@@ -1,0 +1,277 @@
+{
+  "id": "BFB-029",
+  "date_UTC": "2026-11-06T10:11:17.433064+00:00",
+  "status": "Exact candidate promoted by Root after isolated15-step saved-file BFB. Root owns combined rebuild/full-KK validation; no live/Native edits by diagnosis owner.",
+  "scope": {
+    "routine": "est_kessler_microphys_api",
+    "Native": "src/SILHS/est_kessler_microphys_module.F90:235",
+    "target": "clubb_kokkos/src/SILHS/est_kessler_microphys_module.cpp",
+    "case": "rico_silhs",
+    "kind": "double/core8",
+    "compiler": "NVHPC26.9 CPU Serial Kokkos Debug -O0 -g",
+    "gate": "15 native300s steps,standard stats,debug2,4C8 columns,zero tolerance. Named variant deterministic SILHS,importance/random-start disabled.",
+    "limit": "Deliberately stop before independently owned KK/fill-hole feedback differences at step16; this is no full-duration RICO acceptance or stochastic/other-compiler/GPU claim."
+  },
+  "first_difference": {
+    "sample_zero_based": 9,
+    "saved_time_s": 3000,
+    "level_zero_based": 10,
+    "column_zero_based": 3,
+    "field": "AKstd_cld",
+    "Cpp": 9.579286143433864e-08,
+    "Native": 9.579286143433866e-08,
+    "ULPs": 1,
+    "inputs": "Saved cloud_frac,mixt_frac,chi1/2,stdev_chi1/2,AKm,AKstd all identical at the first boundary; captured actual kernel AK1/2 and variances retain full precision.",
+    "actual_input": {
+      "first_model_sample": 10,
+      "first_saved_time_s": 3000,
+      "column_zero_based": 3,
+      "level_zero_based": 10,
+      "actual_intermediates": {
+        "cloud_frac": 0.08567480862419063,
+        "mixt_frac": 0.09333419887526256,
+        "AK1": 6.802321371982912e-08,
+        "AK2": 6.792496401879828e-24,
+        "AK1var": 8.836900715119271e-15,
+        "AK2var": 6.850896611499602e-30,
+        "AKm": 6.348892157461026e-09,
+        "AKstd_cld_Cpp": 9.579286143433864e-08,
+        "AKstd_cld_Native": 9.579286143433866e-08
+      },
+      "trace_all15": [
+        [
+          0.0,
+          0.4883971307539203,
+          5.810726520648281e-269,
+          9.562001599871253e-285,
+          0.0,
+          0.0,
+          2.8379421602803314e-269,
+          0.0
+        ],
+        [
+          0.0,
+          0.42843353554138236,
+          3.3250249054579677e-49,
+          3.818491786700133e-67,
+          0.0,
+          0.0,
+          1.4245521760085077e-49,
+          0.0
+        ],
+        [
+          0.0,
+          0.30507481324830843,
+          1.8939274234408296e-51,
+          3.0347620506866255e-142,
+          0.0,
+          0.0,
+          5.77789555012061e-52,
+          0.0
+        ],
+        [
+          0.0,
+          0.2929157235308408,
+          3.235893632310458e-48,
+          7.806724146422468e-68,
+          0.0,
+          0.0,
+          9.478441245770584e-49,
+          0.0
+        ],
+        [
+          0.0,
+          0.46888532716355263,
+          1.264704753401336e-38,
+          1.9455515065131936e-39,
+          0.0,
+          0.0,
+          6.963325972507069e-39,
+          0.0
+        ],
+        [
+          0.0,
+          0.3926966871424986,
+          2.4378995236779485e-41,
+          3.7733338197377124e-48,
+          0.0,
+          0.0,
+          9.573552956904187e-42,
+          0.0
+        ],
+        [
+          4.5682669507398094e-07,
+          0.38949576523303375,
+          1.6805801172740395e-23,
+          6.649013947692307e-27,
+          5.602587835238049e-30,
+          0.0,
+          6.549847639302827e-24,
+          2.1855964162758536e-12
+        ],
+        [
+          0.009764906265170492,
+          0.3541481752219975,
+          2.8670294281267825e-12,
+          1.1761392461215206e-17,
+          1.4736583534805757e-19,
+          3.2945167096886573e-25,
+          1.01536083639565e-12,
+          2.3095648677421956e-09
+        ],
+        [
+          0.07077423740149427,
+          0.29165792201600016,
+          3.686428917484397e-10,
+          9.612330127175724e-19,
+          2.7334777541343486e-17,
+          2.446820761493109e-26,
+          1.0751762045420101e-10,
+          1.0530799753724544e-08
+        ],
+        [
+          0.08567480862419063,
+          0.09333419887526256,
+          6.802321371982912e-08,
+          6.792496401879828e-24,
+          8.836900715119271e-15,
+          6.850896611499602e-30,
+          6.348892157461026e-09,
+          9.579286143433864e-08
+        ],
+        [
+          0.0634891844293491,
+          0.10689562824529014,
+          2.0412009571255167e-08,
+          4.123524771085634e-17,
+          3.1685582715794915e-15,
+          1.0790008044195219e-24,
+          2.1819546236955764e-09,
+          6.967954021262245e-08
+        ],
+        [
+          0.0529437031476815,
+          0.08483195676435046,
+          1.7735677602163455e-08,
+          4.297401457893093e-20,
+          2.4929969073233897e-15,
+          7.887166928309199e-28,
+          1.5045522355725176e-09,
+          6.07533737733211e-08
+        ],
+        [
+          0.041448760033371605,
+          0.08125545705095083,
+          8.51365294270681e-09,
+          3.1136888717517495e-21,
+          1.0779958822642362e-15,
+          5.124953146304378e-29,
+          6.91780761035675e-10,
+          4.4461458827452005e-08
+        ],
+        [
+          0.029679675729719385,
+          0.0527207557637952,
+          1.467860671986101e-08,
+          -9.629078590070075e-24,
+          2.096042933497614e-15,
+          4.805363355031014e-30,
+          7.738672398305862e-10,
+          5.8533163047935925e-08
+        ],
+        [
+          0.017624581636218054,
+          0.02680823219970435,
+          3.969181847934825e-08,
+          7.872032985421078e-28,
+          7.255084762514185e-15,
+          0.0,
+          1.064067486222884e-09,
+          9.892838428442637e-08
+        ]
+      ]
+    },
+    "control_prefix_differences": [
+      {
+        "field": "AKstd_cld",
+        "count": 29,
+        "first": [
+          9,
+          10,
+          3
+        ]
+      }
+    ]
+  },
+  "cause": {
+    "ordinary": "(AKm/cloud_frac)*(AKm/cloud_frac)",
+    "Native": "Compute rounded quotient AKm/cloud_frac,then square it,as Native **2 specifies.",
+    "ordinary_compiled": "AKm*AKm/(cloud_frac*cloud_frac) before the final fused subtraction.",
+    "candidate": "One call-local const real_t AKm_over_cloud_frac before the unchanged square/variance/clip/sqrt expression.",
+    "Native_assembly": "native_est_kessler_assembly.txt: addresses2153,219a divide AKm/cloud_frac;219f multiplies those rounded quotients;21ba fuses first moment minus squared quotient.",
+    "ordinary_assembly": "ordinary_est_kessler_assembly.txt:2b68c numerator square;2b720 denominator square;2b724 quotient of squares;2b728 fused subtraction.",
+    "candidate_assembly": "candidate_est_kessler_assembly.txt:2b5ad divide/store quotient;2b674/2b67c square rounded value;2b680 fused subtraction. Equivalent Native final operation retained.",
+    "existing_precedent": "BFB-015 surface-variance rounded quotient powers; same compiler behavior and source-preserving boundary."
+  },
+  "actual_input_replay": {
+    "exact_View_replay": {
+      "ordinary": 9.579286143433864e-08,
+      "candidate": 9.579286143433866e-08,
+      "Native_recorded": 9.579286143433866e-08
+    },
+    "source": "actual_quotient_replay.cpp",
+    "why_View_matters": "Repeated Kokkos View accesses preserve the actual compiler expression shape and reproduce original/output bits.",
+    "rejected_simplification": {
+      "source": "scalar_only_quotient_replay.cpp",
+      "result": {
+        "ordinary": 9.579286143433866e-08,
+        "candidate": 9.579286143433866e-08,
+        "Native_recorded": 9.579286143433866e-08
+      },
+      "reason": "Scalar-only extraction changed the compiler optimization and did not reproduce the original View mismatch. Retained as an explicit negative diagnostic, not cited as original-reproduction evidence."
+    }
+  },
+  "model_controls": {
+    "baseline": "baseline15_RESULT.json: both run15,first difference10.",
+    "instrumentation": "trace15_RESULT.json: actual kernel intermediates; all saved bytes identical to uninstrumented baseline.",
+    "candidate": "candidate15_RESULT.json / candidate15_results/case_compare_summary.json: both15steps,full saved file bytes match Native.",
+    "Native_control": "Candidate Native saved file also equals unchanged baseline Native15 file.",
+    "frozen_prefix_raw_identity": [
+      {
+        "model": "Cpp",
+        "variables_raw_bit_exact": 635
+      },
+      {
+        "model": "Native",
+        "variables_raw_bit_exact": 635
+      }
+    ]
+  },
+  "source_cleanup_audit": {
+    "read_scope": "Complete Native2-procedure file and current C++ file/caller/adapters; focused Native/ordinary/candidate assembly.",
+    "unchanged": "All original public/private names,args,return ownership; sample recurrences,PDF extraction,AK1/AK2/variances/AKstd/other outputs,cloud condition/else floor,MAX arg order/constants,diagnostics and case-owned captures.",
+    "only_deviation": "Documented local quotient materialization reproduces Native exponent base; braces permit that local declaration in the existing branch.",
+    "format": "100columns,no new globals,state,allocations or interface; exact inverse-replacement proves every other byte unchanged.",
+    "no_new_physics": "Kessler estimate is a debug2 SILHS diagnostic; other KK causes are not modified or accepted by this gate."
+  },
+  "sha256": {
+    "build/parallel_cpu_lanes/driver_silhs_numeric/est_kessler_before029.cpp": "4d959fdefa2aca886895a1ced7bbd3294f374d68dc3cf14b37cc8e644bc92b11",
+    "build/parallel_cpu_lanes/driver_silhs_numeric/candidate_est_kessler_microphys_module.cpp": "a288db6b8bf9a3b506c7a4f92d37df1bc4f7d499a724f802c3d74d9ec9515cdf",
+    "clubb_kokkos/src/SILHS/est_kessler_microphys_module.cpp": "a288db6b8bf9a3b506c7a4f92d37df1bc4f7d499a724f802c3d74d9ec9515cdf",
+    "build/parallel_cpu_lanes/driver_silhs_numeric/candidate_clubb_standalone": "c9fe3271dbce0178fc5f9e3beb9999e8bac5bdf5bdf55e214d0e5448aff12e4c",
+    "build/parallel_cpu_lanes/driver_silhs_numeric/baseline_clubb_standalone": "1ba4138f39e843177a9de5c8689e0bd70e1b20e7da003e03789e424dc32c11b6",
+    "build/parallel_cpu_lanes/driver_silhs_numeric/actual_quotient_replay.cpp": "ce2db4669bca35f90c2ac815b700f627791851b6eef7717998f6dde52367decd",
+    "src/SILHS/est_kessler_microphys_module.F90": "2c1010c3eeb4f507ffdc2266328bd65b31a7f381d9c2c1068c473a0f4bcb706a"
+  },
+  "outputs_sha256": {
+    "frozen_Cpp_full": "b92b64b448309795c2ec9a2e76e59fb68620a437fb461fa1fc3f4e929f873dc5",
+    "frozen_Native_full": "5bf4d8ea8f9fb1d24113a5c98f30626ec3790160ab8cd7f8b708c3afa979ce15",
+    "control_Cpp_15": "e31d3637547397e4405e30c513672de67d6cee1ac069017eb16e016ad4108ff1",
+    "trace_Cpp_15": "e31d3637547397e4405e30c513672de67d6cee1ac069017eb16e016ad4108ff1",
+    "candidate_Cpp_15": "57262cd6a9d65cf62388f0de342b5413e1c84eae8d8a892663cbdea016f0f3c4",
+    "candidate_Native_15": "57262cd6a9d65cf62388f0de342b5413e1c84eae8d8a892663cbdea016f0f3c4",
+    "control_Native_15": "57262cd6a9d65cf62388f0de342b5413e1c84eae8d8a892663cbdea016f0f3c4"
+  },
+  "patch": "BFB-029_candidate.patch",
+  "live_integration": "Exact candidate promoted; combined Serial build and14CTest pass; full six-case KK/SILHS gate running."
+}

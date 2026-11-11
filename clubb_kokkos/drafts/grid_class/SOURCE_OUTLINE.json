@@ -1,0 +1,608 @@
+{
+  "remaining_native_inventory_and_order": [
+    "setup_grid",
+    "cleanup_grid_api",
+    "setup_grid_heights",
+    "read_grid_heights",
+    "calc_zt2zm_weights",
+    "calc_zm2zt_weights"
+  ],
+  "ported_inventory_and_order": [
+    "setup_grid",
+    "cleanup_grid_api",
+    "setup_grid_heights",
+    "calc_zt2zm_weights",
+    "calc_zm2zt_weights"
+  ],
+  "retained_IO_service": [
+    "read_grid_heights"
+  ],
+  "public_CPP_inventory": [
+    "setup_grid",
+    "cleanup_grid_api",
+    "setup_grid_heights"
+  ],
+  "private_CPP_inventory": [
+    "calc_zt2zm_weights",
+    "calc_zm2zt_weights"
+  ],
+  "routines": [
+    {
+      "name": "setup_grid",
+      "source_lines": [
+        277,
+        677
+      ],
+      "arguments": [
+        {
+          "name": "nzmax",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sfc_elevation",
+          "kind": "real",
+          "dims": [
+            "ngrdcol"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_implemented",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_ascending_grid",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "grid_type",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "deltaz",
+          "kind": "real",
+          "dims": [
+            "ngrdcol"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "zm_init",
+          "kind": "real",
+          "dims": [
+            "ngrdcol"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "zm_top",
+          "kind": "real",
+          "dims": [
+            "ngrdcol"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "momentum_heights",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzmax"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "thermodynamic_heights",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzmax-1"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "gr",
+          "kind": "grid",
+          "dims": [],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "err_info",
+          "kind": "err_info_type",
+          "dims": [],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "ordered_calls": [
+        "call setup_grid_heights( gr%nzm, gr%nzt, ngrdcol, l_implemented, l_ascending_grid, grid_type, deltaz, zm_init, momentum_heights(:,begin_height_idx_zm:end_height_idx_zm), thermodynamic_heights(:,begin_height_idx_zt:end_height_idx_zt), gr, err_info )"
+      ],
+      "ordered_branches": [
+        "if ( nzmax > NWARNING .and. clubb_at_least_debug_level_api( 1 ) ) then",
+        "if ( .not. l_implemented ) then",
+        "if ( grid_type == 1 ) then",
+        "else if ( grid_type == 2 ) then",
+        "if ( l_ascending_grid ) then",
+        "do while( thermodynamic_heights(1,k) >= zm_init(1) .and. k > 1 )",
+        "else",
+        "do while( thermodynamic_heights(1,k) >= zm_init(1) .and. k < gr%nzt )",
+        "if( thermodynamic_heights(1,k) <= zm_init(1) ) then",
+        "else",
+        "if ( l_ascending_grid ) then",
+        "else",
+        "if ( l_ascending_grid ) then",
+        "do while( thermodynamic_heights(1,k) > zm_top(1) .and. k > 1 )",
+        "else",
+        "do while( thermodynamic_heights(1,k) > zm_top(1) .and. k < gr%nzt )",
+        "if( zm_top(1) < thermodynamic_heights(1,k) ) then",
+        "else",
+        "if ( l_ascending_grid ) then",
+        "else",
+        "else if ( grid_type == 3 ) then",
+        "if ( l_ascending_grid ) then",
+        "do while( momentum_heights(1,k) < zm_init(1) .and. k < gr%nzm )",
+        "else",
+        "do while( momentum_heights(1,k) < zm_init(1) .and. k > 1 )",
+        "if( momentum_heights(1,k) < zm_init(1) ) then",
+        "else",
+        "if ( l_ascending_grid ) then",
+        "else",
+        "if ( l_ascending_grid ) then",
+        "do while( momentum_heights(1,k) > zm_top(1) .and. k > 1 )",
+        "else",
+        "do while( momentum_heights(1,k) > zm_top(1) .and. k < gr%nzm )",
+        "if ( momentum_heights(1,k) > zm_top(1) ) then",
+        "else",
+        "if ( l_ascending_grid ) then",
+        "else",
+        "if ( ierr /= 0 ) then",
+        "if ( clubb_at_least_debug_level_api( 0 ) ) then",
+        "if ( any(err_info%err_code == clubb_fatal_error) ) then",
+        "if ( sfc_elevation(i) > gr%zm(i,1) ) then"
+      ],
+      "implementation": "C++ source body draft."
+    },
+    {
+      "name": "cleanup_grid_api",
+      "source_lines": [
+        680,
+        714
+      ],
+      "arguments": [
+        {
+          "name": "gr",
+          "kind": "grid",
+          "dims": [],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "ordered_calls": [],
+      "ordered_branches": [
+        "if ( ierr /= 0 ) then"
+      ],
+      "implementation": "C++ source body draft."
+    },
+    {
+      "name": "setup_grid_heights",
+      "source_lines": [
+        717,
+        1051
+      ],
+      "arguments": [
+        {
+          "name": "nzm",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_implemented",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_ascending_grid",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "grid_type",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "deltaz",
+          "kind": "real",
+          "dims": [
+            "ngrdcol"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "zm_init",
+          "kind": "real",
+          "dims": [
+            "ngrdcol"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "momentum_heights",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "thermodynamic_heights",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "gr",
+          "kind": "grid",
+          "dims": [],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "err_info",
+          "kind": "err_info_type",
+          "dims": [],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "ordered_calls": [
+        "call calc_zm2zt_weights( nzt, ngrdcol, gr )",
+        "call calc_zt2zm_weights( nzm, nzt, ngrdcol, gr )"
+      ],
+      "ordered_branches": [
+        "if ( .not. l_implemented ) then",
+        "if ( grid_type == 1 ) then",
+        "if ( l_ascending_grid ) then",
+        "else",
+        "elseif ( grid_type == 2 ) then",
+        "if ( l_ascending_grid ) then",
+        "else",
+        "elseif ( grid_type == 3 ) then",
+        "else",
+        "else",
+        "if ( l_ascending_grid ) then",
+        "else",
+        "if ( l_ascending_grid ) then",
+        "else"
+      ],
+      "implementation": "C++ source body draft."
+    },
+    {
+      "name": "read_grid_heights",
+      "source_lines": [
+        1054,
+        1376
+      ],
+      "arguments": [
+        {
+          "name": "nzmax",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "grid_type",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "zm_grid_fname",
+          "kind": "character",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": "*"
+        },
+        {
+          "name": "zt_grid_fname",
+          "kind": "character",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": "*"
+        },
+        {
+          "name": "file_unit",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "momentum_heights",
+          "kind": "real",
+          "dims": [
+            "nzmax"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "thermodynamic_heights",
+          "kind": "real",
+          "dims": [
+            "nzmax-1"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "err_info",
+          "kind": "err_info_type",
+          "dims": [],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "ordered_calls": [
+        "call file_read_1d( file_unit, zt_grid_fname, nzmax-1, 1, thermodynamic_heights )",
+        "call file_read_1d( file_unit, zm_grid_fname, nzmax, 1, momentum_heights )"
+      ],
+      "ordered_branches": [
+        "if ( grid_type == 1 ) then",
+        "if ( zm_grid_fname /= '' ) then",
+        "if ( zt_grid_fname /= '' ) then",
+        "elseif ( grid_type == 2 ) then",
+        "if ( zm_grid_fname /= '' ) then",
+        "if ( input_status < 0 ) exit",
+        "if ( input_status > 0 ) then",
+        "if ( any(err_info%err_code == clubb_fatal_error) ) then",
+        "if ( zt_level_count /= nzmax-1 ) then",
+        "if ( thermodynamic_heights(k+1) <= thermodynamic_heights(k) ) then",
+        "elseif ( grid_type == 3 ) then",
+        "if ( zt_grid_fname /= '' ) then",
+        "if ( input_status < 0 ) exit",
+        "if ( input_status > 0 ) then",
+        "if ( zm_level_count /= nzmax ) then",
+        "if ( momentum_heights(k) <= momentum_heights(k-1) ) then",
+        "if ( generic_input_item > 0.0_core_rknd ) then"
+      ],
+      "implementation": "Retained existing explicit Native file-I/O service including validation, approved Root."
+    },
+    {
+      "name": "calc_zt2zm_weights",
+      "source_lines": [
+        2026,
+        2312
+      ],
+      "arguments": [
+        {
+          "name": "nzm",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "gr",
+          "kind": "grid",
+          "dims": [],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "ordered_calls": [],
+      "ordered_branches": [],
+      "implementation": "C++ source body draft."
+    },
+    {
+      "name": "calc_zm2zt_weights",
+      "source_lines": [
+        2466,
+        2634
+      ],
+      "arguments": [
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "gr",
+          "kind": "grid",
+          "dims": [],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "ordered_calls": [],
+      "ordered_branches": [],
+      "implementation": "C++ source body draft."
+    }
+  ],
+  "read_evidence": {
+    "Native_total_lines": 2889,
+    "Native_read_scope": "Module declarations and all six remaining bodies freshly reread; existing17 operators previously fully reviewed by this owner and not edited in this draft.",
+    "JAX_actual_file": "clubb_jax/src/CLUBB_core/grid_class.py",
+    "JAX_lines": 503,
+    "full_JAX_and_remaining_Native_bodies_read_before_outline": true,
+    "API_callers_read": "clubb_api_module1954\u20132270 single/multi height/setup wrappers; live C++driver dimensions, inputs and f2k call sites inspected."
+  },
+  "canonical_sha256": "a5c86824a01af155e24114cf0e23166d228b616716d650fac8d715a7a991d603",
+  "jax_sha256": "fba21f6e9f4225936f39f8cb0238c4d419748abddffc2e169c318cf596ff5870",
+  "merge_positions": [
+    "setup_grid/cleanup_grid_api/setup_grid_heights before redirect_interpolated_azm_k; read_grid_heights remains Native IO.",
+    "calc_zt2zm_weights after cubic_interpolated_azm_2D and before linear_interpolated_azt_2D.",
+    "calc_zm2zt_weights after cubic_interpolated_azt_2D and before gradzm_2D."
+  ],
+  "existing_schema": "One generated16field grid mirror retained; Native one-based physical boundary metadata and existing zero-based private weight selectors preserved.",
+  "constructor_contract": "Standalone dimensions/trimming use only first column with exact ascending/descending scans. Allocate8fields in Native order. setup_grid_heights then debug0 fatal gate, then first failing column surface check using literal storage index1 even descending.",
+  "height_contract": "All standalone types1/2/3 and implemented host inputs, signed descending spacings, direct reciprocals without JAX floors, weight calls in Native zm2zt then zt2zm order; physical metadata assigned only after weight calls.",
+  "weight_contract": "Exact six zt2zm assignments and two zm2zt assignments; no new denominator floor, one-level fallback or altered boundary formulas. Scalar work may fuse independent boundary/interior cells without association changes.",
+  "IOboundary": "Keep actual existing f2k::read_grid_heights and its whole Native validation body; no new count reader, Native private API or permanent forwarding wrapper.",
+  "state_ownership": "Caller-owned existing grid Views/scalars only. No module grid instance/global cache. Kokkos cleanup release has no Native DEALLOCATE STAT status; resource-failure boundary must be documented separately.",
+  "API_wrappers": "Stage actual existing generic single/multicol setup_grid_api and setup_grid_heights_api, preserving Native names/arguments/error-print behavior and necessary rank adaptation. Root owns other API wrappers.",
+  "status": "Outline only. No shared edits/build/tests/runtime/BFB claim."
+}

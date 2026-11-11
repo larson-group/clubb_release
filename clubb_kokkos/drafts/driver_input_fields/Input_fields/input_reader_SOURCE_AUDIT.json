@@ -1,0 +1,141 @@
+{
+  "date_UTC": "2026-11-06T06:45:12.758757+00:00",
+  "attribution": "Owner fullNative868/actualJAX345 read and separate targetsource reread; no independent reviewer claim.",
+  "procedures_in_Native_order": [
+    {
+      "routine": "read_two_dim_file",
+      "arguments": [
+        "iunit",
+        "nCol",
+        "filename",
+        "read_vars",
+        "other_dim"
+      ]
+    },
+    {
+      "routine": "read_one_dim_file",
+      "arguments": [
+        "iunit",
+        "nCol",
+        "filename",
+        "read_vars"
+      ]
+    },
+    {
+      "routine": "fill_blanks_one_dim_vars",
+      "arguments": [
+        "num_vars",
+        "one_dim_vars"
+      ]
+    },
+    {
+      "routine": "fill_blanks_two_dim_vars",
+      "arguments": [
+        "num_vars",
+        "other_dim",
+        "two_dim_vars"
+      ]
+    },
+    {
+      "routine": "linear_fill_blanks",
+      "arguments": [
+        "dim_grid",
+        "grid",
+        "var",
+        "default_value"
+      ]
+    },
+    {
+      "routine": "deallocate_one_dim_vars",
+      "arguments": [
+        "num_vars",
+        "one_dim_vars"
+      ]
+    },
+    {
+      "routine": "deallocate_two_dim_vars",
+      "arguments": [
+        "num_vars",
+        "two_dim_vars",
+        "other_dim"
+      ]
+    },
+    {
+      "routine": "read_x_table",
+      "arguments": [
+        "nvar",
+        "xdim",
+        "ydim",
+        "target_name",
+        "retVars"
+      ]
+    },
+    {
+      "routine": "read_x_profile",
+      "arguments": [
+        "nvar",
+        "dim_size",
+        "target_name",
+        "retVars",
+        "input_file"
+      ]
+    },
+    {
+      "routine": "get_target_index",
+      "arguments": [
+        "nvar",
+        "target_name",
+        "retVars"
+      ]
+    },
+    {
+      "routine": "count_columns",
+      "arguments": [
+        "iunit",
+        "filename"
+      ]
+    }
+  ],
+  "public_procedures": 10,
+  "required_private_helpers": [
+    "linear_fill_blanks"
+  ],
+  "immutable_names_exact": 35,
+  "manual_review": [
+    "recordfieldorder/types and Nativefixed30metadata semantics",
+    "readone/readtwo/countNativefileparse remainsI/O-only and exactlypreservesNativeerrors",
+    "threeprimitiveI/OABI widths,filename lengths,Fortranflatorder and malloc/std::free ownership checked",
+    "1Dfill startswithvariable1; eachsubsequent fieldusesupdatedgrid",
+    "2Dfill eachfield fullmainaxispass thenfullotheraxispass; stridedNativearraysections mappedtoKokkossubviews",
+    "ordered valid-point compaction and anydescending detection beforeNativeamt0/partial/fullbranches",
+    "existingzlinterp seesonlydefinedscratchprefix lengthamt; reverse onlynegatesgrids",
+    "sameNative no-fill/exterior interpolationbehavior, including1validpointnotinvented",
+    "read_x_table firstmatchingfield ownedresult, Nativeerrors",
+    "read_x_profile Native1basedindex,presenceflag andundefinedtail preserved",
+    "deallocation releasesonlyvalues andleavesmetadata fields",
+    "Cppstdstring blankpadding/trim intrinsic representedby2private languageboundaryhelpers",
+    "Kokkoslambda captures onlyView/scalar data; explicit returntype enclosinglambdas; namedtemplateparameters",
+    "no global/thread_local/cache/modelIOfallback"
+  ],
+  "source_definedness": [
+    "read_x_profile tail beyondsize(source) isNativeundefined; WithoutInitializing preserves that boundary, no fabricatedpadding",
+    "Native read_two_dim_file malformedblock-size assumptions remaininsideNativeI/Oservice, no scientificinterpretation or extra retry added"
+  ],
+  "BFB_specific_adaptations": [],
+  "sha256": {
+    "src/Input_fields/input_reader.F90": "7fa79bd77c26fdc6078e9bdd96b06392fc5ee60c71bfc4c3804f8aed9efbab1c",
+    "clubb_jax/src/Input_fields/input_reader.py": "e88fb7f4fbd7c1f39d4a799ce2fee7f4979558619f693235b5bbed68b3721faf",
+    "clubb_kokkos/drafts/driver_input_fields/Input_fields/input_reader.cpp": "69842393084485b06a977243a65d035d58e866046951a804788c7c56c1726f9b",
+    "clubb_kokkos/drafts/driver_input_fields/Input_fields/input_reader.hpp": "8548f239e310ec58b0718ed5967d7a8bac50eba11cd5e2fc8f2c49214954f9f3",
+    "clubb_kokkos/drafts/driver_input_fields/Input_fields/input_names.hpp": "25eabb3970889fc06c348dd1216850bd6b545195989c0504f9b5a9bef4417569",
+    "clubb_kokkos/drafts/driver_input_fields/f2k/input_reader_io_bridge.hpp": "ae2b82bf25563a34a712ccc07b7e6cfd21bfa4333a828f7e0d1409fc8b39f9d2",
+    "clubb_kokkos/drafts/driver_input_fields/f2k/input_reader_io_bridge.F90": "9c76f9c5756eb8560812079e975615abbf9ff0942a512ea3824b1c4c4abefcb7"
+  },
+  "runtime_status": "Uncompiled/untested. No Serial/CUDA/runtime/BFBclaim. RootownscombinedCPUmodelgate.",
+  "metadata_boundary_correction": {
+    "date_UTC": "2026-11-06T08:33:57.793222+00:00",
+    "finding": "Root integration review found padded fixed30 std::string metadata fails direct external C++ comparisons.",
+    "remedy": "Trim trailing blanks when assigning public name/dim_name/dim1_name/dim2_name/other_dim metadata; preserve leading blanks and unchanged fixed30 primitive wire. No array/numerical changes.",
+    "validation": "Owner inspected all7assignment sites; no build/runtime claim."
+  }
+}

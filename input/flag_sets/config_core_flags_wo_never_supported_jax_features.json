@@ -3,12 +3,16 @@
         "saturation_formula": 1,
         "l_godunov_upwind_xpyp_ta": true,
         "l_lh_importance_sampling": false,
+        "l_random_k_lh_start": true,
         "l_max_overlap_in_cloud": false
     },
     "flag3": {
         "ipdf_call_placement": 1, 
         "l_ho_trad_coriolis": true,
         "l_ho_nontrad_coriolis": true
+    },
+    "flag4": {
+        "iiPDF_type": 7
     },
     "flag5": {
         "l_predict_upwp_vpwp": false
@@ -17,6 +21,7 @@
         "l_wp2_fill_holes_tke": false,
         "l_enable_relaxed_clipping": true,
         "l_min_xp2_from_corr_wx": false,
+        "l_add_dycore_grid": true,
 	    "l_lh_straight_mc": true
     },
     "flag7": {
@@ -65,6 +70,7 @@
     },
     "flag14": {
         "l_use_tke_in_wp3_pr_turb_term": false,
+        "l_use_tke_in_wp2_wp3_K_dfsn": true,
         "l_use_wp3_lim_with_smth_Heaviside": true,
         "l_smooth_Heaviside_tau_wpxp": false,
         "l_modify_limiters_for_cnvg_test": true

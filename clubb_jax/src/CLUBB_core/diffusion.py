@@ -53,18 +53,18 @@ def diffusion_zt_lhs(
     invrs_rho_ds_ztzxt,
     rho_ds_zm,
 ):
-    r"""Vertical eddy diffusion of var_zt:  implicit portion of the code.
+    """Vertical eddy diffusion of var_zt:  implicit portion of the code.
 
     The variable "var_zt" stands for a variable that is located at
     thermodynamic grid levels.
 
     The d(var_zt)/dt equation contains an eddy diffusion term:
 
-    + d [ ( K_zm + nu ) * d(var_zt)/dz ] / dz.
+      + d [ ( K_zm + nu ) * d(var_zt)/dz ] / dz.
 
     This term is usually solved for completely implicitly, such that:
 
-    + d [ ( K_zm + nu ) * d( var_zt(t+1) )/dz ] / dz.
+      + d [ ( K_zm + nu ) * d( var_zt(t+1) )/dz ] / dz.
 
     However, when a Crank-Nicholson scheme is used, the eddy diffusion term
     has both implicit and explicit components, such that:
@@ -87,21 +87,21 @@ def diffusion_zt_lhs(
     The implicit portion of this term is discretized as follows:
 
     The values of var_zt are found on the thermodynamic levels, while the
-    values of K_zm are found on the momentum levels.  The derivatives (d/dz)
-    of var_zt are taken over the intermediate momentum levels.  At the
-    intermediate momentum levels, d(var_zt)/dz is multiplied by ( K_zm + nu ).
-    Then, the derivative of the whole mathematical expression is taken over
-    the central thermodynamic level, which yields the desired result.
+    values of K_zm are found on the momentum levels.  The derivatives d/dz of
+    var_zt are taken over the intermediate momentum levels.  At the
+    intermediate momentum levels, d(var_zt)/dz is multiplied by (K_zm + nu).
+    Then the derivative of the whole mathematical expression is taken over the
+    central thermodynamic level.
 
-    --var_zt------------------------------------------------- t(k+1)
+      --var_zt------------------------------------------------- t(k+1)
 
-    ==========d(var_zt)/dz==(K_zm+nu)======================== m(k+1)
+      ==========d(var_zt)/dz==(K_zm+nu)======================== m(k+1)
 
-    --var_zt-------------------d[(K_zm+nu)*d(var_zt)/dz]/dz-- t(k)
+      --var_zt-------------------d[(K_zm+nu)*d(var_zt)/dz]/dz-- t(k)
 
-    ==========d(var_zt)/dz==(K_zm+nu)======================== m(k)
+      ==========d(var_zt)/dz==(K_zm+nu)======================== m(k)
 
-    --var_zt------------------------------------------------- t(k-1)
+      --var_zt------------------------------------------------- t(k-1)
 
     The vertical indices t(k+1), m(k+1), t(k), m(k), and t(k-1) correspond
     with altitudes zt(k+1), zm(k+1), zt(k), zm(k), and zt(k-1), respectively.
@@ -121,6 +121,7 @@ def diffusion_zt_lhs(
            (1/2), reversing the sign on each left-hand side element, and then
            multiplying each element by the appropriate var_zt(t) value from
            the appropriate vertical level.
+
 
     Boundary Conditions:
 
@@ -193,6 +194,7 @@ def diffusion_zt_lhs(
        diagonals on the left-hand side will preserve the right-hand side value
        at that level, thus satisfying the fixed-point boundary conditions.
 
+
     Conservation Properties:
 
     When zero-flux boundary conditions are used, this technique of
@@ -218,7 +220,7 @@ def diffusion_zt_lhs(
     Left-hand side matrix contributions from eddy diffusion term; first four
     vertical levels:
 
-         -------------------------------------------------------------------------->
+        -------------------------------------------------------------------------->
     k=1 | +invrs_dzt(k)          -invrs_dzt(k)                          0
         |   *(K_zm(k+1)+nu)        *(K_zm(k+1)+nu)
         |     *invrs_dzm(k+1)        *invrs_dzm(k+1)
@@ -238,7 +240,7 @@ def diffusion_zt_lhs(
     k=4 |         0                        0                -invrs_dzt(k)
         |                                                     *(K_zm(k)+nu)
         |                                                       *invrs_dzm(k)
-       \ /
+       \\ /
 
     Note:  The superdiagonal term from level 3 and both the main diagonal and
            superdiagonal terms from level 4 are not shown on this diagram.
@@ -259,34 +261,12 @@ def diffusion_zt_lhs(
 
     Brian Griffin.  April 26, 2008.
 
-    The Fortran out-argument lhs is returned as an array with diagonal order
-    [superdiagonal, main diagonal, subdiagonal]; Fortran 1-based grid indices
-    are represented by 0-based Python slices.
+    References:
+    None
 
-    Fortran declarations (diffusion_zt_lhs in src/CLUBB_core/diffusion.F90):
-
-        !------------------------ Input Variables ------------------------
-        integer, intent(in) :: &
-          nzm, &
-          nzt, &
-          ngrdcol
-
-        type (grid), intent(in) :: gr
-
-        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) ::  &
-          K_zm,            & ! Coef. of eddy diffusivity at momentum levels   [m^2/s]
-          rho_ds_zm          ! Dry statis density on momentum levels          [kg/m^3]
-
-        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) ::  &
-          K_zt,            & ! Coef. of eddy diffusivity at thermo. levels    [m^2/s]
-          invrs_rho_ds_ztzxt    ! Inverse dry statis density on thermo. levels   [m^3/kg]
-
-        real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
-          nu                ! Background constant coef. of eddy diffusivity  [m^2/s]
-
-        !------------------------ Return Variable ------------------------
-        real( kind = core_rknd ), dimension(3,ngrdcol,nzt), intent(out) :: &
-          lhs     ! LHS coefficient of diffusion term    [1/s]
+    JAX adaptation: the Fortran out-argument `lhs` is returned as an array with
+    diagonal order [superdiagonal, main diagonal, subdiagonal].  Fortran 1-based
+    grid indices are represented by 0-based Python slices.
     """
     K_zm_nu = K_zm + nu[:, None]
 
@@ -427,18 +407,18 @@ def diffusion_zm_lhs(
     invrs_rho_ds_zm,
     rho_ds_zt,
 ):
-    r"""Vertical eddy diffusion of var_zm:  implicit portion of the code.
+    """Vertical eddy diffusion of var_zm:  implicit portion of the code.
 
     The variable "var_zm" stands for a variable that is located at momentum
     grid levels.
 
     The d(var_zm)/dt equation contains an eddy diffusion term:
 
-    + d [ ( K_zt + nu ) * d(var_zm)/dz ] / dz.
+      + d [ ( K_zt + nu ) * d(var_zm)/dz ] / dz.
 
     This term is usually solved for completely implicitly, such that:
 
-    + d [ ( K_zt + nu ) * d( var_zm(t+1) )/dz ] / dz.
+      + d [ ( K_zt + nu ) * d( var_zm(t+1) )/dz ] / dz.
 
     However, when a Crank-Nicholson scheme is used, the eddy diffusion term
     has both implicit and explicit components, such that:
@@ -461,21 +441,21 @@ def diffusion_zm_lhs(
     The implicit portion of this term is discretized as follows:
 
     The values of var_zm are found on the momentum levels, while the values of
-    K_zt are found on the thermodynamic levels.  The derivatives (d/dz) of
+    K_zt are found on the thermodynamic levels.  The derivatives d/dz of
     var_zm are taken over the intermediate thermodynamic levels.  At the
     intermediate thermodynamic levels, d(var_zm)/dz is multiplied by
-    ( K_zt + nu ).  Then, the derivative of the whole mathematical expression
-    is taken over the central momentum level, which yields the desired result.
+    (K_zt + nu).  Then the derivative of the whole mathematical expression is
+    taken over the central momentum level.
 
-    ==var_zm================================================= m(k+1)
+      ==var_zm================================================= m(k+1)
 
-    ----------d(var_zm)/dz--(K_zt+nu)------------------------ t(k)
+      ----------d(var_zm)/dz--(K_zt+nu)------------------------ t(k)
 
-    ==var_zm===================d[(K_zt+nu)*d(var_zm)/dz]/dz== m(k)
+      ==var_zm===================d[(K_zt+nu)*d(var_zm)/dz]/dz== m(k)
 
-    ----------d(var_zm)/dz--(K_zt+nu)------------------------ t(k-1)
+      ----------d(var_zm)/dz--(K_zt+nu)------------------------ t(k-1)
 
-    ==var_zm================================================= m(k-1)
+      ==var_zm================================================= m(k-1)
 
     The vertical indices m(k+1), t(k), m(k), t(k-1), and m(k-1) correspond
     with altitudes zm(k+1), zt(k), zm(k), zt(k-1), and zm(k-1), respectively.
@@ -495,6 +475,7 @@ def diffusion_zm_lhs(
            (1/2), reversing the sign on each left-hand side element, and then
            multiplying each element by the appropriate var_zm(t) value from
            the appropriate vertical level.
+
 
     Boundary Conditions:
 
@@ -567,6 +548,7 @@ def diffusion_zm_lhs(
        diagonals on the left-hand side will preserve the right-hand side value
        at that level, thus satisfying the fixed-point boundary conditions.
 
+
     Conservation Properties:
 
     When zero-flux boundary conditions are used, this technique of
@@ -592,7 +574,7 @@ def diffusion_zm_lhs(
     Left-hand side matrix contributions from eddy diffusion term; first four
     vertical levels:
 
-         ---------------------------------------------------------------------->
+        ---------------------------------------------------------------------->
     k=1 | +invrs_dzm(k)          -invrs_dzm(k)                      0
         |   *(K_zt(k)+nu)          *(K_zt(k)+nu)
         |     *invrs_dzt(k)          *invrs_dzt(k)
@@ -612,7 +594,7 @@ def diffusion_zm_lhs(
     k=4 |          0                       0              -invrs_dzm(k)
         |                                                   *(K_zt(k-1)+nu)
         |                                                     *invrs_dzt(k-1)
-       \ /
+       \\ /
 
     Note:  The superdiagonal term from level 3 and both the main diagonal and
            superdiagonal terms from level 4 are not shown on this diagram.
@@ -633,34 +615,12 @@ def diffusion_zm_lhs(
 
     Brian Griffin.  April 26, 2008.
 
-    The Fortran out-argument lhs is returned as an array with diagonal order
-    [superdiagonal, main diagonal, subdiagonal]; Fortran 1-based grid indices
-    are represented by 0-based Python slices.
+    References:
+    None
 
-    Fortran declarations (diffusion_zm_lhs in src/CLUBB_core/diffusion.F90):
-
-        !--------------------------- Input Variables ---------------------------
-        integer, intent(in) :: &
-          nzm, &
-          nzt, &
-          ngrdcol
-
-        type (grid), intent(in) :: gr
-
-        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) ::  &
-          K_zm,           &
-          invrs_rho_ds_zm
-
-        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) ::  &
-          K_zt,           & ! Coef. of eddy diffusivity at thermo. levels   [m^2/s]
-          rho_ds_zt
-
-        real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
-          nu                ! Background constant coef. of eddy diffusivity [m^2/s]
-
-        !--------------------------- Output Variables ---------------------------
-        real( kind = core_rknd ), dimension(3,ngrdcol,nzm), intent(out) :: &
-          lhs     ! LHS coefficient of diffusion term    [1/s]
+    JAX adaptation: the Fortran out-argument `lhs` is returned as an array with
+    diagonal order [superdiagonal, main diagonal, subdiagonal].  Fortran 1-based
+    grid indices are represented by 0-based Python slices.
     """
     K_zt_nu = K_zt + nu[:, None]
 

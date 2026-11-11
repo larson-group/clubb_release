@@ -1,0 +1,32 @@
+{
+  "canonical_source": "src/CLUBB_core/calc_pressure.F90",
+  "canonical_sha256": "9a93446fa6ea7f5e7ce927681f23598f51a78b7d2c4c1f1e6b970de8845cf714",
+  "target_sha256": "479d15185c9873be7aae29e1aaa9c4d28dbee41fb813532ecd2c0715af7ea849",
+  "routines": [
+    {
+      "name": "init_pressure",
+      "required_arguments": 8,
+      "ordered_assignment_trees": 12,
+      "ordered_branch_predicates": 3
+    },
+    {
+      "name": "calculate_thvm",
+      "required_arguments": 8,
+      "ordered_assignment_trees": 1,
+      "ordered_branch_predicates": 0
+    }
+  ],
+  "kernels": 6,
+  "lower_scientific_dependency": "Existing C++zt2zm_api only; its full six-argument call checked as part of assignment trees.",
+  "manual_review": [
+    "Full265line Native and actualJAX bodies/callers read before outline. Both routines complete; no JAX-only helper or safe-branch arithmetic imported.",
+    "Surface/first-thermo/first-pressure/thermo-recurrence/momentum stages retain source order and storage indices. Thermo k dependencies remain serial within each column. Momentum cells depend only on completed thermo(k-1).",
+    "Native three epsilon predicates retain their own reference theta_v; momentum epsilon*previous-thermo value differs from the generalized JAX helper threshold and remains Native.",
+    "All output fields written, scratch owned by interpolation return, grid component aliases only. No UDT capture/global cache/bridge/stats/error path.",
+    "calculate_thvm uses output memory/execution space directly, retaining host/strided drivers and device core fields. Inputs must be accessible from that space; all current C++calls have matching residency.",
+    "Generic init adapter reuses existing array owner and restores caller outputs; Native legacy single-column sequence-association input readers remain Native external callers, not a new rank1CppAPI.",
+    "Separate cleanup reviews Native argument groups/comments/units/full hydrostatic equations, ordinary powers/logs/core constants, case-sensitive names,100columns and whitespace."
+  ],
+  "remaining_dependencies": "None beyond live grid/array/types/constants owners.",
+  "runtime_status": "Uncompiled/untested: CPU/GPU/model arithmetic, log/constant branches, threshold edges,initialization/host/strided caller paths all pending. No BFB claim/speculative workaround."
+}

@@ -1,0 +1,625 @@
+{
+  "preimplementation_outline": true,
+  "source": "src/CLUBB_core/diagnose_correlations_module.F90",
+  "native_lines": 1037,
+  "jax": "clubb_jax/src/CLUBB_core/diagnose_correlations_module.py",
+  "native_active_inventory_and_order": [
+    "diagnose_correlations",
+    "diagnose_corr",
+    "calc_w_corr",
+    "calc_varnce",
+    "calc_mean",
+    "calc_cholesky_corr_mtx_approx",
+    "setup_corr_cholesky_mtx",
+    "cholesky_to_corr_mtx_approx",
+    "corr_array_assertion_checks",
+    "rearrange_corr_array"
+  ],
+  "routines": [
+    {
+      "name": "diagnose_correlations",
+      "module": "diagnose_correlations_module",
+      "source": "src/CLUBB_core/diagnose_correlations_module.F90",
+      "arguments": [
+        {
+          "name": "pdf_dim",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "iiPDF_w",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "corr_array_pre",
+          "kind": "real",
+          "dims": [
+            "pdf_dim",
+            "pdf_dim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_calc_w_corr",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "corr_array",
+          "kind": "real",
+          "dims": [
+            "pdf_dim",
+            "pdf_dim"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "ordered_control": [
+        "do i = 1, pdf_dim",
+        "if ( .not. l_calc_w_corr ) then"
+      ],
+      "ordered_calls": [
+        "call rearrange_corr_array( pdf_dim, iiPDF_w, corr_array_pre, corr_array_pre_swapped )",
+        "call diagnose_corr( pdf_dim, sqrt(sigma2_on_mu2_ip_array), corr_array_pre_swapped, corr_array_swapped )",
+        "call rearrange_corr_array( pdf_dim, iiPDF_w, corr_array_swapped, corr_array)"
+      ]
+    },
+    {
+      "name": "diagnose_corr",
+      "module": "diagnose_correlations_module",
+      "source": "src/CLUBB_core/diagnose_correlations_module.F90",
+      "arguments": [
+        {
+          "name": "n_variables",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sqrt_sigma2_on_mu2_ip",
+          "kind": "real",
+          "dims": [
+            "n_variables"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "corr_matrix_prescribed",
+          "kind": "real",
+          "dims": [
+            "n_variables",
+            "n_variables"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "corr_matrix_approx",
+          "kind": "real",
+          "dims": [
+            "n_variables",
+            "n_variables"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "ordered_control": [
+        "if ( .false. ) then",
+        "do i = 1, n_variables",
+        "do j = 2, (n_variables-1)",
+        "do i = (j+1), n_variables",
+        "if ( f_ij < -max_mag_correlation ) then",
+        "else if ( f_ij > max_mag_correlation ) then"
+      ],
+      "ordered_calls": []
+    },
+    {
+      "name": "calc_w_corr",
+      "module": "diagnose_correlations_module",
+      "source": "src/CLUBB_core/diagnose_correlations_module.F90",
+      "arguments": [
+        {
+          "name": "wpxp",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "stdev_w",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "stdev_x",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "w_tol",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "x_tol",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": {
+        "name": "calc_w_corr",
+        "kind": "real",
+        "dims": [],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      "ordered_control": [
+        "if ( calc_w_corr < -max_mag_correlation ) then",
+        "else if ( calc_w_corr > max_mag_correlation ) then"
+      ],
+      "ordered_calls": []
+    },
+    {
+      "name": "calc_varnce",
+      "module": "diagnose_correlations_module",
+      "source": "src/CLUBB_core/diagnose_correlations_module.F90",
+      "arguments": [
+        {
+          "name": "mixt_frac",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "x1",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "x2",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "xm",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "x1p2",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "x2p2",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": {
+        "name": "calc_varnce",
+        "kind": "real",
+        "dims": [],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      "ordered_control": [],
+      "ordered_calls": []
+    },
+    {
+      "name": "calc_mean",
+      "module": "diagnose_correlations_module",
+      "source": "src/CLUBB_core/diagnose_correlations_module.F90",
+      "arguments": [
+        {
+          "name": "mixt_frac",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "x1",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "x2",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": {
+        "name": "calc_mean",
+        "kind": "real",
+        "dims": [],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      "ordered_control": [],
+      "ordered_calls": []
+    },
+    {
+      "name": "calc_cholesky_corr_mtx_approx",
+      "module": "diagnose_correlations_module",
+      "source": "src/CLUBB_core/diagnose_correlations_module.F90",
+      "arguments": [
+        {
+          "name": "n_variables",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "iiPDF_w",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "corr_matrix",
+          "kind": "real",
+          "dims": [
+            "n_variables",
+            "n_variables"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "corr_cholesky_mtx",
+          "kind": "real",
+          "dims": [
+            "n_variables",
+            "n_variables"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "corr_mtx_approx",
+          "kind": "real",
+          "dims": [
+            "n_variables",
+            "n_variables"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "ordered_control": [
+        "do i = 2, n_variables",
+        "do j = 1, i-1"
+      ],
+      "ordered_calls": [
+        "call rearrange_corr_array( n_variables, iiPDF_w, corr_matrix, corr_mtx_swap )",
+        "call setup_corr_cholesky_mtx( n_variables, corr_mtx_swap, corr_cholesky_mtx_swap )",
+        "call rearrange_corr_array( n_variables, iiPDF_w, corr_cholesky_mtx_swap, corr_cholesky_mtx )",
+        "call cholesky_to_corr_mtx_approx( n_variables, corr_cholesky_mtx_swap, corr_mtx_approx_swap )",
+        "call rearrange_corr_array( n_variables, iiPDF_w, corr_mtx_approx_swap, corr_mtx_approx )",
+        "call corr_array_assertion_checks( n_variables, corr_mtx_approx )"
+      ]
+    },
+    {
+      "name": "setup_corr_cholesky_mtx",
+      "module": "diagnose_correlations_module",
+      "source": "src/CLUBB_core/diagnose_correlations_module.F90",
+      "arguments": [
+        {
+          "name": "n_variables",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "corr_matrix",
+          "kind": "real",
+          "dims": [
+            "n_variables",
+            "n_variables"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "corr_cholesky_mtx_t",
+          "kind": "real",
+          "dims": [
+            "n_variables",
+            "n_variables"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "ordered_control": [
+        "do i = 1, n_variables-1",
+        "do j = i+1, n_variables",
+        "do i = 1, n_variables",
+        "do j = 1, n_variables",
+        "do i = 1, n_variables",
+        "do j = i, n_variables",
+        "do j = 2, n_variables",
+        "do i = 1, j-1",
+        "do j = 2, n_variables",
+        "do i = 2, n_variables-1",
+        "do j = i+1, n_variables",
+        "do k = 1, i-1"
+      ],
+      "ordered_calls": []
+    },
+    {
+      "name": "cholesky_to_corr_mtx_approx",
+      "module": "diagnose_correlations_module",
+      "source": "src/CLUBB_core/diagnose_correlations_module.F90",
+      "arguments": [
+        {
+          "name": "n_variables",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "corr_cholesky_mtx_t",
+          "kind": "real",
+          "dims": [
+            "n_variables",
+            "n_variables"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "corr_matrix_approx",
+          "kind": "real",
+          "dims": [
+            "n_variables",
+            "n_variables"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "ordered_control": [],
+      "ordered_calls": []
+    },
+    {
+      "name": "corr_array_assertion_checks",
+      "module": "diagnose_correlations_module",
+      "source": "src/CLUBB_core/diagnose_correlations_module.F90",
+      "arguments": [
+        {
+          "name": "n_variables",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "corr_array",
+          "kind": "real",
+          "dims": [
+            "n_variables",
+            "n_variables"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "ordered_control": [
+        "if ( clubb_at_least_debug_level_api( 1 ) ) then",
+        "do i = 1, n_variables - 1",
+        "do j = i+1, n_variables",
+        "if ( ( corr_array(i,j) < -max_mag_correlation ) .or. ( corr_array(i,j) > max_mag_correlation ) .or. ( corr_array(j,i) < -max_mag_correlation ) .or. ( corr_array(j,i) > max_mag_correlation ) ) then",
+        "error stop \"Error: A value in the correlation matrix is out of range.\"",
+        "if ( clubb_at_least_debug_level_api( 2 ) ) then",
+        "do i = 1, n_variables",
+        "if ( ( corr_array(i,i) > one + tol ) .or. (corr_array(i,i) < one - tol ) ) then",
+        "error stop \"Error: Diagonal element(s) of the correlation matrix are unequal to one.\""
+      ],
+      "ordered_calls": []
+    },
+    {
+      "name": "rearrange_corr_array",
+      "module": "diagnose_correlations_module",
+      "source": "src/CLUBB_core/diagnose_correlations_module.F90",
+      "arguments": [
+        {
+          "name": "pdf_dim",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "iiPDF_w",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "corr_array",
+          "kind": "real",
+          "dims": [
+            "pdf_dim",
+            "pdf_dim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "corr_array_swapped",
+          "kind": "real",
+          "dims": [
+            "pdf_dim",
+            "pdf_dim"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "ordered_control": [],
+      "ordered_calls": []
+    }
+  ],
+  "numerical_evidence": "Uncompiled/untested; no CPU/GPU runtime or BFB claim.",
+  "supported_inventory": [
+    "diagnose_correlations",
+    "diagnose_corr",
+    "calc_w_corr",
+    "calc_varnce",
+    "calc_mean",
+    "calc_cholesky_corr_mtx_approx",
+    "setup_corr_cholesky_mtx",
+    "cholesky_to_corr_mtx_approx",
+    "corr_array_assertion_checks",
+    "rearrange_corr_array"
+  ],
+  "jax_supported_exclusions": [
+    "Four wholly commented-out Native procedures approx_w_corr/approx_w_covar/set_w_corr/unpack_correlations are not active routines.",
+    "l_calc_w_corr=true unsupported by JAX; Native working matrix is read uninitialized. Explicit unsupported guard instead of inventing data."
+  ],
+  "behavior": [
+    "Metadata iiPDF_w remains Native1based. Private rearrange preserves array-assignment value semantics/overlap using local swap buffers.",
+    "diagnose_corr preserves ordinary Native sqrt(1-c*c), conditional f_ij clamps and lower-triangle writes; no JAX sqrt floor imported.",
+    "Scalar mean/variance/w-correlation preserve real-kind literals, exact association and clipping branches; device-inline public functions.",
+    "Approximate transposed Cholesky preserves ascending scalar-product recurrences and zero/one initialization.",
+    "Matrix product C=L*transpose(L) uses ordered inner contraction, no parallel FP reduction; Native MATMUL lowering is an unverified arithmetic boundary.",
+    "Error-stop assertion checks remain debug1 off-diagonal then debug2 diagonal with exact strings; no boolean-only reduced API.",
+    "All storage per call; no external lower science routine required beyond existing host debug query."
+  ],
+  "literal_kinds": "Active real literals are explicitly core_rknd; preserve direct real_t values, no invented default-single widening."
+}

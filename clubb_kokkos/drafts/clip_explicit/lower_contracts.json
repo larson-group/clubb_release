@@ -1,0 +1,42 @@
+[
+  {
+    "name": "stats_update_budget_2d",
+    "module": "stats_netcdf",
+    "source": "src/CLUBB_core/stats_netcdf.F90",
+    "arguments": [
+      {
+        "name": "name",
+        "kind": "character",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": "*"
+      },
+      {
+        "name": "values",
+        "kind": "real",
+        "dims": [
+          ":",
+          ":"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "stats",
+        "kind": "stats_type",
+        "dims": [],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      }
+    ],
+    "result": null,
+    "cpp_name": "stats_update_budget",
+    "existing_bridge": false
+  }
+]

@@ -1,0 +1,27 @@
+{
+  "phase": "Separate post-implementation cleanup and source re-read",
+  "routine": "calc_w_up_in_cloud",
+  "scope": "One public13-argument routine only; unreachable private interpolation cluster separately source-reviewed",
+  "checks": {
+    "native_signature_groups_order_and_requiredness": true,
+    "native36assignment_operation_trees_after_square_max_language_lowering": true,
+    "all_six_component_branch_arms": true,
+    "all_four_output_fields_written_each_cell": true,
+    "all_native_scalar_names_and_statement_order": true,
+    "branch_dependent_local_first_use_manually_checked": true,
+    "all22_native_computation_comments_in_order": true,
+    "variance_unit_wording_correction_verified": true,
+    "column_fastest_flattening_and_LayoutLeft_views": true,
+    "kernel_count": 1,
+    "no_lower_physics_bridges_or_allocations_or_global_mutable_state": true,
+    "no_fma_precision_guard_or_new_clipping": true,
+    "no_builds_or_tests": true
+  },
+  "max_line_width": 98,
+  "trailing_whitespace": false,
+  "sha256": {
+    "pdf_closure_module.cpp": "21e533596502d0bdbff881bbd06cf727edbdf675e13306d95b8413ac61f29b22",
+    "pdf_closure_module.hpp": "468a80922c56a46afe2a794e2fa62b88d3da1742cd922670bad49cc927a7164a"
+  },
+  "runtime_status": "Compilation, CPU zero-tolerance model verification, supported-PDF and special-function branch coverage remain root integration work."
+}

@@ -20,9 +20,10 @@ the app. Running the command again reopens this checkout's existing dashboard.
 To run a case:
 
 1. Open **Run** and click the runtime badge beside the launch button to choose
-   Fortran or JAX.
+   Fortran, Python, or JAX.
 2. Prepare the selected implementation: Fortran needs a build from the
-   **Compile** tab or `./compile.py`. JAX sets up its own environment on
+   **Compile** tab or `./compile.py`; Python needs a
+   [Python build](#python-runs-and-tuning). JAX sets up its own environment on
    first use and needs no Fortran build.
 3. Choose a case and output directory, launch the run, and watch its log.
 4. Open **Plots** to view the output. You can also plot existing NetCDF files
@@ -120,7 +121,7 @@ unavailable for CPU and Metal. The chooser's **?** button explains the options.
 See the [JAX guide](../clubb_jax/README.md#gpu-running) for
 hardware requirements and command-line equivalents.
 
-Fortran uses the selected compiled build, which you can change or
+Fortran and Python use the selected compiled build, which you can change or
 rebuild through the chooser. New Tune jobs use the selected Fortran or JAX loss
 backend. Each saved revision keeps its runtime choice; Continue and result
 reruns use that saved choice even if the chooser changes later.
@@ -469,7 +470,8 @@ orphan active work; another adapter can reconnect, query the same `job_id`, and
 cancel it.
 
 The ordinary **Start tuning** button uses that same broker path; it is not only
-for agent-launched jobs. On startup the broker also scans `output/tuner/` for
+for agent-launched jobs. On startup the broker also scans `output/tuner/` (and
+the legacy `output_tuner/` location) for
 the newest still-running file-backed Tune worker, so a worker that outlived an
 older dashboard reload can be reattached and have its keepalive renewed.
 

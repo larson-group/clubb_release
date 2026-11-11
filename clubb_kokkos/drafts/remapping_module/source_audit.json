@@ -1,0 +1,273 @@
+{
+  "provenance": "Owner source/cleanup review, not an independent-agent verdict.",
+  "source_sha256": "09131e11129d771f41dda1522ead13e517da55c6a46af7b5a2eeadb7499cb6f5",
+  "jax_sha256": "2e9bc7df52cf25fbfd61be092028d19dc388a13b62d18db93dd08e2b41608a8d",
+  "targets": {
+    "remapping_module.cpp": {
+      "sha256": "f6a961233fcbec94c6428d689bda2803d4735e7d794b6ed278921b603e3f14b2",
+      "lines": 1414,
+      "max_columns": 100,
+      "trailing_whitespace": false
+    },
+    "remapping_module.hpp": {
+      "sha256": "f28558c9bddc25145a48912275d0b1b36c20e5ac866df9aaf390d5f66cd15d77",
+      "lines": 112,
+      "max_columns": 99,
+      "trailing_whitespace": false
+    }
+  },
+  "all_18_Native_bodies_reviewed": true,
+  "definitions_in_Native_order": true,
+  "Native_argument_counts": {
+    "remap_iv_from_var_name": 1,
+    "calc_mass_over_grid_intervals": 5,
+    "matrix_vector_mult": 5,
+    "vertical_integral_conserve_mass": 6,
+    "check_conservation": 9,
+    "check_monotonicity": 5,
+    "check_consistency": 3,
+    "remap_vals_to_target_helper": 13,
+    "remap_vals_to_target": 13,
+    "check_remap_matrix_conservation": 5,
+    "check_remap_matrix_consistency": 3,
+    "check_remap_matrix_monotonicity": 3,
+    "remapping_matrix": 4,
+    "kmppm": 4,
+    "steepz": 9,
+    "ppm2m": 7,
+    "map1_ppm": 16,
+    "remap_vals_ppm": 7
+  },
+  "total_Native_arguments": 118,
+  "exact_selector_names": 44,
+  "ordered_explicit_calls": {
+    "remap_iv_from_var_name": 0,
+    "calc_mass_over_grid_intervals": 0,
+    "matrix_vector_mult": 0,
+    "vertical_integral_conserve_mass": 0,
+    "check_conservation": 0,
+    "check_monotonicity": 0,
+    "check_consistency": 0,
+    "remap_vals_to_target_helper": 4,
+    "remap_vals_to_target": 0,
+    "check_remap_matrix_conservation": 0,
+    "check_remap_matrix_consistency": 0,
+    "check_remap_matrix_monotonicity": 0,
+    "remapping_matrix": 3,
+    "kmppm": 0,
+    "steepz": 0,
+    "ppm2m": 5,
+    "map1_ppm": 1,
+    "remap_vals_ppm": 1
+  },
+  "device_kernel_count": 34,
+  "device_kernels": [
+    {
+      "line": 104,
+      "calls_scalar_kmppm": false
+    },
+    {
+      "line": 210,
+      "calls_scalar_kmppm": false
+    },
+    {
+      "line": 251,
+      "calls_scalar_kmppm": false
+    },
+    {
+      "line": 478,
+      "calls_scalar_kmppm": false
+    },
+    {
+      "line": 632,
+      "calls_scalar_kmppm": false
+    },
+    {
+      "line": 770,
+      "calls_scalar_kmppm": false
+    },
+    {
+      "line": 884,
+      "calls_scalar_kmppm": true
+    },
+    {
+      "line": 919,
+      "calls_scalar_kmppm": false
+    },
+    {
+      "line": 925,
+      "calls_scalar_kmppm": false
+    },
+    {
+      "line": 931,
+      "calls_scalar_kmppm": false
+    },
+    {
+      "line": 945,
+      "calls_scalar_kmppm": false
+    },
+    {
+      "line": 985,
+      "calls_scalar_kmppm": false
+    },
+    {
+      "line": 991,
+      "calls_scalar_kmppm": false
+    },
+    {
+      "line": 1010,
+      "calls_scalar_kmppm": false
+    },
+    {
+      "line": 1028,
+      "calls_scalar_kmppm": false
+    },
+    {
+      "line": 1046,
+      "calls_scalar_kmppm": false
+    },
+    {
+      "line": 1055,
+      "calls_scalar_kmppm": false
+    },
+    {
+      "line": 1061,
+      "calls_scalar_kmppm": false
+    },
+    {
+      "line": 1073,
+      "calls_scalar_kmppm": false
+    },
+    {
+      "line": 1093,
+      "calls_scalar_kmppm": false
+    },
+    {
+      "line": 1098,
+      "calls_scalar_kmppm": false
+    },
+    {
+      "line": 1108,
+      "calls_scalar_kmppm": false
+    },
+    {
+      "line": 1117,
+      "calls_scalar_kmppm": false
+    },
+    {
+      "line": 1130,
+      "calls_scalar_kmppm": false
+    },
+    {
+      "line": 1145,
+      "calls_scalar_kmppm": false
+    },
+    {
+      "line": 1181,
+      "calls_scalar_kmppm": true
+    },
+    {
+      "line": 1194,
+      "calls_scalar_kmppm": false
+    },
+    {
+      "line": 1250,
+      "calls_scalar_kmppm": false
+    },
+    {
+      "line": 1265,
+      "calls_scalar_kmppm": false
+    },
+    {
+      "line": 1306,
+      "calls_scalar_kmppm": false
+    },
+    {
+      "line": 1387,
+      "calls_scalar_kmppm": false
+    },
+    {
+      "line": 1391,
+      "calls_scalar_kmppm": false
+    },
+    {
+      "line": 1395,
+      "calls_scalar_kmppm": false
+    },
+    {
+      "line": 1407,
+      "calls_scalar_kmppm": false
+    }
+  ],
+  "manual_routine_review": {
+    "calc_mass_over_grid_intervals": [
+      "Both upper/lower spline coverage errors and full two-line payloads",
+      "Moving spline index, node equality tolerance, trapezoid sum/upper interpolation order; no added node clamp"
+    ],
+    "matrix_vector_mult": [
+      "Owned result, every column/target-cell store, serial ascending source-cell fold"
+    ],
+    "vertical_integral_conserve_mass": [
+      "Native SUM represented by explicit ascending fold; exact compiler association unverified"
+    ],
+    "check_conservation": [
+      "Source then target integral; relative AND absolute predicates, exact warning/data order"
+    ],
+    "check_monotonicity": [
+      "Global extrema and every violating value; PPM checks cells4..N-3 only"
+    ],
+    "check_consistency": [
+      "Native matrix owner on ones; singleton-rank adapters retain storage lifetime"
+    ],
+    "remap_vals_to_target_helper": [
+      "Cached optional operator stays read-only; mass and ordered pressures still computed before presence selection",
+      "Ullrich/PPM/unsupported method branch order; debug conservation/monotonicity/consistency per Native column"
+    ],
+    "remap_vals_to_target": [
+      "Read-only grids despite missing Native INTENT",
+      "ZT uses surrounding ZM; ZM builds two exterior edges plus all interior ZT, with exact counts"
+    ],
+    "check_remap_matrix_conservation": [
+      "Serial weighted column sums and first failing column; exact warning+fatal text"
+    ],
+    "check_remap_matrix_consistency": [
+      "Serial row sums and first failing row; exact warning+fatal text"
+    ],
+    "check_remap_matrix_monotonicity": [
+      "Any negative entry per row, then early outer exit; exact warning+fatal text"
+    ],
+    "remapping_matrix": [
+      "Independent overlap cells, zero/nonzero branches and target-thickness division",
+      "Debug operator checks conservation,consistency,monotonicity order"
+    ],
+    "kmppm": [
+      "All lmt0/1/2/3 branches and condition ordering",
+      "Scalar overload reads A6 only in Native-required branches; array3 returns before launches/reads"
+    ],
+    "steepz": [
+      "Rat k2..km; F k2..km-1; alfa k3..km-2; updated AL k4..km-2; every shifted level checked"
+    ],
+    "ppm2m": [
+      "All top/bottom iv0,-1,other constraints, km>32 sponge, AR-copy stage",
+      "Top2/interior/bottom2 limiter order; Huynh>=7 private branches retained",
+      "kord4 does not load unwritten A6 before Lin limiter initializes it; interior-only independent-cell launch fusion"
+    ],
+    "map1_ppm": [
+      "Original16args, longitude/latitude physical vs scratch coordinates and k0 zero-index storage",
+      "Ascending moving search, first-column/level diagnostic, unchanged q2 before failure return",
+      "Retain undefined failed-diagnostic pe2 read when kn<km; no fabricated zeros/search clamp",
+      "Full-cell kl sum, first/last partial sums and divisions preserve Native arithmetic trees"
+    ],
+    "remap_vals_ppm": [
+      "Public PPM hardcodes kord4 and singleton latitude controls",
+      "Edges/values reversed in Native order, one sequential map1 call per column, output scratch reused across columns"
+    ],
+    "remap_iv_from_var_name": [
+      "Two independent case-sensitive lists, ADJUSTL/TRIM/LEN64 blank/truncation handling"
+    ]
+  },
+  "device_only_same_kind_constant_materializations": 5,
+  "deliberate_BFB_arithmetic_changes": [],
+  "runtime_and_BFB_status": "Pending; no live C++ caller. Serial compilation is separate evidence.",
+  "remaining_findings": []
+}

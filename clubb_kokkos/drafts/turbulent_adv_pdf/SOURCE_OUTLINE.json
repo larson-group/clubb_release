@@ -1,0 +1,551 @@
+{
+  "preimplementation_outline": true,
+  "source": "src/CLUBB_core/turbulent_adv_pdf.F90",
+  "native_lines": 1054,
+  "jax": "clubb_jax/src/CLUBB_core/turbulent_adv_pdf.py",
+  "supported_scope": "All four public Native routines, no private helpers or exclusions; all arguments required. JAX supports all four.",
+  "native_inventory_and_order": [
+    "xpyp_term_ta_pdf_lhs",
+    "xpyp_term_ta_pdf_lhs_godunov",
+    "xpyp_term_ta_pdf_rhs",
+    "xpyp_term_ta_pdf_rhs_godunov"
+  ],
+  "routines": [
+    {
+      "name": "xpyp_term_ta_pdf_lhs",
+      "module": "turbulent_adv_pdf",
+      "source": "src/CLUBB_core/turbulent_adv_pdf.F90",
+      "arguments": [
+        {
+          "name": "nzm",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "gr",
+          "kind": "grid",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "coef_wpxpyp_implicit",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rho_ds_zt",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rho_ds_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "invrs_rho_ds_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_upwind_xpyp_turbulent_adv",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sgn_turbulent_vel",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "coef_wpxpyp_implicit_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs_ta",
+          "kind": "real",
+          "dims": [
+            "ndiags3",
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "ordered_control": [
+        "do i = 1, ngrdcol",
+        "do b = 1, ndiags3",
+        "if ( .not. l_upwind_xpyp_turbulent_adv ) then",
+        "do k = 2, nzm-1, 1",
+        "do i = 1, ngrdcol",
+        "else",
+        "do k = 2, nzm-1, 1",
+        "do i = 1, ngrdcol",
+        "if ( gr%grid_dir * sgn_turbulent_vel(i,k) > zero ) then",
+        "else",
+        "end if",
+        "endif",
+        "do i = 1, ngrdcol",
+        "do b = 1, ndiags3"
+      ],
+      "ordered_calls": []
+    },
+    {
+      "name": "xpyp_term_ta_pdf_lhs_godunov",
+      "module": "turbulent_adv_pdf",
+      "source": "src/CLUBB_core/turbulent_adv_pdf.F90",
+      "arguments": [
+        {
+          "name": "nzm",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "gr",
+          "kind": "grid",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "coef_wpxpyp_implicit",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "invrs_rho_ds_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rho_ds_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs_ta",
+          "kind": "real",
+          "dims": [
+            "ndiags3",
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "ordered_control": [
+        "do i = 1, ngrdcol",
+        "do b = 1, ndiags3",
+        "do k = 2, nzm-1",
+        "do i = 1, ngrdcol",
+        "do i = 1, ngrdcol",
+        "do b = 1, ndiags3"
+      ],
+      "ordered_calls": []
+    },
+    {
+      "name": "xpyp_term_ta_pdf_rhs",
+      "module": "turbulent_adv_pdf",
+      "source": "src/CLUBB_core/turbulent_adv_pdf.F90",
+      "arguments": [
+        {
+          "name": "nzm",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "gr",
+          "kind": "grid",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "term_wpxpyp_explicit",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rho_ds_zt",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rho_ds_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "invrs_rho_ds_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_upwind_xpyp_turbulent_adv",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sgn_turbulent_vel",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "term_wpxpyp_explicit_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rhs_ta",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "ordered_control": [
+        "do i = 1, ngrdcol",
+        "if ( .not. l_upwind_xpyp_turbulent_adv ) then",
+        "do k = 2, nzm-1, 1",
+        "do i = 1, ngrdcol",
+        "else",
+        "do k = 2, nzm-1, 1",
+        "do i = 1, ngrdcol",
+        "if ( gr%grid_dir * sgn_turbulent_vel(i,k) > zero ) then",
+        "else",
+        "endif",
+        "end if",
+        "do i = 1, ngrdcol"
+      ],
+      "ordered_calls": []
+    },
+    {
+      "name": "xpyp_term_ta_pdf_rhs_godunov",
+      "module": "turbulent_adv_pdf",
+      "source": "src/CLUBB_core/turbulent_adv_pdf.F90",
+      "arguments": [
+        {
+          "name": "nzm",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "gr",
+          "kind": "grid",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "term_wpxpyp_explicit_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "invrs_rho_ds_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sgn_turbulent_vel",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rho_ds_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rhs_ta",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "ordered_control": [
+        "do i = 1, ngrdcol",
+        "do k = 2, nzm-1",
+        "do i = 1, ngrdcol",
+        "do i = 1, ngrdcol"
+      ],
+      "ordered_calls": []
+    }
+  ],
+  "behavior": [
+    "LHS lower storage boundary, centered/upwind or Godunov interior, upper storage boundary; all bands zero at both endpoints.",
+    "RHS lower storage boundary, centered/upwind or Godunov interior, upper storage boundary; endpoints zero.",
+    "Directional upwind branch is grid_dir*sign>0; zero goes to else.",
+    "Ordinary upwind sign is momentum-level; Godunov RHS sign is thermodynamic-level as declared.",
+    "Grid weights are (column,thermodynamic level,upper/lower category), Native category1:2 -> C++0:1.",
+    "LHS retains Native (band,column,momentum level), super/main/sub bands; no operator-boundary transpose.",
+    "Loops use storage interiors2:nzm-1 independent of grid direction; directional factors remain unchanged.",
+    "No Native lower calls, scratch arrays, stats, errors, diagnostics or recurrences."
+  ],
+  "comment_adaptations": [
+    "Remove stale Godunov optional from_level/to_level descriptions: neither Native signature has those arguments.",
+    "Complete truncated upper-boundary-zero comment; repair branch else comment to include zero, without executable change."
+  ],
+  "ownership": "Concrete execution-space Views plus thin generic overloads using existing array_types owner. Grid captures component Views/scalars only.",
+  "numerical_evidence": "Pending: no build, test, model or BFB claim."
+}

@@ -1,0 +1,30 @@
+{
+  "canonical": "src/CLUBB_core/sfc_varnce_module.F90",
+  "canonical_sha256": "a52f5a887f2a55b36abb3586f1c2ce9a85211467716d19b5a9633ff8893148bf",
+  "source_outline": "SOURCE_OUTLINE.json",
+  "routine_inventory": [
+    "calc_sfc_varnce"
+  ],
+  "native_signature_arguments": 33,
+  "direct_source_review": "80 assignment expression trees,24 ordered branch predicates,12 ordered budget calls; complete active and dormant Andre1978 branches",
+  "expression_review": "expression_audit.json",
+  "manual_review": [
+    "Native per-column depth search signed direction and stopping tests; no added upper-grid fallback",
+    "All passive scalar ranks/indices and special rt/thl coefficient branches",
+    "Begin/finalize array/dt materialization before same Native calls without physics-array mutation",
+    "Required public Native checker11args:6scalar surface values +3scalar profiles, correct column/surface selection, all-column fatal semantics delegated unchanged",
+    "Host diagnostic staging once at debug>=2; error header order and complete field-specific dump labels/array order",
+    "Call-owned scratch, component scalar/View captures, no f2k or owning UDT in36 device bodies",
+    "Source description/reference/argument comments, meaningful Native explanations and inactive formulas retained; two-space/100-column cleanup",
+    "External out-of-line33argument declaration/definition, no accidental inline-only implementation"
+  ],
+  "deliberate_numerical_choices": "Established second-tie MIN/MAX convention and argument-order3argumentMAX expansion; grouped integer powers; no FMA/rounding/emulation. All runtime evidence pending.",
+  "shared_changes": "None; no production/CMake/generator/build/test changes. Mixing-length independent review artifacts remain separate under /tmp.",
+  "compile_status": "Pending; public f2k::sfc_varnce_check must be generated or promoted before compilation",
+  "numerical_status": "Pending root maintained CPU-vs-CPU zero-tolerance model; GPU milestone evidence also pending.",
+  "outstanding_source_findings": [],
+  "sha256": {
+    "sfc_varnce_module.cpp": "be5297297dba7f212f09204a9c45fb5fe537d36719ec3ed54f0ad8c5acc7cfb2",
+    "sfc_varnce_module.hpp": "4b133a38e6b8f352287e00fda4bb4497931ed56a84fbbb8e2fe9565ac4d54ce9"
+  }
+}

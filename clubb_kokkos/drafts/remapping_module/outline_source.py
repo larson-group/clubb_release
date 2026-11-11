@@ -1,0 +1,31 @@
+"""Record the complete Native remapping inventory before implementation."""
+from pathlib import Path
+import re,json,hashlib,sys
+D=Path(__file__).resolve().parent;R=D.parents[2];sys.path.insert(0,str(R/'clubb_kokkos/src/f2k'))
+from fortran_procedures import statements,declaration
+from generate_derived_types import split_top
+P=R/'src/CLUBB_core/remapping_module.F90';S=P.read_text();J=R/'clubb_jax/src/CLUBB_core/remapping_module.py'
+starts=list(re.finditer(r'(?im)^\s*(?:(integer|real[^\n]*?)\s+)?(subroutine|function)\s+(\w+)\s*\(',S));routines=[]
+for m in starts:
+ name=m[3];end=re.search(r'(?im)^\s*end\s+(?:subroutine|function)\s+'+name+r'\s*$',S[m.end():]);assert end,name
+ stop=m.end()+end.end();raw=S[m.start():stop];sts=statements(raw);head=sts[0];begin=head.index('(');depth=1;k=begin+1
+ while depth:depth+=(head[k]=='(')-(head[k]==')');k+=1
+ names=split_top(head[begin+1:k-1]);fields={}
+ for st in sts[1:]:
+  if '::' in st:
+   fields.update(declaration(st))
+ args=[]
+ for n in names:
+  assert n.lower() in fields,(name,n)
+  a=fields[n.lower()];row=vars(a).copy()
+  if not a.intent:
+   assert name=='remap_vals_to_target' and n in ['gr_source','gr_target']
+   row['verified_contract_override']='Read-only; complete body reads grid metadata/coordinates and does not modify either object. Native declaration omits INTENT; no source edit.'
+  args.append(row)
+ result=re.search(r'(?i)result\s*\(\s*(\w+)\s*\)',head);result_name=result[1] if result else name
+ result_field=vars(fields[result_name.lower()]) if result_name.lower() in fields else {'name':result_name,'kind':m[1] or None}
+ routines.append({'name':name,'kind':m[2].lower(),'source_lines':[S.count('\n',0,m.start())+1,S.count('\n',0,stop)+1],'public':name in ['remap_iv_from_var_name','remap_vals_to_target'],'arguments':args,'result':result_field if m[2].lower()=='function' else None,'ordered_calls':[x for x in sts if x.lower().startswith('call ')],'ordered_control':[x for x in sts if re.match(r'(?i)(if\b|else\s*if\b|elseif\b|do\b|select\s+case\b|case\b|return\b|exit\b|error\s+stop\b)',x)],'scientific_assignment_statements':[x for x in sts if re.match(r'\w+\s*(?:\([^=]*\))?\s*=(?!=|>)',x)]})
+assert len(routines)==18,len(routines)
+rec={'source':str(P.relative_to(R)),'source_sha256':hashlib.sha256(P.read_bytes()).hexdigest(),'native_lines':len(S.splitlines()),'jax':str(J.relative_to(R)),'jax_sha256':hashlib.sha256(J.read_bytes()).hexdigest(),'jax_lines':len(J.read_text().splitlines()),'full_Native_and_JAX_read_before_implementation':True,'native_inventory_and_order':[p['name'] for p in routines],'public_inventory':['remap_iv_from_var_name','remap_vals_to_target'],'routines':routines,'supported_model_algorithms':['Ullrichmethod1','PPMmethod2withNativewrapperhard-codedkord4'],'scope_choices':['Retain publicNative name selector despite actualJAX omission.','Retain all Native diagnostics and private optional R_ij reuse despite JAX omission.','Steepz is REQUIRED on activekord4: Native call1319 precedes Huynh gate1429; JAX call246 and definition312.','Retain Native km>32 wind-top sponge behavior that JAX implementation omits.','Prefer retaining the small Native-private Huynh branch for complete source fidelity while making no additional public model option/runtime claim; public wrapper remainskord4.'],'required_existing_owners':['array_types.hpp existing storage/adapters','grid_class.hpp sole grid schema','interpolation.hpp lin_interpolate_two_points scalar device API','constants_clubb.hpp physical/rational constants','error_code.hpp debug metadata host boundary','model_flags.hpp selectedcons_ullrich_remap1/ppm_remap2 (not currently emitted)'],'state_ownership':['All arrays/caches/scratch call-owned Kokkos Views; no mutable globals.','Private R_ij is read-only optional input, not allocatable/recomputed when present. Native still computes source/target masses and pressure recurrences on reuse.','Public PPM wrapper calls map1_ppm once per column and reuses target_values_flipped; preserve source failure-return/state semantics.'],'numerical_rules':['Use Native ascending segment integration and pressure recurrences, ordered j matrix-vector fold and ordered kl PPM full-cell sums. Do not import JAX cumulative integrals/einsum/prefix sums.','Native formulas/branch orders/conditional divisions without JAX safe denominators or search-index clamps; no speculative FMA adjustments.','Keep physical-column first fields; document any internal PPM coefficient-axis adaptation from Native(4,column,level).','No current C++ caller; compilation/source audit cannot establish model/GPU/BFB behavior.'],'native_definedness_and_comment_notes':['map1_ppm missing-bracket error write loops kk1..km+1 and readspe2(kn+1); invalid-target prints can read outside pe2 whenkn<km. Preserve source range rather than silently truncating.','map1_ppm failure returns before writing q2; initial output may be unspecified, later public-column calls reuse the previous target profile. Do not invent zero/clamp fallback.','Density splines/grid edges must cover common region and be ascending; preserve original coverage checks without new interpolation conventions.','Correct copied source/target-count labels and density-vs-altitude comment units only where implementation makes meanings explicit.'],'caller_inventory':[{'source':'src/Benchmark_cases/atex.F90','procedure':'atex_tndcy','gate':'l_add_dycore_grid','calls':2,'status':'Native under Nativeprescribe_forcings; no C++remapcall'}, {'source':'src/Benchmark_cases/time_dependent_input.F90','procedure':'apply_time_dependent_forcings_from_dycore','gate':'dycore forcing path','state':'Native-helddimension_var/t_dependent_forcing_data','status':'Native outer IO/forcing owner'}, {'source':'src/CLUBB_core/stats_netcdf.F90','procedure':'sampledoutputwriter','gate':'l_different_output_grid and ZM/ZT and netCDFoutput','status':'Native statsbackend intentionally retained'}, {'source':'src/CLUBB_core/grid_adaptation_module.F90','procedure':'remap-all-fields','status':'Adaptivegrid outside supporteddriver scope'}],'status':'Source outline complete; no implementation/build/model claim yet.'}
+(D/'SOURCE_OUTLINE.json').write_text(json.dumps(rec,indent=2)+'\n')
+print('Outlined18Native procedures,2public APIs, full ordered calls/control/contracts; no implementation yet.')

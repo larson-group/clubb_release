@@ -1,0 +1,81 @@
+{
+  "status": "Source read and outline before implementation; no runtime evidence",
+  "native_source": "src/CLUBB_core/pdf_closure_module.F90",
+  "native_sha256": "11776506ccb2aa64b4d8cc3a801a4d8bb058c5416587729f728b3ee76244c196",
+  "routine": "calc_w_up_in_cloud",
+  "native_lines": [
+    3143,
+    3340
+  ],
+  "public": true,
+  "argument_groups": {
+    "required_in": [
+      "nz",
+      "ngrdcol",
+      "mixt_frac",
+      "cloud_frac_1",
+      "cloud_frac_2",
+      "w_1",
+      "w_2",
+      "varnce_w_1",
+      "varnce_w_2"
+    ],
+    "required_out": [
+      "w_up_in_cloud",
+      "w_down_in_cloud",
+      "cloudy_updraft_frac",
+      "cloudy_downdraft_frac"
+    ],
+    "optionals": []
+  },
+  "source_order": [
+    "Compute stdev_w_1 and stdev_w_2 from component variances",
+    "Component1 strict all-up >max_num_stdevs*stdev, strict all-down <-max_num_stdevs*stdev, otherwise mixed erf/exp formulas",
+    "Component2 same three branches with component2 fields",
+    "cloudy_updraft_frac mixture",
+    "cloudy_downdraft_frac mixture",
+    "w_up_in_cloud weighted integral divided by max(eps,cloudy_updraft_frac)",
+    "w_down_in_cloud weighted integral divided by max(eps,cloudy_downdraft_frac)"
+  ],
+  "native_local_names": [
+    "w_up_1",
+    "w_up_2",
+    "w_down_1",
+    "w_down_2",
+    "stdev_w_1",
+    "stdev_w_2",
+    "ratio_w_1",
+    "ratio_w_2",
+    "erf_ratio_w_1",
+    "erf_ratio_w_2",
+    "exp_neg_ratio_w_1_sqd",
+    "exp_neg_ratio_w_2_sqd",
+    "updraft_frac_1",
+    "updraft_frac_2",
+    "downdraft_frac_1",
+    "downdraft_frac_2",
+    "i",
+    "k"
+  ],
+  "calls": [],
+  "constants": [
+    "sqrt_2pi",
+    "sqrt_2",
+    "one",
+    "one_half",
+    "zero",
+    "max_num_stdevs",
+    "eps"
+  ],
+  "stats_errors_clipping": "No own stats/errors/clipping. Native pdf_closure caller gates supported ADG1/ADG2/new-hybrid PDFs and requested up/down stats at1249\u20131262. Caller otherwise zeros four outputs.",
+  "mapping": "One column-first flattened cell kernel, LayoutLeft fields, every scalar local private to a cell; no allocations, global state or bridge",
+  "required_semantics": [
+    "Strict thresholds put equality in mixed branch",
+    "Source MAX conditional selects second operand on tie; no fmax-style NaN filtering",
+    "exp(-ratio**2) lowers to exp(-(ratio*ratio)), preserving unary-minus precedence",
+    "Preserve one-updraft_frac for mixed downdraft fractions and source component/order grouping",
+    "Keep distinct Native component branches and no JAX _component helper"
+  ],
+  "comment_correction": "Native varnce_w_1/2 descriptions say standard deviation despite [m^2/s^2] and sqrt(varnce) assignment; target correctly describes variance. No equation change.",
+  "jax_scope": "Full actual helper1525\u20131600 read; all component branches and four output formulas present. JAX uses eager vector _component/where; target keeps Native branches/names/statement order."
+}

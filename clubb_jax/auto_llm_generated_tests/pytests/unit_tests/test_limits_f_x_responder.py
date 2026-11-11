@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 """validate the JAX calc_limits_F_x_responder + sort_roots ports (new_pdf.F90)."""
 
-from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
-
 
 import numpy as np
 
@@ -24,13 +22,13 @@ def _inputs(seed):
 def test_sort_roots():
     rng = np.random.default_rng(1)
     r = rng.uniform(-5, 5, (NG, NZ, 3))
-    assert np.array_equal(np.asarray(call_jax(sort_roots, r)), np.sort(r, axis=-1))
+    assert np.array_equal(np.asarray(sort_roots(r)), np.sort(r, axis=-1))
     print("  sort_roots == jnp.sort (ascending)  PASS")
 
 
 def test_bounds():
     mf, Skx, sgn = _inputs(5)
     g_min, g_max = (np.asarray(x) for x in
-                    call_jax(calc_limits_F_x_responder, mf, Skx, sgn, np.full((NG, NZ), MAX_POS), np.full((NG, NZ), MAX_NEG)))
+                    calc_limits_F_x_responder(mf, Skx, sgn, np.full((NG, NZ), MAX_POS), np.full((NG, NZ), MAX_NEG)))
     assert np.all(g_min >= -1e-12) and np.all(g_max <= 1.0 + 1e-12), "F_x limits out of [0,1]"
     print("  bounds: min_F_x, max_F_x in [0,1]  PASS")

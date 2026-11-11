@@ -1,0 +1,2448 @@
+{
+  "status": "mechanical Native-prefix check only; semantic branch/comment/format review and model integration pending",
+  "files": [
+    {
+      "source": "src/Benchmark_cases/arm.F90",
+      "native_sha256": "7c87612ad591823924c3d5addcced24058cd9073aa1a73f5427b1c44a74ebae4",
+      "targets": [
+        "clubb_kokkos/drafts/driver_benchmark_cases/Benchmark_cases/arm.hpp"
+      ],
+      "routines": [
+        {
+          "routine": "arm_sfclyr",
+          "native_arguments": [
+            "ngrdcol",
+            "time",
+            "z",
+            "thlm_sfc",
+            "ubar",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar"
+          ],
+          "cpp_arguments": [
+            "ngrdcol",
+            "time",
+            "z",
+            "thlm_sfc",
+            "ubar",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar",
+            "input"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": [
+            "input"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "src/Benchmark_cases/arm_0003.F90",
+      "native_sha256": "77be5e75442ce5ec931447857d61633150f1c0072dd4d95d5bfaad1ac5b61007",
+      "targets": [
+        "clubb_kokkos/drafts/driver_benchmark_cases/Benchmark_cases/arm_0003.hpp"
+      ],
+      "routines": [
+        {
+          "routine": "arm_0003_sfclyr",
+          "native_arguments": [
+            "ngrdcol",
+            "time",
+            "z",
+            "rho_sfc",
+            "thlm_sfc",
+            "ubar",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar"
+          ],
+          "cpp_arguments": [
+            "ngrdcol",
+            "time",
+            "z",
+            "rho_sfc",
+            "thlm_sfc",
+            "ubar",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar",
+            "input"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": [
+            "input"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "src/Benchmark_cases/arm_3year.F90",
+      "native_sha256": "1700e1b97a375d8c891f022782ff11fe8a5ddd871ea96d66ca53dda4f108ecc2",
+      "targets": [
+        "clubb_kokkos/drafts/driver_benchmark_cases/Benchmark_cases/arm_3year.hpp"
+      ],
+      "routines": [
+        {
+          "routine": "arm_3year_sfclyr",
+          "native_arguments": [
+            "ngrdcol",
+            "time",
+            "z",
+            "rho_sfc",
+            "thlm_sfc",
+            "ubar",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar"
+          ],
+          "cpp_arguments": [
+            "ngrdcol",
+            "time",
+            "z",
+            "rho_sfc",
+            "thlm_sfc",
+            "ubar",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar",
+            "input"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": [
+            "input"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "src/Benchmark_cases/arm_97.F90",
+      "native_sha256": "bb661cc7fb37e4b002fa20c46d4b355cc99746020dd758478f4cd9f2f4b78c66",
+      "targets": [
+        "clubb_kokkos/drafts/driver_benchmark_cases/Benchmark_cases/arm_97.hpp"
+      ],
+      "routines": [
+        {
+          "routine": "arm_97_sfclyr",
+          "native_arguments": [
+            "ngrdcol",
+            "time",
+            "z",
+            "rho_sfc",
+            "thlm_sfc",
+            "ubar",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar"
+          ],
+          "cpp_arguments": [
+            "ngrdcol",
+            "time",
+            "z",
+            "rho_sfc",
+            "thlm_sfc",
+            "ubar",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar",
+            "input"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": [
+            "input"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "src/Benchmark_cases/astex_a209.F90",
+      "native_sha256": "3edf4df0aa074ff00f9e40e223d91e93c887af3f84238a725a24b964a0684cbf",
+      "targets": [
+        "clubb_kokkos/drafts/driver_benchmark_cases/Benchmark_cases/astex_a209.hpp"
+      ],
+      "routines": [
+        {
+          "routine": "astex_a209_tndcy",
+          "native_arguments": [
+            "sclr_dim",
+            "edsclr_dim",
+            "sclr_idx",
+            "gr",
+            "wm_zt",
+            "wm_zm",
+            "thlm_forcing",
+            "rtm_forcing",
+            "sclrm_forcing",
+            "edsclrm_forcing"
+          ],
+          "cpp_arguments": [
+            "sclr_dim",
+            "edsclr_dim",
+            "sclr_idx",
+            "gr",
+            "wm_zt",
+            "wm_zm",
+            "thlm_forcing",
+            "rtm_forcing",
+            "sclrm_forcing",
+            "edsclrm_forcing"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": []
+        },
+        {
+          "routine": "astex_a209_sfclyr",
+          "native_arguments": [
+            "ngrdcol",
+            "time",
+            "ubar",
+            "rtm",
+            "thlm",
+            "lowestlevel",
+            "exner_sfc",
+            "p_sfc",
+            "saturation_formula",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar",
+            "t_sfc"
+          ],
+          "cpp_arguments": [
+            "ngrdcol",
+            "time",
+            "ubar",
+            "rtm",
+            "thlm",
+            "lowestlevel",
+            "exner_sfc",
+            "p_sfc",
+            "saturation_formula",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar",
+            "t_sfc",
+            "input"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": [
+            "input"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "src/Benchmark_cases/atex.F90",
+      "native_sha256": "3a1cc74fd547a4a581d8bd3faf676687d4eaf3933fa30fb340e96de425d58ade",
+      "targets": [
+        "clubb_kokkos/drafts/driver_benchmark_cases/Benchmark_cases/atex.hpp"
+      ],
+      "routines": [
+        {
+          "routine": "calc_forcings",
+          "native_arguments": [
+            "ngrdcol",
+            "gr",
+            "z_inversion",
+            "thlm_forcing",
+            "rtm_forcing"
+          ],
+          "cpp_arguments": [
+            "ngrdcol",
+            "gr",
+            "z_inversion",
+            "thlm_forcing",
+            "rtm_forcing"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": []
+        },
+        {
+          "routine": "atex_tndcy",
+          "native_arguments": [
+            "ngrdcol",
+            "sclr_dim",
+            "edsclr_dim",
+            "sclr_idx",
+            "gr",
+            "time",
+            "time_initial",
+            "rtm",
+            "l_add_dycore_grid",
+            "grid_remap_method",
+            "gr_dycore",
+            "total_idx_rho_lin_spline",
+            "rho_lin_spline_vals",
+            "rho_lin_spline_levels",
+            "p_sfc",
+            "err_info",
+            "wm_zt",
+            "wm_zm",
+            "thlm_forcing",
+            "rtm_forcing",
+            "sclrm_forcing",
+            "edsclrm_forcing"
+          ],
+          "cpp_arguments": [
+            "ngrdcol",
+            "sclr_dim",
+            "edsclr_dim",
+            "sclr_idx",
+            "gr",
+            "time",
+            "time_initial",
+            "rtm",
+            "l_add_dycore_grid",
+            "grid_remap_method",
+            "gr_dycore",
+            "total_idx_rho_lin_spline",
+            "rho_lin_spline_vals",
+            "rho_lin_spline_levels",
+            "p_sfc",
+            "err_info",
+            "wm_zt",
+            "wm_zm",
+            "thlm_forcing",
+            "rtm_forcing",
+            "sclrm_forcing",
+            "edsclrm_forcing"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": []
+        },
+        {
+          "routine": "atex_sfclyr",
+          "native_arguments": [
+            "ngrdcol",
+            "time",
+            "ubar",
+            "thlm_sfc",
+            "rtm_sfc",
+            "exner_sfc",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar",
+            "t_sfc"
+          ],
+          "cpp_arguments": [
+            "ngrdcol",
+            "time",
+            "ubar",
+            "thlm_sfc",
+            "rtm_sfc",
+            "exner_sfc",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar",
+            "t_sfc",
+            "input"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": [
+            "input"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "src/Benchmark_cases/atex_long.F90",
+      "native_sha256": "1f8517c4ff378904343ea53ba37f917faaf61a8e63cff06baa58ce68959d2912",
+      "targets": [
+        "clubb_kokkos/drafts/driver_benchmark_cases/Benchmark_cases/atex_long.hpp"
+      ],
+      "routines": [
+        {
+          "routine": "calc_forcings",
+          "native_arguments": [
+            "ngrdcol",
+            "gr",
+            "thlm_forcing",
+            "rtm_forcing"
+          ],
+          "cpp_arguments": [
+            "ngrdcol",
+            "gr",
+            "thlm_forcing",
+            "rtm_forcing"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": []
+        },
+        {
+          "routine": "atex_long_tndcy",
+          "native_arguments": [
+            "ngrdcol",
+            "sclr_dim",
+            "edsclr_dim",
+            "sclr_idx",
+            "gr",
+            "time",
+            "wm_zt",
+            "wm_zm",
+            "thlm_forcing",
+            "rtm_forcing",
+            "sclrm_forcing",
+            "edsclrm_forcing"
+          ],
+          "cpp_arguments": [
+            "ngrdcol",
+            "sclr_dim",
+            "edsclr_dim",
+            "sclr_idx",
+            "gr",
+            "time",
+            "wm_zt",
+            "wm_zm",
+            "thlm_forcing",
+            "rtm_forcing",
+            "sclrm_forcing",
+            "edsclrm_forcing"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": []
+        },
+        {
+          "routine": "atex_long_sfclyr",
+          "native_arguments": [
+            "ngrdcol",
+            "time",
+            "ubar",
+            "thlm_sfc",
+            "rtm_sfc",
+            "exner_sfc",
+            "rho_sfc",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar",
+            "t_sfc"
+          ],
+          "cpp_arguments": [
+            "ngrdcol",
+            "time",
+            "ubar",
+            "thlm_sfc",
+            "rtm_sfc",
+            "exner_sfc",
+            "rho_sfc",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar",
+            "t_sfc",
+            "input"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": [
+            "input"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "src/Benchmark_cases/bomex.F90",
+      "native_sha256": "f132c74c9d0486e41b4cc79facb25eeeb72f1be5703b208123d4051a49e98e92",
+      "targets": [
+        "clubb_kokkos/drafts/driver_benchmark_cases/Benchmark_cases/bomex.hpp"
+      ],
+      "routines": [
+        {
+          "routine": "bomex_tndcy",
+          "native_arguments": [
+            "ngrdcol",
+            "sclr_dim",
+            "edsclr_dim",
+            "sclr_idx",
+            "gr",
+            "rtm",
+            "l_readiopdata",
+            "thlm_forcing",
+            "rtm_forcing",
+            "sclrm_forcing",
+            "edsclrm_forcing"
+          ],
+          "cpp_arguments": [
+            "ngrdcol",
+            "sclr_dim",
+            "edsclr_dim",
+            "sclr_idx",
+            "gr",
+            "rtm",
+            "l_readiopdata",
+            "thlm_forcing",
+            "rtm_forcing",
+            "sclrm_forcing",
+            "edsclrm_forcing"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": []
+        },
+        {
+          "routine": "bomex_sfclyr",
+          "native_arguments": [
+            "ngrdcol",
+            "time",
+            "rtm_sfc",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar"
+          ],
+          "cpp_arguments": [
+            "ngrdcol",
+            "time",
+            "rtm_sfc",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar",
+            "input"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": [
+            "input"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "src/Benchmark_cases/clex9_nov02.F90",
+      "native_sha256": "23a56e0d32ce71e7289579b42c9edd54404e19dff929ab6a080b892b50f13d71",
+      "targets": [
+        "clubb_kokkos/drafts/driver_benchmark_cases/Benchmark_cases/clex9_nov02.hpp"
+      ],
+      "routines": [
+        {
+          "routine": "clex9_nov02_read_t_dependent",
+          "native_arguments": [
+            "time",
+            "sens_ht",
+            "latent_ht"
+          ],
+          "cpp_arguments": [
+            "time",
+            "sens_ht",
+            "latent_ht",
+            "input"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": [
+            "input"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "src/Benchmark_cases/clex9_oct14.F90",
+      "native_sha256": "66e20abef38d19321b292e11b549da16e57cfdeca935ddef8a8554798bf760c4",
+      "targets": [
+        "clubb_kokkos/drafts/driver_benchmark_cases/Benchmark_cases/clex9_oct14.hpp"
+      ],
+      "routines": [
+        {
+          "routine": "clex9_oct14_read_t_dependent",
+          "native_arguments": [
+            "time",
+            "sens_ht",
+            "latent_ht"
+          ],
+          "cpp_arguments": [
+            "time",
+            "sens_ht",
+            "latent_ht",
+            "input"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": [
+            "input"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "src/Benchmark_cases/cloud_feedback.F90",
+      "native_sha256": "4e8ecaa451e2659834dc317009aeeeb9bdc54bdf7da1b30cdfefdee9323491c6",
+      "targets": [
+        "clubb_kokkos/drafts/driver_benchmark_cases/Benchmark_cases/cloud_feedback.hpp"
+      ],
+      "routines": [
+        {
+          "routine": "cloud_feedback_sfclyr",
+          "native_arguments": [
+            "ngrdcol",
+            "time",
+            "sfctype",
+            "thlm_sfc",
+            "rtm_sfc",
+            "lowest_level",
+            "ubar",
+            "p_sfc",
+            "t_sfc",
+            "saturation_formula",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar"
+          ],
+          "cpp_arguments": [
+            "ngrdcol",
+            "time",
+            "sfctype",
+            "thlm_sfc",
+            "rtm_sfc",
+            "lowest_level",
+            "ubar",
+            "p_sfc",
+            "t_sfc",
+            "saturation_formula",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar",
+            "input"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": [
+            "input"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "src/Benchmark_cases/cobra.F90",
+      "native_sha256": "4d7788efff0890ae4c01cde149ea5d34d03e4bfca3ae4d20277e8a0506b674c2",
+      "targets": [
+        "clubb_kokkos/drafts/driver_benchmark_cases/Benchmark_cases/cobra.hpp"
+      ],
+      "routines": [
+        {
+          "routine": "cobra_sfclyr",
+          "native_arguments": [
+            "ngrdcol",
+            "sclr_dim",
+            "edsclr_dim",
+            "sclr_idx",
+            "l_do_expldiff_rtm_thlm",
+            "time",
+            "z",
+            "rho_sfc",
+            "thlm_sfc",
+            "ubar",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar",
+            "wpsclrp_sfc",
+            "wpedsclrp_sfc",
+            "t_sfc"
+          ],
+          "cpp_arguments": [
+            "ngrdcol",
+            "sclr_dim",
+            "edsclr_dim",
+            "sclr_idx",
+            "l_do_expldiff_rtm_thlm",
+            "time",
+            "z",
+            "rho_sfc",
+            "thlm_sfc",
+            "ubar",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar",
+            "wpsclrp_sfc",
+            "wpedsclrp_sfc",
+            "t_sfc",
+            "input"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": [
+            "input"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "src/Benchmark_cases/diag_ustar_module.F90",
+      "native_sha256": "7fbb636183f47ad8826f2997201e9bad26543ec28c1919656858cd899daffbde",
+      "targets": [
+        "clubb_kokkos/drafts/driver_benchmark_cases/Benchmark_cases/diag_ustar_module.hpp"
+      ],
+      "routines": [
+        {
+          "routine": "diag_ustar",
+          "native_arguments": [
+            "z",
+            "bflx",
+            "wnd",
+            "z0"
+          ],
+          "cpp_arguments": [
+            "z",
+            "bflx",
+            "wnd",
+            "z0"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": []
+        }
+      ]
+    },
+    {
+      "source": "src/Benchmark_cases/dycoms2_rf01.F90",
+      "native_sha256": "355ecdfddf3d54e1278ffde7aa4075d647d624eb896aae1986617d2746957bd1",
+      "targets": [
+        "clubb_kokkos/drafts/driver_benchmark_cases/Benchmark_cases/dycoms2_rf01.hpp"
+      ],
+      "routines": [
+        {
+          "routine": "dycoms2_rf01_tndcy",
+          "native_arguments": [
+            "ngrdcol",
+            "gr",
+            "sclr_dim",
+            "edsclr_dim",
+            "sclr_idx",
+            "thlm_forcing",
+            "rtm_forcing",
+            "sclrm_forcing",
+            "edsclrm_forcing"
+          ],
+          "cpp_arguments": [
+            "ngrdcol",
+            "gr",
+            "sclr_dim",
+            "edsclr_dim",
+            "sclr_idx",
+            "thlm_forcing",
+            "rtm_forcing",
+            "sclrm_forcing",
+            "edsclrm_forcing"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": []
+        },
+        {
+          "routine": "dycoms2_rf01_sfclyr",
+          "native_arguments": [
+            "ngrdcol",
+            "time",
+            "sfctype",
+            "p_sfc",
+            "exner_sfc",
+            "ubar",
+            "thlm_sfc",
+            "rtm_sfc",
+            "rho_sfc",
+            "saturation_formula",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar",
+            "t_sfc"
+          ],
+          "cpp_arguments": [
+            "ngrdcol",
+            "time",
+            "sfctype",
+            "p_sfc",
+            "exner_sfc",
+            "ubar",
+            "thlm_sfc",
+            "rtm_sfc",
+            "rho_sfc",
+            "saturation_formula",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar",
+            "t_sfc",
+            "input"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": [
+            "input"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "src/Benchmark_cases/dycoms2_rf02.F90",
+      "native_sha256": "16042c14cc267e73e2f92f79dff1a0b664f67ae9d392cb187a6f1f5cb9e329dc",
+      "targets": [
+        "clubb_kokkos/drafts/driver_benchmark_cases/Benchmark_cases/dycoms2_rf02.hpp"
+      ],
+      "routines": [
+        {
+          "routine": "dycoms2_rf02_tndcy",
+          "native_arguments": [
+            "ngrdcol",
+            "sclr_dim",
+            "edsclr_dim",
+            "sclr_idx",
+            "gr",
+            "wm_zt",
+            "wm_zm",
+            "thlm_forcing",
+            "rtm_forcing",
+            "sclrm_forcing",
+            "edsclrm_forcing"
+          ],
+          "cpp_arguments": [
+            "ngrdcol",
+            "sclr_dim",
+            "edsclr_dim",
+            "sclr_idx",
+            "gr",
+            "wm_zt",
+            "wm_zm",
+            "thlm_forcing",
+            "rtm_forcing",
+            "sclrm_forcing",
+            "edsclrm_forcing"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": []
+        },
+        {
+          "routine": "dycoms2_rf02_sfclyr",
+          "native_arguments": [
+            "ngrdcol",
+            "time",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar"
+          ],
+          "cpp_arguments": [
+            "ngrdcol",
+            "time",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar",
+            "input"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": [
+            "input"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "src/Benchmark_cases/ekman.F90",
+      "native_sha256": "71fa00ebd044dd0f92d3f21f483512a23fbedc53df45a875ff01d95c430c1c48",
+      "targets": [
+        "clubb_kokkos/drafts/driver_benchmark_cases/Benchmark_cases/ekman.hpp"
+      ],
+      "routines": [
+        {
+          "routine": "ekman_sfclyr",
+          "native_arguments": [
+            "ngrdcol",
+            "um_sfc",
+            "vm_sfc",
+            "ubar",
+            "upwp_sfc",
+            "vpwp_sfc",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar"
+          ],
+          "cpp_arguments": [
+            "ngrdcol",
+            "um_sfc",
+            "vm_sfc",
+            "ubar",
+            "upwp_sfc",
+            "vpwp_sfc",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": []
+        }
+      ]
+    },
+    {
+      "source": "src/Benchmark_cases/fire.F90",
+      "native_sha256": "8ed48208198a6f05c6390e760e5e49415707675775e8e72f1ac331397f76c069",
+      "targets": [
+        "clubb_kokkos/drafts/driver_benchmark_cases/Benchmark_cases/fire.hpp"
+      ],
+      "routines": [
+        {
+          "routine": "fire_sfclyr",
+          "native_arguments": [
+            "ngrdcol",
+            "time",
+            "ubar",
+            "p_sfc",
+            "thlm_sfc",
+            "rtm_sfc",
+            "exner_sfc",
+            "saturation_formula",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar",
+            "t_sfc"
+          ],
+          "cpp_arguments": [
+            "ngrdcol",
+            "time",
+            "ubar",
+            "p_sfc",
+            "thlm_sfc",
+            "rtm_sfc",
+            "exner_sfc",
+            "saturation_formula",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar",
+            "t_sfc",
+            "input"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": [
+            "input"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "src/Benchmark_cases/gabls2.F90",
+      "native_sha256": "299fd8e39828dadc8b032456e55c3c19438fbf310356177eee0df98d902ecb36",
+      "targets": [
+        "clubb_kokkos/drafts/driver_benchmark_cases/Benchmark_cases/gabls2.hpp"
+      ],
+      "routines": [
+        {
+          "routine": "gabls2_tndcy",
+          "native_arguments": [
+            "ngrdcol",
+            "sclr_dim",
+            "edsclr_dim",
+            "sclr_idx",
+            "gr",
+            "time",
+            "time_initial",
+            "wm_zt",
+            "wm_zm",
+            "thlm_forcing",
+            "rtm_forcing",
+            "sclrm_forcing",
+            "edsclrm_forcing"
+          ],
+          "cpp_arguments": [
+            "ngrdcol",
+            "sclr_dim",
+            "edsclr_dim",
+            "sclr_idx",
+            "gr",
+            "time",
+            "time_initial",
+            "wm_zt",
+            "wm_zm",
+            "thlm_forcing",
+            "rtm_forcing",
+            "sclrm_forcing",
+            "edsclrm_forcing"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": []
+        },
+        {
+          "routine": "gabls2_sfclyr",
+          "native_arguments": [
+            "ngrdcol",
+            "time",
+            "time_initial",
+            "lowest_level",
+            "p_sfc",
+            "ubar",
+            "thlm",
+            "rtm",
+            "exner_sfc",
+            "saturation_formula",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar",
+            "t_sfc"
+          ],
+          "cpp_arguments": [
+            "ngrdcol",
+            "time",
+            "time_initial",
+            "lowest_level",
+            "p_sfc",
+            "ubar",
+            "thlm",
+            "rtm",
+            "exner_sfc",
+            "saturation_formula",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar",
+            "t_sfc"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": []
+        }
+      ]
+    },
+    {
+      "source": "src/Benchmark_cases/gabls3.F90",
+      "native_sha256": "ad5f90275599cb9984d8789bbc91ee6cbe2511ee85c3f6312bd10f4b99d60412",
+      "targets": [
+        "clubb_kokkos/drafts/driver_benchmark_cases/Benchmark_cases/gabls3.hpp"
+      ],
+      "routines": [
+        {
+          "routine": "gabls3_sfclyr",
+          "native_arguments": [
+            "ngrdcol",
+            "ubar",
+            "veg_t_in_k",
+            "thlm_sfc",
+            "rtm_sfc",
+            "lowest_level",
+            "exner_sfc",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar"
+          ],
+          "cpp_arguments": [
+            "ngrdcol",
+            "ubar",
+            "veg_t_in_k",
+            "thlm_sfc",
+            "rtm_sfc",
+            "lowest_level",
+            "exner_sfc",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": []
+        }
+      ]
+    },
+    {
+      "source": "src/Benchmark_cases/gabls3_night.F90",
+      "native_sha256": "b9eb8d57bb8286bb07efa72ba68355237945b382edb2140029758f203a1e7cf1",
+      "targets": [
+        "clubb_kokkos/drafts/driver_benchmark_cases/Benchmark_cases/gabls3_night.hpp"
+      ],
+      "routines": [
+        {
+          "routine": "gabls3_night_sfclyr",
+          "native_arguments": [
+            "ngrdcol",
+            "time",
+            "um_sfc",
+            "vm_sfc",
+            "thlm_sfc",
+            "rtm_sfc",
+            "lowest_level",
+            "upwp_sfc",
+            "vpwp_sfc",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar"
+          ],
+          "cpp_arguments": [
+            "ngrdcol",
+            "time",
+            "um_sfc",
+            "vm_sfc",
+            "thlm_sfc",
+            "rtm_sfc",
+            "lowest_level",
+            "upwp_sfc",
+            "vpwp_sfc",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar",
+            "input"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": [
+            "input"
+          ]
+        },
+        {
+          "routine": "psi_h",
+          "native_arguments": [
+            "x",
+            "xlmo"
+          ],
+          "cpp_arguments": [
+            "x",
+            "xlmo"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": []
+        },
+        {
+          "routine": "gm1",
+          "native_arguments": [
+            "x"
+          ],
+          "cpp_arguments": [
+            "x"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": []
+        },
+        {
+          "routine": "gh1",
+          "native_arguments": [
+            "x"
+          ],
+          "cpp_arguments": [
+            "x"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": []
+        },
+        {
+          "routine": "fm1",
+          "native_arguments": [
+            "x"
+          ],
+          "cpp_arguments": [
+            "x"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": []
+        },
+        {
+          "routine": "fh1",
+          "native_arguments": [
+            "x"
+          ],
+          "cpp_arguments": [
+            "x"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": []
+        },
+        {
+          "routine": "landflx",
+          "native_arguments": [
+            "th",
+            "ts",
+            "qh",
+            "qs",
+            "uh",
+            "vh",
+            "h",
+            "z0",
+            "shf",
+            "lhf",
+            "vel",
+            "ustar"
+          ],
+          "cpp_arguments": [
+            "th",
+            "ts",
+            "qh",
+            "qs",
+            "uh",
+            "vh",
+            "h",
+            "z0",
+            "shf",
+            "lhf",
+            "vel",
+            "ustar"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": []
+        }
+      ]
+    },
+    {
+      "source": "src/Benchmark_cases/jun25.F90",
+      "native_sha256": "df58fa9e9abe06bfb59198ef4324ffe20f4c7bbaac4a9fee1d2000ad7d1f9777",
+      "targets": [
+        "clubb_kokkos/drafts/driver_benchmark_cases/Benchmark_cases/jun25.hpp"
+      ],
+      "routines": [
+        {
+          "routine": "jun25_altocu_read_t_dependent",
+          "native_arguments": [
+            "time",
+            "sens_ht",
+            "latent_ht"
+          ],
+          "cpp_arguments": [
+            "time",
+            "sens_ht",
+            "latent_ht",
+            "input"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": [
+            "input"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "src/Benchmark_cases/lba.F90",
+      "native_sha256": "b4dd24e001356f4d3b6bc0a6b028afaa7ebbe36c4d7d8da8335840bb378c81b4",
+      "targets": [
+        "clubb_kokkos/drafts/driver_benchmark_cases/Benchmark_cases/lba.hpp"
+      ],
+      "routines": [
+        {
+          "routine": "lba_tndcy",
+          "native_arguments": [
+            "ngrdcol",
+            "sclr_dim",
+            "edsclr_dim",
+            "sclr_idx",
+            "gr",
+            "thlm_forcing",
+            "rtm_forcing",
+            "sclrm_forcing",
+            "edsclrm_forcing"
+          ],
+          "cpp_arguments": [
+            "ngrdcol",
+            "sclr_dim",
+            "edsclr_dim",
+            "sclr_idx",
+            "gr",
+            "thlm_forcing",
+            "rtm_forcing",
+            "sclrm_forcing",
+            "edsclrm_forcing"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": []
+        },
+        {
+          "routine": "lba_sfclyr",
+          "native_arguments": [
+            "ngrdcol",
+            "time_current",
+            "time_initial",
+            "z",
+            "rho_sfc",
+            "thlm_sfc",
+            "ubar",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar"
+          ],
+          "cpp_arguments": [
+            "ngrdcol",
+            "time_current",
+            "time_initial",
+            "z",
+            "rho_sfc",
+            "thlm_sfc",
+            "ubar",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": []
+        }
+      ]
+    },
+    {
+      "source": "src/Benchmark_cases/mpace_a.F90",
+      "native_sha256": "45a8f6e0a38a67cfd027fb66195520a3a7bf27ca850e7616b41fef8941ee46b5",
+      "targets": [
+        "clubb_kokkos/drafts/driver_benchmark_cases/Benchmark_cases/mpace_a.cpp",
+        "clubb_kokkos/drafts/driver_benchmark_cases/Benchmark_cases/mpace_a.hpp"
+      ],
+      "routines": [
+        {
+          "routine": "mpace_a_tndcy",
+          "native_arguments": [
+            "ngrdcol",
+            "sclr_dim",
+            "edsclr_dim",
+            "sclr_idx",
+            "gr",
+            "time",
+            "p_in_pa",
+            "wm_zt",
+            "wm_zm",
+            "thlm_forcing",
+            "rtm_forcing",
+            "um_hoc_grid",
+            "vm_hoc_grid",
+            "sclrm_forcing",
+            "edsclrm_forcing"
+          ],
+          "cpp_arguments": [
+            "ngrdcol",
+            "sclr_dim",
+            "edsclr_dim",
+            "sclr_idx",
+            "gr",
+            "time",
+            "p_in_pa",
+            "wm_zt",
+            "wm_zm",
+            "thlm_forcing",
+            "rtm_forcing",
+            "um_hoc_grid",
+            "vm_hoc_grid",
+            "sclrm_forcing",
+            "edsclrm_forcing",
+            "input"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": [
+            "input"
+          ]
+        },
+        {
+          "routine": "mpace_a_sfclyr",
+          "native_arguments": [
+            "ngrdcol",
+            "time",
+            "rho_sfc",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar"
+          ],
+          "cpp_arguments": [
+            "ngrdcol",
+            "time",
+            "rho_sfc",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar",
+            "input"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": [
+            "input"
+          ]
+        },
+        {
+          "routine": "mpace_a_init",
+          "native_arguments": [
+            "iunit",
+            "file_path"
+          ],
+          "cpp_arguments": [
+            "iunit",
+            "file_path",
+            "input"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": [
+            "input"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "src/Benchmark_cases/mpace_b.F90",
+      "native_sha256": "3f8aefcf6485aa9520174f39a5a90d06eb600b0dd55303ff8d5d8909a1fc6500",
+      "targets": [
+        "clubb_kokkos/drafts/driver_benchmark_cases/Benchmark_cases/mpace_b.hpp"
+      ],
+      "routines": [
+        {
+          "routine": "mpace_b_tndcy",
+          "native_arguments": [
+            "ngrdcol",
+            "sclr_dim",
+            "edsclr_dim",
+            "sclr_idx",
+            "gr",
+            "p_in_pa",
+            "thvm",
+            "wm_zt",
+            "wm_zm",
+            "thlm_forcing",
+            "rtm_forcing",
+            "sclrm_forcing",
+            "edsclrm_forcing"
+          ],
+          "cpp_arguments": [
+            "ngrdcol",
+            "sclr_dim",
+            "edsclr_dim",
+            "sclr_idx",
+            "gr",
+            "p_in_pa",
+            "thvm",
+            "wm_zt",
+            "wm_zm",
+            "thlm_forcing",
+            "rtm_forcing",
+            "sclrm_forcing",
+            "edsclrm_forcing"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": []
+        },
+        {
+          "routine": "mpace_b_sfclyr",
+          "native_arguments": [
+            "ngrdcol",
+            "time",
+            "rho_sfc",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar"
+          ],
+          "cpp_arguments": [
+            "ngrdcol",
+            "time",
+            "rho_sfc",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar",
+            "input"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": [
+            "input"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "src/Benchmark_cases/neutral_case.F90",
+      "native_sha256": "b70b548e972420fbd0a26e4c681ac6c991ff7adeba41efd8531977522bb12a82",
+      "targets": [
+        "clubb_kokkos/drafts/driver_benchmark_cases/Benchmark_cases/neutral_case.hpp"
+      ],
+      "routines": [
+        {
+          "routine": "neutral_case_sfclyr",
+          "native_arguments": [
+            "ngrdcol",
+            "time",
+            "um_sfc",
+            "vm_sfc",
+            "ubar",
+            "upwp_sfc",
+            "vpwp_sfc",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar"
+          ],
+          "cpp_arguments": [
+            "ngrdcol",
+            "time",
+            "um_sfc",
+            "vm_sfc",
+            "ubar",
+            "upwp_sfc",
+            "vpwp_sfc",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": []
+        }
+      ]
+    },
+    {
+      "source": "src/Benchmark_cases/nov11.F90",
+      "native_sha256": "78eb22f552e2e3d7f73a53cf631bde4c72c0eb6d494af9e758f129caf9cd225b",
+      "targets": [
+        "clubb_kokkos/drafts/driver_benchmark_cases/Benchmark_cases/nov11.hpp"
+      ],
+      "routines": [
+        {
+          "routine": "nov11_altocu_rtm_adjust",
+          "native_arguments": [
+            "ngrdcol",
+            "gr",
+            "time",
+            "time_initial",
+            "dt",
+            "rtm"
+          ],
+          "cpp_arguments": [
+            "ngrdcol",
+            "gr",
+            "time",
+            "time_initial",
+            "dt",
+            "rtm"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": []
+        },
+        {
+          "routine": "nov11_altocu_read_t_dependent",
+          "native_arguments": [
+            "time",
+            "sens_ht",
+            "latent_ht"
+          ],
+          "cpp_arguments": [
+            "time",
+            "sens_ht",
+            "latent_ht",
+            "input"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": [
+            "input"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "src/Benchmark_cases/prescribe_forcings.F90",
+      "native_sha256": "55e26ce8ed366811f70fab34b86ac44271d56a2ff02a164785faabf2d095858f",
+      "targets": [
+        "clubb_kokkos/drafts/driver_benchmark_cases/Benchmark_cases/prescribe_forcings.cpp",
+        "clubb_kokkos/drafts/driver_benchmark_cases/Benchmark_cases/prescribe_forcings.hpp"
+      ],
+      "routines": [
+        {
+          "routine": "prescribe_forcings",
+          "native_arguments": [
+            "gr",
+            "nzm",
+            "nzt",
+            "ngrdcol",
+            "sclr_dim",
+            "edsclr_dim",
+            "sclr_idx",
+            "l_do_expldiff_rtm_thlm",
+            "runtype",
+            "sfctype",
+            "time_current",
+            "time_initial",
+            "dt",
+            "l_readiopdata",
+            "um",
+            "vm",
+            "thlm",
+            "p_in_pa",
+            "exner",
+            "rho",
+            "rho_zm",
+            "thvm",
+            "veg_t_in_k",
+            "l_modify_bc_for_cnvg_test",
+            "saturation_formula",
+            "stats",
+            "l_add_dycore_grid",
+            "grid_remap_method",
+            "total_idx_rho_lin_spline",
+            "rho_lin_spline_vals",
+            "rho_lin_spline_levels",
+            "gr_dycore",
+            "rtm",
+            "wm_zm",
+            "wm_zt",
+            "ug",
+            "vg",
+            "um_ref",
+            "vm_ref",
+            "thlm_forcing",
+            "rtm_forcing",
+            "um_forcing",
+            "vm_forcing",
+            "wprtp_forcing",
+            "wpthlp_forcing",
+            "rtp2_forcing",
+            "thlp2_forcing",
+            "rtpthlp_forcing",
+            "wpsclrp",
+            "sclrm_forcing",
+            "edsclrm_forcing",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "upwp_sfc",
+            "vpwp_sfc",
+            "t_sfc",
+            "p_sfc",
+            "sens_ht",
+            "latent_ht",
+            "wpsclrp_sfc",
+            "wpedsclrp_sfc",
+            "err_info"
+          ],
+          "cpp_arguments": [
+            "gr",
+            "nzm",
+            "nzt",
+            "ngrdcol",
+            "sclr_dim",
+            "edsclr_dim",
+            "sclr_idx",
+            "l_do_expldiff_rtm_thlm",
+            "runtype",
+            "sfctype",
+            "time_current",
+            "time_initial",
+            "dt",
+            "l_readiopdata",
+            "um",
+            "vm",
+            "thlm",
+            "p_in_pa",
+            "exner",
+            "rho",
+            "rho_zm",
+            "thvm",
+            "veg_t_in_k",
+            "l_modify_bc_for_cnvg_test",
+            "saturation_formula",
+            "stats",
+            "l_add_dycore_grid",
+            "grid_remap_method",
+            "total_idx_rho_lin_spline",
+            "rho_lin_spline_vals",
+            "rho_lin_spline_levels",
+            "gr_dycore",
+            "rtm",
+            "wm_zm",
+            "wm_zt",
+            "ug",
+            "vg",
+            "um_ref",
+            "vm_ref",
+            "thlm_forcing",
+            "rtm_forcing",
+            "um_forcing",
+            "vm_forcing",
+            "wprtp_forcing",
+            "wpthlp_forcing",
+            "rtp2_forcing",
+            "thlp2_forcing",
+            "rtpthlp_forcing",
+            "wpsclrp",
+            "sclrm_forcing",
+            "edsclrm_forcing",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "upwp_sfc",
+            "vpwp_sfc",
+            "t_sfc",
+            "p_sfc",
+            "sens_ht",
+            "latent_ht",
+            "wpsclrp_sfc",
+            "wpedsclrp_sfc",
+            "err_info",
+            "input",
+            "mpace"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": [
+            "input",
+            "mpace"
+          ]
+        },
+        {
+          "routine": "read_surface_var_for_bc",
+          "native_arguments": [
+            "gr",
+            "ngrdcol",
+            "um",
+            "vm",
+            "rtm",
+            "thlm",
+            "rho_zm",
+            "exner",
+            "p_sfc",
+            "l_modify_bc_for_cnvg_test",
+            "z_bot",
+            "um_bot",
+            "vm_bot",
+            "rtm_bot",
+            "thlm_bot",
+            "rho_bot",
+            "exner_bot"
+          ],
+          "cpp_arguments": [
+            "gr",
+            "ngrdcol",
+            "um",
+            "vm",
+            "rtm",
+            "thlm",
+            "rho_zm",
+            "exner",
+            "p_sfc",
+            "l_modify_bc_for_cnvg_test",
+            "z_bot",
+            "um_bot",
+            "vm_bot",
+            "rtm_bot",
+            "thlm_bot",
+            "rho_bot",
+            "exner_bot"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": []
+        }
+      ]
+    },
+    {
+      "source": "src/Benchmark_cases/rico.F90",
+      "native_sha256": "41592fed31e6a073b4146d4151c4cb047d0f6b82fcb08ce197489306ace70ada",
+      "targets": [
+        "clubb_kokkos/drafts/driver_benchmark_cases/Benchmark_cases/rico.hpp"
+      ],
+      "routines": [
+        {
+          "routine": "rico_tndcy",
+          "native_arguments": [
+            "ngrdcol",
+            "sclr_dim",
+            "edsclr_dim",
+            "sclr_idx",
+            "gr",
+            "rtm",
+            "exner",
+            "thlm_forcing",
+            "rtm_forcing",
+            "sclrm_forcing",
+            "edsclrm_forcing"
+          ],
+          "cpp_arguments": [
+            "ngrdcol",
+            "sclr_dim",
+            "edsclr_dim",
+            "sclr_idx",
+            "gr",
+            "rtm",
+            "exner",
+            "thlm_forcing",
+            "rtm_forcing",
+            "sclrm_forcing",
+            "edsclrm_forcing"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": []
+        },
+        {
+          "routine": "rico_sfclyr",
+          "native_arguments": [
+            "ngrdcol",
+            "time",
+            "um_sfc",
+            "vm_sfc",
+            "thlm",
+            "rtm",
+            "z_bot",
+            "p_sfc",
+            "exner_sfc",
+            "saturation_formula",
+            "upwp_sfc",
+            "vpwp_sfc",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar",
+            "t_sfc"
+          ],
+          "cpp_arguments": [
+            "ngrdcol",
+            "time",
+            "um_sfc",
+            "vm_sfc",
+            "thlm",
+            "rtm",
+            "z_bot",
+            "p_sfc",
+            "exner_sfc",
+            "saturation_formula",
+            "upwp_sfc",
+            "vpwp_sfc",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar",
+            "t_sfc",
+            "input"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": [
+            "input"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "src/Benchmark_cases/sfc_flux.F90",
+      "native_sha256": "614c3e5b14acbaae367222a9cba949149231f23f14ef53f1d0a05fa6bcf4d789",
+      "targets": [
+        "clubb_kokkos/drafts/driver_benchmark_cases/Benchmark_cases/sfc_flux.hpp"
+      ],
+      "routines": [
+        {
+          "routine": "compute_momentum_flux",
+          "native_arguments": [
+            "ngrdcol",
+            "um_sfc",
+            "vm_sfc",
+            "ubar",
+            "ustar",
+            "upwp_sfc",
+            "vpwp_sfc"
+          ],
+          "cpp_arguments": [
+            "ngrdcol",
+            "um_sfc",
+            "vm_sfc",
+            "ubar",
+            "ustar",
+            "upwp_sfc",
+            "vpwp_sfc"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": []
+        },
+        {
+          "routine": "compute_ubar",
+          "native_arguments": [
+            "ngrdcol",
+            "um_sfc",
+            "vm_sfc",
+            "ubar"
+          ],
+          "cpp_arguments": [
+            "ngrdcol",
+            "um_sfc",
+            "vm_sfc",
+            "ubar"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": []
+        },
+        {
+          "routine": "compute_ht_mostr_flux",
+          "native_arguments": [
+            "time_in",
+            "ntimes",
+            "latent_ht_given",
+            "sens_ht_given",
+            "time_sfc_given",
+            "heat_flx",
+            "moisture_flx"
+          ],
+          "cpp_arguments": [
+            "time_in",
+            "ntimes",
+            "latent_ht_given",
+            "sens_ht_given",
+            "time_sfc_given",
+            "heat_flx",
+            "moisture_flx"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": []
+        },
+        {
+          "routine": "compute_wpthlp_sfc",
+          "native_arguments": [
+            "ngrdcol",
+            "cd",
+            "ubar",
+            "thlm_sfc",
+            "t_sfc",
+            "exner_sfc",
+            "wpthlp_sfc"
+          ],
+          "cpp_arguments": [
+            "ngrdcol",
+            "cd",
+            "ubar",
+            "thlm_sfc",
+            "t_sfc",
+            "exner_sfc",
+            "wpthlp_sfc"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": []
+        },
+        {
+          "routine": "compute_wprtp_sfc",
+          "native_arguments": [
+            "ngrdcol",
+            "cd",
+            "ubar",
+            "rtm_sfc",
+            "adjustment",
+            "wprtp_sfc"
+          ],
+          "cpp_arguments": [
+            "ngrdcol",
+            "cd",
+            "ubar",
+            "rtm_sfc",
+            "adjustment",
+            "wprtp_sfc"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": []
+        },
+        {
+          "routine": "set_sclr_sfc_rtm_thlm",
+          "native_arguments": [
+            "ngrdcol",
+            "sclr_dim",
+            "edsclr_dim",
+            "sclr_idx",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "wpsclrp_sfc",
+            "wpedsclrp_sfc"
+          ],
+          "cpp_arguments": [
+            "ngrdcol",
+            "sclr_dim",
+            "edsclr_dim",
+            "sclr_idx",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "wpsclrp_sfc",
+            "wpedsclrp_sfc"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": []
+        },
+        {
+          "routine": "convert_sens_ht_to_km_s",
+          "native_arguments": [
+            "sens_ht",
+            "rho_sfc"
+          ],
+          "cpp_arguments": [
+            "sens_ht",
+            "rho_sfc"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": []
+        },
+        {
+          "routine": "convert_latent_ht_to_m_s",
+          "native_arguments": [
+            "latent_ht",
+            "rho_sfc"
+          ],
+          "cpp_arguments": [
+            "latent_ht",
+            "rho_sfc"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": []
+        }
+      ]
+    },
+    {
+      "source": "src/Benchmark_cases/spec_hum_to_mixing_ratio.F90",
+      "native_sha256": "491fb11c5837773265882c908880bb6e282f87b1accdc3dfdfb280e2715fb1ab",
+      "targets": [
+        "clubb_kokkos/drafts/driver_benchmark_cases/Benchmark_cases/spec_hum_to_mixing_ratio.hpp"
+      ],
+      "routines": [
+        {
+          "routine": "flux_spec_hum_to_mixing_ratio",
+          "native_arguments": [
+            "ngrdcol",
+            "rtm_zm",
+            "wpqtp",
+            "wprtp"
+          ],
+          "cpp_arguments": [
+            "ngrdcol",
+            "rtm_zm",
+            "wpqtp",
+            "wprtp"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": []
+        },
+        {
+          "routine": "force_spec_hum_to_mixing_ratio",
+          "native_arguments": [
+            "ngrdcol",
+            "nzt",
+            "rtm",
+            "qtm_forcing",
+            "rtm_forcing"
+          ],
+          "cpp_arguments": [
+            "ngrdcol",
+            "nzt",
+            "rtm",
+            "qtm_forcing",
+            "rtm_forcing"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": []
+        }
+      ]
+    },
+    {
+      "source": "src/Benchmark_cases/time_dependent_input.F90",
+      "native_sha256": "58baf00fe8f16516452851e9169334bc8858546b35bd687e47d90507dd55c2c3",
+      "targets": [
+        "clubb_kokkos/drafts/driver_benchmark_cases/Benchmark_cases/time_dependent_input.cpp",
+        "clubb_kokkos/drafts/driver_benchmark_cases/Benchmark_cases/time_dependent_input.hpp"
+      ],
+      "routines": [
+        {
+          "routine": "initialize_t_dependent_input",
+          "native_arguments": [
+            "iunit",
+            "runtype",
+            "l_readiopdata",
+            "rho",
+            "nz",
+            "grid",
+            "p_in_pa",
+            "l_add_dycore_grid",
+            "grid_adapt_in_time_method"
+          ],
+          "cpp_arguments": [
+            "iunit",
+            "runtype",
+            "l_readiopdata",
+            "rho",
+            "nz",
+            "grid",
+            "p_in_pa",
+            "l_add_dycore_grid",
+            "grid_adapt_in_time_method",
+            "input",
+            "iop"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": [
+            "input",
+            "iop"
+          ]
+        },
+        {
+          "routine": "finalize_t_dependent_input",
+          "native_arguments": [],
+          "cpp_arguments": [
+            "input"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": [
+            "input"
+          ]
+        },
+        {
+          "routine": "initialize_t_dependent_sfc",
+          "native_arguments": [
+            "iunit",
+            "l_readiopdata",
+            "rho",
+            "input_file"
+          ],
+          "cpp_arguments": [
+            "iunit",
+            "l_readiopdata",
+            "rho",
+            "input_file",
+            "input",
+            "iop"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": [
+            "input",
+            "iop"
+          ]
+        },
+        {
+          "routine": "initialize_t_dependent_forcings",
+          "native_arguments": [
+            "iunit",
+            "input_file",
+            "nz",
+            "grid",
+            "p_in_pa",
+            "l_add_dycore_grid",
+            "grid_adapt_in_time_method"
+          ],
+          "cpp_arguments": [
+            "iunit",
+            "input_file",
+            "nz",
+            "grid",
+            "p_in_pa",
+            "l_add_dycore_grid",
+            "grid_adapt_in_time_method",
+            "input"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": [
+            "input"
+          ]
+        },
+        {
+          "routine": "finalize_t_dependent_forcings",
+          "native_arguments": [],
+          "cpp_arguments": [
+            "input"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": [
+            "input"
+          ]
+        },
+        {
+          "routine": "finalize_t_dependent_sfc",
+          "native_arguments": [],
+          "cpp_arguments": [
+            "input"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": [
+            "input"
+          ]
+        },
+        {
+          "routine": "read_to_grid",
+          "native_arguments": [
+            "ntwo_dim_vars",
+            "dim_size",
+            "other_dim_size",
+            "nz",
+            "grid",
+            "two_dim_vars",
+            "target_name"
+          ],
+          "cpp_arguments": [
+            "ntwo_dim_vars",
+            "dim_size",
+            "other_dim_size",
+            "nz",
+            "grid",
+            "two_dim_vars",
+            "target_name"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": []
+        },
+        {
+          "routine": "apply_time_dependent_forcings_from_array",
+          "native_arguments": [
+            "ngrdcol",
+            "nzm",
+            "nzt",
+            "sclr_dim",
+            "edsclr_dim",
+            "sclr_idx",
+            "l_do_expldiff_rtm_thlm",
+            "gr",
+            "rtm",
+            "rho",
+            "exner",
+            "forcings_array",
+            "thlm_f",
+            "rtm_f",
+            "um_ref",
+            "vm_ref",
+            "um_f",
+            "vm_f",
+            "wm_zt",
+            "wm_zm",
+            "ug",
+            "vg",
+            "sclrm_forcing",
+            "edsclrm_forcing"
+          ],
+          "cpp_arguments": [
+            "ngrdcol",
+            "nzm",
+            "nzt",
+            "sclr_dim",
+            "edsclr_dim",
+            "sclr_idx",
+            "l_do_expldiff_rtm_thlm",
+            "gr",
+            "rtm",
+            "rho",
+            "exner",
+            "forcings_array",
+            "thlm_f",
+            "rtm_f",
+            "um_ref",
+            "vm_ref",
+            "um_f",
+            "vm_f",
+            "wm_zt",
+            "wm_zm",
+            "ug",
+            "vg",
+            "sclrm_forcing",
+            "edsclrm_forcing",
+            "input"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": [
+            "input"
+          ]
+        },
+        {
+          "routine": "apply_time_dependent_forcings",
+          "native_arguments": [
+            "ngrdcol",
+            "nzm",
+            "nzt",
+            "sclr_dim",
+            "edsclr_dim",
+            "sclr_idx",
+            "l_do_expldiff_rtm_thlm",
+            "gr",
+            "time",
+            "rtm",
+            "rho",
+            "exner",
+            "thlm_f",
+            "rtm_f",
+            "um_ref",
+            "vm_ref",
+            "um_f",
+            "vm_f",
+            "wm_zt",
+            "wm_zm",
+            "ug",
+            "vg",
+            "sclrm_forcing",
+            "edsclrm_forcing"
+          ],
+          "cpp_arguments": [
+            "ngrdcol",
+            "nzm",
+            "nzt",
+            "sclr_dim",
+            "edsclr_dim",
+            "sclr_idx",
+            "l_do_expldiff_rtm_thlm",
+            "gr",
+            "time",
+            "rtm",
+            "rho",
+            "exner",
+            "thlm_f",
+            "rtm_f",
+            "um_ref",
+            "vm_ref",
+            "um_f",
+            "vm_f",
+            "wm_zt",
+            "wm_zm",
+            "ug",
+            "vg",
+            "sclrm_forcing",
+            "edsclrm_forcing",
+            "input"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": [
+            "input"
+          ]
+        },
+        {
+          "routine": "apply_time_dependent_forcings_from_dycore",
+          "native_arguments": [
+            "ngrdcol",
+            "nzm",
+            "nzt",
+            "sclr_dim",
+            "edsclr_dim",
+            "sclr_idx",
+            "l_do_expldiff_rtm_thlm",
+            "gr",
+            "gr_dycore",
+            "time",
+            "rtm",
+            "rho",
+            "exner",
+            "grid_remap_method",
+            "total_idx_rho_lin_spline",
+            "rho_lin_spline_vals",
+            "rho_lin_spline_levels",
+            "p_sfc",
+            "thlm_f",
+            "rtm_f",
+            "um_ref",
+            "vm_ref",
+            "um_f",
+            "vm_f",
+            "wm_zt",
+            "wm_zm",
+            "ug",
+            "vg",
+            "sclrm_forcing",
+            "edsclrm_forcing"
+          ],
+          "cpp_arguments": [
+            "ngrdcol",
+            "nzm",
+            "nzt",
+            "sclr_dim",
+            "edsclr_dim",
+            "sclr_idx",
+            "l_do_expldiff_rtm_thlm",
+            "gr",
+            "gr_dycore",
+            "time",
+            "rtm",
+            "rho",
+            "exner",
+            "grid_remap_method",
+            "total_idx_rho_lin_spline",
+            "rho_lin_spline_vals",
+            "rho_lin_spline_levels",
+            "p_sfc",
+            "thlm_f",
+            "rtm_f",
+            "um_ref",
+            "vm_ref",
+            "um_f",
+            "vm_f",
+            "wm_zt",
+            "wm_zm",
+            "ug",
+            "vg",
+            "sclrm_forcing",
+            "edsclrm_forcing",
+            "input"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": [
+            "input"
+          ]
+        },
+        {
+          "routine": "time_select",
+          "native_arguments": [
+            "time",
+            "nvar",
+            "time_array",
+            "before_time",
+            "after_time",
+            "time_frac"
+          ],
+          "cpp_arguments": [
+            "time",
+            "nvar",
+            "time_array",
+            "before_time",
+            "after_time",
+            "time_frac"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": []
+        }
+      ]
+    },
+    {
+      "source": "src/Benchmark_cases/twp_ice.F90",
+      "native_sha256": "5fcc240d59b2f4d1713295bc7c5d8daea0f1224596e1726ada46ac62cc51a718",
+      "targets": [
+        "clubb_kokkos/drafts/driver_benchmark_cases/Benchmark_cases/twp_ice.hpp"
+      ],
+      "routines": [
+        {
+          "routine": "twp_ice_sfclyr",
+          "native_arguments": [
+            "ngrdcol",
+            "time",
+            "z",
+            "exner_sfc",
+            "thlm_sfc",
+            "ubar",
+            "rtm",
+            "p_sfc",
+            "saturation_formula",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar",
+            "t_sfc"
+          ],
+          "cpp_arguments": [
+            "ngrdcol",
+            "time",
+            "z",
+            "exner_sfc",
+            "thlm_sfc",
+            "ubar",
+            "rtm",
+            "p_sfc",
+            "saturation_formula",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar",
+            "t_sfc",
+            "input"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": [
+            "input"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "src/Benchmark_cases/wangara.F90",
+      "native_sha256": "c9c9e0ae3653aa6a3aab16d857be6eb4df216c846c39faafa9253296e19a43fb",
+      "targets": [
+        "clubb_kokkos/drafts/driver_benchmark_cases/Benchmark_cases/wangara.hpp"
+      ],
+      "routines": [
+        {
+          "routine": "wangara_tndcy",
+          "native_arguments": [
+            "ngrdcol",
+            "gr",
+            "sclr_dim",
+            "edsclr_dim",
+            "sclr_idx",
+            "wm_zt",
+            "wm_zm",
+            "thlm_forcing",
+            "rtm_forcing",
+            "sclrm_forcing",
+            "edsclrm_forcing"
+          ],
+          "cpp_arguments": [
+            "ngrdcol",
+            "gr",
+            "sclr_dim",
+            "edsclr_dim",
+            "sclr_idx",
+            "wm_zt",
+            "wm_zm",
+            "thlm_forcing",
+            "rtm_forcing",
+            "sclrm_forcing",
+            "edsclrm_forcing"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": []
+        },
+        {
+          "routine": "wangara_sfclyr",
+          "native_arguments": [
+            "ngrdcol",
+            "time",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar"
+          ],
+          "cpp_arguments": [
+            "ngrdcol",
+            "time",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar"
+          ],
+          "native_prefix_match": true,
+          "appended_case_state": []
+        }
+      ]
+    }
+  ]
+}

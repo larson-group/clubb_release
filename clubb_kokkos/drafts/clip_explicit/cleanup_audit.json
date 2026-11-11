@@ -1,0 +1,32 @@
+{
+  "date": "2026-11-05",
+  "phase": "Separate post-implementation cleanup/source review",
+  "scope": "All1016Native lines and full517-line JAX counterpart read before draft; all6public routines/19constants/no omitted option",
+  "reviewed": [
+    "All public arguments/order/intents, true optional scalar maximum, caller allocation ownership and two justified public subview adapters",
+    "All covariance/stat/counter/scalar/perturbed branches and exact clipping boundary indices",
+    "Native normal STOP before stats/clipping; failing-device guard stages only on failure",
+    "Native lower-warning-before-assignment and upper-warning-after-assignment, including physical/numeric descending bounds",
+    "Full comments, Native continuation/intent groups, declaration-comment continuations, units and reserved selector gaps",
+    "All skewness formulas and both height limiters; signed magnitude and floating kind epsilon; no speculative floors/FMA",
+    "All32device bodies without owning UDT captures, host I/O/backend calls or nested launch"
+  ],
+  "fixed_during_cleanup": [
+    "Kept complete declaration descriptions and Native argument groups rather than signature tags as descriptions",
+    "Converted single-quoted Native diagnostics to C++ strings and avoided shadowing the Native message argument",
+    "Retained whitespace-tolerant PRESENT handling; optional scalar copied once per device-using block",
+    "Normal STOP newline formatting and runtime-signed host debug loops corrected",
+    "Public optional input intent explicitly labeled; full fatal diagnostic value stream audited separately"
+  ],
+  "final_sha256": {
+    "clip_explicit.cpp": "f906bad6de0d5159a6156c093634d7ffea1088e22ec1465a85a616d00cc10372",
+    "clip_explicit.hpp": "a31d5cfba20379b9050ee8d2769dae43dc300da1f06406cfdc19b1660c6e4d5f",
+    "f2k_dependencies.hpp": "87a51a6b293bc5aec1f27955e925aa2920ac1145948df5f903f78b108c1e8d41"
+  },
+  "native_sha256": "d05ccb611d9512a7e00ddc74e864dc6391c7cf525915c4fa2ad0b9797a54be8b",
+  "verification": "Source comparisons and formatting only; no builds/tests/numerical claim",
+  "remaining": "Root-owned stable Heaviside helper promotion, public stats_update_budget definition, live bridge removal and CPU BFB gate",
+  "independent_review_repairs": [
+    "Precise owner-specific header/field documentation and Native science call grouping; exact executable-token stream unchanged"
+  ]
+}

@@ -61,15 +61,15 @@ def check_clubb_settings(
 
 
 def sfc_varnce_check(
-    ngrdcol: int, sclr_dim: int, wp2_sfc, up2_sfc, vp2_sfc, thlp2_sfc,
-    rtp2_sfc, rtpthlp_sfc, sclrp2_sfc, sclrprtp_sfc, sclrpthlp_sfc,
+    sclr_dim: int, wp2_sfc: float, up2_sfc: float, vp2_sfc: float, thlp2_sfc: float,
+    rtp2_sfc: float, rtpthlp_sfc: float, sclrp2_sfc, sclrprtp_sfc, sclrpthlp_sfc,
     err_info: ErrInfo,
 ):
     """Run numerical surface-variance NaN checks against stored err_info."""
     set_fortran_err_info(err_info)
     clubb_f2py.f2py_sfc_varnce_check(
-        int(sclr_dim), f_arr(wp2_sfc), f_arr(up2_sfc), f_arr(vp2_sfc), f_arr(thlp2_sfc),
-        f_arr(rtp2_sfc), f_arr(rtpthlp_sfc), f_arr(sclrp2_sfc), f_arr(sclrprtp_sfc), f_arr(sclrpthlp_sfc), ngrdcol=int(ngrdcol),
+        int(sclr_dim), float(wp2_sfc), float(up2_sfc), float(vp2_sfc), float(thlp2_sfc),
+        float(rtp2_sfc), float(rtpthlp_sfc), f_arr(sclrp2_sfc), f_arr(sclrprtp_sfc), f_arr(sclrpthlp_sfc),
     )
     return get_fortran_err_info()
 
@@ -117,7 +117,7 @@ def parameterization_check(
 
 
 def pdf_closure_check(
-    nz: int, ngrdcol: int, sclr_dim: int,
+    nz: int, sclr_dim: int,
     wp4, wprtp2, wp2rtp, wpthlp2, wp2thlp, cloud_frac, rcm, wpthvp, wp2thvp, wp2up,
     rtpthvp, thlpthvp, wprcp, wp2rcp, rtprcp, thlprcp, rcp2, wprtpthlp, crt_1, crt_2,
     cthl_1, cthl_2, pdf_params: pdf_parameter, sclrpthvp, sclrprcp, wpsclrp2, wpsclrprtp, wpsclrpthlp, wp2sclrp,
@@ -132,12 +132,12 @@ def pdf_closure_check(
         f_arr(wprcp), f_arr(wp2rcp), f_arr(rtprcp), f_arr(thlprcp), f_arr(rcp2), f_arr(wprtpthlp),
         f_arr(crt_1), f_arr(crt_2), f_arr(cthl_1), f_arr(cthl_2), f_arr(sclrpthvp), f_arr(sclrprcp),
         f_arr(wpsclrp2), f_arr(wpsclrprtp), f_arr(wpsclrpthlp), f_arr(wp2sclrp),
-        nz=int(nz), ngrdcol=int(ngrdcol))
+        nz=int(nz))
     return get_fortran_err_info()
 
 
-def length_check(nzt: int, ngrdcol: int, lscale, lscale_up, lscale_down, err_info: ErrInfo):
+def length_check(nzt: int, lscale, lscale_up, lscale_down, err_info: ErrInfo):
     """Run the mixing-length NaN check against err_info data in module storage."""
     set_fortran_err_info(err_info)
-    clubb_f2py.f2py_length_check(f_arr(lscale), f_arr(lscale_up), f_arr(lscale_down), nzt=int(nzt), ngrdcol=int(ngrdcol))
+    clubb_f2py.f2py_length_check(f_arr(lscale), f_arr(lscale_up), f_arr(lscale_down), nzt=int(nzt))
     return get_fortran_err_info()

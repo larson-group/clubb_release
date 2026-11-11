@@ -13,8 +13,6 @@ Each test documents its setup and assertions below; fixtures restore debug
 state. No Fortran/F2PY runtime is imported. Whole-driver/Fortran comparisons
 and real-case gradients belong to the separate integration_tests/ workflows.
 """
-
-from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
 import jax
 import jax.numpy as jnp
 import numpy as np
@@ -22,14 +20,14 @@ import pytest
 
 from clubb_jax.src.CLUBB_core import error_code
 from clubb_jax.src.CLUBB_core.constants_clubb import Cp, Lv, Rd, ep, ep1, ep2, grav, zero_threshold
-from clubb_jax.src.CLUBB_core.err_info_type_module import ErrInfo
+from clubb_jax.src.CLUBB_core.err_info import ErrInfo
 from clubb_jax.src.CLUBB_core.grid_class import setup_grid, zm2zt
-from clubb_jax.src.CLUBB_core.stats_netcdf import JaxStats
+from clubb_jax.src.CLUBB_core.jax_stats import JaxStats
 from clubb_jax.src.CLUBB_core.mixing_length import (
     calc_Lscale, compute_mixing_length, compute_coherent_mixing_length, sat_mixrat_liq_flatau,
 )
 from clubb_jax.src.CLUBB_core.parameters_tunable import init_clubb_params, PNAME_IDX
-from clubb_jax.src.CLUBB_core.pdf_parameter_module import init_pdf_params
+from clubb_jax.src.CLUBB_core.pdf_params import init_pdf_params
 
 
 @pytest.fixture(autouse=True)
@@ -161,7 +159,7 @@ def test_coherent_matches_serial_early_exit_oracle(energy):
     em = jnp.full_like(x['em'], energy)
     mu, multiplier = jnp.array([.001, .002]), jnp.array([1., .7])
     frac, weight = jnp.array([.35, 1.]), jnp.array([0., 1.])
-    actual = jax.jit(lambda e: call_jax(compute_coherent_mixing_length,
+    actual = jax.jit(lambda e: compute_coherent_mixing_length(
         gr.nzm, gr.nzt, 2, gr, thvm, x['thlm'], x['rtm'], pdf, e,
         jnp.full((2,), 1e5), pressure, exner, x['thlm'], mu, multiplier,
         frac, weight, 0., False, ErrInfo.initialized(2)))(em)
@@ -185,7 +183,7 @@ def test_legacy_first_layer_root_and_debug_predicate():
     mu = jnp.array([.001, .002])
     energy = .0001
     error_code.set_debug_level(2)
-    actual = jax.jit(lambda e: call_jax(compute_mixing_length,
+    actual = jax.jit(lambda e: compute_mixing_length(
         gr.nzm, gr.nzt, 2, gr, thl, thl, jnp.zeros_like(thl), e,
         jnp.full((2,), 1e5), jnp.full_like(thl, 1e5), jnp.ones_like(thl), thl,
         mu, 0., 3, False, ErrInfo.initialized(2)))(jnp.full((2, gr.nzm), energy))
@@ -214,7 +212,7 @@ def test_three_methods_gradients_and_runtime_parameter_reuse(method):
     stats = JaxStats.empty(l_sample=False, names=(), ncol=2, max_nlev=gr.nzm)
     def calculate(x):
         """Return full outputs for the selected method using the dynamic test input dictionary."""
-        return call_jax(calc_Lscale, gr.nzm, gr.nzt, 2, gr, False, jnp.full((2,), 1e5),
+        return calc_Lscale(gr.nzm, gr.nzt, 2, gr, False, jnp.full((2,), 1e5),
             jnp.full((2,), 1e5), pressure, exner, x['rtm'], x['thlm'], thvm,
             jnp.full((2, gr.nzm), .1), jnp.full((2, gr.nzm), 1e-6),
             jnp.zeros((2, gr.nzm)), pdf, x['em'], x['thlm'], 0.,
@@ -283,7 +281,7 @@ def test_parcel_orientation_stretched_grid_host_floor_and_cap(method):
         and per-column caps.
         """
         exner = jnp.exp(-3e-5*grid.zt)
-        return call_jax(calc_Lscale_directly, 2, gr.nzm, gr.nzt, grid, True,
+        return calc_Lscale_directly(2, gr.nzm, gr.nzt, grid, True,
             1e5*exner**3.5, exner, rt, thl, thl*(1.+ep1*rt),
             jnp.full_like(rt, 1e-6), jnp.full_like(thl, .1), jnp.zeros_like(rt),
             pdf, em, thl, jnp.array([15., 70.]), 20., cp, 3, False,
@@ -321,7 +319,7 @@ def test_legacy_invalid_entrainment_preserves_healthy_column(capfd):
     gr, exner, pressure, thvm, _, x = fixture()
     def calculate(mu):
         """Return legacy parcel lengths/errors for the supplied two-column entrainment vector."""
-        return call_jax(compute_mixing_length, gr.nzm, gr.nzt, 2, gr, thvm, x['thlm'],
+        return compute_mixing_length(gr.nzm, gr.nzt, 2, gr, thvm, x['thlm'],
             x['rtm'], x['em'], jnp.full((2,), 1e5), pressure, exner, x['thlm'],
             mu, 20., 3, False, ErrInfo.initialized(2))
     run = jax.jit(calculate)
@@ -351,7 +349,7 @@ def test_cpu_launch_groups_match_single_columns_and_transpose():
         thl = 298. + .003*gr.zt + .02*jnp.sin(gr.zt)
         rt = jnp.full_like(thl, .008)
         exner = jnp.exp(-3e-5*gr.zt)
-        return call_jax(compute_mixing_length, gr.nzm, gr.nzt, gr.ngrdcol, gr,
+        return compute_mixing_length(gr.nzm, gr.nzt, gr.ngrdcol, gr,
             thl*(1.+ep1*rt), thl, rt, jnp.full((gr.ngrdcol, gr.nzm), .4),
             jnp.full((gr.ngrdcol,), 1e5), 1e5*exner**3.5, exner, thl,
             mu, 0., 3, False, ErrInfo.initialized(gr.ngrdcol))
@@ -431,7 +429,7 @@ def test_coherent_partial_launch_groups_preserve_columns_and_derivatives(descend
         params = values['params']
         pdf = init_pdf_params(grid.nzt, ng).replace(
             thl_1=thl+.7, thl_2=thl-.4, rt_1=rt+.001, rt_2=rt-.0005)
-        return call_jax(compute_coherent_mixing_length, grid.nzm, grid.nzt, ng, grid,
+        return compute_coherent_mixing_length(grid.nzm, grid.nzt, ng, grid,
             thl*(1.+ep1*rt), thl, rt, pdf, values['em'], jnp.full((ng,), 1e5),
             1e5*exner**3.5, exner, thl,
             params[:, PNAME_IDX['Lscale_mu_entrain']],

@@ -9,6 +9,7 @@ import ast
 BENCHMARK_CASES = _REPO_ROOT / "clubb_jax" / "src" / "Benchmark_cases"
 INPUT_FIELDS = _REPO_ROOT / "clubb_jax" / "src" / "Input_fields"
 CLUBB_CORE = _REPO_ROOT / "clubb_jax" / "src" / "CLUBB_core"
+ADVANCE_CLUBB_TO_END = _REPO_ROOT / "clubb_jax" / "src" / "advance_clubb_to_end.py"
 
 
 # Source order for the routines supported by the standalone JAX driver. The

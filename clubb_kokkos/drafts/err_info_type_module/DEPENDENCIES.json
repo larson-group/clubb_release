@@ -1,0 +1,43 @@
+{
+  "reused_schema_owner": "clubb_kokkos/src/CLUBB_core/err_info_type_module.hpp",
+  "new_transient_public_alias": {
+    "name": "format_err_info_headers",
+    "definition": "set_err_info_values_api",
+    "included_optional_inputs": [],
+    "required_arguments": [
+      {
+        "name": "ngrdcol",
+        "kind": "integer",
+        "intent": "in"
+      },
+      {
+        "name": "err_info",
+        "kind": "err_info_type",
+        "intent": "inout"
+      }
+    ],
+    "reason": "Exact Native fixed-width header I/O via already-public setter; all optional state/normalization branches absent. Private Native update_headers remains private.",
+    "native_import_name": "set_err_info_values_api",
+    "cpp_public_name": "set_err_info_values_api",
+    "presence_overload": "two required arguments only: ngrdcol, err_info"
+  },
+  "constants": [
+    "unused_var",
+    "clubb_no_error"
+  ],
+  "retire_after_replacement": [
+    "init_default_err_info_api",
+    "set_err_info_values_api selected lat/lon alias"
+  ],
+  "required_shared_merge": [
+    "preserved type-generator procedure regions",
+    "replace existing inline cleanup_err_info_api",
+    "add transient manifest alias in existing generator",
+    "driver setter adds nullopt optional-int placeholders",
+    "existing PUBLIC_NAMES maps formatter C-symbol key to Native public setter name, preserving stats alias behavior"
+  ],
+  "remaining_scientific_lower_contracts": [],
+  "shared_array_owner": "array_types.hpp",
+  "state_ownership": "Existing case-owned mirror Views/scalars only. No C++ mutable global or thread-local cache.",
+  "status": "Isolated source draft only. No shared edits, compilation, model runs or BFB claim. Owner source review and separate cleanup only; independent review and CPU zero-tolerance integration remain pending."
+}

@@ -1,0 +1,233 @@
+{
+  "canonical_source": "src/CLUBB_core/advance_helper_module.F90",
+  "canonical_sha256": "56879d6527a62625bfd5c2f2cc2247700ac312bb533ba5f69ae3636b2c39cc41",
+  "target": "clubb_kokkos/drafts/advance_helper_module/advance_helper_module.hpp",
+  "target_sha256": "8f5141fa06e7962083927070191439c1095dfa66e36fb1565794fa0a271887af",
+  "native_definition_order": [
+    "calc_ddzt_umvm_sqd",
+    "calc_wp3_on_wp2",
+    "set_boundary_conditions_lhs",
+    "set_boundary_conditions_rhs",
+    "calc_stability_correction",
+    "calc_brunt_vaisala_freq_sqd",
+    "compute_Cx_fnc_Richardson",
+    "calc_Ri_zm",
+    "Lscale_width_vert_avg",
+    "wp23_term_splat_lhs",
+    "smooth_min_sclr_idx",
+    "smooth_min_array_scalar",
+    "smooth_min_arrays",
+    "smooth_min_scalars",
+    "smooth_max_sclr_idx",
+    "smooth_max_array_scalar",
+    "smooth_max_array_1D_scalar",
+    "smooth_max_arrays",
+    "smooth_max_scalars",
+    "smooth_heaviside_peskin",
+    "calc_xpwp_1D",
+    "calc_xpwp_2D",
+    "vertical_avg",
+    "vertical_integral",
+    "pvertinterp",
+    "calculate_thlp2_rad"
+  ],
+  "routines": [
+    {
+      "name": "calc_ddzt_umvm_sqd",
+      "arguments": 7,
+      "ordered_branch_predicates": 0,
+      "ordered_subroutine_calls": 0,
+      "ordered_assignment_expression_trees": 3,
+      "review": "All arithmetic/grouping/index/argument trees exact after documented syntax/rank mappings"
+    },
+    {
+      "name": "calc_wp3_on_wp2",
+      "arguments": 8,
+      "ordered_branch_predicates": 1,
+      "ordered_subroutine_calls": 0,
+      "ordered_assignment_expression_trees": 6,
+      "review": "All arithmetic/grouping/index/argument trees exact after documented syntax/rank mappings"
+    },
+    {
+      "name": "set_boundary_conditions_lhs",
+      "arguments": 7,
+      "review": "Manual ordered boundary/serial reduction adaptation review"
+    },
+    {
+      "name": "set_boundary_conditions_rhs",
+      "arguments": 9,
+      "review": "Manual ordered boundary/serial reduction adaptation review"
+    },
+    {
+      "name": "calc_stability_correction",
+      "arguments": 7,
+      "ordered_branch_predicates": 1,
+      "ordered_subroutine_calls": 0,
+      "ordered_assignment_expression_trees": 3,
+      "review": "All arithmetic/grouping/index/argument trees exact after documented syntax/rank mappings"
+    },
+    {
+      "name": "calc_brunt_vaisala_freq_sqd",
+      "arguments": 21,
+      "ordered_branch_predicates": 6,
+      "ordered_subroutine_calls": 5,
+      "ordered_assignment_expression_trees": 25,
+      "review": "All arithmetic/grouping/index/argument trees exact after documented syntax/rank mappings"
+    },
+    {
+      "name": "compute_Cx_fnc_Richardson",
+      "arguments": 13,
+      "ordered_branch_predicates": 3,
+      "ordered_subroutine_calls": 1,
+      "ordered_assignment_expression_trees": 21,
+      "review": "All arithmetic/grouping/index/argument trees exact after documented syntax/rank mappings"
+    },
+    {
+      "name": "calc_Ri_zm",
+      "arguments": 7,
+      "ordered_branch_predicates": 0,
+      "ordered_subroutine_calls": 0,
+      "ordered_assignment_expression_trees": 1,
+      "review": "All arithmetic/grouping/index/argument trees exact after documented syntax/rank mappings"
+    },
+    {
+      "name": "Lscale_width_vert_avg",
+      "arguments": 8,
+      "ordered_branch_predicates": 5,
+      "ordered_subroutine_calls": 0,
+      "ordered_assignment_expression_trees": 13,
+      "review": "All arithmetic/grouping/index/argument trees exact after documented syntax/rank mappings"
+    },
+    {
+      "name": "wp23_term_splat_lhs",
+      "arguments": 11,
+      "ordered_branch_predicates": 1,
+      "ordered_subroutine_calls": 1,
+      "ordered_assignment_expression_trees": 6,
+      "review": "All arithmetic/grouping/index/argument trees exact after documented syntax/rank mappings"
+    },
+    {
+      "name": "smooth_min_sclr_idx",
+      "arguments": 5,
+      "ordered_branch_predicates": 0,
+      "ordered_subroutine_calls": 0,
+      "ordered_assignment_expression_trees": 1,
+      "review": "All arithmetic/grouping/index/argument trees exact after documented syntax/rank mappings"
+    },
+    {
+      "name": "smooth_min_array_scalar",
+      "arguments": 5,
+      "ordered_branch_predicates": 0,
+      "ordered_subroutine_calls": 0,
+      "ordered_assignment_expression_trees": 1,
+      "review": "All arithmetic/grouping/index/argument trees exact after documented syntax/rank mappings"
+    },
+    {
+      "name": "smooth_min_arrays",
+      "arguments": 5,
+      "ordered_branch_predicates": 0,
+      "ordered_subroutine_calls": 0,
+      "ordered_assignment_expression_trees": 1,
+      "review": "All arithmetic/grouping/index/argument trees exact after documented syntax/rank mappings"
+    },
+    {
+      "name": "smooth_min_scalars",
+      "arguments": 3,
+      "ordered_branch_predicates": 0,
+      "ordered_subroutine_calls": 0,
+      "ordered_assignment_expression_trees": 1,
+      "review": "All arithmetic/grouping/index/argument trees exact after documented syntax/rank mappings"
+    },
+    {
+      "name": "smooth_max_sclr_idx",
+      "arguments": 5,
+      "ordered_branch_predicates": 0,
+      "ordered_subroutine_calls": 0,
+      "ordered_assignment_expression_trees": 1,
+      "review": "All arithmetic/grouping/index/argument trees exact after documented syntax/rank mappings"
+    },
+    {
+      "name": "smooth_max_array_scalar",
+      "arguments": 5,
+      "ordered_branch_predicates": 0,
+      "ordered_subroutine_calls": 0,
+      "ordered_assignment_expression_trees": 1,
+      "review": "All arithmetic/grouping/index/argument trees exact after documented syntax/rank mappings"
+    },
+    {
+      "name": "smooth_max_array_1D_scalar",
+      "arguments": 4,
+      "ordered_branch_predicates": 0,
+      "ordered_subroutine_calls": 0,
+      "ordered_assignment_expression_trees": 1,
+      "review": "All arithmetic/grouping/index/argument trees exact after documented syntax/rank mappings"
+    },
+    {
+      "name": "smooth_max_arrays",
+      "arguments": 5,
+      "ordered_branch_predicates": 0,
+      "ordered_subroutine_calls": 0,
+      "ordered_assignment_expression_trees": 1,
+      "review": "All arithmetic/grouping/index/argument trees exact after documented syntax/rank mappings"
+    },
+    {
+      "name": "smooth_max_scalars",
+      "arguments": 3,
+      "ordered_branch_predicates": 0,
+      "ordered_subroutine_calls": 0,
+      "ordered_assignment_expression_trees": 1,
+      "review": "All arithmetic/grouping/index/argument trees exact after documented syntax/rank mappings"
+    },
+    {
+      "name": "smooth_heaviside_peskin",
+      "arguments": 4,
+      "ordered_branch_predicates": 2,
+      "ordered_subroutine_calls": 0,
+      "ordered_assignment_expression_trees": 4,
+      "review": "All arithmetic/grouping/index/argument trees exact after documented syntax/rank mappings"
+    },
+    {
+      "name": "calc_xpwp_1D",
+      "arguments": 4,
+      "ordered_branch_predicates": 0,
+      "ordered_subroutine_calls": 0,
+      "ordered_assignment_expression_trees": 1,
+      "review": "All arithmetic/grouping/index/argument trees exact after documented syntax/rank mappings"
+    },
+    {
+      "name": "calc_xpwp_2D",
+      "arguments": 7,
+      "ordered_branch_predicates": 0,
+      "ordered_subroutine_calls": 0,
+      "ordered_assignment_expression_trees": 1,
+      "review": "All arithmetic/grouping/index/argument trees exact after documented syntax/rank mappings"
+    },
+    {
+      "name": "vertical_avg",
+      "arguments": 4,
+      "review": "Manual ordered boundary/serial reduction adaptation review"
+    },
+    {
+      "name": "vertical_integral",
+      "arguments": 4,
+      "review": "Manual ordered boundary/serial reduction adaptation review"
+    },
+    {
+      "name": "pvertinterp",
+      "arguments": 7,
+      "ordered_branch_predicates": 4,
+      "ordered_subroutine_calls": 0,
+      "ordered_assignment_expression_trees": 9,
+      "review": "All arithmetic/grouping/index/argument trees exact after documented syntax/rank mappings"
+    },
+    {
+      "name": "calculate_thlp2_rad",
+      "arguments": 9,
+      "ordered_branch_predicates": 1,
+      "ordered_subroutine_calls": 0,
+      "ordered_assignment_expression_trees": 3,
+      "review": "All arithmetic/grouping/index/argument trees exact after documented syntax/rank mappings"
+    }
+  ],
+  "status": "Source-only review aid. No build, execution or BFB claim."
+}

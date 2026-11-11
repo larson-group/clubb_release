@@ -1,7 +1,5 @@
 """Check the hydrostatic-pressure ports against Fortran."""
 
-from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
-
 import jax.numpy as jnp
 import numpy as np
 
@@ -22,10 +20,10 @@ def _pressure_mismatch(jgr, fgr, rng, n_draws):
     for _ in range(n_draws):
         thvm = np.sort(rng.uniform(290.0, 330.0, (ng, nzt)), axis=1)[:, ::-1].copy()  # decreasing with height
         psfc = rng.uniform(9e4, 1.02e5, ng)
-        ji = call_jax(init_pressure, jnp.asarray(thvm), jnp.asarray(psfc), jgr)            # (p, exner, p_zm, exner_zm)
+        ji = init_pressure(jnp.asarray(thvm), jnp.asarray(psfc), jgr)            # (p, exner, p_zm, exner_zm)
         fi = fortran.init_pressure(ng, fgr, thvm, psfc)
         w_ip = max(w_ip, max(max_rel_diff("hydrostatic", ji[k], fi[k], 1.0) for k in range(4)))
-        jh = call_jax(hydrostatic, jnp.asarray(thvm), jnp.asarray(psfc), jgr)              # (p, p_zm, exner, exner_zm, rho, rho_zm)
+        jh = hydrostatic(jnp.asarray(thvm), jnp.asarray(psfc), jgr)              # (p, p_zm, exner, exner_zm, rho, rho_zm)
         fh = fortran.hydrostatic(ng, fgr, thvm, psfc)
         w_hy = max(w_hy, max(max_rel_diff("hydrostatic", jh[k], fh[k], 1.0) for k in range(6)))
     return w_ip, w_hy

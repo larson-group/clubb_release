@@ -10,8 +10,6 @@ mixed central moment — so the analytic formulas (incl. the corr cross-terms an
 <w'^2 x'^2>) are validated, not just transcribed. + finite grad. Companion to iter-559's calc_wp4_pdf. (iter 560)
 """
 
-from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
-
 
 import numpy as np
 
@@ -44,8 +42,8 @@ def test_closed_form():
     for cs in _CASES:
         w1, w2, x1, x2, vw1, vw2, vx1, vx2, c1, c2, a = cs
         wm, xm, r_wp2xp, r_wpxp2, r_wp2xp2 = _refs(*cs)
-        g_wp2xp = float(call_jax(calc_wp2xp_pdf, wm, xm, w1, w2, x1, x2, vw1, vw2, vx1, vx2, c1, c2, a))
-        g_wpxp2 = float(call_jax(calc_wpxp2_pdf, wm, xm, w1, w2, x1, x2, vw1, vw2, vx1, vx2, c1, c2, a))
+        g_wp2xp = float(calc_wp2xp_pdf(wm, xm, w1, w2, x1, x2, vw1, vw2, vx1, vx2, c1, c2, a))
+        g_wpxp2 = float(calc_wpxp2_pdf(wm, xm, w1, w2, x1, x2, vw1, vw2, vx1, vx2, c1, c2, a))
         g_wp2xp2 = float(calc_wp2xp2_pdf(wm, xm, w1, w2, x1, x2, vw1, vw2, vx1, vx2, c1, c2, a))
         for got, ref in ((g_wp2xp, r_wp2xp), (g_wpxp2, r_wpxp2), (g_wp2xp2, r_wp2xp2)):
             worst = max(worst, abs(got - ref) / (abs(ref) + 1e-300))

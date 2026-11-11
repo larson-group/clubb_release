@@ -1,0 +1,39 @@
+{
+  "scope": "All five Native calendar routines and two immutable tables, full Native/JAX read before outline.",
+  "canonical_sha256": "7c515505098175469cfb5a88643720e8a72a1d0184d493f6a01335d3ab152e2f",
+  "files": {
+    "calendar.cpp": "ee7c8ca6757f21df171b66695de77255092e2b366f744c1640b5954d3148e7b0",
+    "calendar.hpp": "262a8eae2b7bd878507831d262ade6b912a1c75d25bc90c3de61808743d053c8"
+  },
+  "reviews": [
+    {
+      "name": "gregorian2julian_date",
+      "ordered_assignment_expression_trees": 4
+    },
+    {
+      "name": "julian2gregorian_date",
+      "ordered_assignment_expression_trees": 13
+    },
+    {
+      "name": "leap_year",
+      "ordered_assignment_expression_trees": 1
+    },
+    {
+      "name": "compute_current_date_api",
+      "ordered_assignment_expression_trees": 4
+    },
+    {
+      "name": "gregorian2julian_day",
+      "Native_ordered_month_SUM_and_function_result": true,
+      "leap_correction_and_exact_fatal_literal": true
+    }
+  ],
+  "source_notes": [
+    "Exact Native truncating INTEGER expressions and source assignment order.",
+    "Elapsed FLOOR precedes integer conversion; seconds use Native time_precision double, independent of core kind.",
+    "Native repeated leap predicates, one-based prefix bounds, upper-day fatal branch/message retained; JAX omitted fatal not imported.",
+    "Only immutable Native tables and call-local scalars. No new state owner or lower bridge."
+  ],
+  "provenance": "Owner source review; independent review and separate cleanup tracked separately.",
+  "runtime_status": "Draft only. No builds/tests/CPU/GPU/BFB claim; all inputs, rollovers, invalid-day error branch await integration."
+}

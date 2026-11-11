@@ -446,7 +446,7 @@ module input_reader
   !   None
   !-----------------------------------------------------------------------------------------------
 
-    use interpolation, only: zlinterp
+    use interpolation, only: zlinterp_fnc
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
@@ -506,17 +506,9 @@ module input_reader
       var_out = default_value
     else if (amt < dim_grid) then
       if ( reversed ) then
-        var_out = reshape( &
-          zlinterp( 1, dim_grid, & ! In
-                    amt, reshape(-grid, [1,dim_grid]), & ! In
-                    reshape(-temp_grid(1:amt), [1,amt]), reshape(temp_var(1:amt), [1,amt]) ), & ! In
-          [dim_grid] )
+        var_out = zlinterp_fnc( dim_grid, amt, -grid, -temp_grid(1:amt), temp_var(1:amt) )
       else
-        var_out = reshape( &
-          zlinterp( 1, dim_grid, & ! In
-                    amt, reshape(grid, [1,dim_grid]), & ! In
-                    reshape(temp_grid(1:amt), [1,amt]), reshape(temp_var(1:amt), [1,amt]) ), & ! In
-          [dim_grid] )
+        var_out = zlinterp_fnc( dim_grid, amt, grid, temp_grid(1:amt), temp_var(1:amt) )
       end if
     else
       var_out = var

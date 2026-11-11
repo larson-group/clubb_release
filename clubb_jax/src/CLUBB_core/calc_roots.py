@@ -39,65 +39,54 @@ def _cardano_cbrt(z):
 def cubic_solve(a_coef, b_coef, c_coef, d_coef):
     """Solve for the roots of x in a cubic equation.
 
-    The cubic equation has the form:
+    Fortran comments:
+      Description:
+        Solve for the roots of x in a cubic equation.
 
-    f(x) = a*x^3 + b*x^2 + c*x + d;
+        The cubic equation has the form:
 
-    where a /= 0.  When f(x) = 0, the cubic formula is used to solve:
+        f(x) = a*x^3 + b*x^2 + c*x + d;
 
-    a*x^3 + b*x^2 + c*x + d = 0.
+        where a /= 0.  When f(x) = 0, the cubic formula is used to solve:
 
-    The cubic formula is also called Cardano's Formula.
+        a*x^3 + b*x^2 + c*x + d = 0.
 
-    The three solutions for x are:
+        The cubic formula is also called Cardano's Formula.
 
-    x(1) = -(1/3)*(b/a) + ( S + T );
-    x(2) = -(1/3)*(b/a) - (1/2) * ( S + T ) + (1/2)i * sqrt(3) * ( S - T );
-    x(3) = -(1/3)*(b/a) - (1/2) * ( S + T ) - (1/2)i * sqrt(3) * ( S - T );
+        The three solutions for x are:
 
-    where:
+        x(1) = -(1/3)*(b/a) + ( S + T );
+        x(2) = -(1/3)*(b/a) - (1/2) * ( S + T ) + (1/2)i * sqrt(3) * ( S - T );
+        x(3) = -(1/3)*(b/a) - (1/2) * ( S + T ) - (1/2)i * sqrt(3) * ( S - T );
 
-    S = ( R + sqrt( D ) )^(1/3); and
-    T = ( R - sqrt( D ) )^(1/3).
+        where:
 
-    The discriminant, D, is given by:
+        S = ( R + sqrt( D ) )^(1/3); and
+        T = ( R - sqrt( D ) )^(1/3).
 
-    D = R^2 + Q^3.
+        The determinant, D, is given by:
 
-    The values of R and Q relate back to the a, b, c, and d coefficients:
+        D = R^2 + Q^3.
 
-    Q = ( 3*(c/a) - (b/a)^2 ) / 9; and
-    R = ( 9*(b/a)*(c/a) - 27*(d/a) - 2*(b/a)^3 ) / 54.
+        The values of R and Q relate back to the a, b, c, and d coefficients:
 
-    When D < 0, there are three unique, real-valued roots.  When D = 0, there
-    are three real-valued roots, but one root is a double root or a triple
-    root.  When D > 0, there is one real-valued root and there are two roots
-    that are complex conjugates.
+        Q = ( 3*(c/a) - (b/a)^2 ) / 9; and
+        R = ( 9*(b/a)*(c/a) - 27*(d/a) - 2*(b/a)^3 ) / 54.
 
-    References:
-    http://mathworld.wolfram.com/CubicFormula.html
+        When D < 0, there are three unique, real-valued roots.  When D = 0, there
+        are three real-valued roots, but one root is a double root or a triple
+        root.  When D > 0, there is one real-valued root and there are two roots
+        that are complex conjugates.
 
-    Returns:
-        roots
-
-    Fortran declarations (cubic_solve in src/CLUBB_core/calc_roots.F90):
-
-        !--------------------------- Input Variables ---------------------------
-
-        real( kind = core_rknd ), intent(in) :: &
-          a_coef, & ! Coefficient a (of x^3) in a*x^3 + b*x^2 + c^x + d = 0    [-]
-          b_coef, & ! Coefficient b (of x^2) in a*x^3 + b*x^2 + c^x + d = 0    [-]
-          c_coef, & ! Coefficient c (of x) in a*x^3 + b*x^2 + c^x + d = 0      [-]
-          d_coef    ! Coefficient d in a*x^3 + b*x^2 + c^x + d = 0             [-]
-
-        !--------------------------- Output Variables ---------------------------
-        complex( kind = core_rknd ), intent(out) :: &
-          root_1, root_2, root_3    ! Roots of x that satisfy a*x^3 + b*x^2 + c*x + d = 0       [-]
+      References:
+        http://mathworld.wolfram.com/CubicFormula.html
     """
+    a = jnp.asarray(a_coef); b = jnp.asarray(b_coef)
+    c = jnp.asarray(c_coef); d = jnp.asarray(d_coef)
 
-    ba = b_coef / a_coef
-    ca = c_coef / a_coef
-    da = d_coef / a_coef
+    ba = b / a
+    ca = c / a
+    da = d / a
 
     # Find the value of the coefficient Q; where
     # Q = ( 3*(c/a) - (b/a)^2 ) / 9.
@@ -155,53 +144,44 @@ def cubic_solve(a_coef, b_coef, c_coef, d_coef):
 def quadratic_solve(a_coef, b_coef, c_coef):
     """Solve for the roots of x in a quadratic equation.
 
-    The equation has the form:
+    Fortran comments:
+      Description:
+        Solve for the roots of x in a quadratic equation.
 
-    f(x) = a*x^2 + b*x + c;
+        The equation has the form:
 
-    where a /= 0.  When f(x) = 0, the quadratic formula is used to solve:
+        f(x) = a*x^2 + b*x + c;
 
-    a*x^2 + b*x + c = 0.
+        where a /= 0.  When f(x) = 0, the quadratic formula is used to solve:
 
-    The two solutions for x are:
+        a*x^2 + b*x + c = 0.
 
-    x(1) = ( -b + sqrt( b^2 - 4*a*c ) ) / (2*a); and
-    x(2) = ( -b - sqrt( b^2 - 4*a*c ) ) / (2*a).
+        The two solutions for x are:
 
-    The discriminant, D, is given by:
+        x(1) = ( -b + sqrt( b^2 - 4*a*c ) ) / (2*a); and
+        x(2) = ( -b - sqrt( b^2 - 4*a*c ) ) / (2*a).
 
-    D = b^2 - 4*a*c.
+        The determinant, D, is given by:
 
-    When D > 0, there are two unique, real-valued roots.  When D = 0, there
-    are two real-valued roots, but they are a double root.  When D < 0, there
-    there are two roots that are complex conjugates.
+        D = b^2 - 4*a*c.
 
-    Returns:
-        roots
+        When D > 0, there are two unique, real-valued roots.  When D = 0, there
+        are two real-valued roots, but they are a double root.  When D < 0, there
+        there are two roots that are complex conjugates.
 
-    Fortran declarations (quadratic_solve in src/CLUBB_core/calc_roots.F90):
-
-        !--------------------------- Input Variables ---------------------------
-
-        real( kind = core_rknd ), intent(in) :: &
-          a_coef, & ! Coefficient a (of x^2) in a*x^2 + b*x + c = 0    [-]
-          b_coef, & ! Coefficient b (of x) in a*x^2 + b*x + c = 0      [-]
-          c_coef    ! Coefficient c in a*x^2 + b*x + c = 0             [-]
-
-        !--------------------------- Output Variables ---------------------------
-        complex( kind = core_rknd ), intent(out) :: &
-          root_1, root_2    ! Roots of x that satisfy a*x^2 + b*x + c = 0       [-]
+      References:
     """
+    a = jnp.asarray(a_coef); b = jnp.asarray(b_coef); c = jnp.asarray(c_coef)
 
     # Find the value of the determinant D; where
     # D = b^2 - 4*a*c.
-    determinant = b_coef ** 2 - 4.0 * a_coef * c_coef
+    determinant = b ** 2 - 4.0 * a * c
 
     # Calculate the square root of the determinant.  This will be a complex
     # number.
     sqrt_det = jnp.sqrt(determinant.astype(_C))
-    b_c = b_coef.astype(_C)
-    two_a = (2.0 * a_coef).astype(_C)
+    b_c = b.astype(_C)
+    two_a = (2.0 * a).astype(_C)
 
     # Find the values of the roots.
     # This root is real-valued when D > 0, as well as when D = 0 (when it is
@@ -221,24 +201,18 @@ def quadratic_solve(a_coef, b_coef, c_coef):
 def cube_root(x):
     """Calculates the cube root of x.
 
-    When x >= 0, this code simply calculates x^(1/3).  When x < 0, this code
-    uses x^(1/3) = -|x|^(1/3).  This eliminates numerical errors when the
-    exponent of 1/3 is not treated as exactly 1/3, which would sometimes
-    result in values of NaN.
+    Fortran comments:
+      Description:
+        Calculates the cube root of x.
 
-    Returns:
-        cube_root
+        When x >= 0, this code simply calculates x^(1/3).  When x < 0, this code
+        uses x^(1/3) = -|x|^(1/3).  This eliminates numerical errors when the
+        exponent of 1/3 is not treated as exactly 1/3, which would sometimes
+        result in values of NaN.
 
-    Fortran declarations (cube_root in src/CLUBB_core/calc_roots.F90):
-
-        !--------------------------- Input Variables ---------------------------
-        real( kind = core_rknd ), intent(in) :: &
-          x  ! Variable x
-
-        !--------------------------- Output Variables ---------------------------
-        real( kind = core_rknd ) :: &
-          cube_root  ! Cube root of x
+      References:
     """
+    x = jnp.asarray(x)
     abs_cbrt = jnp.abs(x) ** _ONE_THIRD
     cube_root = jnp.where(x >= 0.0, abs_cbrt, -abs_cbrt)
     return cube_root

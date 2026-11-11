@@ -35,7 +35,7 @@ from clubb_jax.src.SILHS import parameters_silhs
 from clubb_jax.src.Microphys import parameters_microphys as parameters
 from clubb_jax.src.Microphys.KK_microphys import parameters_KK
 from clubb_jax.src.Microphys.Morrison_microphys import module_mp_graupel
-from clubb_jax.src.CLUBB_core.file_functions import read_namelist
+from clubb_jax.src.Input_fields.namelist import read_namelist
 from clubb_jax.src.Input_fields.corr_varnce_input_reader import read_correlation_matrix
 from clubb_jax.src.CLUBB_core.corr_varnce_module import (
     init_pdf_hydromet_arrays_api,
@@ -141,15 +141,17 @@ def init_microphys(
     ):
         if name.lower() in cfg:
             setattr(parameters, name, cfg[name.lower()])
+    # l_gfdl_activation belongs to /gfdl_activation_setting/.
+    parameters.l_gfdl_activation = bool(cfg.get("l_gfdl_activation", False))
 
     parameters.lh_microphys_type = {"disabled": 3, "interactive": 1, "non-interactive": 2}.get(
         parameters.lh_microphys_type, parameters.lh_microphys_type
     )
     parameters_KK.C_evap = float(cfg.get("c_evap", parameters_KK.C_evap))
     parameters_KK.r_0 = float(cfg.get("r_0", parameters_KK.r_0))
-    from clubb_jax.src.Microphys.KK_microphys import Parabolic
+    from clubb_jax.src.Microphys.KK_microphys import parabolic_cylinder
 
-    Parabolic.l_high_accuracy_parab_cyl_fnc = bool(
+    parabolic_cylinder.l_high_accuracy_parab_cyl_fnc = bool(
         cfg.get("l_high_accuracy_parab_cyl_fnc", False)
     )
     if cfg.get("l_morr_xp2_mc", False):
@@ -183,6 +185,8 @@ def init_microphys(
         and parameters.microphys_scheme != "khairoutdinov_kogan"
     ):
         raise ValueError("l_silhs_KK_convergence_adj_mean requires KK microphysics")
+    if parameters.l_gfdl_activation:
+        raise ValueError("GFDL activation core is not supported")
     if parameters.microphys_scheme not in ("none", "khairoutdinov_kogan", "morrison"):
         raise ValueError(f"Unsupported microphys_scheme: {parameters.microphys_scheme}")
 

@@ -1,0 +1,91 @@
+{
+  "status": "SOURCE/CLEANUP AND NARROW COMPILE COMPLETE; Root model integration pending",
+  "files": [
+    {
+      "path": "clubb_kokkos/src/generate_driver_io.py",
+      "sha256": "d551965f7ed6a8bdeffbcd10f770221eee8b04bcac394645e26891c893022d4f",
+      "no_trailing_whitespace": true,
+      "final_newline": true,
+      "maximum_line_length": 109
+    },
+    {
+      "path": "clubb_kokkos/src/driver_io.hpp",
+      "sha256": "13a25477d8729df6c8a9079ea5e8e5be568c67abed2cd035a90acaae8efb50f5",
+      "no_trailing_whitespace": true,
+      "final_newline": true,
+      "maximum_line_length": 100
+    },
+    {
+      "path": "clubb_kokkos/src/Microphys/generate_microphys_io.py",
+      "sha256": "2791b1567307e9b7d92e29333d07297494347ef0cbf5bdab7883cc4c91649759",
+      "no_trailing_whitespace": true,
+      "final_newline": true,
+      "maximum_line_length": 98
+    },
+    {
+      "path": "clubb_kokkos/src/Microphys/microphys_io.hpp",
+      "sha256": "7a843c18ae3b8b79cc966f512ac84cd6125eaba9d46929b325fb2842b4759338",
+      "no_trailing_whitespace": true,
+      "final_newline": true,
+      "maximum_line_length": 97
+    },
+    {
+      "path": "clubb_kokkos/src/Radiation/radiation_io.hpp",
+      "sha256": "02c6e482e16c2d67ee19ad9373cc540da1a6152c852f7900a3baf0e09b9ed5e1",
+      "no_trailing_whitespace": true,
+      "final_newline": true,
+      "maximum_line_length": 92
+    },
+    {
+      "path": "clubb_kokkos/src/Radiation/radiation_io.cpp",
+      "sha256": "19911ebdfd2f8c99ff6a5c8e1c49b52953dd400943659f052a0ebb787900d174",
+      "no_trailing_whitespace": true,
+      "final_newline": true,
+      "maximum_line_length": 99
+    }
+  ],
+  "signature_argument_order_and_templates": "10 readers exactly retain previous generated contracts (SourceAudit).",
+  "field_order": "433 generated and22 radiation binds follow Native namelist/type declaration order.",
+  "character_and_kind_review": "All bound character widths come from Native declarations; nine Morrison default-real scalar fields remainfloat; Core/time/double fields retain originalCppsignature.",
+  "array_bounds_review": "Tunable Views explicitly bound to Native(ngrdcol); sclr_tol_nl bound to existing sclr_max; tables exactly20entries; alllowerbounds1.",
+  "state_review": "LocalGroup/streams and supplied mutable values only; no static/globalcase storage, NativeUMTcopy, Transfer descriptors or FortranIO call.",
+  "error_review": "Status readers return Group.read_file status; setfields/radiation fatal readers throw Group.error;append enforces Nativeexisting-fileprecondition.",
+  "comments_review": "Purpose/publicreaderlist, defaultownership, primitivekindsource, fixedbounds and unusedNativeunit adaptation explained at actual owners.",
+  "generation_idempotence": true,
+  "separate_source_audit": "SOURCE_AUDIT.json",
+  "narrow_compiles": {
+    "instantiate_serial": {
+      "log": "build/validation/permanent_namelist_bindings/instantiate_serial.log",
+      "log_bytes": 0,
+      "object_exists": true
+    },
+    "radiation_serial": {
+      "log": "build/validation/permanent_namelist_bindings/radiation_serial.log",
+      "log_bytes": 0,
+      "object_exists": true
+    },
+    "instantiate_cuda": {
+      "log": "build/validation/permanent_namelist_bindings/instantiate_cuda.log",
+      "log_bytes": 0,
+      "object_exists": true
+    },
+    "radiation_cuda": {
+      "log": "build/validation/permanent_namelist_bindings/radiation_cuda.log",
+      "log_bytes": 0,
+      "object_exists": true
+    }
+  },
+  "CUDA_runtime": "Not run; compile-only, actualsm86 module/compiler flags recorded inCUDA_COMPILE.json.",
+  "model_runtime": "Root owns caller/CMake/retiredbridge cleanup and maintained whole-model checks. No model/oracle suite run by binding owner.",
+  "dependency_cleanup": {
+    "keep": [
+      "src/f2k/fortran_procedures.py",
+      "src/f2k/generate_derived_types.py andits existing parser dependencies"
+    ],
+    "new": [
+      "src/generate_driver_io.py (driver producer andshared Microphys renderer)",
+      "src/Microphys/generate_microphys_io.py"
+    ],
+    "obsolete_runtime_imports": "None; safe forRoot to retire specified old driver/microphys/radiation IO bridge owners."
+  }
+}

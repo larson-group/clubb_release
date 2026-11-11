@@ -1,0 +1,27 @@
+{
+  "required_existing_owners": {
+    "array_types.hpp": "Owned column-first View aliases and shared memory-space/strided adapters, unchanged.",
+    "grid_class.hpp": "Sole generated grid schema; reads zm,zt,nzt,nzm.",
+    "constants_clubb.hpp": "grav,zero,one,one_half,one_fourth,one_eighth,three_sixteenth,three_halves,two,three,four,five,eight,twelve.",
+    "interpolation.hpp": "Device scalar lin_interpolate_two_points; existing arithmetic choices reused.",
+    "f2k/procedure_bridge.hpp": "Existing host-only clubb_at_least_debug_level_api(2) metadata query."
+  },
+  "required_selected_constants": [
+    {
+      "name": "cons_ullrich_remap",
+      "value": 1,
+      "source": "src/CLUBB_core/model_flags.F90:94",
+      "owner": "clubb_kokkos/src/f2k/generate_derived_types.py"
+    },
+    {
+      "name": "ppm_remap",
+      "value": 2,
+      "source": "src/CLUBB_core/model_flags.F90:97",
+      "owner": "clubb_kokkos/src/f2k/generate_derived_types.py"
+    }
+  ],
+  "new_physics_bridge_contracts": [],
+  "bridge_removals": [],
+  "new_types_or_schema_edits": [],
+  "compile_only_status": "No actual C++ remapping caller; retain higher forcing/stats Native owners."
+}

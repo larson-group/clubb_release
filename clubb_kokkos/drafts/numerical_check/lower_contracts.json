@@ -1,0 +1,51 @@
+[
+  {
+    "name": "initialize_error_headers",
+    "module": "error_code",
+    "source": "src/CLUBB_core/error_code.F90",
+    "source_lines": "69\u201394",
+    "arguments": [],
+    "result": null,
+    "existing_bridge": false,
+    "parser_note": "Native bare no-argument SUBROUTINE omits parentheses; current read_procedure requires them. Full body verified; extend parser owner or stage handwritten BIND(C) through existing f2k owner, without Native edits."
+  },
+  {
+    "name": "check_parameters_api",
+    "module": "parameters_tunable",
+    "source": "src/CLUBB_core/parameters_tunable.F90",
+    "arguments": [
+      {
+        "name": "ngrdcol",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "clubb_params",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nparams"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "err_info",
+        "kind": "err_info_type",
+        "dims": [],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      }
+    ],
+    "result": null,
+    "existing_bridge": false
+  }
+]

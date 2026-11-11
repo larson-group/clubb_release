@@ -387,11 +387,10 @@ module prescribe_forcings_module
       select case ( runtype )
 
       !  case ( "astex_a209" ) ! ASTEX Sc case for K & K
-      !    call astex_a209_tndcy( ngrdcol, sclr_dim, edsclr_dim, sclr_idx, & ! In
-      !                           gr, & ! In
-      !                           wm_zt, wm_zm, & ! Out
-      !                           thlm_forcing, rtm_forcing, & ! Out
-      !                           sclrm_forcing, edsclrm_forcing ) ! Out
+      !    call astex_a209_tndcy( sclr_dim, edsclr_dim, sclr_idx, &     ! Intent(in)
+      !                           wm_zt, wm_zm, &                       ! Intent(out)
+      !                           thlm_forcing, rtm_forcing , &         ! Intent(out)
+      !                           sclrm_forcing, edsclrm_forcing )      ! Intent(out)
 
       case ( "atex" ) ! ATEX case
 
@@ -404,7 +403,7 @@ module prescribe_forcings_module
                          total_idx_rho_lin_spline, &            ! Intent(in)
                          rho_lin_spline_vals, &                 ! Intent(in)
                          rho_lin_spline_levels, &               ! Intent(in)
-                         p_sfc, &                               ! Intent(in)
+                         p_sfc(1), &                            ! Intent(in)
                          err_info, &                            ! Intent(inout)
                          wm_zt, wm_zm, &                        ! Intent(out)
                          thlm_forcing, rtm_forcing, &           ! Intent(out)

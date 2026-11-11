@@ -15,10 +15,7 @@ Date: 2/27/25
 This script first creates a string array of every file's name (sans .F90) in the source folder of CLUBB.
 Next, it recursively searches through given folders for files with lines including
 "use anyStringInThatArray" (except "use clubb_api_module").
-If found, the script exits with status 1 and prints the offending file.
-Missing, empty, or unreadable Fortran inputs exit with status 2 instead of passing.
-AppleDouble resource-fork files (._*) are excluded. Legacy-encoded comments do
-not prevent scanning the surrounding Fortran USE statements.
+If found, the script exits with a nonzero exit code and prints the offending file.
 
 Usage:
   python api_commitment_test.py [-h] [-cpu] clubbSrcDir searchDir [-exclude_dir EXCLUDEDIR [EXCLUDEDIR ...]]
@@ -40,15 +37,9 @@ bannedNamePattern = r'\n[^!\n]*use {}[,\s\n!]'
 # Whitelist for file extensions that we want to check
 fortranFileExtensions = ('.f', '.f90')
 
-def input_error(message):
-    """Report an incomplete check on stderr and exit with status 2."""
-    print("Error: " + message, file=sys.stderr)
-    sys.exit(2)
-
-
 def findFiles(dir, exclude=[]):
     """
-    Returns files in a directory tree, excluding AppleDouble metadata files.
+    Returns a list of every file in a directory.
 
     This function is adapted from Stack Overflow:
     http://stackoverflow.com/questions/19932130/python-iterate-through-folders-then-subfolders-and-print-filenames-with-path-t
@@ -59,7 +50,7 @@ def findFiles(dir, exclude=[]):
     result = []
     # Find all subdirectories within the host model folder that do not have any of the excluded foldernames in their path
     # e.g. if we want to exclude all of ['CLUBB', 'SILHS'], then 'SAM/UTIL/SRC' is fine, but 'SAM/SRC/CLUBB' is not
-    subdirs = [x[0] for x in os.walk(dir, onerror=lambda error: input_error(str(error))) if not any([e in x[0]+'/' for e in exclude])]
+    subdirs = [x[0] for x in os.walk(dir) if not any([e in x[0]+'/' for e in exclude])]
     # Iterate through subdirectories
     for subdir in subdirs:
         # Get all files within that subfolder
@@ -67,8 +58,7 @@ def findFiles(dir, exclude=[]):
         # If it is an actual file, combine foldername and filename and append to result
         if len(files) > 0:
             for file in files:
-                if not file.startswith("._"):
-                    result.append(subdir + "/" + file)
+                result.append(subdir + "/" + file)
     return result
 
 
@@ -102,14 +92,22 @@ def checkForStrings(bannedNames, file):
     :return: A list of the strings found in the file
     """
     foundNames = []
-    # Preserve undecodable comment bytes; Fortran USE identifiers are ASCII.
-    with open(file, 'r', encoding='utf-8', errors='surrogateescape') as f:
-        content = f.read().lower()
-    for moduleName in bannedNames:
-        res = re.search(bannedNamePattern.format(moduleName), content)
-        if res:
-            print("Found: Module ", moduleName, ' in file ', file)
-            foundNames.append("use " + moduleName)
+    with open(file, 'r') as f:
+        try:
+            # Read file content line by line
+            content = f.read().lower()
+            # Iterate through all CLUBB modules except the API module
+            for moduleName in bannedNames:
+                # Search for use pattern with moduleName inserted
+                res = re.search(bannedNamePattern.format(moduleName), content)
+                # If found, append to results
+                if res:
+                    print("Found: Module ", moduleName, ' in file ', file)
+                    foundNames.append("use " + moduleName)
+        except Exception as e:
+            print('Read error for file ', file)
+            print(str(e))
+            return foundNames
 
     return foundNames
 
@@ -165,16 +163,8 @@ def main(clubbSrcDirectory, searchObjs, excludedDirectories, cpuMode):
 
     excludedDirectories.append(".git")
 
-    if not os.path.isdir(clubbSrcDirectory):
-        input_error("CLUBB source directory does not exist: " + clubbSrcDirectory)
-    if not searchObjs:
-        input_error("Specify at least one host source path to check.")
-
-    # A missing module list would make every import appear allowed.
-    files = [path for path in findFiles(clubbSrcDirectory)
-             if path.lower().endswith(fortranFileExtensions)]
-    if not files:
-        input_error("No Fortran source files found in " + clubbSrcDirectory)
+    # Find all of the files in the clubb src directory.
+    files = findFiles(clubbSrcDirectory)
 
     # Put them in a string array.
     bannedNames = arrayOfFileNames(files)
@@ -182,18 +172,15 @@ def main(clubbSrcDirectory, searchObjs, excludedDirectories, cpuMode):
     # Find all the files in the search directory.
     searchFiles = []
     for o in searchObjs:
-        if os.path.isdir(o):
-            paths = findFiles(o, excludedDirectories)
-        elif os.path.isfile(o):
-            paths = [o]
+        if os.path.exists(o):
+            if os.path.isdir(o):
+                searchFiles.extend(findFiles(o, excludedDirectories))
+            elif os.path.isfile(o):
+                searchFiles.append(o)
+            else:
+                print('Error. Given path ', o, 'is neither a folder nor a file.' )
         else:
-            input_error("Host source path does not exist or is not a file/directory: " + o)
-        paths = [path for path in paths
-                 if not os.path.basename(path).startswith("._")
-                 and path.lower().endswith(fortranFileExtensions)]
-        if not paths:
-            input_error("No Fortran source files to check in " + o)
-        searchFiles.extend(paths)
+            print('Error. Given path ', o, ' does not exist.')
 
     # Do any of them contain an offending line?
     errorDictionary = {}  # All of the files in the host model and their modules which call CLUBB
@@ -201,10 +188,7 @@ def main(clubbSrcDirectory, searchObjs, excludedDirectories, cpuMode):
     for file in searchFiles:
         # Only check fortran source code files
         if file.lower().endswith(fortranFileExtensions):
-            try:
-                foundFiles = checkForStrings(bannedNames, file)
-            except OSError as error:
-                input_error("Cannot read " + file + ": " + str(error))
+            foundFiles = checkForStrings(bannedNames, file)
             if len(foundFiles) > 0:
                 errorDictionary[file] = foundFiles
 

@@ -1,0 +1,72 @@
+{
+  "status": "Source-audited draft; not compiled or runtime validated",
+  "authority": "src/CLUBB_core/saturation.F90; all 1185 lines read",
+  "native_sha256": "9ceef5b4544a39dfa2234d9863f97b111de334cf5ab514bc24c44e5c8f35902f",
+  "routine_order": [
+    "sat_mixrat_liq_k",
+    "sat_mixrat_liq_2D",
+    "sat_vapor_press_liq",
+    "sat_vapor_press_liq_flatau",
+    "sat_vapor_press_liq_bolton",
+    "sat_vapor_press_liq_gfdl",
+    "sat_vapor_press_liq_lookup",
+    "sat_mixrat_ice_k",
+    "sat_mixrat_ice_2D",
+    "rcm_sat_adj"
+  ],
+  "native_argument_counts": {
+    "sat_mixrat_liq_k": 3,
+    "sat_mixrat_liq_2D": 7,
+    "sat_vapor_press_liq": 3,
+    "sat_vapor_press_liq_flatau": 2,
+    "sat_vapor_press_liq_bolton": 2,
+    "sat_vapor_press_liq_gfdl": 2,
+    "sat_vapor_press_liq_lookup": 1,
+    "sat_mixrat_ice_k": 3,
+    "sat_mixrat_ice_2D": 5,
+    "rcm_sat_adj": 5
+  },
+  "all_native_signature_names_and_order": true,
+  "formula_operation_trees_compared": {
+    "sat_mixrat_liq_k": 6,
+    "sat_vapor_press_liq_flatau": 2,
+    "sat_vapor_press_liq_bolton": 1,
+    "sat_vapor_press_liq_gfdl": 1,
+    "sat_vapor_press_liq_lookup": 1,
+    "sat_mixrat_ice_2D": 4,
+    "rcm_sat_adj": 3
+  },
+  "mixing_ratio_operation_trees_compared": {
+    "sat_mixrat_liq_k": 3,
+    "sat_mixrat_liq_2D": 3,
+    "sat_mixrat_ice_2D": 3
+  },
+  "shared_liquid_scalar_array_assignment_trees": true,
+  "lookup_literal_tokens_exact": 156,
+  "selector_and_public_svp_call_order": true,
+  "optional_start_index": "Native 1-based, ascending/descending/absent and empty range retained",
+  "output_memory": "Pressure memory space via array_types owner",
+  "scalar_device_apis": [
+    "sat_mixrat_liq_api",
+    "sat_mixrat_ice",
+    "sat_vapor_press_liq",
+    "rcm_sat_adj"
+  ],
+  "manual_audit": [
+    "All 10 Native routine signatures, scientific descriptions/references and source order",
+    "Liquid and ice pressure cap and both mixing-ratio/specific-humidity branches",
+    "Distinct source liquid scalar/2D specific-humidity denominators",
+    "Distinct GFDL liquid mixrat 173.15K and public SVP 203.15K floors",
+    "Flatau source factored/Horner associations, coefficient scale and minimum temperatures",
+    "All selectors and original sentinel defaults, including ice lookup sentinel",
+    "ANINT tie-away rounding, exact lookup values and 188:343 clamping",
+    "rcm_sat_adj tolerance/limit, update/exit/bracket order and Native loop-counter edge",
+    "No stats, persistent mutable state, f2k lower calls or speculative FMA fixes",
+    "Necessary scalar-device/array-fusion/table adaptations classified in INTEGRATION.md"
+  ],
+  "pending_shared_dependencies": [
+    "model_flags.hpp: saturation_bolton/gfdl/flatau/lookup and I_sat_sphum"
+  ],
+  "runtime": "No compilation, unit tests, oracle tests or whole-model runs; root owns integration",
+  "target_sha256": "fe019a81c12835ef3dd071bce4ca172fdd5d5bc452a6c8de077a81250102ecbc"
+}

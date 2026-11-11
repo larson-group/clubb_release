@@ -1,0 +1,48 @@
+{
+  "canonical_source": "src/CLUBB_core/err_info_type_module.F90",
+  "canonical_sha256": "77607c338598c80789e8a7e9bb23a3b7602f3bba67c95166762db52e2021519f",
+  "hashes": {
+    "err_info_type_module.cpp": "3c45b8ce349623fc6ca5974060b897b1dff97b79c14de8e1ca6c53a0201e905a",
+    "procedure_declarations.hpp.inc": "434638fe6afcf6e9843fec58f4665577a5609a4ba776bc0ddd233cfb2caab707",
+    "procedure_includes.hpp.inc": "abf7176198fc96357c6140aa84dba335abe81b2cf426c6b830a57627a7b296bd",
+    "f2k/procedure_manifest.py.inc": "ed1d26aefdd87dc08f05684494b66a9c82896ae599672fdee2b4bfcda050fd51"
+  },
+  "routines": [
+    {
+      "name": "init_default_err_info_api",
+      "arguments": 2,
+      "contract_and_source_order_reviewed": true
+    },
+    {
+      "name": "init_err_info_api",
+      "arguments": 6,
+      "contract_and_source_order_reviewed": true
+    },
+    {
+      "name": "set_err_info_values_api",
+      "arguments": 6,
+      "contract_and_source_order_reviewed": true
+    },
+    {
+      "name": "update_headers",
+      "arguments": 2,
+      "contract_and_source_order_reviewed": true
+    },
+    {
+      "name": "cleanup_err_info_api",
+      "arguments": 1,
+      "contract_and_source_order_reviewed": true
+    }
+  ],
+  "kernels_reviewed": 2,
+  "manual_review": [
+    "Default MPI/chunk values both1 and actual Native dummy argument order retained; required initializer allocation order/no-error fill then setter call preserved.",
+    "Native setter guard visibly repeats err_header and omits host_lon/err_code; optional MPI/chunk/lat/lon processing order and exact >90/-90,>180/-180 formulas retained.",
+    "Explicit optional View adapters preserve independent absence and caller memory-space staging. Actual driver lat/lon-only keyword call needs two nullopt integer placeholders at promotion.",
+    "Private update_headers delegates exact fixed-width I/O through an alias of PUBLIC Native setter with all optionals absent; actual state/allocation/normalization is C++. The alias neither exposes the Native private helper nor adds permanent private accessors.",
+    "Only formatted header bytes/string return to the original case from a call-local snapshot. No C++ mutable global state.",
+    "Cleanup preserves Native component release order and scalar context. Kokkos refcount release has no Native DEALLOCATE STAT status; no fabricated failure tests/warnings. Already allocated InOut initialization throws instead of silently reallocating."
+  ],
+  "review_kind": "Owner full Native/JAXread, source contract/field/order review; separate cleanup and independent reviewer tracked separately.",
+  "runtime_status": "Uncompiled and untested. No CPU/GPU/BFB claim. All lifecycle, optional bounds, errors, printer and formatting backend behavior remain pending integration."
+}

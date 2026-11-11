@@ -9,32 +9,21 @@ module T_in_K_wrapper
 
   implicit none
   private
-  public :: f2py_thlm2T_in_K
+  public :: f2py_thlm2T_in_K_1D
 
 contains
 
-  subroutine f2py_thlm2T_in_K( nz, ngrdcol, thlm, exner, rcm, & ! In
-                               T_in_K ) bind(C, name="f2py_thlm2t_in_k_") ! Out
-
-    ! Description:
-    !   Call thlm2T_in_K with complete column batches through the F2PY bridge.
+  subroutine f2py_thlm2T_in_K_1D(nz, thlm, exner, rcm, T_in_K) &
+    bind(C, name="f2py_thlm2t_in_k_1d_")
 
     use T_in_K_module, only: thlm2T_in_K_api
 
-    !--------------------------- Input Variables ---------------------------
-    integer, intent(in) :: nz ! Number of vertical levels [-]
-    integer, intent(in) :: ngrdcol ! Number of grid columns [-]
-    real(core_rknd), dimension(ngrdcol, nz), intent(in) :: thlm ! Liquid potential temperature  [K]
-    real(core_rknd), dimension(ngrdcol, nz), intent(in) :: exner ! Exner function                [-]
-    real(core_rknd), dimension(ngrdcol, nz), intent(in) :: rcm ! Liquid water mixing ratio     [kg/kg]
+    integer, intent(in) :: nz
+    real(core_rknd), dimension(nz), intent(in) :: thlm, exner, rcm
+    real(core_rknd), dimension(nz), intent(out) :: T_in_K
 
-    !--------------------------- Output Variables ---------------------------
-    real(core_rknd), dimension(ngrdcol, nz), intent(out) :: T_in_K ! Result temperature [K]
+    T_in_K = thlm2T_in_K_api(nz, thlm, exner, rcm)
 
-    !--------------------------- Begin Code ---------------------------
-
-    T_in_K = thlm2T_in_K_api(nz, ngrdcol, thlm, exner, rcm)
-
-  end subroutine f2py_thlm2T_in_K
+  end subroutine f2py_thlm2T_in_K_1D
 
 end module T_in_K_wrapper

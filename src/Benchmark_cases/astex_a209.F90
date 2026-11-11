@@ -17,14 +17,13 @@ module astex_a209
   contains
 
   !----------------------------------------------------------------------
-  subroutine astex_a209_tndcy( ngrdcol, sclr_dim, edsclr_dim, sclr_idx, & ! In
-                               gr, & ! In
-                               wm_zt, wm_zm, & ! Out
-                               thlm_forcing, rtm_forcing, & ! Out
-                               sclrm_forcing, edsclrm_forcing ) ! Out
+  subroutine astex_a209_tndcy( sclr_dim, edsclr_dim, sclr_idx, &
+                               gr, wm_zt, wm_zm,  & 
+                               thlm_forcing, rtm_forcing, &
+                               sclrm_forcing, edsclrm_forcing )
 
     ! Description:
-    !   Set theta and water tendencies and subsidence for all ASTEX KK columns.
+    !   Subroutine to set theta and water tendencies for ASTEX KK case
     ! References:
     !   http://www.euclipse.nl/wp3/ASTEX_Lagrangian/Introduction.shtml
     !----------------------------------------------------------------------
@@ -45,7 +44,6 @@ module astex_a209
 
     !--------------------- Input Variables ---------------------
     integer, intent(in) :: &
-      ngrdcol, & ! Number of columns [-]
       sclr_dim, & 
       edsclr_dim
 
@@ -55,40 +53,40 @@ module astex_a209
     type (grid), intent(in) :: gr
 
     !--------------------- Output Variables ---------------------
-    real( kind = core_rknd ), intent(out), dimension(ngrdcol,gr%nzt) ::  &
+    real( kind = core_rknd ), intent(out), dimension(gr%nzt) ::  & 
       wm_zt,         & ! w wind on the thermodynamic grid        [m/s]
       thlm_forcing,  & ! Liquid potential temperature tendency   [K/s]
       rtm_forcing      ! Total water mixing ratio tendency       [kg/kg/s]
 
-    real( kind = core_rknd ), intent(out), dimension(ngrdcol,gr%nzm) ::  &
+    real( kind = core_rknd ), intent(out), dimension(gr%nzm) ::  & 
       wm_zm            ! w wind on the momentum grid             [m/s]
 
-    real( kind = core_rknd ), intent(out), dimension(ngrdcol,gr%nzt,sclr_dim) ::  &
+    real( kind = core_rknd ), intent(out), dimension(gr%nzt,sclr_dim) ::  & 
       sclrm_forcing ! Passive scalar forcing  [units/s]
 
-    real( kind = core_rknd ), intent(out), dimension(ngrdcol,gr%nzt,edsclr_dim) ::  &
+    real( kind = core_rknd ), intent(out), dimension(gr%nzt,edsclr_dim) ::  & 
       edsclrm_forcing ! Passive scalar forcing  [units/s]
 
     !--------------------- Local Variables ---------------------
 
-    integer :: i, k ! Column and vertical indices
+    integer :: i
 
     !--------------------- Begin Code ---------------------
 
     ! Compute large-scale subsidence
 
-    do k = 1, gr%nzt
-      do i = 1, ngrdcol
-        wm_zt(i,k) = - 5.e-6_core_rknd * gr%zt(i,k)
-      end do
+    do i=1,gr%nzt
+
+      wm_zt(i) = - 5.e-6_core_rknd * gr%zt(1,i)
+
     end do
 
     ! Interpolate to momentum levels
-    wm_zm = zt2zm_api( gr%nzm, gr%nzt, ngrdcol, gr, wm_zt ) ! In
+    wm_zm = zt2zm_api( gr, wm_zt )
 
     ! Boundary conditions on zm
-    wm_zm(:,1) = 0.0_core_rknd        ! At surface
-    wm_zm(:,gr%nzm) = 0.0_core_rknd  ! Model top
+    wm_zm(1) = 0.0_core_rknd        ! At surface
+    wm_zm(gr%nzm) = 0.0_core_rknd  ! Model top
 
     ! Radiative theta-l tendency
 
@@ -99,11 +97,11 @@ module astex_a209
     rtm_forcing = 0.0_core_rknd
 
     ! Test scalars with thetal and rt if desired
-    if ( sclr_idx%iisclr_thl > 0 ) sclrm_forcing(:,:,sclr_idx%iisclr_thl) = thlm_forcing
-    if ( sclr_idx%iisclr_rt  > 0 ) sclrm_forcing(:,:,sclr_idx%iisclr_rt)  = rtm_forcing
+    if ( sclr_idx%iisclr_thl > 0 ) sclrm_forcing(:,sclr_idx%iisclr_thl) = thlm_forcing
+    if ( sclr_idx%iisclr_rt  > 0 ) sclrm_forcing(:,sclr_idx%iisclr_rt)  = rtm_forcing
 
-    if ( sclr_idx%iiedsclr_thl > 0 ) edsclrm_forcing(:,:,sclr_idx%iiedsclr_thl) = thlm_forcing
-    if ( sclr_idx%iiedsclr_rt  > 0 ) edsclrm_forcing(:,:,sclr_idx%iiedsclr_rt)  = rtm_forcing
+    if ( sclr_idx%iiedsclr_thl > 0 ) edsclrm_forcing(:,sclr_idx%iiedsclr_thl) = thlm_forcing
+    if ( sclr_idx%iiedsclr_rt  > 0 ) edsclrm_forcing(:,sclr_idx%iiedsclr_rt)  = rtm_forcing
 
     return
   end subroutine astex_a209_tndcy

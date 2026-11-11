@@ -1,0 +1,50 @@
+{
+  "canonical_source": "src/CLUBB_core/turbulent_adv_pdf.F90",
+  "canonical_sha256": "140f97fc7cbda60cc6faffcfd8f2ce8da1510c60fd57c26f5170b93aa0d9ada5",
+  "cpp_sha256": "130cf3eeac29686e8422b45e7f263a312039f7bdf20ef8b0e626d341d2f92195",
+  "hpp_sha256": "18a12a73ccc4dc14354dbc9af71f29420f159e2b20433f173f6958cd787e45df",
+  "routines": [
+    {
+      "name": "xpyp_term_ta_pdf_lhs",
+      "arguments": 12,
+      "ordered_indexed_assignment_trees": 11,
+      "ordered_if_predicates": 2,
+      "independent_kernels": 4,
+      "header_contracts_and_generic_call_order": "exact"
+    },
+    {
+      "name": "xpyp_term_ta_pdf_lhs_godunov",
+      "arguments": 8,
+      "ordered_indexed_assignment_trees": 5,
+      "ordered_if_predicates": 0,
+      "independent_kernels": 3,
+      "header_contracts_and_generic_call_order": "exact"
+    },
+    {
+      "name": "xpyp_term_ta_pdf_rhs",
+      "arguments": 12,
+      "ordered_indexed_assignment_trees": 5,
+      "ordered_if_predicates": 2,
+      "independent_kernels": 4,
+      "header_contracts_and_generic_call_order": "exact"
+    },
+    {
+      "name": "xpyp_term_ta_pdf_rhs_godunov",
+      "arguments": 9,
+      "ordered_indexed_assignment_trees": 3,
+      "ordered_if_predicates": 0,
+      "independent_kernels": 3,
+      "header_contracts_and_generic_call_order": "exact"
+    }
+  ],
+  "separate_manual_review": [
+    "Full four Native routines and JAX scope read; Native scientific descriptions and executable comments retained in place except documented stale/incorrect comments.",
+    "Native band-first operator output, super/main/sub categories and all two endpoints checked; no transpose.",
+    "Grid weight categories1:2 are upper/lower slots, not physical offsets. View conversion is the only index-base change.",
+    "Flattened interior k=2+cell/ngrdcol,i=1+cell%ngrdcol covers Native2:nzm-1 exactly for either grid direction. Boundary flattening covers all three bands at both storage endpoints.",
+    "Upwind >zero branch, zero else, Godunov min/max ordering and thermodynamic sign profile are unchanged.",
+    "Concrete execution-space Views pair with execution-space grid components; generic adapter uses existing array owner and retains caller allocations. No UDT/device bridge/host IO capture.",
+    "Separate cleanup: public/definition continuation groups, argument units/shapes, scientific descriptions, Native block comments/dividers, case-sensitive calls, semicolon placement,100columns and whitespace."
+  ],
+  "numerical_evidence": "Pending: no compilation, tests, model execution or BFB claim. No deliberate BFB-specific arithmetic adaptation."
+}

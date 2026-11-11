@@ -1,54 +1,45 @@
-// Run standard and reverse-grid G-unit checks with a GNU debug build.
-// From the repository root, load gcc/netcdf-fortran, run python compile.py -debug,
-// then python human_reviewed_tests/run_G_unit_tests.py (add -rev_direction_grid_test for reversal).
 // Record independent failures while allowing manual aborts to stop the pipeline.
 pipeline {
-  agent any
+  agent none
   options { disableConcurrentBuilds() }
 
   stages {
-    // Parallel checks use separate workspaces and checkouts on the selected worker.
+    // Each branch owns its executor, checkout, build, and output files.
     stage('Independent workflows') {
       parallel {
         stage('Run standard G-unit tests') {
+          agent any
           steps {
-            ws("${env.WORKSPACE}@run_standard_g_unit_tests") {
-              checkout scm
+            sh '''
+              source /etc/profile.d/larson-group.sh
+              module load gcc netcdf-fortran
+              python compile.py -debug
+            '''
 
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
               sh '''
                 source /etc/profile.d/larson-group.sh
                 module load gcc netcdf-fortran
-                python compile.py -debug
+                python human_reviewed_tests/run_G_unit_tests.py
               '''
-
-              catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
-                sh '''
-                  source /etc/profile.d/larson-group.sh
-                  module load gcc netcdf-fortran
-                  python human_reviewed_tests/run_G_unit_tests.py
-                '''
-              }
             }
           }
         }
         stage('Run reverse-grid G-unit test') {
+          agent any
           steps {
-            ws("${env.WORKSPACE}@run_reverse_grid_g_unit_test") {
-              checkout scm
+            sh '''
+              source /etc/profile.d/larson-group.sh
+              module load gcc netcdf-fortran
+              python compile.py -debug
+            '''
 
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
               sh '''
                 source /etc/profile.d/larson-group.sh
                 module load gcc netcdf-fortran
-                python compile.py -debug
+                python human_reviewed_tests/run_G_unit_tests.py -rev_direction_grid_test
               '''
-
-              catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
-                sh '''
-                  source /etc/profile.d/larson-group.sh
-                  module load gcc netcdf-fortran
-                  python human_reviewed_tests/run_G_unit_tests.py -rev_direction_grid_test
-                '''
-              }
             }
           }
         }

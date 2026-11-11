@@ -1,0 +1,21 @@
+{
+  "Native_source": "src/readiopdata_module.F90",
+  "Native_full_read_lines": 298,
+  "Native_sha256": "5f98bea620b1bf415158400d1c768c853f805e8c75abc6409f9ed9ee277154f6",
+  "routines_in_source_order": [
+    "readiopdata_dims",
+    "readiopdata_snd",
+    "readiopdata_sfc",
+    "readiopdata_frc",
+    "task_abort"
+  ],
+  "state": "Accepted earlyreadiopdata_state unchanged; no Native module/globalcopies.",
+  "branches": [
+    "dims loadmetadata/firstlatlon/flag/release",
+    "sndrequiresdims/corefloatconstants/onlyfirsttimestep/pressureunits/corethermoexner/saturation/rcm/thetalvirtual/inversehydrostatic/flag/release",
+    "sfc requiresdims+snd;corecall;fiveoptionalallocatablespresence/order;timesinteger->core;flag/release",
+    "frc requiresdims+snd;oncecoreload/localnlevels/sourcefirsttimecopy/flag;preserveundefinednessnotes",
+    "external task_abort -> permanentC++fatalexception"
+  ],
+  "runtime_status": "Fullsourceoutlinebeforeimplementation; Nativefrcundefinedboundariesnotrepaired."
+}

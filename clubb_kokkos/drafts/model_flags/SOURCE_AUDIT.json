@@ -1,0 +1,35 @@
+{
+  "scope": "All three Native behavior APIs plus same-named stream adapter justified by actual C++ case-owned output sinks. Existing mirror type reused.",
+  "canonical_sha256": "bb122b091c1b82f2a27f52014f25b7ba20b07da0337ebc390a0e2aca00ade0d5",
+  "hashes": {
+    "model_flags.cpp": "0c2823280bbe11fd4443b51c5cfb3e04ef42b21ffe26d8d73a707f3ace360e24",
+    "procedure_declarations.hpp.inc": "7478bd821ae70a62141a174ffe6b85d965df82afd4d1593b8b3cdf0bc541123f",
+    "procedure_includes.hpp.inc": "1d1f7d9007745ae3c742274354bfa534052f2f4b52b4c9213f8007690e2d49c9",
+    "f2k_manifest.py.inc": "73a0332ebb63270eb09c617528fcb00cc865baa5b593ac97f44a8e2b3d9bd3f7",
+    "generator_constants.py.inc": "1aab74d92c081620c1f0e72fb5bdf3303224e4b0d11cb70b18d1a59862f4d505"
+  },
+  "reviews": [
+    {
+      "name": "set_default_clubb_config_flags_api",
+      "arguments": 66,
+      "ordered_assignments": 66
+    },
+    {
+      "name": "initialize_clubb_config_flags_type_api",
+      "arguments": 67,
+      "ordered_assignments": 66
+    },
+    {
+      "name": "print_clubb_config_flags_api",
+      "required_arguments": 2,
+      "integer_unit_public_Native_IO_boundary": true,
+      "stream_adapter_ordered_row_field_pairs": 64,
+      "Native_omitted_rows_and_wind_swap_preserved": true
+    }
+  ],
+  "ownership": "Native modules have no mutable module instances. All scalar outputs/configuration fields belong to existing caller/ClubbDriver. Immutable source constants remain generated in their original owner.",
+  "errors": "Two exact Native selector fatal checks precede all field assignments; unsupported invalid IntentOut state is not initialized artificially.",
+  "formatting_boundary": "int-iunit overload keeps exact Native I/O through public bridge. ostream overload preserves64row/value mappings; compiler-specific list-directed spacing unverified. No C++ logical-unit registry.",
+  "review_kind": "Owner source review; separate cleanup/independent review tracked separately.",
+  "runtime_status": "Draft only. No shared edits/builds/tests/CPU/GPU/BFB claim. Missing two selected constants/public I/O bridge are explicit integration dependencies."
+}

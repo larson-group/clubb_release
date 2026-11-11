@@ -417,7 +417,7 @@ module simple_rad_module
 !   None
 !-------------------------------------------------------------------------------
 
-    use interpolation, only: zlinterp ! Procedure(s)
+    use interpolation, only: zlinterp_fnc ! Procedure(s)
 
     use grid_class, only: grid
 
@@ -441,12 +441,8 @@ module simple_rad_module
 
     ! Local Variables
     real( kind = core_rknd ), dimension(lba_nzrad) :: radhtz
-    ! Shared forcing data copied once to the interpolation batch.
-    real( kind = core_rknd ), dimension(ngrdcol,lba_nzrad) :: &
-      zrad_columns, & ! Forcing heights repeated over model columns [m]
-      radht_columns ! Shared heating profile repeated over model columns [K/s]
     real( kind = core_rknd ) :: a, time
-    integer :: i1, i2
+    integer :: i1, i2, i
 
     time = real( time_current - time_initial, kind = core_rknd )
 
@@ -485,11 +481,9 @@ module simple_rad_module
     end if ! time <= times(1)
 
     ! Radiative theta-l tendency
-    zrad_columns = spread( lba_zrad, 1, ngrdcol )
-    radht_columns = spread( radhtz, 1, ngrdcol )
-    radht = zlinterp( ngrdcol, gr%nzt, & ! In
-                      lba_nzrad, gr%zt, & ! In
-                      zrad_columns, radht_columns ) ! In
+    do i = 1, ngrdcol
+      radht(i,:) = zlinterp_fnc( gr%nzt, lba_nzrad, gr%zt(i,:), lba_zrad, radhtz )
+    end do
 
     return
   end subroutine simple_rad_lba

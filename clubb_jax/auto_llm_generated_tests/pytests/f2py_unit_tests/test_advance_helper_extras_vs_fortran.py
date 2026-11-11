@@ -85,11 +85,11 @@ def calc_Ri_zm(bv_freq_sqd, shear, lim_bv, lim_shear):
 
 
 def vertical_avg(rho_ds, field, dz):
-    return _vertical_avg(1, len(rho_ds), jnp.asarray(rho_ds)[None, :], jnp.asarray(field)[None, :], jnp.asarray(dz)[None, :])[0]
+    return _vertical_avg(len(np.asarray(rho_ds)), rho_ds, field, dz)
 
 
 def vertical_integral(rho_ds, field, dz):
-    return _vertical_integral(1, len(rho_ds), jnp.asarray(rho_ds)[None, :], jnp.asarray(field)[None, :], jnp.asarray(dz)[None, :])[0]
+    return _vertical_integral(len(np.asarray(rho_ds)), rho_ds, field, dz)
 
 
 def calc_brunt_vaisala_freq_sqd(
@@ -304,15 +304,15 @@ def test_stability_and_Ri_f2py():
 def test_vertical_avg_integral_f2py():
     """Density-weighted vertical_avg = sum(field·rho·dz)/sum(rho·dz) and vertical_integral = sum(field·rho·dz)
     (advance_helper_module.F90) vs the Fortran oracle — pure column reductions, previously untested."""
-    from clubb_python import clubb_api
+    import clubb_f2py
     rng = np.random.default_rng(8)
     aworst = iworst = 0.0
     for _ in range(40):
         nz = 12
         rho = rng.uniform(0.3, 1.2, nz); fld = rng.uniform(-5.0, 5.0, nz); dz = rng.uniform(20.0, 80.0, nz)
         aworst = max(aworst, max_abs_diff("vertical_avg", float(vertical_avg(rho, fld, dz)),
-                                           clubb_api.vertical_avg(1, nz, rho[None, :], fld[None, :], dz[None, :]).item()))
-        vi_j = float(vertical_integral(rho, fld, dz)); vi_f = clubb_api.vertical_integral(1, nz, rho[None, :], fld[None, :], dz[None, :]).item()
+                                           float(clubb_f2py.f2py_vertical_avg(rho, fld, dz))))
+        vi_j = float(vertical_integral(rho, fld, dz)); vi_f = float(clubb_f2py.f2py_vertical_integral(rho, fld, dz))
         iworst = max(iworst, max_rel_diff("vertical_integral", vi_j, vi_f, 1.0))
     assert aworst < 1e-12, f"vertical_avg f2py mismatch {aworst:.2e}"
     assert iworst < 1e-12, f"vertical_integral f2py rel mismatch {iworst:.2e}"

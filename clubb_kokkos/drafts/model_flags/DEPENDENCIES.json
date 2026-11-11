@@ -1,0 +1,17 @@
+{
+  "schema_owner": "Existing generated model_flags.hpp::clubb_config_flags_type (66fields); no duplicate type.",
+  "missing_selected_constants": [
+    "ppm_remap=2",
+    "no_grid_adaptation=0"
+  ],
+  "constant_owner": "Extend the existing Native-derived selected-constant loop; fragment lists names, not an alternate catalog.",
+  "new_IO_only_bridge": "Public Native print_clubb_config_flags_api(iunit,clubb_config_flags),2required inputs; staged existing-manifest entry.",
+  "case_state_owner": "Existing ClubbDriver scalar flags and clubb_config_flags. No added owner/class/global cache.",
+  "existing_Native_namelist_boundary": "generate_driver_io.py already owns configurable_clubb_flags_nl; leave explicit Native syntax/IO there.",
+  "generator_requirement": "Preserve the complete generated selected-constant+type region, starting before the constants loop, using the existing shared marker design. Permanent declarations/includes stay outside.",
+  "caller_replacements": [
+    "Replace driver default/initializer f2k prefixes with C++ routines without other argument changes.",
+    "Replace current manual66-row driver dump with Native-order ostream overload for std::cout and current case_log when appropriate. Native prints64rows and swaps um/vm values; preserve source behavior, no unasked Native fix."
+  ],
+  "runtime_status": "Draft only, no shared edits/build/test/runtime evidence."
+}

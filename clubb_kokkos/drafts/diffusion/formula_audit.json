@@ -1,0 +1,24 @@
+{
+  "explicit_assignment_operation_trees": {
+    "diffusion_zt_lhs": 30,
+    "diffusion_zm_lhs": 29
+  },
+  "total": 59,
+  "whole_array_operation_trees": {
+    "diffusion_zt_lhs": 0,
+    "diffusion_zm_lhs": 0
+  },
+  "whole_array_total": 0,
+  "ordered_if_predicates": {
+    "diffusion_zt_lhs": 4,
+    "diffusion_zm_lhs": 3
+  },
+  "total_if_predicates": 7,
+  "manual_minmax_or_storage_cases": {
+    "diffusion_zt_lhs": 0,
+    "diffusion_zm_lhs": 0
+  },
+  "native_sha256": "eb60047bb545ea86e181ba992e1458a03b9b3fe7427529e032e736fd34bae3d8",
+  "target_sha256": "9bfbf4fb8f9fb2b363c5f8dfbb6d2cd42babffc0169f2bdb5a37fbab957e2552",
+  "scope": "Source operation structure only; no compilation or numeric execution"
+}

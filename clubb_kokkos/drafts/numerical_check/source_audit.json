@@ -1,0 +1,112 @@
+{
+  "status": "Complete supported source draft; uncompiled and not runtime validated",
+  "source": "src/CLUBB_core/numerical_check.F90; all1889lines read",
+  "jax_scope": "All466lines read; full Native checks restored, not JAX reduced settings/schema",
+  "routine_order": [
+    "length_check",
+    "pdf_closure_check",
+    "parameterization_check",
+    "sfc_varnce_check",
+    "rad_check",
+    "invalid_model_arrays",
+    "check_negative",
+    "check_nan_1d",
+    "check_nan_2d",
+    "check_nan_sclr",
+    "calculate_spurious_source",
+    "check_clubb_settings_api"
+  ],
+  "argument_counts": {
+    "length_check": 5,
+    "pdf_closure_check": 33,
+    "parameterization_check": 53,
+    "sfc_varnce_check": 11,
+    "rad_check": 12,
+    "invalid_model_arrays": 24,
+    "check_negative": 4,
+    "check_nan_1d": 4,
+    "check_nan_2d": 4,
+    "check_nan_sclr": 4,
+    "calculate_spurious_source": 6,
+    "check_clubb_settings_api": 8
+  },
+  "new_procedure_count": 8,
+  "live_definition_byte_equality": {
+    "parameterization_check": "d3894b57caa5277df547d2cc980b195672e4744877b26464b374f257267ff3e5",
+    "check_negative": "6062c85d50e1a50b5e15c5d7a6b6a2d95a1bd4fa133e480e40b3633e3549f62a",
+    "check_nan_1d": "5ee2f9dd61818442c4c3de941f03ecb58de89fdf73eecd3b2378c345af49056b",
+    "check_nan_2d": "9fae30224426664e5fc03ad9df9ecd097ed66996a698d3b6566651dcb7fe785f"
+  },
+  "live_public_declaration_byte_equal": true,
+  "new_ordered_call_counts": {
+    "length_check": 3,
+    "pdf_closure_check": 71,
+    "sfc_varnce_check": 9,
+    "rad_check": 9,
+    "invalid_model_arrays": 0,
+    "check_nan_sclr": 0,
+    "calculate_spurious_source": 0,
+    "check_clubb_settings_api": 2
+  },
+  "new_calls_checked": 94,
+  "new_arguments_checked": 371,
+  "stats_gated_fields": [
+    "wp4",
+    "wprtp2",
+    "wpthlp2",
+    "rcp2",
+    "wprtpthlp"
+  ],
+  "new_complete_diagnostic_payload_counts": {
+    "length_check": 0,
+    "pdf_closure_check": 0,
+    "sfc_varnce_check": 0,
+    "rad_check": 0,
+    "invalid_model_arrays": 17,
+    "check_nan_sclr": 2,
+    "calculate_spurious_source": 0,
+    "check_clubb_settings_api": 163
+  },
+  "diagnostic_payload_values": 238,
+  "hydrometeor_name_width10_storage_and_trim_manually_checked": true,
+  "settings_host_branch_predicates": 52,
+  "settings_device_ANY_relations": 11,
+  "ordered_model_nonfinite_probes": 18,
+  "device_kernel_bodies": 17,
+  "source_fatal_assignment_and_return_counts_match": true,
+  "ordered_new_call_write_fatal_return_branch_events": {
+    "length_check": 4,
+    "pdf_closure_check": 72,
+    "sfc_varnce_check": 10,
+    "rad_check": 10,
+    "invalid_model_arrays": 19,
+    "check_nan_sclr": 4,
+    "calculate_spurious_source": 1,
+    "check_clubb_settings_api": 217
+  },
+  "manual_review": [
+    "All8new Native bodies reread end-to-end including diagnostics, complete comments and private generic dispatch",
+    "PDF first-column fields and typo wpsclrtlp retained; five exact stats gates",
+    "All source GPU warnings/ERRORSTOP and debug0 checks retained",
+    "Both-false relaxed-clipping source comments stay nonfatal; tau10 warnings keep >one OR <one",
+    "Eight host implementation checks accumulate general fatal flags without early return",
+    "NaN-before-negative/beginning-of-step/cold-reset behavior lives in unchanged definitions",
+    "Concrete source branches and all Native argument groups retained, no omitted option"
+  ],
+  "adaptations": [
+    "Execution-space const LayoutStride profile Views preserve per-column strided callers",
+    "Required scalar surface API plus actual HostSpace vector adaptation through existing array owner",
+    "Private finite ANY reduction/dump formatter lower intrinsics and list-directed I/O only",
+    "calculate_spurious_source header placement enables native scalar device calls",
+    "Six source sponge globals read once through existing driver_environment metadata owner",
+    "GPU ERRORSTOP becomes host runtime_error, diagnostics use full-precision C++ streams"
+  ],
+  "runtime": "No builds/tests/numerical execution; CPU BFB remains root integration gate",
+  "sha256": {
+    "numerical_check.cpp": "4a38744df59dd1923c10a5738a64f04b42bb110dc0d8af07cecc4ddc74b6d2d8",
+    "numerical_check.hpp": "2ef957a5d9bb17c4b890f811fa8e2baab275017a106c8b96ded1171c35bd64a7",
+    "f2k_dependencies.hpp": "2fdf8334b215144c5f67f52e2f24d4e3c421070e6f2ef0e760dae7e55d3b764c"
+  },
+  "native_sha256": "c15625bf76e3d97f6c4437dd25544da18aa9aca253df7a4de372f11814026dc7",
+  "jax_sha256": "a517f79260d50c96c50510364dc9edc7976acd5e0c221f84c37e614d09d45700"
+}

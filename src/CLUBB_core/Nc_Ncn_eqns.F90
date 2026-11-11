@@ -188,7 +188,7 @@ module Nc_Ncn_eqns
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
+    ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
       mu_chi_1,         & ! Mean of chi (old s) (1st PDF component)      [kg/kg]
       mu_chi_2,         & ! Mean of chi (old s) (2nd PDF component)      [kg/kg]
@@ -206,7 +206,7 @@ module Nc_Ncn_eqns
       cloud_frac_1,     & ! Cloud fraction (1st PDF component)               [-]
       cloud_frac_2        ! Cloud fraction (2nd PDF component)               [-]
 
-    !--------------------------- Output Variables ---------------------------
+    ! Return Variable
     real( kind = core_rknd ) :: &
       Nc_in_cloud    ! Mean cloud droplet concentration (in-cloud)      [num/kg]
 
@@ -286,7 +286,7 @@ module Nc_Ncn_eqns
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
+    ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
       mu_chi_1,    & ! Mean of chi (old s) (1st PDF component)           [kg/kg]
       mu_chi_2,    & ! Mean of chi (old s) (2nd PDF component)           [kg/kg]
@@ -301,7 +301,7 @@ module Nc_Ncn_eqns
       const_Ncnp2_on_Ncnm2, & ! Prescribed ratio of <Ncn'^2> to <Ncn>^2      [-]
       const_corr_chi_Ncn      ! Prescribed correlation of chi and Ncn        [-]
 
-    !--------------------------- Output Variables ---------------------------
+    ! Return Variable
     real( kind = core_rknd ) :: &
       Ncnm    ! Mean simplified cloud nuclei concentration (overall)    [num/kg]
 
@@ -437,7 +437,7 @@ module Nc_Ncn_eqns
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
+    ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
       mu_chi_1,         & ! Mean of chi (old s) (1st PDF component)      [kg/kg]
       mu_chi_2,         & ! Mean of chi (old s) (2nd PDF component)      [kg/kg]
@@ -453,7 +453,7 @@ module Nc_Ncn_eqns
       corr_chi_Ncn_2_n, & ! Correlation of chi and ln Ncn (2nd PDF comp.)    [-]
       mixt_frac           ! Mixture fraction                                 [-]
 
-    !--------------------------- Output Variables ---------------------------
+    ! Return Variable
     real( kind = core_rknd ) :: &
       Ncm    ! Mean cloud droplet concentration (overall)    [num/kg] 
 
@@ -653,7 +653,7 @@ module Nc_Ncn_eqns
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
+    ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
       mu_chi_1,    & ! Mean of chi (old s) (1st PDF component)           [kg/kg]
       mu_chi_2,    & ! Mean of chi (old s) (2nd PDF component)           [kg/kg]
@@ -667,7 +667,7 @@ module Nc_Ncn_eqns
       const_corr_chi_Ncn,   & ! Prescribed correlation of chi and Ncn        [-]
       Ncnm_val_denom_0        ! Ncnm value -- denominator in eqn. is 0  [num/kg]
 
-    !--------------------------- Output Variables ---------------------------
+    ! Return Variable
     real( kind = core_rknd ) :: &
       Ncnm    ! Mean simplified cloud nuclei concentration (overall)    [num/kg]
 
@@ -782,7 +782,7 @@ module Nc_Ncn_eqns
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
+    ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
       mu_chi_i,         & ! Mean of chi (old s) (ith PDF component)      [kg/kg]
       mu_Ncn_i,         & ! Mean of Ncn (ith PDF component)             [num/kg]
@@ -791,7 +791,7 @@ module Nc_Ncn_eqns
       sigma_Ncn_i_n,    & ! Standard deviation of ln Ncn (ith PDF component) [-]
       corr_chi_Ncn_i_n    ! Correlation of chi and ln Ncn (ith PDF comp.)    [-]
 
-    !--------------------------- Output Variables ---------------------------
+    ! Return Variable
     real( kind = core_rknd ) :: &
       bivar_NL_chi_Ncn_mean
 
@@ -903,7 +903,7 @@ module Nc_Ncn_eqns
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
+    ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
       mu_chi_i,    & ! Mean of chi (old s) (ith PDF component)           [kg/kg]
       sigma_chi_i    ! Standard deviation of chi (ith PDF component)     [kg/kg]
@@ -912,7 +912,7 @@ module Nc_Ncn_eqns
       const_Ncnp2_on_Ncnm2, & ! Prescribed ratio of <Ncn'^2> to <Ncn>^2      [-]
       const_corr_chi_Ncn      ! Prescribed correlation of chi and Ncn        [-]
 
-    !--------------------------- Output Variables ---------------------------
+    ! Return Variable
     real( kind = core_rknd ) :: &
       bivar_Ncnm_eqn_comp
 

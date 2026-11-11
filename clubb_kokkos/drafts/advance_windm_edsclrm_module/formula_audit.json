@@ -1,0 +1,37 @@
+{
+  "explicit_assignment_operation_trees": {
+    "advance_windm_edsclrm": 58,
+    "windm_edsclrm_implicit_stats": 21,
+    "compute_uv_tndcy": 17,
+    "windm_edsclrm_lhs": 7,
+    "windm_edsclrm_rhs": 12
+  },
+  "total": 115,
+  "whole_array_operation_trees": {
+    "advance_windm_edsclrm": 2,
+    "windm_edsclrm_implicit_stats": 3,
+    "compute_uv_tndcy": 0,
+    "windm_edsclrm_lhs": 0,
+    "windm_edsclrm_rhs": 2
+  },
+  "whole_array_total": 7,
+  "ordered_if_predicates": {
+    "advance_windm_edsclrm": 45,
+    "windm_edsclrm_implicit_stats": 4,
+    "compute_uv_tndcy": 2,
+    "windm_edsclrm_lhs": 2,
+    "windm_edsclrm_rhs": 5
+  },
+  "total_if_predicates": 58,
+  "manual_minmax_or_storage_cases": {
+    "advance_windm_edsclrm": 0,
+    "windm_edsclrm_solve": "Storage/solver API boundary audited separately",
+    "windm_edsclrm_implicit_stats": 0,
+    "compute_uv_tndcy": 0,
+    "windm_edsclrm_lhs": 0,
+    "windm_edsclrm_rhs": 0
+  },
+  "native_sha256": "7fdcf962c3ac68ecc5c0385d8e999cf59bb3e5ec4a282f12169dc60a46113b06",
+  "target_sha256": "4230d735fdb96636c8310ff17268673ba878b38ba139d43c7f8685a91a9b7dd4",
+  "scope": "Source operation structure only; no compilation or numeric execution"
+}

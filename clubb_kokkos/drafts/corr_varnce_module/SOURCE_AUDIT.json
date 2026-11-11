@@ -1,0 +1,100 @@
+{
+  "canonical_source": "src/CLUBB_core/corr_varnce_module.F90",
+  "canonical_sha256": "e60567948f930fd0cb010f3c5cf4ed17995759322fc8a828bec7aac95d6618db",
+  "hashes": {
+    "corr_varnce_module.cpp": "1131ceffa948a3e415717428cb8bb875470fa52a0deed77d185c4a80129e3f8b",
+    "parameter_types.hpp.inc": "f4545a60f2c20c7eabafa09bf81ba695e12834b94a94d53d06c83e0c05937475",
+    "default_tables.hpp.inc": "90ebc373b703b2635c30d4fea782c899ee9fec74e945a9071613f48833e6bc5e",
+    "procedure_declarations.hpp.inc": "46741ab0637120cc8c77442e4c40df7128c6baacff8002d610422950ee84a98b",
+    "f2k_dependencies.hpp": "4188638f0656c78ae098966c1f0393d5ff22b74861cd1ad6533ad4b69363080d"
+  },
+  "routines": [
+    {
+      "name": "def_corr_idx",
+      "arguments": 2,
+      "ordered_assignment_trees": 13,
+      "ordered_native_if_predicates": 12,
+      "ordered_string_cases": 0
+    },
+    {
+      "name": "set_corr_arrays_to_default",
+      "arguments": 4,
+      "ordered_assignment_trees": 10,
+      "ordered_native_if_predicates": 1,
+      "ordered_string_cases": 0
+    },
+    {
+      "name": "get_corr_var_index",
+      "arguments": 2,
+      "ordered_assignment_trees": 13,
+      "ordered_native_if_predicates": 0,
+      "ordered_string_cases": 12
+    },
+    {
+      "name": "init_pdf_hydromet_arrays_api",
+      "arguments": 16,
+      "ordered_assignment_trees": 74,
+      "ordered_native_if_predicates": 27,
+      "ordered_string_cases": 0
+    },
+    {
+      "name": "setup_corr_varnce_array_api",
+      "arguments": 7,
+      "ordered_assignment_trees": 4,
+      "ordered_native_if_predicates": 5,
+      "ordered_string_cases": 0
+    },
+    {
+      "name": "assert_corr_symmetric",
+      "arguments": 3,
+      "ordered_assignment_trees": "manual error/formatting review below",
+      "ordered_native_if_predicates": 2,
+      "ordered_string_cases": 0
+    },
+    {
+      "name": "print_corr_matrix",
+      "arguments": 2,
+      "ordered_assignment_trees": "manual error/formatting review below",
+      "ordered_native_if_predicates": 0,
+      "ordered_string_cases": 0
+    }
+  ],
+  "tables": [
+    {
+      "name": "corr_array_n_cloud_def",
+      "core_kind_literals_in_exact_Fortran_flat_order": 144
+    },
+    {
+      "name": "corr_array_n_below_def",
+      "core_kind_literals_in_exact_Fortran_flat_order": 144
+    }
+  ],
+  "scalar_parameter_types": [
+    {
+      "name": "hmp2_ip_on_hmm2_ip_ratios_type",
+      "ordered_native_core_kind_fields_and_defaults": 8
+    },
+    {
+      "name": "hmp2_ip_on_hmm2_ip_slope_type",
+      "ordered_native_core_kind_fields_and_defaults": 8
+    },
+    {
+      "name": "hmp2_ip_on_hmm2_ip_intrcpt_type",
+      "ordered_native_core_kind_fields_and_defaults": 8
+    }
+  ],
+  "ordered_public_lower_calls": 3,
+  "metadata_owner": "Exact existing generated26-field hm_metadata_type; no duplicate;INTENT OUT reset and five local host mirrors restore caller-owned View components.",
+  "manual_review": [
+    "Full950line Native and852line JAX reads precede outline; no JAX-only compatibility metadata/helpers or reduced diagnostic interfaces imported.",
+    "Root-approved immutable default tables retain all288 core-kind values and order; no mutable/thread_local cache/global allocation. External mutation is not a new supported C++API.",
+    "Initialization retains all species index/variance/name/padding/flag/tolerance assignment order, optional slopes/intercepts and sequential PDF counts; valid Native species indices are unique and cover hydromet_dim.",
+    "Native host scalar metadata work has no GPU captures/launches/bridges; persistent fields remain Kokkos Views. Generated owner and converter untouched.",
+    "Public setup retains both-present override semantics, exact cloud/below mirroring order and warning predicates/messages.",
+    "Fatal check order/header array vs global choice/all-column status/first return/full matrix payload retained. List-directed numeric text uses local max_digits10 stream; exact compiler-dependent decimal formatting is not claimed.",
+    "Fixed-format print keeps transpose orientation,F5.2,LEN10,stride6,LEN72 and stdout; exact decimal/NaN/infinity formatting remains unverified.",
+    "Separate final cleanup reviews public contracts/optionals, Native argument groups, comments/units, declared type owner, literal kinds,100columns/whitespace and no target-only scientific helper."
+  ],
+  "remaining_lower": "One missing required public host bridge: mirror_lower_triangular_matrix(int nvars, rank2 real matrix InOut). Existing Native debug query remains; no new constant needed.",
+  "runtime_status": "Uncompiled/untested. No unit/model execution, CPU/GPU equality or BFB claim; no speculative arithmetic workaround."
+}

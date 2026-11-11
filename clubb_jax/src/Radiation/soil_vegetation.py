@@ -100,15 +100,10 @@ def advance_soil_veg(
         jnp.exp(jnp.pi / 4.0) * rs * cs * jnp.sqrt(ks * 3600.0 * 24.0 * 365.0)
     )  # Known magic number
 
-    def accumulate_stats(stats):
-        """Collect this diagnostic block only on sampled timesteps."""
+    if stats.l_sample:
         stats = stats.update("veg_T_in_K", veg_T_in_K)
         stats = stats.update("sfc_soil_T_in_K", sfc_soil_T_in_K)
         stats = stats.update("deep_soil_T_in_K", deep_soil_T_in_K)
-
-        return stats
-
-    stats = stats.sampled(accumulate_stats)
 
     Frad_LW_up_sfc = stefan_boltzmann * veg_T_in_K ** 4  # LW upwelling flux [W/m2]
     # Turbulent Flux of equivalent potential temperature   [K]
@@ -143,15 +138,10 @@ def advance_soil_veg(
     # Update deep soil temp
     deep_soil_T_in_K = deep_soil_T_in_K + dt * c3 * soil_heat_flux
 
-    def accumulate_stats(stats):
-        """Collect this diagnostic block only on sampled timesteps."""
+    if stats.l_sample:
         # The source makes one scalar update per column. JaxStats accepts the
         # equivalent all-column surface vector in one call.
         stats = stats.update("soil_heat_flux", soil_heat_flux)
-
-        return stats
-
-    stats = stats.sampled(accumulate_stats)
 
     return stats, deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K
 

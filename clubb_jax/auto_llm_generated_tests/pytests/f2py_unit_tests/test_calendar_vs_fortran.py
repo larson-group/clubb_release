@@ -1,8 +1,6 @@
 """Check the calendar.F90 port (Fliegel & van Flandern Julian-Day-Number routines)
 against Fortran."""
 
-from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
-
 from clubb_jax.src.CLUBB_core.calendar import (
     compute_current_date_api,
     gregorian2julian_date,
@@ -24,11 +22,11 @@ def test_f2py_oracle():
     for d, m, y in _DATES:
         assert bool(leap_year(y)) == bool(clubb_f2py.f2py_leap_year(y)), f"leap_year {y}"
         assert int(gregorian2julian_day(d, m, y)) == int(clubb_f2py.f2py_gregorian2julian_day(d, m, y)), f"g2jd {(d, m, y)}"
-        jd = call_jax(gregorian2julian_date, d, m, y)
-        assert tuple(call_jax(julian2gregorian_date, jd)) == tuple(int(v) for v in clubb_f2py.f2py_julian2gregorian_date(jd)), f"j2g {jd}"
+        jd = gregorian2julian_date(d, m, y)
+        assert tuple(julian2gregorian_date(jd)) == tuple(int(v) for v in clubb_f2py.f2py_julian2gregorian_date(jd)), f"j2g {jd}"
         for secs in times:
             n += 1
-            jx = call_jax(compute_current_date_api, d, m, y, secs)
+            jx = compute_current_date_api(d, m, y, secs)
             fp = clubb_f2py.f2py_compute_current_date(d, m, y, secs)
             assert (jx[0], jx[1], jx[2]) == (int(fp[0]), int(fp[1]), int(fp[2])) and abs(jx[3] - fp[3]) <= 1e-9, \
                 f"compute_current_date {(d, m, y, secs)}: jax={jx} f2py={tuple(fp)}"

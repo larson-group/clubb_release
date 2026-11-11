@@ -14,29 +14,23 @@ module coamps_microphys_driver_module
   contains
 
 #ifdef COAMPS_MICRO
-  subroutine coamps_microphys_driver( gr, ngrdcol, & ! In
-                                      runtype, timea_in, deltf_in, & ! In
-                                      rtm, wm_zm, p_in_Pa, exner, rho, & ! In
-                                      thlm, T_in_K, & ! In
-                                      rim, rrm, & ! In
-                                      rgm, rsm, & ! In
-                                      rcm, Ncm, & ! In
-                                      Nrm, Nim, & ! In
-                                      saturation_formula, & ! In
-                                      stats, Nccnm, & ! InOut
-                                      Vrs, Vri, & ! Out
-                                      Vrr, VNr, & ! Out
-                                      Vrg, & ! Out
-                                      ritend, rrtend, & ! Out
-                                      rgtend, rstend, & ! Out
-                                      nrmtend, ncmtend, nimtend, & ! Out
-                                      rvm_mc, rcm_mc, thlm_mc ) ! Out
+  subroutine coamps_microphys_driver & 
+         ( gr, runtype, timea_in, deltf_in, & 
+           rtm, wm_zm, p_in_Pa, exner, rho, & 
+           thlm, rim, rrm, rgm, rsm, & 
+           rcm, Ncm, Nrm, Nim, &
+           saturation_formula, &
+           stats, icol,         &
+           Nccnm, cond, &
+           Vrs, Vri, Vrr, VNr, Vrg, & 
+           ritend, rrtend, rgtend,  & 
+           rstend, nrmtend, & 
+           ncmtend, nimtend, & 
+           rvm_mc, rcm_mc, thlm_mc )
 
 !    Description:
 !      Subroutine to compute ice, as it is done in NRL's COAMPS
-!      mesoscale model, using adjtq.F. Process all CLUBB columns here while
-!      retaining the single-column interface to the imported COAMPS routines.
-!      T_in_K is the batch temperature already computed by microphys_driver.
+!      mesoscale model, using adjtq.F.
 
 !      COAMPS was developed by the Naval Research Laboratory,
 !      Monterey, California.  COAMPS is a registered trademark of the
@@ -69,6 +63,8 @@ module coamps_microphys_driver_module
         clubb_at_least_debug_level_api  ! Procedure
 
     use parameters_microphys, only: l_graupel, l_ice_microphys ! Variable(s)
+
+    use T_in_K_module, only: thlm2T_in_K_api ! Procedure(s)
 
     implicit none
 
@@ -156,166 +152,287 @@ module coamps_microphys_driver_module
       xland = 0.0,  & ! Land/Sea assumption
       wtm   = 1.0  ! Weighting array for mass point (never used)
 
-    !--------------------------- Input Variables ---------------------------
-    type(grid), intent(in) :: gr ! CLUBB vertical grids
+! Input Variables
+    type (grid), intent(in) :: gr
 
-    integer, intent(in) :: ngrdcol ! Number of grid columns [-]
+    character(len=*), intent(in) :: runtype
 
-    character(len=*), intent(in) :: runtype ! Case name
+! Note: Time variables "timea_in" and "deltf_in" need to be passed in
+!       from CLUBB with precision "time_precision".  I have redefined
+!       "timea" and "deltf" below to be regular precision variables
+!       that are passed throughout COAMPS microphysics.  Brian; 4/5/2008.
+    real( kind = time_precision ), intent(in) :: & 
+      timea_in          ! Current model time                   [s]
 
-    real( kind = time_precision ), intent(in) :: timea_in ! Current model time [s]
-    real( kind = core_rknd ), intent(in) :: deltf_in ! Main timestep [s]
+    real( kind= core_rknd ), intent(in) :: &
+      deltf_in         ! Timestep (i.e. dt_main in CLUBB)      [s]
 
-    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(in) :: &
-      rtm ! Total water mixing ratio [kg/kg]
+    real(kind = core_rknd), dimension(gr%nzt), intent(in) :: & 
+      rtm,     & ! Total water mixing ratio                        [kg/kg]
+      rcm,     & ! Cloud water mixing ratio                        [kg/kg]
+      p_in_Pa, & ! Pressure                                        [Pa]
+      exner,   & ! Mean exner function                             [-]
+      rho,     & ! Mean density                                    [kg/m^3]
+      thlm       ! Liquid potential temperature                    [K]
 
-    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm), intent(in) :: &
-      wm_zm ! Vertical wind on momentum levels [m/s]
+    real(kind = core_rknd), dimension(gr%nzm), intent(in) :: & 
+      wm_zm      ! Vertical wind                                   [m/s]
 
-    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(in) :: &
-      p_in_Pa, & ! Pressure [Pa]
-      exner,   & ! Exner function [-]
-      rho,     & ! Density [kg/m^3]
-      thlm,    & ! Liquid potential temperature [K]
-      T_in_K,  & ! Absolute temperature computed for the full batch [K]
-      rim,     & ! Ice water mixing ratio [kg/kg]
-      rrm,     & ! Rain water mixing ratio [kg/kg]
-      rgm,     & ! Graupel water mixing ratio [kg/kg]
-      rsm,     & ! Snow water mixing ratio [kg/kg]
-      rcm,     & ! Cloud water mixing ratio [kg/kg]
-      Ncm,     & ! Number of cloud droplets [count/kg]
-      Nrm,     & ! Number of rain drops [count/kg]
-      Nim        ! Number of ice crystals [count/kg]
+    real(kind = core_rknd), dimension(gr%nzt), intent(in) :: & 
+      rim, & ! Ice water mixing ratio     [kg/kg]
+      rrm, & ! Rain water mixing ratio    [kg/kg]
+      rgm, & ! Graupel water mixing ratio [kg/kg]
+      rsm, & ! Snow water mixing ratio    [kg/kg]
+      Nrm, & ! Number of rain drops       [count/kg]
+      Ncm, & ! Number of cloud droplets   [count/kg]
+      Nim    ! Number of ice crystals     [count/kg]
 
-    integer, intent(in) :: saturation_formula ! Saturation formula selector [-]
+    integer, intent(in) :: &
+      saturation_formula ! Integer that stores the saturation formula to be used
 
-    !------------------------ Input/Output Variables ------------------------
-    type(stats_type), intent(inout) :: stats ! Statistics buffers and sample controls
+    type(stats_type), intent(inout) :: &
+      stats
 
-    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(inout) :: &
-      Nccnm ! Number of cloud nuclei [count/kg]
+    integer, intent(in) :: &
+      icol
 
-    !--------------------------- Output Variables ---------------------------
-    ! All sedimentation velocities are on thermodynamic levels.
-    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(out) :: &
-      Vrs,     & ! Snow mixing ratio fall speed [m/s]
-      Vri,     & ! Pristine ice mixing ratio fall speed [m/s]
-      Vrr,     & ! Rain mixing ratio fall speed [m/s]
-      VNr,     & ! Rain concentration fall speed [m/s]
-      Vrg,     & ! Graupel mixing ratio fall speed [m/s]
-      ritend,  & ! Ice water tendency [kg/kg/s]
-      rrtend,  & ! Rain water tendency [kg/kg/s]
-      rgtend,  & ! Graupel water tendency [kg/kg/s]
-      rstend,  & ! Snow water tendency [kg/kg/s]
-      nrmtend, & ! Rain number tendency [count/kg/s]
-      ncmtend, & ! Cloud droplet number tendency [count/kg/s]
-      nimtend, & ! Ice number tendency [count/kg/s]
-      rvm_mc,  & ! Vapor water tendency [kg/kg/s]
-      rcm_mc,  & ! Cloud water tendency [kg/kg/s]
-      thlm_mc    ! Liquid potential temperature tendency [K/s]
+    real(kind = core_rknd), dimension(gr%nzt), intent(inout) :: & 
+      Nccnm         ! Number of cloud nuclei     [count/kg]
 
-    !--------------------------- Local Variables ---------------------------
-    integer :: icol, k, kf ! Column, CLUBB level and reversed COAMPS level [-]
-    integer :: kk, kmax, icase, nrdamp ! Scheme level counts, case and damping controls [-]
-    integer :: nkpts(ngrdcol), len(ngrdcol) ! Saturated point counts in each column [-]
-    integer :: kcomp(ngrdcol,gr%nzt) ! Packed saturated level indices in each column [-]
-    integer :: icomp(ipts) ! Native horizontal point index, always one [-]
-    logical :: ldrizzle ! Enable drizzle in the imported scheme [-]
+    real(kind = core_rknd), dimension(1,1,gr%nzt), intent(inout) :: &
+      cond ! condensation/evaporation of liquid water
 
-    real :: timea, deltf ! Scheme time and timestep [s]
-    real :: snzero ! Intercept of the snow size distribution [1/m^4]
-    real :: sat ! Supersaturation at one point [-]
-    real :: gmbov2, gmbov2g, gmbp3, gm3, gm4, gm5, gm6, gm7, gm8, gm9 ! Gamma factors [-]
-    real :: ex2, ex2g, ex3, ex7, ex7g, ex4, ex4g, ex5 ! Scheme coefficients [units vary]
-    real :: hlvoka, hlsoka, hlvorv, hlsorv, rvochi, cpor ! Thermodynamic coefficients [units vary]
-    real :: lfocp, lvocp, lsocp, hkaolf, sloper, slopes, slopeg, eic ! Scheme coefficients [units vary]
+! Output Variables
+    real(kind = core_rknd), dimension(gr%nzt), intent(out) :: & 
+      ritend,     & ! d(ri)/dt                   [kg/kg/s]
+      rrtend,     & ! d(rr)/dt                   [kg/kg/s]
+      rgtend,     & ! d(rg)/dt                   [kg/kg/s]
+      rstend,  & ! d(rs)/dt                [kg/kg/s]
+      rvm_mc,     & ! d(rv)/dt                   [kg/kg/s]
+      rcm_mc,     & ! d(rc)/dt                   [kg/kg/s]
+      thlm_mc,    & ! d(thlm)/dt                 [K/s]
+      nrmtend,    & ! d(Nrm)/dt                  [count/kg/s]
+      ncmtend,    & ! d(Ncm)/dt                  [count/kg/s]
+      nimtend       ! d(Nim)/dt                  [count/kg/s]
 
-    ! Scheme buffers use default real, preserving the original conversion points.
-    ! The middle singleton dimension belongs to COAMPS; columns remain contiguous.
-    real, dimension(ngrdcol,1,gr%nzm) :: &
-      w3_flip, & ! Reversed vertical velocity on momentum levels [m/s]
-      pr3d_flip, & ! Reversed pressure on thermodynamic levels; unused top point [Pa]
-      qsatv3d_flip, & ! Reversed liquid saturation mixing ratio; unused top point [kg/kg]
-      temp3d_flip, & ! Reversed temperature; unused top point [K]
-      qsati3d_flip, & ! Reversed ice saturation mixing ratio; unused top point [kg/kg]
-      th2t3d_flip ! Reversed Exner function; unused top point [-]
+    ! All hydrometeor sedimentation velocities are output on thermodynamic
+    ! grid levels.
+    real(kind = core_rknd), dimension(gr%nzt), intent(out) :: & 
+      Vrr, & ! Rain mixing ratio fall speed        [m/s]
+      VNr, & ! Rain conc. fall speed               [m/s]
+      Vrs, & ! Snow mixing ratio fall speed        [m/s]
+      Vrg, & ! Graupel fall speed                  [m/s]
+      Vri    ! Pristine ice mixing ratio fall speed  [m/s]
 
-    real, dimension(ngrdcol,1,gr%nzt) :: &
-      qi3_flip, & ! Reversed ice water mixing ratio [kg/kg]
-      qr3_flip, & ! Reversed rain water mixing ratio [kg/kg]
-      qg3_flip, & ! Reversed graupel mixing ratio [kg/kg]
-      qs3_flip, & ! Reversed snow water mixing ratio [kg/kg]
-      qc3_flip, & ! Reversed cloud water mixing ratio [kg/kg]
-      qv3_flip, & ! Reversed vapor mixing ratio [kg/kg]
-      th3_flip, & ! Reversed potential temperature [K]
-      p3_flip, & ! Reversed perturbation Exner function [-]
-      exbm_flip, & ! Reversed mean Exner function [-]
-      rbm_flip, & ! Reversed mean density [kg/m^3]
-      cond_flip, & ! Reversed condensation diagnostic [kg/kg]
-      nc3, & ! Cloud droplet number in native concentration units [(m^3/cm^3)/kg]
-      nr3, & ! Rain droplet number in native concentration units [(m^3/cm^3)/kg]
-      ncn3, & ! Cloud nuclei in native concentration units [(m^3/cm^3)/kg]
-      ni3, & ! Ice crystal number per volume [count/m^3]
-      snowslope, & ! Snow distribution slope in CLUBB vertical order [1/m]
-      rvc, & ! Cloud droplet mean volume radius in CLUBB vertical order [cm]
-      rvr, & ! Rain droplet mean volume radius in CLUBB vertical order [cm]
-      falli_flip, & ! Reversed ice fall speed [m/s]
-      falls_flip, & ! Reversed snow fall speed [m/s]
-      fallg_flip, & ! Reversed graupel fall speed [m/s]
-      fallr_flip, & ! Reversed rain fall speed [m/s]
-      falln_flip, & ! Reversed rain number fall speed [m/s]
-      falli_in_cloud, & ! Packed in-cloud ice fall speed [m/s]
-      falls_in_cloud, & ! Packed in-cloud snow fall speed [m/s]
-      fallg_in_cloud, & ! Packed in-cloud graupel fall speed [m/s]
-      fallr_in_cloud, & ! Packed in-cloud rain fall speed [m/s]
-      falln_in_cloud ! Packed in-cloud rain number fall speed [m/s]
+! Local Variables
 
-    ! These native diagnostics are required by adjtq but are not consumed by CLUBB.
-    real, dimension(1,1,gr%nzt) :: &
-      pcond, & ! Unused native scheme diagnostic [units vary]
-      psmlti, & ! Unused native scheme diagnostic [units vary]
-      psacw, & ! Unused native scheme diagnostic [units vary]
-      pgacw, & ! Unused native scheme diagnostic [units vary]
-      piacw, & ! Unused native scheme diagnostic [units vary]
-      pchomo, & ! Unused native scheme diagnostic [units vary]
-      praut, & ! Unused native scheme diagnostic [units vary]
-      pracw, & ! Unused native scheme diagnostic [units vary]
-      pdepi, & ! Unused native scheme diagnostic [units vary]
-      pint, & ! Unused native scheme diagnostic [units vary]
-      pgdep, & ! Unused native scheme diagnostic [units vary]
-      pconv, & ! Unused native scheme diagnostic [units vary]
-      psaci, & ! Unused native scheme diagnostic [units vary]
-      pgaci, & ! Unused native scheme diagnostic [units vary]
-      praci, & ! Unused native scheme diagnostic [units vary]
-      prevp, & ! Unused native scheme diagnostic [units vary]
-      psdep, & ! Unused native scheme diagnostic [units vary]
-      pmltge, & ! Unused native scheme diagnostic [units vary]
-      pgmlt, & ! Unused native scheme diagnostic [units vary]
-      psmlt, & ! Unused native scheme diagnostic [units vary]
-      pgacrm, & ! Unused native scheme diagnostic [units vary]
-      pgacwm, & ! Unused native scheme diagnostic [units vary]
-      pracs, & ! Unused native scheme diagnostic [units vary]
-      pgshr, & ! Unused native scheme diagnostic [units vary]
-      pgacr, & ! Unused native scheme diagnostic [units vary]
-      psacr, & ! Unused native scheme diagnostic [units vary]
-      piacr, & ! Unused native scheme diagnostic [units vary]
-      prhomo, & ! Unused native scheme diagnostic [units vary]
-      pgacs, & ! Unused native scheme diagnostic [units vary]
-      pmltse, & ! Unused native scheme diagnostic [units vary]
-      pwacs, & ! Unused native scheme diagnostic [units vary]
-      snowv_flip ! Unused native scheme diagnostic [units vary]
+    real, dimension(gr%nzt) :: &
+      T_in_K     ! Temperature                                     [K]
 
-    real :: ary1d(1,gr%nzt,1) ! Disabled native graphics buffer [units vary]
-    real :: rvm(ngrdcol,gr%nzt) ! Initial water vapor mixing ratio [kg/kg]
-    real :: Nsm(ngrdcol,gr%nzt) ! Diagnostic snow number concentration [count/kg]
+! Addition by Adam Smith, 24 April 2008
+! Adding snow particle number concentration
+    real, dimension(gr%nzt) :: Nsm ! [count/kg]
+! End of ajsmith4's addition
 
-    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt) :: &
-      mvrr_stats, & ! Rain mean volume radius [m]
-      cloud_radius_stats, & ! Cloud droplet mean volume radius [m]
-      snowslope_stats, & ! Snow distribution slope [1/m]
-      Nsm_stats ! Diagnostic snow number concentration [count/kg]
+! Variables on the w grid
+    real, dimension(1,1,gr%nzm) :: & 
+      w3,       & ! Vertical wind on the w grid          [m/s]
+      pr3d,     & ! Pressure on w grid                   [Pa]
+      qsatv3d,  & ! Saturation mr array?                 [kg/kg]
+      temp3d,   & ! Temperature on w grid                [K]
+      qsati3d,  & ! Saturation mr over ice array?        [kg/kg]
+      th2t3d,   & ! Mean exner function on w grid        [-]
+! Michael Falk, 13 Jul 2007, added these.  They are flipped versions of these variables;
+! that is to say, in the following versions k=1 is the top of the domain and k=k/+1 is the
+! sub-ground ghost point.
+      w3_flip, & 
+      pr3d_flip, & 
+      qsatv3d_flip, & 
+      temp3d_flip, & 
+      qsati3d_flip, & 
+      th2t3d_flip
+! eMFc
 
-    !--------------------------- Begin Code ---------------------------
+! Variables on the m grid
+    real, dimension(1,1,gr%nzt) :: & 
+      qi3,    & ! Pristine ice mixing ratio               [kg/kg]
+      qr3,    & ! Rain water mixing ratio                 [kg/kg]
+      qg3,    & ! Graupel mixing ratio                    [kg/kg]
+      qs3,    & ! Snow water mixing ratio                 [kg/kg]
+! Michael Falk, 13 Jul 2007, added these; they are flipped versions, as above.
+      qi3_flip, & 
+      qr3_flip, & 
+      qg3_flip, & 
+      qs3_flip
+! eMFc
+
+    real :: & 
+      gmbov2, & 
+      gmbov2g, & 
+      gmbp3, & 
+      gm3, & 
+      gm4, & 
+      gm5, & 
+      gm6, & 
+      gm7, & 
+      gm8, & 
+      gm9, & 
+      ex2, & 
+      ex2g, & 
+      ex3, & 
+      ex7, & 
+      ex7g, & 
+      ex4, & 
+      ex4g, & 
+      ex5, & 
+      hlvoka
+
+    real :: &
+      hlsoka, & 
+      hlvorv, & 
+      hlsorv, & 
+      rvochi, & 
+      cpor, & 
+      lfocp, & 
+      lvocp, & 
+      lsocp, & 
+      hkaolf, & 
+      sloper, & 
+      slopes, & 
+      slopeg, & 
+      eic, & 
+      sat
+
+    real, dimension(gr%nzt) :: & 
+      thm, & 
+      rvm
+
+    real, dimension(1,1,gr%nzt) :: & 
+      qt3,         & ! Total water mixing ratio
+      qv3,         & ! Water vapor mixing ratio
+      qc3,         & ! Cloud water mixing ratio
+      th3,         & ! potential temperature
+      p3,          & ! perturbation exner function
+      nc3,         & ! Number of cloud droplets
+      nr3,         & ! Number of rain drops
+      ncn3,        & ! Number of cloud nuclei
+      ni3,         & ! Number of ice crystals
+      exbm,        & ! Mean exner function
+      rbm,         & ! Mean density
+      snowslope,   & ! These variables are the individual microphysical terms.  Michael Falk
+              !  Michael Falk
+              ! (Name modified by Adam Smith, 24 April 2008)
+      pcond,       & ! condensation/evaporation of cloud water
+      psmlti,      & ! melting of cloud ice
+      psacw,       & ! collection of cloud water by snow
+      pgacw,       & ! ???
+      piacw,       & ! ???
+      pchomo,      & ! ???
+      praut,       & ! autoconversion of cloud water
+      pracw,       & ! collection of cloud water by rain water
+      pdepi,       & ! depositional growth of cloud ice
+      pint,        & ! initiation of cloud ice
+      pgdep,       & ! ???
+      pconv,       & ! conversion of cloud ice to snow
+      psaci,       & ! collection of cloud ice by snow
+      pgaci,       & ! ???
+      praci,       & ! ???
+      prevp,       & ! evaporation of raindrops
+      psdep,       & ! depositional growth of snow
+      pmltge,      & ! ???
+      pgmlt          ! ???
+
+    real, dimension(1,1,gr%nzt) :: & 
+      psmlt,       & ! melting of snow
+      pgacrm,      & ! ???
+      pgacwm,      & ! ???
+      pracs,       & ! ???
+      pgshr,       & ! ???
+      pgacr,       & ! ???
+      psacr,       & ! ???
+      piacr,       & ! ???
+      prhomo,      & ! ???
+      pgacs,       & ! ???
+      pmltse,      & ! ???
+      pwacs,       & ! ???
+! Michael Falk, 13 Jul 2007, added these; they are flipped versions of these variables
+      cond_flip, & 
+      p3_flip, & 
+      qc3_flip, & 
+      qt3_flip, & 
+      qv3_flip, & 
+      th3_flip, & 
+      exbm_flip, & 
+      rbm_flip
+! eMFc
+
+    real, dimension(1,1,gr%nzt) :: & 
+      fallr,   & ! Fall speed for rain mixing ratio              [m/s]
+      falln,   & ! Fall speed for rain drop number conc.         [m/s]
+      falli,   & ! Fall speed for pristine ice mixing ratio      [m/s]
+      falls,   & ! Fall speed for snow mixing ratio              [m/s] (Michael Falk 19 Jul 2007)
+      snowv,   & ! Fall speed for snow mixing ratio              [m/s]
+      fallg,   & ! Fall speed for graupel mixing ratio           [m/s]
+! Michael Falk, 13 Jul 2007, added these; they are flipped versions of these variables
+      fallg_flip, & 
+      fallr_flip, & 
+      falln_flip, & 
+      falli_flip, & 
+      falls_flip, & 
+      snowv_flip, & 
+! and then added these following variables 18 Jul 2007.
+! The in_cloud versions are only assigned values (and passed to and from adjtq) within clouds.
+! They are passed to fallr, falln, falli, and falls, which are assigned 0 outside of cloud
+! and assigned the in_cloud values within cloud.
+! snowv is passed at all gridpoints, 1 to kk+1, regardless of cloud.
+      fallr_in_cloud, & 
+      falln_in_cloud, & 
+      falli_in_cloud, & 
+      falls_in_cloud, & 
+      fallg_in_cloud
+! eMFc
+
+    ! Mean volume radius of cloud and rain droplets used by COAMPS microphysics.
+    real, dimension(1,1,gr%nzt) :: & 
+      rvc,      & ! Cloud droplet radius         [cm]
+      rvr      ! Rain droplet radius          [cm]
+
+    real, dimension(1,gr%nzt,1) :: & 
+      ary1d        ! 1d graphics parameters
+
+    integer :: & 
+      i, & 
+      k,             & ! Loop control variables
+      len,          & ! # of saturated points???
+      icase,        & ! Which case?
+      nrdamp       ! Number of points in the damping layer (COAMPS)
+
+    real :: & 
+      snzero ! ???
+
+    integer, dimension(1) :: & 
+      nkpts
+
+    integer, dimension(gr%nzt) :: & 
+      icomp,          & !
+      kcomp          !
+
+    logical :: & 
+      ldrizzle  ! is drizzle on?
+
+
+    real ::  & ! Regular precision to be passed into COAMPS microphysics. Brian.
+      timea, & ! Current model time                      [s]
+      deltf    ! Timestep (i.e. dt_main in CLUBB)        [s]
+
+    integer :: & 
+      kk,     & ! Number of COAMPS m gridpoints in the vertical (gr%nzt)
+      kmax  ! Maximum array size (kk + ??)
+
+!----------------------------------------------------------------------
+
+! Begin coamps_microphys_driver code
+
     kk = gr%nzt
     kmax = gr%nzm
 
@@ -388,9 +505,14 @@ module coamps_microphys_driver_module
 
     end select
 
-    ! Brian set regular precision variables "timea" and "deltf" to the values
-    ! brought in from CLUBB as precision "time_precision" variables "timea_in" and
-    ! "deltf_in".  Brian; 4/5/2008.
+! The eic variable is something related to ice.  In regular COAMPS it is
+! declared as a parameter but it is then set to another value, which is illegal.
+! -dschanen
+    eic      = 1.0
+
+! Brian set regular precision variables "timea" and "deltf" to the values
+! brought in from CLUBB as precision "time_precision" variables "timea_in" and
+! "deltf_in".  Brian; 4/5/2008.
     timea = real( timea_in )
     deltf = real( deltf_in )
 
@@ -404,159 +526,235 @@ module coamps_microphys_driver_module
     end if
 ! eMFc
 
-    ! Note that this is much simpler approx. of gamma than the ANL function
-    ! used in the rest of the CLUBB code.
-    ! It is used only to have a direct comparison with COAMPS-LES -dschanen
-    call gamma( 3.0, gm3 )
-    call gamma( 4.0, gm4 )
-    call gamma( 5.0, gm5 )
-    call gamma( 6.0, gm6 )
-    call gamma( 7.0, gm7 ) ! Known magic number
-    call gamma( 8.0, gm8 ) ! Known magic number
-    call gamma( 9.0, gm9 ) ! Known magic number
-    call gamma( bsnow+3.0, gmbp3 )
-    call gamma( bsnow*0.5 + 2.5, gmbov2 ) ! Known magic number
-    call gamma( bgrp*0.5 + 2.5, gmbov2g ) ! Known magic number
+! Set up initial fields
 
-    ex2  = bsnow * 0.5 + 2.5 ! Known magic number
-    ex2g = bgrp * 0.5 + 2.5 ! Known magic number
-    ex3  = bsnow + 3.0
-    ex7  = 0.44 * gmbov2 ! Known magic number
-    ex7g = 0.31 * gmbov2g ! Known magic number
-    ex4  = aprpr/visair
-    ex4g = abar/visair
-    ex5  = real(pi*aprpr*snzero*gmbp3/4.0)
+! Compute quantities for computing tendencies
+    rvm = real(rtm - rcm)
 
-    !     Lf     = Ls - Lv   ! Latent heat of fusion (occurs in constants)
-    hlvoka = real(Lv)/therco
-    hkaolf = therco/real(Lf)
-    hlsoka = real(Ls)/therco
-    hlvorv = real(Lv)/real(Rv)
-    hlsorv = real(Ls)/real(Rv)
-    rvochi = real(Rv)/difvap
-    cpor   = real(Cp/Rd)
-    lfocp  = real(Lf/Cp)
-    lvocp  = real(Lv/Cp)
-    lsocp  = real(Ls/Cp)
+    if( any( rvm < 0. ) ) then
+
+        if ( clubb_at_least_debug_level_api( 1 ) ) then
+            write(fstderr,*) 'in COAMPS (R) microphys driver: some rvm < 0'
+        end if
+
+        where ( rvm < 0. ) rvm = 0.
+
+    end if
+
+      thm(1:kk) = real(thlm(1:kk) & 
+                  + ( Lv /( Cp * exner(1:kk) )* rcm(1:kk) ))
+
+      ! Determine absolute temperature
+      T_in_K = real(thlm2T_in_K_api( gr%nzt, thlm, exner, rcm ))
+
+      ! Setup COAMPS verical velocity / mass grid variables
+      w3(1,1,1:kk+1) = real(wm_zm(1:kk+1))
 
 
-    sloper = real(pi * rholiq * rnzero * 1.0e-8)
-    slopes = real(pi * rhosno * snzero * 1.0e-8)
-    slopeg = real(pi * rhogrp * gnzero * 1.0e-8)
-    icomp = 1
-    nkpts = 0
-    len = 0
-    snowslope = 0.
-    rvr = 0.
-    rvc = 0.
+!     do k=1, kk+1, 1
+!       pr3d(1,1,k)    = zt2zm_api( p, k )
+!       th2t3d(1,1,k)  = zt2zm_api( exner, k )
+!       temp3d(1,1,k)  = zt2zm_api( thm, k ) * th2t3d(1,1,k)
+!       qsatv3d(1,1,k) = sat_mixrat_liq_api( pr3d(1,1,k), temp3d(1,1,k) )
+!       qsati3d(1,1,k) = sat_mixrat_ice( pr3d(1,1,k), temp3d(1,1,k) )
+!     end do
 
-    ! Convert the full batch to scheme precision and its top-down vertical order.
-    do k = 1, kk
-      kf = kk + 1 - k
-      do icol = 1, ngrdcol
-        rvm(icol,k) = real(rtm(icol,k) - rcm(icol,k))
-        th3_flip(icol,1,kf) = real(thlm(icol,k) &
-          + ( Lv / ( Cp * exner(icol,k) ) * rcm(icol,k) ))
-        pr3d_flip(icol,1,kf) = real(p_in_Pa(icol,k))
-        th2t3d_flip(icol,1,kf) = real(exner(icol,k))
-        temp3d_flip(icol,1,kf) = real(T_in_K(icol,k))
-        qc3_flip(icol,1,kf) = real(rcm(icol,k))
-        qr3_flip(icol,1,kf) = real(rrm(icol,k))
-        qg3_flip(icol,1,kf) = real(rgm(icol,k))
-        qs3_flip(icol,1,kf) = real(rsm(icol,k))
-        qi3_flip(icol,1,kf) = real(rim(icol,k))
-        exbm_flip(icol,1,kf) = real(exner(icol,k))
-        rbm_flip(icol,1,kf) = real(rho(icol,k))
-        p3_flip(icol,1,kf) = 0.
-        cond_flip(icol,1,kf) = 0.
+! Setup COAMPS m (mass) grid variables that are only used from
+! gridpoints 1 to kk, but are nonetheless defined from 1 to kk+1
+! since they are defined as w (momentum) variables elsewhere
+! within COAMPS.
+! Since values 1 to kk are the only ones used, they are the only
+! ones that are assigned.
+! Comments by Michael Falk, David Schanen, and Vince Larson
 
-        ! Concentrations retain their original bottom-up order until the call.
-        nc3(icol,1,k) = real(Ncm(icol,k) / cm3_per_m3)
-        nr3(icol,1,k) = real(Nrm(icol,k) / cm3_per_m3)
-        ncn3(icol,1,k) = real(Nccnm(icol,k) / cm3_per_m3)
-        ni3(icol,1,k) = real(Nim(icol,k) * rho(icol,k))
+! The top point is undefined and unreferenced in these '3d' arrays
+      pr3d(1,1,1:kk)   = real(p_in_Pa(1:kk))
+      th2t3d(1,1,1:kk) = real(exner(1:kk))
+      temp3d(1,1,1:kk) = T_in_K(1:kk)
+
+      do k=1, kk, 1
+        qsatv3d(1,1,k) = real(sat_mixrat_liq_api( &
+                real(pr3d(1,1,k), kind = core_rknd), &
+                real(temp3d(1,1,k), kind = core_rknd), saturation_formula ))
+        qsati3d(1,1,k) = real(sat_mixrat_ice( &
+                real(pr3d(1,1,k), kind = core_rknd), &
+                real(temp3d(1,1,k), kind = core_rknd), saturation_formula ))
       end do
-    end do
 
-    do icol = 1, ngrdcol
-      if ( any( rvm(icol,:) < 0. ) .and. clubb_at_least_debug_level_api( 1 ) ) then
-        write(fstderr,*) 'in COAMPS (R) microphys driver: some rvm < 0'
-      end if
-    end do
+! Setup COAMPS m (mass) grid variables
+      qt3(1,1,1:kk)  = real(rtm(1:kk))
+      qc3(1,1,1:kk)  = real(rcm(1:kk))
+      qr3(1,1,1:kk)  = real(rrm(1:kk))
+      qg3(1,1,1:kk)  = real(rgm(1:kk))
+      qs3(1,1,1:kk)  = real(rsm(1:kk))
+      qi3(1,1,1:kk)  = real(rim(1:kk))
+      exbm(1,1,1:kk) = real(exner(1:kk))
+      rbm(1,1,1:kk)  = real(rho(1:kk))
+      th3(1,1,1:kk)  = thm(1:kk)
+      qv3(1,1,1:kk)  = rvm(1:kk)
 
-    do k = 1, kk
-      kf = kk + 1 - k
-      do icol = 1, ngrdcol
-        if ( rvm(icol,k) < 0. ) rvm(icol,k) = 0.
-        qv3_flip(icol,1,kf) = rvm(icol,k)
-        qsatv3d_flip(icol,1,kf) = real(sat_mixrat_liq_api( &
-          real(pr3d_flip(icol,1,kf), kind = core_rknd), &
-          real(temp3d_flip(icol,1,kf), kind = core_rknd), saturation_formula ))
-        qsati3d_flip(icol,1,kf) = real(sat_mixrat_ice( &
-          real(pr3d_flip(icol,1,kf), kind = core_rknd), &
-          real(temp3d_flip(icol,1,kf), kind = core_rknd), saturation_formula ))
+      do k=1,kk
+        p3(1,1,k)   = 0.0
 
-        falli_flip(icol,1,kf) = 0.
-        falls_flip(icol,1,kf) = 0.
-        fallg_flip(icol,1,kf) = 0.
-        fallr_flip(icol,1,kf) = 0.
-        falln_flip(icol,1,kf) = 0.
-        falli_in_cloud(icol,1,kf) = 0.
-        falls_in_cloud(icol,1,kf) = 0.
-        fallg_in_cloud(icol,1,kf) = 0.
-        fallr_in_cloud(icol,1,kf) = 0.
-        falln_in_cloud(icol,1,kf) = 0.
+        ! Convert from MKS units as needed
+        ! Nrm, Ncm, Nccnm are in kg^-1, and need to coverted to
+        ! (m^3/cm^3)*kg^-1.  They will be converted to #/cc within adjtq if
+        ! ldrizzle is true, or ignored if ldrizzle is false.
+        nc3(1,1,k)  = real(Ncm(k) / cm3_per_m3)
+        nr3(1,1,k)  = real(Nrm(k) / cm3_per_m3)
+        ncn3(1,1,k) = real(Nccnm(k) / cm3_per_m3)
+
+        ! Nim is in #/m^3 within adjtq (See conice.F).
+        ni3(1,1,k)  = real(Nim(k) * rho(k))
+
       end do
-    end do
 
-    do k = 1, kk+1
-      do icol = 1, ngrdcol
-        w3_flip(icol,1,kk+2-k) = real(wm_zm(icol,k))
-      end do
-    end do
+! Note that this is much simpler approx. of gamma than the ANL function
+! used in the rest of the CLUBB code.
+! It is used only to have a direct comparison with COAMPS-LES -dschanen
+      call gamma( 3.0, gm3 )
+      call gamma( 4.0, gm4 )
+      call gamma( 5.0, gm5 )
+      call gamma( 6.0, gm6 )
+      call gamma( 7.0, gm7 ) ! Known magic number
+      call gamma( 8.0, gm8 ) ! Known magic number
+      call gamma( 9.0, gm9 ) ! Known magic number
+      call gamma( bsnow+3.0, gmbp3 )
+      call gamma( bsnow*0.5 + 2.5, gmbov2 ) ! Known magic number
+      call gamma( bgrp*0.5 + 2.5, gmbov2g ) ! Known magic number
 
-    ! Pack saturated points in the same top-down order within each column.
-    do k = nrdamp, kk
-      do icol = 1, ngrdcol
+      ex2  = bsnow * 0.5 + 2.5 ! Known magic number
+      ex2g = bgrp * 0.5 + 2.5 ! Known magic number
+      ex3  = bsnow + 3.0
+      ex7  = 0.44 * gmbov2 ! Known magic number
+      ex7g = 0.31 * gmbov2g ! Known magic number
+      ex4  = aprpr/visair
+      ex4g = abar/visair
+      ex5  = real(pi*aprpr*snzero*gmbp3/4.0)
+
+!     Lf     = Ls - Lv   ! Latent heat of fusion (occurs in constants)
+      hlvoka = real(Lv)/therco
+      hkaolf = therco/real(Lf)
+      hlsoka = real(Ls)/therco
+      hlvorv = real(Lv)/real(Rv)
+      hlsorv = real(Ls)/real(Rv)
+      rvochi = real(Rv)/difvap
+      cpor   = real(Cp/Rd)
+      lfocp  = real(Lf/Cp)
+      lvocp  = real(Lv/Cp)
+      lsocp  = real(Ls/Cp)
+
+      ary1d(1,1:kk,1) = 0. ! 1d graphics parameters
+      nkpts = 0
+      len = 0
+
+! Michael Falk, 6 July 2007
+! Assigning values to the "flip" variables, in which k=1 is the top of the domain
+
+      cond_flip(1,1,1:kk) = 0.
+      p3_flip(1,1,1:kk)  = p3(1,1,kk:1:-1)     ! Pressure
+      qt3_flip(1,1,1:kk) = qt3(1,1,kk:1:-1)   ! Total water mixing ratio
+      qv3_flip(1,1,1:kk) = qv3(1,1,kk:1:-1)   ! Vapor water mixing ratio
+      qc3_flip(1,1,1:kk) = qc3(1,1,kk:1:-1)   ! Cloud water mixing ratio
+      th3_flip(1,1,1:kk) = th3(1,1,kk:1:-1)   ! Potential temp.
+      exbm_flip(1,1,1:kk)= exbm(1,1,kk:1:-1) ! Exner function
+      rbm_flip(1,1,1:kk) = rbm(1,1,kk:1:-1)   ! Density
+
+      qi3_flip(1,1,1:kk) = qi3(1,1,kk:1:-1) ! Ice water mixing ratio
+      qr3_flip(1,1,1:kk) = qr3(1,1,kk:1:-1) ! Rain water mixing ratio
+      qg3_flip(1,1,1:kk) = qg3(1,1,kk:1:-1) ! Graupel water mixing ratio
+      qs3_flip(1,1,1:kk) = qs3(1,1,kk:1:-1) ! Snow water mixing ratio
+
+      w3_flip(1,1,1:kk+1) = w3(1,1,kk+1:1:-1) ! not referenced in COAMPS microphysics
+
+      pr3d_flip(1,1,1:kk)    = pr3d(1,1,kk:1:-1) ! top point is undefined
+      qsatv3d_flip(1,1,1:kk) = qsatv3d(1,1,kk:1:-1) ! " "
+      temp3d_flip(1,1,1:kk)  = temp3d(1,1,kk:1:-1) ! " "
+      qsati3d_flip(1,1,1:kk) = qsati3d(1,1,kk:1:-1) ! " "
+      th2t3d_flip(1,1,1:kk)  = th2t3d(1,1,kk:1:-1) ! " "
+
+
+
+! determination of which points are "in_cloud" are which are outside of cloud
+      do k=nrdamp,kk
+!-------------------------------------------------------------------------------
+! determine if point is saturated as in COAMPS
+!-------------------------------------------------------------------------------
         if ( .not. l_ice_microphys ) then
-          sat = qv3_flip(icol,1,k)/qsatv3d_flip(icol,1,k)-1.0
+          sat = qv3_flip(1,1,k)/qsatv3d_flip(1,1,k)-1.0
         else
-          if ( temp3d_flip(icol,1,k) >= T_freeze_K ) then
-            sat = qv3_flip(icol,1,k)/qsatv3d_flip(icol,1,k)-1.0
+          if ( temp3d_flip(1,1,k) >= T_freeze_K ) then
+            sat = qv3_flip(1,1,k)/qsatv3d_flip(1,1,k)-1.0
           else
-            sat = qv3_flip(icol,1,k)/qsati3d_flip(icol,1,k)-1.0
-          end if
-        end if
+            sat = qv3_flip(1,1,k)/qsati3d_flip(1,1,k)-1.0
+          endif
+        endif
 
-        if ( sat > 0.0 .or. qc3_flip(icol,1,k) >= pcut .or. &
-             qr3_flip(icol,1,k) >= pcut .or. qs3_flip(icol,1,k) >= pcut .or. &
-             qi3_flip(icol,1,k) >= pcut .or. qg3_flip(icol,1,k) >= pcut ) then
-          nkpts(icol) = nkpts(icol) + 1
-          len(icol) = len(icol) + 1
-          kcomp(icol,nkpts(icol)) = k
+        if (sat > 0.0 .or. & 
+            qc3_flip(1,1,k) >= pcut .or. & 
+            qr3_flip(1,1,k) >= pcut .or. & 
+            qs3_flip(1,1,k) >= pcut .or. & 
+            qi3_flip(1,1,k) >= pcut .or. & 
+            qg3_flip(1,1,k) >= pcut & 
+           ) & 
+            then
+          nkpts = nkpts+1
+          len   = len+1
+          kcomp(nkpts) = k
         end if
       end do
-    end do
 
-    do icol = 1, ngrdcol
-      ! The imported ice-collection routine modifies eic; reset it per column.
-      eic = 1.0
-      ary1d = 0.
+      do i=1,ipts
+        icomp(i) = 1
+      end do
 
-      ! Only the imported scalar scheme runs one whole column at a time.
-      if ( len(icol) > 0 ) call adjtq &
-             (cond_flip(icol,1,1:kk),p3_flip(icol,1,1:kk),qc3_flip(icol,1,1:kk) &
-             ,qi3_flip(icol,1,1:kk),qr3_flip(icol,1,1:kk),qg3_flip(icol,1,1:kk) &
-             ,qs3_flip(icol,1,1:kk),qv3_flip(icol,1,1:kk),th3_flip(icol,1,1:kk) &
-             ,w3_flip(icol,1,1:kk+1),pr3d_flip(icol,1,1:kk+1) &
-             ,qsatv3d_flip(icol,1,1:kk+1),temp3d_flip(icol,1,1:kk+1) &
-             ,qsati3d_flip(icol,1,1:kk+1),th2t3d_flip(icol,1,1:kk+1),wtm &
-             ,exbm_flip(icol,1,1:kk),rbm_flip(icol,1,1:kk) &
-             ,nc3(icol,1,kk:1:-1),nr3(icol,1,kk:1:-1),ncn3(icol,1,kk:1:-1) &
-             ,ni3(icol,1,kk:1:-1),real(Cp),deltf,real(Lf),real(Ls),real(Lv) &
+      sloper = real(pi * rholiq * rnzero * 1.0e-8)
+      slopes = real(pi * rhosno * snzero * 1.0e-8)
+      slopeg = real(pi * rhogrp * gnzero * 1.0e-8)
+
+! Michael Falk, 17 Jul 2007, is initializing fallspeed arrays
+      do k=1,kk
+        falli(1,1,k) = 0.
+        falls(1,1,k) = 0.
+        fallg(1,1,k) = 0.
+        fallr(1,1,k) = 0.
+        falln(1,1,k) = 0.
+        snowv(1,1,k) = 0.
+
+        falli_flip(1,1,k) = 0.
+        falls_flip(1,1,k) = 0.
+        fallg_flip(1,1,k) = 0.
+        fallr_flip(1,1,k) = 0.
+        falln_flip(1,1,k) = 0.
+
+! Michael Falk added these initializations, 10 Oct 2007
+        falli_in_cloud(1,1,k) = 0.
+        falls_in_cloud(1,1,k) = 0.
+        fallg_in_cloud(1,1,k) = 0.
+        fallr_in_cloud(1,1,k) = 0.
+        falln_in_cloud(1,1,k) = 0.
+! eMFc
+      end do
+! dschanen added this to avoid uninitialized memory 24 Jul 2008
+      snowslope = 0.
+      rvr       = 0.
+      rvc       = 0.
+
+! Call the actual COAMPS microphysics scheme
+      if ( len > 0 ) call adjtq &
+             (cond_flip(1,1,1:kk),p3_flip(1,1,1:kk),qc3_flip(1,1,1:kk) &
+             ,qi3_flip(1,1,1:kk),qr3_flip(1,1,1:kk),qg3_flip(1,1,1:kk) &
+             ,qs3_flip(1,1,1:kk),qv3_flip(1,1,1:kk),th3_flip(1,1,1:kk) &
+             ,w3_flip(1,1,1:kk+1),pr3d_flip(1,1,1:kk+1) &
+             ,qsatv3d_flip(1,1,1:kk+1),temp3d_flip(1,1,1:kk+1) &
+             ,qsati3d_flip(1,1,1:kk+1),th2t3d_flip(1,1,1:kk+1),wtm &
+             ,exbm_flip(1,1,1:kk),rbm_flip(1,1,1:kk) &
+!     3       ,nc3,nr3,ncn3,ni3,cp,deltf,Lf,Ls,Lv 
+             ,nc3(1,1,kk:1:-1),nr3(1,1,kk:1:-1),ncn3(1,1,kk:1:-1) &
+             ,ni3(1,1,kk:1:-1),real(Cp),deltf,real(Lf),real(Ls),real(Lv) &
              ,pcut,real(p0),real(Rd),real(Rv),sloper,slopes,slopeg,timea,l_ice_microphys &
              ,nne,kk,i1d,j1d,ary1d,i1dflg,n1d,maxpt1d,maxvr1d &
-             ,kmax,nrdamp,ipts,nkpts(icol:icol),icomp,kcomp(icol,:),j &
+             ,kmax,nrdamp,ipts,nkpts,icomp,kcomp,j &
              ,xland,aa0,aa1,aa2,aa3,abar,apr,aprpr,bsnow &
              ,cbeta,cnzero,cimass,cpor,cw,difvap,erc,esi,eic &
              ,eri,egc,esc,esr,egi,egr,egs,mw,real(pi),praut1,praut2 &
@@ -565,9 +763,9 @@ module coamps_microphys_driver_module
              ,gm7,gm8,gm9,gmbp3,gmbov2,gmbov2g,bgrp,ex1,ex2 &
              ,ex2g,ex3,hlvoka,hkaolf,hlsoka,hlvorv,hlsorv &
              ,rvochi,lfocp,lvocp,lsocp,ex7,ex7g,ex4,ex4g,ex5 &
-             ,ldrizzle,l_graupel,icon,icond,len(icol),icase &
+             ,ldrizzle,l_graupel,icon,icond,len,icase &
              ,snowv_flip(:,:,1:kk) &
-             ,snowslope(icol,1,kk:1:-1),pcond(1,1,kk:1:-1) &
+             ,snowslope(1,1,kk:1:-1),pcond(1,1,kk:1:-1) &
              ,psmlti(1,1,kk:1:-1),psacw(1,1,kk:1:-1),pgacw(1,1,kk:1:-1) &
              ,piacw(1,1,kk:1:-1),pchomo(1,1,kk:1:-1),praut(1,1,kk:1:-1) &
              ,pracw(1,1,kk:1:-1),pdepi(1,1,kk:1:-1),pint(1,1,kk:1:-1) &
@@ -578,198 +776,189 @@ module coamps_microphys_driver_module
              ,pracs(1,1,kk:1:-1),pgshr(1,1,kk:1:-1),pgacr(1,1,kk:1:-1) &
              ,psacr(1,1,kk:1:-1),piacr(1,1,kk:1:-1),prhomo(1,1,kk:1:-1) &
              ,pgacs(1,1,kk:1:-1),pmltse(1,1,kk:1:-1),pwacs(1,1,kk:1:-1) &
-             ,falli_in_cloud(icol:icol,:,1:nkpts(icol)) &
-             ,fallg_in_cloud(icol:icol,:,1:nkpts(icol)) &
-             ,fallr_in_cloud(icol:icol,:,1:nkpts(icol)) &
-             ,falln_in_cloud(icol:icol,:,1:nkpts(icol)) &
-             ,falls_in_cloud(icol:icol,:,1:nkpts(icol)) &
-             ,rvc(icol:icol,:,:),rvr(icol:icol,:,:))
+             ,falli_in_cloud(:,:,1:nkpts(1)) &
+             ,fallg_in_cloud(:,:,1:nkpts(1)) &
+             ,fallr_in_cloud(:,:,1:nkpts(1)) &
+             ,falln_in_cloud(:,:,1:nkpts(1)) &
+             ,falls_in_cloud(:,:,1:nkpts(1)) &
+             ,rvc,rvr)
 
-    end do
+! reassigning flipped versions of variables to normal versions
+      cond(1,1,1:kk) = real(cond_flip(1,1,kk:1:-1), kind = core_rknd)
+      p3(1,1,1:kk) = p3_flip(1,1,kk:1:-1)
+      qt3(1,1,1:kk) = qt3_flip(1,1,kk:1:-1)
+      qv3(1,1,1:kk) = qv3_flip(1,1,kk:1:-1)
+      qc3(1,1,1:kk) = qc3_flip(1,1,kk:1:-1)
+      th3(1,1,1:kk) = th3_flip(1,1,kk:1:-1)
+      exbm(1,1,1:kk) = exbm_flip(1,1,kk:1:-1)
+      rbm(1,1,1:kk) = rbm_flip(1,1,kk:1:-1)
 
-    ! Scatter packed fall speeds back to the reversed full grid.
-    do k = 1, kk
-      do icol = 1, ngrdcol
-        if ( k > nkpts(icol) ) cycle
-        falli_flip(icol,1,kcomp(icol,k)) = falli_in_cloud(icol,1,k)
-        falls_flip(icol,1,kcomp(icol,k)) = falls_in_cloud(icol,1,k)
-        fallg_flip(icol,1,kcomp(icol,k)) = fallg_in_cloud(icol,1,k)
-        fallr_flip(icol,1,kcomp(icol,k)) = fallr_in_cloud(icol,1,k)
-        falln_flip(icol,1,kcomp(icol,k)) = falln_in_cloud(icol,1,k)
+      qi3(1,1,1:kk) = qi3_flip(1,1,kk:1:-1)
+      qr3(1,1,1:kk) = qr3_flip(1,1,kk:1:-1)
+      qg3(1,1,1:kk) = qg3_flip(1,1,kk:1:-1)
+      qs3(1,1,1:kk) = qs3_flip(1,1,kk:1:-1)
+
+! This is unneeded, since these quantities do not change -dschanen
+! 2 April 2008
+!     w3(1,1,1:kk+1) = w3_flip(1,1,kk+1:1:-1)
+!     pr3d(1,1,1:kk+1) = pr3d_flip(1,1,kk+1:1:-1)
+!     qsatv3d(1,1,1:kk+1) = qsatv3d_flip(1,1,kk+1:1:-1)
+!     temp3d(1,1,1:kk+1) = temp3d_flip(1,1,kk+1:1:-1)
+!     qsati3d(1,1,1:kk+1) = qsati3d_flip(1,1,kk+1:1:-1)
+!     th2t3d(1,1,1:kk+1) = th2t3d_flip(1,1,kk+1:1:-1)
+
+! assigning in-cloud fall speeds to _flip arrays, which are zero outside of cloud
+      do k=1,nkpts(1)
+        falli_flip(:,:,kcomp(k)) = falli_in_cloud(:,:,k)
+        falls_flip(:,:,kcomp(k)) = falls_in_cloud(:,:,k)
+        fallg_flip(:,:,kcomp(k)) = fallg_in_cloud(:,:,k)
+        fallr_flip(:,:,kcomp(k)) = fallr_in_cloud(:,:,k)
+        falln_flip(:,:,kcomp(k)) = falln_in_cloud(:,:,k)
       end do
-    end do
 
-    ! Keep the original order of cloud/rain/aerosol concentration clipping.
-    do k = 1, kk
-      do icol = 1, ngrdcol
-        if ( nr3(icol,1,k) < 0. ) then
-          ncn3(icol,1,k) = ncn3(icol,1,k) + nr3(icol,1,k)
-          nr3(icol,1,k) = 0.
-        end if
-        if ( nc3(icol,1,k) < 0. ) then
-          ncn3(icol,1,k) = ncn3(icol,1,k) + nc3(icol,1,k)
-          nc3(icol,1,k) = 0.
-        end if
-        if ( ncn3(icol,1,k) < 0. ) ncn3(icol,1,k) = 0.
+      falli(:,:,kk:1:-1) = falli_flip(:,:,1:kk)
+      falls(:,:,kk:1:-1) = falls_flip(:,:,1:kk)
+      fallg(:,:,kk:1:-1) = fallg_flip(:,:,1:kk)
+      fallr(:,:,kk:1:-1) = fallr_flip(:,:,1:kk)
+      falln(:,:,kk:1:-1) = falln_flip(:,:,1:kk)
+      snowv(:,:,kk:1:-1) = falls_flip(:,:,1:kk)
 
-        Nccnm(icol,k) = real(ncn3(icol,1,k), kind = core_rknd) * cm3_per_m3
-        if ( snowslope(icol,1,k) < 2.0 ) then
-          snowslope(icol,1,k) = 0.
-          Nsm(icol,k) = 0.0
+! Assure positive definiteness in nc3/nr3/ncn3 fields
+
+! Should there be a clipping stat for these?
+      do k=1, kk, 1
+        if (nr3(1,1,k) < 0.) then
+          ncn3(1,1,k) = ncn3(1,1,k) + nr3(1,1,k)
+          nr3(1,1,k)  = 0.
+        end if
+
+        if (nc3(1,1,k) < 0.) then
+          ncn3(1,1,k) = ncn3(1,1,k) + nc3(1,1,k)
+          nc3(1,1,k)  = 0.
+        end if
+
+        if (ncn3(1,1,k) < 0.) then
+          ncn3(1,1,k)  = 0.
+        end if
+      end do ! k=1..kk
+
+! Transfer back to CLUBB arrays
+      do k=1, kk, 1
+        ! Convert to MKS as needed
+        ! ncn3 is in (m^3/cm^3)*kg^-1, and needs to be converted to kg^-1.
+        Nccnm(k) = real(ncn3(1,1,k), kind = core_rknd) * cm3_per_m3
+      end do ! k=1..kk
+
+!-------------------------------------------------
+! Addition by Adam Smith, 24 April 2008
+! Adding snow particle number concentration
+! Values of snowslope < 1.0 lead to excessive and
+! unrealistic Nsm outside of the snow region.
+! The "if" statement prevents these results.
+!-------------------------------------------------
+      do k = 1, kk, 1
+        if (snowslope(1,1,k) < 2.0) then
+          snowslope(1,1,k) = 0.
+          Nsm(k) = 0.0
         else
-          Nsm(icol,k) = snzero / snowslope(icol,1,k)
+          Nsm(k) = snzero / snowslope(1,1,k)
         end if
-        Nsm(icol,k) = Nsm(icol,k) / real(rho(icol,k))
+        ! Convert to #/kg for comparison to Morrison -dschanen 12 Nov 2009
+        Nsm(k) = Nsm(k) / real(rho(k))
       end do
-    end do
 
-    ! Compute CLUBB tendencies after converting the same rounded scheme outputs.
-    do k = 1, kk
-      kf = kk + 1 - k
-      do icol = 1, ngrdcol
-        Vrr(icol,k) = real(fallr_flip(icol,1,kf), kind = core_rknd)
-        VNr(icol,k) = real(falln_flip(icol,1,kf), kind = core_rknd)
-        Vrs(icol,k) = real(falls_flip(icol,1,kf), kind = core_rknd)
-        Vri(icol,k) = real(falli_flip(icol,1,kf), kind = core_rknd)
-        Vrg(icol,k) = real(fallg_flip(icol,1,kf), kind = core_rknd)
-        rrtend(icol,k) = ( real(qr3_flip(icol,1,kf), kind = core_rknd) - rrm(icol,k) ) &
-          / real(deltf, kind = core_rknd)
-        rgtend(icol,k) = ( real(qg3_flip(icol,1,kf), kind = core_rknd) - rgm(icol,k) ) &
-          / real(deltf, kind = core_rknd)
-        ritend(icol,k) = ( real(qi3_flip(icol,1,kf), kind = core_rknd) - rim(icol,k) ) &
-          / real(deltf, kind = core_rknd)
-        nrmtend(icol,k) = ( (real(nr3(icol,1,k), kind = core_rknd)*cm3_per_m3) - Nrm(icol,k) ) &
-          / real(deltf, kind = core_rknd)
-        rstend(icol,k) = ( real(qs3_flip(icol,1,kf), kind = core_rknd) - rsm(icol,k) ) &
-          / real(deltf, kind = core_rknd)
-        ncmtend(icol,k) = ( (real(nc3(icol,1,k), kind = core_rknd)*cm3_per_m3) - Ncm(icol,k) ) &
-          / real(deltf, kind = core_rknd)
-        nimtend(icol,k) = ( (real(ni3(icol,1,k), kind = core_rknd)/rho(icol,k)) - Nim(icol,k) ) &
-          / real(deltf, kind = core_rknd)
-        rvm_mc(icol,k) = real((qv3_flip(icol,1,kf) - rvm(icol,k)) / deltf, kind = core_rknd)
-        rcm_mc(icol,k) = ( real(qc3_flip(icol,1,kf), kind = core_rknd) - rcm(icol,k) ) &
-          / real(deltf, kind = core_rknd)
-        thlm_mc(icol,k) = real(( ( th3_flip(icol,1,kf) &
-          - (real(Lv) / (real(Cp)*exbm_flip(icol,1,kf)) * qc3_flip(icol,1,kf)) ) &
-          - real(thlm(icol,k)) ) / deltf, kind = core_rknd)
-      end do
-    end do
+!-------------------------------------------------
+! End of ajsmith4's addition
+!-------------------------------------------------
 
-    if ( stats%l_sample ) then
-      do k = 1, kk
-        do icol = 1, ngrdcol
-          mvrr_stats(icol,k) = real(rvr(icol,1,k) / 100.0, kind = core_rknd)
-          cloud_radius_stats(icol,k) = real(rvc(icol,1,k) / 100.0, kind = core_rknd)
-          snowslope_stats(icol,k) = real(snowslope(icol,1,k), kind = core_rknd)
-          Nsm_stats(icol,k) = real(Nsm(icol,k), kind = core_rknd)
-        end do
-      end do
-    end if
+      Vrr = real( fallr(1,1,:), kind = core_rknd )
+      VNr = real( falln(1,1,:), kind = core_rknd )
+      Vrs = real( snowv(1,1,:), kind = core_rknd )
+      Vri = real( falli(1,1,:), kind = core_rknd )
+      Vrg = real( fallg(1,1,:), kind = core_rknd )
 
-    if ( stats%l_sample ) then
-      call stats_update( "mvrr", mvrr_stats, & ! In
-                         stats ) ! InOut
-      call stats_update( "m_vol_rad_cloud", cloud_radius_stats, & ! In
-                         stats ) ! InOut
-      call stats_update( "snowslope", snowslope_stats, & ! In
-                         stats ) ! InOut
-      call stats_update( "Nsm", Nsm_stats, & ! In
-                         stats ) ! InOut
-    end if
+! Compute tendencies
+      do k=1, kk, 1
+        rrtend(k)    = ( real(qr3(1,1,k), kind = core_rknd) - rrm(k) ) &
+                         / real(deltf, kind = core_rknd)
+        rgtend(k)    = ( real(qg3(1,1,k), kind = core_rknd) - rgm(k) )&
+                         / real(deltf, kind = core_rknd)
+        ritend(k)    = ( real(qi3(1,1,k), kind = core_rknd) - rim(k) ) &
+                         / real(deltf, kind = core_rknd)
+        nrmtend(k)   = ( (real(nr3(1,1,k), kind = core_rknd)*cm3_per_m3) - Nrm(k) ) &
+                         / real(deltf, kind = core_rknd) ! Conversion factor
+        rstend(k)    = ( real(qs3(1,1,k), kind = core_rknd) - rsm(k) ) &
+                         / real(deltf, kind = core_rknd)
+        ! nc3 is in (m^3/cm^3)*kg^-1, and needs to be converted to kg^-1.
+        ncmtend(k)   = ( ( real( nc3(1,1,k), kind = core_rknd ) * cm3_per_m3 ) &
+                           - Ncm(k) ) &
+                         / real( deltf, kind = core_rknd )
+        ! Convert ice number concentration to #/kg
+        nimtend(k)   = ( ( real( ni3(1,1,k), kind = core_rknd ) / rho(k) ) &
+                           - Nim(k) ) &
+                         / real( deltf, kind = core_rknd )
+        rvm_mc(k)    = real(((qv3(1,1,k) - rvm(k)) / deltf), kind = core_rknd)
+        rcm_mc(k)    = (real(qc3(1,1,k), kind = core_rknd) - rcm(k)) &
+                         / real(deltf, kind = core_rknd)
+        thlm_mc(k)  & 
+        = real(( ( th3(1,1,k) - (real(Lv) / (real(Cp) * exbm(1,1,k)) * qc3(1,1,k) ) ) & 
+          - real(thlm(k)) ) / deltf, kind = core_rknd)
+      end do ! k=1..kk
 
-    return
+      if ( stats%l_sample ) then
+        call stats_update( "mvrr", real( rvr(1,1,1:kk) / 100.0, kind = core_rknd ), stats, icol )
+        call stats_update( "m_vol_rad_cloud", real( rvc(1,1,1:kk) / 100.0, kind = core_rknd ), stats, icol )
+        call stats_update( "snowslope", real( snowslope(1,1,1:kk), kind = core_rknd ), stats, icol )
+        call stats_update( "Nsm", real( Nsm(1:kk), kind = core_rknd ), stats, icol )
+      end if
 
-  end subroutine coamps_microphys_driver
+      return
+      
+    end subroutine coamps_microphys_driver
 
 #else /* COAMPS_MICRO not defined */
-  subroutine coamps_microphys_driver( gr, ngrdcol, & ! In
-                                      runtype, timea_in, deltf_in, & ! In
-                                      rtm, wm_zm, p_in_Pa, exner, rho, & ! In
-                                      thlm, T_in_K, & ! In
-                                      rim, rrm, & ! In
-                                      rgm, rsm, & ! In
-                                      rcm, Ncm, & ! In
-                                      Nrm, Nim, & ! In
-                                      saturation_formula, & ! In
-                                      stats, Nccnm, & ! InOut
-                                      Vrs, Vri, & ! Out
-                                      Vrr, VNr, & ! Out
-                                      Vrg, & ! Out
-                                      ritend, rrtend, & ! Out
-                                      rgtend, rstend, & ! Out
-                                      nrmtend, ncmtend, nimtend, & ! Out
-                                      rvm_mc, rcm_mc, thlm_mc ) ! Out
+   subroutine coamps_microphys_driver( gr, runtype, timea_in, deltf_in, &
+           rtm, wm_zm, p_in_Pa, exner, rho, &
+           thlm, rim, rrm, rgm, rsm, &
+           rcm, Ncm, Nrm, Nim, &
+           saturation_formula, &
+           stats, icol,         &
+           Nccnm, cond, &
+           Vrs, Vri, Vrr, VNr, Vrg, &
+           ritend, rrtend, rgtend, &
+           rstend, nrmtend, &
+           ncmtend, nimtend, &
+           rvm_mc, rcm_mc, thlm_mc )
 
-    ! Description:
-    !   Reject a COAMPS request when the imported scheme was not compiled.
+     use clubb_precision, only: time_precision, core_rknd
+     use grid_class, only: grid
+     use stats_netcdf, only: stats_type
 
-    use clubb_precision, only: time_precision, core_rknd
-    use grid_class, only: grid
-    use stats_netcdf, only: stats_type
+     implicit none
 
-    implicit none
+     type(grid), intent(in) :: gr
+     character(len=*), intent(in) :: runtype
+     real(kind=time_precision), intent(in) :: timea_in
+     real(kind=core_rknd), intent(in) :: deltf_in
+     integer, intent(in) :: saturation_formula
+     integer, intent(in) :: icol
 
-    !--------------------------- Input Variables ---------------------------
-    type(grid), intent(in) :: gr ! CLUBB vertical grids
+     real(kind=core_rknd), dimension(:), intent(in) :: &
+       rtm, wm_zm, p_in_Pa, exner, rho, thlm, rim, rrm, rgm, rsm, &
+       rcm, Ncm, Nrm, Nim
 
-    integer, intent(in) :: ngrdcol ! Number of grid columns [-]
+     type(stats_type), intent(inout) :: stats
 
-    character(len=*), intent(in) :: runtype ! Case name
+     real(kind=core_rknd), dimension(:), intent(inout) :: Nccnm
+     real(kind=core_rknd), dimension(:,:,:), intent(inout) :: cond
 
-    real( kind = time_precision ), intent(in) :: timea_in ! Current model time [s]
-    real( kind = core_rknd ), intent(in) :: deltf_in ! Main timestep [s]
+     real(kind=core_rknd), dimension(:), intent(out) :: &
+       Vrs, Vri, Vrr, VNr, Vrg, ritend, rrtend, rgtend, rstend, &
+       nrmtend, ncmtend, nimtend, rvm_mc, rcm_mc, thlm_mc
 
-    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(in) :: &
-      rtm ! Total water mixing ratio [kg/kg]
+     error stop "Not compiled with COAMPS Microphysics"
 
-    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm), intent(in) :: &
-      wm_zm ! Vertical wind on momentum levels [m/s]
-
-    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(in) :: &
-      p_in_Pa, & ! Pressure [Pa]
-      exner,   & ! Exner function [-]
-      rho,     & ! Density [kg/m^3]
-      thlm,    & ! Liquid potential temperature [K]
-      T_in_K,  & ! Absolute temperature computed for the full batch [K]
-      rim,     & ! Ice water mixing ratio [kg/kg]
-      rrm,     & ! Rain water mixing ratio [kg/kg]
-      rgm,     & ! Graupel water mixing ratio [kg/kg]
-      rsm,     & ! Snow water mixing ratio [kg/kg]
-      rcm,     & ! Cloud water mixing ratio [kg/kg]
-      Ncm,     & ! Number of cloud droplets [count/kg]
-      Nrm,     & ! Number of rain drops [count/kg]
-      Nim        ! Number of ice crystals [count/kg]
-
-    integer, intent(in) :: saturation_formula ! Saturation formula selector [-]
-
-    !------------------------ Input/Output Variables ------------------------
-    type(stats_type), intent(inout) :: stats ! Statistics buffers and sample controls
-
-    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(inout) :: &
-      Nccnm ! Number of cloud nuclei [count/kg]
-
-    !--------------------------- Output Variables ---------------------------
-    ! All sedimentation velocities are on thermodynamic levels.
-    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(out) :: &
-      Vrs,     & ! Snow mixing ratio fall speed [m/s]
-      Vri,     & ! Pristine ice mixing ratio fall speed [m/s]
-      Vrr,     & ! Rain mixing ratio fall speed [m/s]
-      VNr,     & ! Rain concentration fall speed [m/s]
-      Vrg,     & ! Graupel mixing ratio fall speed [m/s]
-      ritend,  & ! Ice water tendency [kg/kg/s]
-      rrtend,  & ! Rain water tendency [kg/kg/s]
-      rgtend,  & ! Graupel water tendency [kg/kg/s]
-      rstend,  & ! Snow water tendency [kg/kg/s]
-      nrmtend, & ! Rain number tendency [count/kg/s]
-      ncmtend, & ! Cloud droplet number tendency [count/kg/s]
-      nimtend, & ! Ice number tendency [count/kg/s]
-      rvm_mc,  & ! Vapor water tendency [kg/kg/s]
-      rcm_mc,  & ! Cloud water tendency [kg/kg/s]
-      thlm_mc    ! Liquid potential temperature tendency [K/s]
-
-    error stop "Not compiled with COAMPS Microphysics"
-
-  end subroutine coamps_microphys_driver
+   end subroutine coamps_microphys_driver
 #endif
 
   end module coamps_microphys_driver_module

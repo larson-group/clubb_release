@@ -1,0 +1,24 @@
+{
+  "scope": "Only2new timer production files and matching staged sources; no shared integration edits by owner.",
+  "hashes": {
+    "clubb_kokkos/src/CLUBB_core/code_timer_module.cpp": "95f2311c09fbe9133562611d7d0539a1a8e38333c055c66815900058720dcc5f",
+    "clubb_kokkos/src/CLUBB_core/code_timer_module.hpp": "31491aac5256cbc794b624c1ae25d0ec5f88e888fdcde3580caaa50705a93998"
+  },
+  "draft_equals_production": true,
+  "source_reinspection": {
+    "full16Native_bodies": "pass",
+    "public5API_names_args_order": "pass",
+    "compiled_branch_inventory": "bothGPTL andcpu_time retained",
+    "helper_names_and_order": "all9CPU and2shared helpers in Native order",
+    "local_state": "sixprivate thread_local variables; Native chunk-growth constants and registry/stack field names preserved",
+    "error_call_and_guard_order": "pass including reset/reinit/disable and mid-write/close failure propagation",
+    "column_table_and_name_path_rules": "pass; numeric elapsed values notBFB targets",
+    "descriptions_comments_units_groups": "pass; Native terminology and units retained, language adaptations at actual boundary",
+    "target_only_helpers": "no extra named module helper;2local formatting lambdas are bounded C++I/O adaptations",
+    "imports": "no retiredf2k, Kokkos include, GPU fence, target-only alias or leaked public state",
+    "format": "100column cap, no trailing whitespace, complete descriptions, helper order and dividers"
+  },
+  "runtime_claim": "none; Root handles builds/GPTL/CPU checks, maintained model and utility compatibility.",
+  "post_review_delta": "Root added localofstream failbit/badbit exceptions after explicit successful-open check; independent reviewer notified.",
+  "known_limit": "CPU timing resolution/epoch/format-rounding vendor details can differ; timers are nondeterministic; no elapsed-value or performance equivalence claimed."
+}

@@ -1,0 +1,307 @@
+{
+  "native_inventory_and_order": [
+    "init_default_err_info_api",
+    "init_err_info_api",
+    "set_err_info_values_api",
+    "update_headers",
+    "cleanup_err_info_api"
+  ],
+  "routines": [
+    {
+      "name": "init_default_err_info_api",
+      "module": "err_info_type_module",
+      "source": "src/CLUBB_core/err_info_type_module.F90",
+      "arguments": [
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "err_info",
+          "kind": "err_info_type",
+          "dims": [],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "source_lines": [
+        124,
+        161
+      ],
+      "calls_in_order": [
+        "call init_err_info_api(ngrdcol, mpi_rank_dummy, chunk_idx_dummy, reshape((/unused_var/), (/ngrdcol/), (/unused_var/)), reshape((/unused_var/), (/ngrdcol/), (/unused_var/)), err_info)"
+      ],
+      "branches_in_order": []
+    },
+    {
+      "name": "init_err_info_api",
+      "module": "err_info_type_module",
+      "source": "src/CLUBB_core/err_info_type_module.F90",
+      "arguments": [
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "chunk_idx_in",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mpi_rank_in",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lat_in",
+          "kind": "real",
+          "dims": [
+            "ngrdcol"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lon_in",
+          "kind": "real",
+          "dims": [
+            "ngrdcol"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "err_info",
+          "kind": "err_info_type",
+          "dims": [],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "source_lines": [
+        164,
+        207
+      ],
+      "calls_in_order": [
+        "call set_err_info_values_api(ngrdcol, err_info, chunk_idx_in, mpi_rank_in, lat_in, lon_in)"
+      ],
+      "branches_in_order": []
+    },
+    {
+      "name": "set_err_info_values_api",
+      "module": "err_info_type_module",
+      "source": "src/CLUBB_core/err_info_type_module.F90",
+      "arguments": [
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "err_info",
+          "kind": "err_info_type",
+          "dims": [],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "chunk_idx_in",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": true,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mpi_rank_in",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": true,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lat_in",
+          "kind": "real",
+          "dims": [
+            "ngrdcol"
+          ],
+          "intent": "in",
+          "optional": true,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lon_in",
+          "kind": "real",
+          "dims": [
+            "ngrdcol"
+          ],
+          "intent": "in",
+          "optional": true,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "source_lines": [
+        210,
+        306
+      ],
+      "calls_in_order": [
+        "call init_default_err_info_api(ngrdcol, err_info)",
+        "call update_headers(ngrdcol, err_info)"
+      ],
+      "branches_in_order": [
+        "if ( .not. allocated(err_info%err_header) .or. .not. allocated(err_info%host_lat) .or. .not. allocated(err_info%err_header) ) then",
+        "if ( present(mpi_rank_in) ) then",
+        "if ( present(chunk_idx_in) ) then",
+        "if ( present(lat_in) ) then",
+        "if ( lat_in(i) > 90._core_rknd ) then",
+        "else",
+        "if ( present(lon_in) ) then",
+        "if ( lon_in(i) > 180._core_rknd ) then",
+        "else"
+      ]
+    },
+    {
+      "name": "update_headers",
+      "module": "err_info_type_module",
+      "source": "src/CLUBB_core/err_info_type_module.F90",
+      "arguments": [
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "err_info",
+          "kind": "err_info_type",
+          "dims": [],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "source_lines": [
+        308,
+        355
+      ],
+      "calls_in_order": [],
+      "branches_in_order": []
+    },
+    {
+      "name": "cleanup_err_info_api",
+      "module": "err_info_type_module",
+      "source": "src/CLUBB_core/err_info_type_module.F90",
+      "arguments": [
+        {
+          "name": "err_info",
+          "kind": "err_info_type",
+          "dims": [],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "source_lines": [
+        358,
+        413
+      ],
+      "calls_in_order": [],
+      "branches_in_order": [
+        "if ( allocated(err_info%err_header) ) then",
+        "if ( ierr /= 0 ) then",
+        "if ( allocated(err_info%err_code) ) then",
+        "if ( ierr /= 0 ) then",
+        "if ( allocated(err_info%host_lat) ) then",
+        "if ( ierr /= 0 ) then",
+        "if ( allocated(err_info%host_lon) ) then",
+        "if ( ierr /= 0 ) then"
+      ]
+    }
+  ],
+  "read_evidence": {
+    "native_lines": 415,
+    "jax_actual_file": "clubb_jax/src/CLUBB_core/err_info.py",
+    "jax_lines": 154,
+    "full_read_before_implementation": true
+  },
+  "native_sha256": "77607c338598c80789e8a7e9bb23a3b7602f3bba67c95166762db52e2021519f",
+  "jax_sha256": "c1109e4334daf563bc10d833b3e14c16b3802581c362a4d0c86f5959599c95da",
+  "mirror_owner": "Existing generated clubb_kokkos/src/CLUBB_core/err_info_type_module.hpp; no duplicate type definition or shared edit.",
+  "deliverable": "Procedure definition and declaration merge fragments; root preserves generator-owned schema region.",
+  "storage": "Existing case-owned Kokkos Views and scalar metadata; no mutable global C++ storage.",
+  "public_inventory": [
+    "init_default_err_info_api",
+    "init_err_info_api",
+    "set_err_info_values_api",
+    "cleanup_err_info_api"
+  ],
+  "excluded_transient_converter_APIs": [
+    "f2k_get_err_info_private_api",
+    "f2k_set_err_info_private_api"
+  ],
+  "adaptations": [
+    "CurrentCppcleanupalreadyexists; fragment must replace it at promotion, not add duplicate.",
+    "Preserve actual repeated-header/host_lat allocation guard, optional update order, coordinate normalization and header refresh.",
+    "Privateupdate_headers delegates only exactNative I/Oformatting to explicit transient generator alias format_err_info_headers: (publicset_err_info_values_api,set()); all Nativeoptional inputs absent, no second normalization.",
+    "NativeInOutinitializer allocation failure on already allocated fields must not silently reinitialize; View allocation state follows existing owner.",
+    "Native deallocation STAT messages have no Kokkos refcount-release counterpart; do not fabricate failure statuses."
+  ],
+  "jax_differences": [
+    "JAX ErrInfo.initialized is a subset with different MPI default and no normalization/stored fixed-width headers. Native behavior remains authority."
+  ],
+  "formatter_presence_alias": {
+    "manifest_key": "format_err_info_headers",
+    "native_definition": "set_err_info_values_api",
+    "included_optionals": [],
+    "PUBLIC_NAMES_cpp_and_native": "set_err_info_values_api",
+    "private_cpp_call": "f2k::set_err_info_values_api(ngrdcol,formatted)",
+    "reason": "Reuse existing stats-style presence overload. Empty optional set formats copied existing fields without normalization. No new alias owner."
+  }
+}

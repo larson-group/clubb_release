@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 
 from clubb_jax.src import clubb_loss_driver as driver
-from clubb_jax.src.CLUBB_core.stats_netcdf import JaxStats
+from clubb_jax.src.CLUBB_core.jax_stats import JaxStats
 from utilities.loss_metrics import case_rmse
 
 

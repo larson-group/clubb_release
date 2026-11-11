@@ -1,0 +1,125 @@
+{
+  "canonical_source": "src/CLUBB_core/sfc_varnce_module.F90",
+  "canonical_sha256": "a52f5a887f2a55b36abb3586f1c2ce9a85211467716d19b5a9633ff8893148bf",
+  "target": "clubb_kokkos/drafts/sfc_varnce_module/sfc_varnce_module.cpp",
+  "target_sha256": "be5297297dba7f212f09204a9c45fb5fe537d36719ec3ed54f0ad8c5acc7cfb2",
+  "native_signature_arguments": 33,
+  "scientific_assignment_trees": 80,
+  "ordered_branch_predicates": 24,
+  "ordered_sampled_budget_calls": 12,
+  "device_bodies_without_owning_udt_or_f2k_capture": 36,
+  "required_public_native_checker_contract": {
+    "name": "sfc_varnce_check",
+    "module": "numerical_check",
+    "source": "src/CLUBB_core/numerical_check.F90",
+    "arguments": [
+      {
+        "name": "sclr_dim",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "wp2_sfc",
+        "kind": "real",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "up2_sfc",
+        "kind": "real",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "vp2_sfc",
+        "kind": "real",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "thlp2_sfc",
+        "kind": "real",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "rtp2_sfc",
+        "kind": "real",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "rtpthlp_sfc",
+        "kind": "real",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "sclrp2_sfc",
+        "kind": "real",
+        "dims": [
+          "sclr_dim"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "sclrprtp_sfc",
+        "kind": "real",
+        "dims": [
+          "sclr_dim"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "sclrpthlp_sfc",
+        "kind": "real",
+        "dims": [
+          "sclr_dim"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "err_info",
+        "kind": "err_info_type",
+        "dims": [],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      }
+    ],
+    "result": null
+  },
+  "status": "Source-only audit. No build or physics execution; CPU-vs-CPU BFB evidence pending."
+}

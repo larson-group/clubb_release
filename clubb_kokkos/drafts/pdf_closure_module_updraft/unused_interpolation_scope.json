@@ -1,0 +1,132 @@
+{
+  "status": "Source-unused private cluster; excluding it matches actual current JAX inventory",
+  "native_sha256": "11776506ccb2aa64b4d8cc3a801a4d8bb058c5416587729f728b3ee76244c196",
+  "native_public_procedures": [
+    "pdf_closure",
+    "calc_wp4_pdf",
+    "calc_wp2xp_pdf",
+    "calc_wpxp2_pdf",
+    "calc_wpxpyp_pdf",
+    "calc_w_up_in_cloud",
+    "pdf_closure_driver"
+  ],
+  "default_visibility": "private, src/CLUBB_core/pdf_closure_module.F90:28",
+  "cluster_definitions": {
+    "interp_var_array": [
+      3343,
+      3419
+    ],
+    "var_value_integer_height": [
+      3422,
+      3488
+    ],
+    "var_subgrid_interp": [
+      3491,
+      3589
+    ]
+  },
+  "call_graph": {
+    "interp_var_array": [
+      "var_value_integer_height",
+      "var_subgrid_interp"
+    ],
+    "var_value_integer_height": [
+      "mono_cubic_interp"
+    ],
+    "var_subgrid_interp": [
+      "mono_cubic_interp"
+    ]
+  },
+  "incoming_edges_from_outside_cluster": [],
+  "all_src_and_jax_symbol_matches": [
+    {
+      "path": "src/CLUBB_core/pdf_closure_module.F90",
+      "line": 3343,
+      "source": "  function interp_var_array( n_points, nz, k, z_vals, var )"
+    },
+    {
+      "path": "src/CLUBB_core/pdf_closure_module.F90",
+      "line": 3368,
+      "source": "      interp_var_array  ! Interpolated values of variable         [units vary]"
+    },
+    {
+      "path": "src/CLUBB_core/pdf_closure_module.F90",
+      "line": 3388,
+      "source": "    interp_var_array(1) = var_value_integer_height( nz, k-1, z_vals, var )"
+    },
+    {
+      "path": "src/CLUBB_core/pdf_closure_module.F90",
+      "line": 3389,
+      "source": "    interp_var_array((n_points+1)/2) = var_value_integer_height( nz, k, z_vals, var )"
+    },
+    {
+      "path": "src/CLUBB_core/pdf_closure_module.F90",
+      "line": 3390,
+      "source": "    interp_var_array(n_points) = var_value_integer_height( nz, k+1, z_vals, var )"
+    },
+    {
+      "path": "src/CLUBB_core/pdf_closure_module.F90",
+      "line": 3402,
+      "source": "      interp_var_array(1+i) &"
+    },
+    {
+      "path": "src/CLUBB_core/pdf_closure_module.F90",
+      "line": 3403,
+      "source": "      = var_subgrid_interp( nz, k, z_vals, var, z_val, l_below=.true. )"
+    },
+    {
+      "path": "src/CLUBB_core/pdf_closure_module.F90",
+      "line": 3414,
+      "source": "      interp_var_array((n_points+1)/2+i) &"
+    },
+    {
+      "path": "src/CLUBB_core/pdf_closure_module.F90",
+      "line": 3415,
+      "source": "      = var_subgrid_interp( nz, k, z_vals, var, z_val, l_below=.false. )"
+    },
+    {
+      "path": "src/CLUBB_core/pdf_closure_module.F90",
+      "line": 3419,
+      "source": "  end function interp_var_array"
+    },
+    {
+      "path": "src/CLUBB_core/pdf_closure_module.F90",
+      "line": 3422,
+      "source": "  function var_value_integer_height( nz, k, z_vals, var_grid_value ) result( var_value )"
+    },
+    {
+      "path": "src/CLUBB_core/pdf_closure_module.F90",
+      "line": 3488,
+      "source": "  end function var_value_integer_height"
+    },
+    {
+      "path": "src/CLUBB_core/pdf_closure_module.F90",
+      "line": 3491,
+      "source": "  function var_subgrid_interp( nz, k, z_vals, var, z_interp, l_below ) result( var_value )"
+    },
+    {
+      "path": "src/CLUBB_core/pdf_closure_module.F90",
+      "line": 3589,
+      "source": "  end function var_subgrid_interp"
+    }
+  ],
+  "src_module_import_sites": [
+    "src/G_unit_test_types/pdf_parameter_tests.F90:147:    use pdf_closure_module, only: &",
+    "src/G_unit_test_types/w_up_in_cloud_tests.F90:104:    use pdf_closure_module, only: &",
+    "src/CLUBB_core/advance_clubb_core_module.F90:286:    use pdf_closure_module, only: &"
+  ],
+  "external_module_import_lists_reviewed": {
+    "src/CLUBB_core/advance_clubb_core_module.F90:286": [
+      "pdf_closure_driver"
+    ],
+    "src/G_unit_test_types/pdf_parameter_tests.F90:147": [
+      "calc_wp4_pdf"
+    ],
+    "src/G_unit_test_types/w_up_in_cloud_tests.F90:104": [
+      "calc_w_up_in_cloud"
+    ]
+  },
+  "jax_all_tree_symbol_match_count": 0,
+  "source_graph_limits": "Static current-repository source review, not linked-binary or runtime coverage; no claim about external private-symbol ABI hacks. No Native routines are deleted.",
+  "decision": "Omit these three unreachable private helpers from supported Kokkos port scope, consistent with actual JAX. Preserve this finding in integration notes; a future Native incoming call requires revisiting the exclusion."
+}

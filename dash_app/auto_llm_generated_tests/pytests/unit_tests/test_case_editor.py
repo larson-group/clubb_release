@@ -33,7 +33,7 @@ def run_draft(trigger, *, value="30", logical=0, array="[1e-9]", name="bomex", r
         pytest.skip("Node is required to exercise the shipped case editor callback")
     base = {"key": "bomex", "namelists": {"model_setting": {"dt_main": 60.0, "l_restart": False,
                                                                        "sclr_tol_nl": [0.01, 1e-8]},
-                                           "stats_setting": {"fname_prefix": "bomex"}}}
+                                           "stats_setting": {"fname_prefix": "bomex"}, "gfdl_activation_setting": {}}}
     paths = ["model_setting.dt_main", "model_setting.l_restart", "model_setting.sclr_tol_nl", "stats_setting.fname_prefix"]
     definitions = cases.field_schema(base["namelists"])
     schema = {path: definitions[path] for path in paths}

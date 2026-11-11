@@ -52,9 +52,9 @@ module time_dependent_input
 !$omp   rtm_sfc_given, CO2_sfc_given,  upwp_sfc_given, vpwp_sfc_given, &
 !$omp   T_sfc_given, wpthlp_sfc_given, wpqtp_sfc_given )
 
-  type(two_dim_read_var), private, allocatable, dimension(:,:) :: &
-    t_dependent_forcing_data ! Interpolated records indexed by (forcing,column).
-                             ! Each holds (level,time) values on that column's grid.
+  type(two_dim_read_var), private, dimension(nforcings) :: &
+    t_dependent_forcing_data ! Data structure that defines the change in input
+                             ! files over time
 !$omp threadprivate( t_dependent_forcing_data )
 
   type(two_dim_read_var), private, dimension(nforcings) :: &
@@ -100,11 +100,10 @@ module time_dependent_input
   contains
 
   !================================================================================================
-  subroutine initialize_t_dependent_input( ngrdcol, iunit, runtype, l_readiopdata, rho, & ! In
-                                           nz, & ! In
-                                           grid, p_in_Pa, & ! In
-                                           l_add_dycore_grid, & ! In
-                                           grid_adapt_in_time_method ) ! In
+  subroutine initialize_t_dependent_input( iunit, runtype, l_readiopdata, rho, nz, &
+                                           grid, p_in_Pa, &
+                                           l_add_dycore_grid, &
+                                           grid_adapt_in_time_method )
     !
     !  Description: 
     !    This subroutine reads in time dependent information about a
@@ -120,16 +119,15 @@ module time_dependent_input
     implicit none
 
     ! Input Variable(s)
-    integer, intent(in) :: ngrdcol ! Number of model columns [-]
     integer, intent(in) :: iunit ! File I/O
 
     character(len=*), intent(in) :: runtype ! Runtype
 
     integer, intent(in) :: nz ! Size of the model grid
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: grid ! Model grid
+    real( kind = core_rknd ), dimension(nz), intent(in) :: grid ! Model grid
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: p_in_Pa ! Pressure[Pa]
+    real( kind = core_rknd ), dimension(nz), intent(in) :: p_in_Pa ! Pressure[Pa]
 
     logical, intent(in) :: &
       l_add_dycore_grid, &     ! Flag to set remapping from dycore on or off
@@ -146,10 +144,9 @@ module time_dependent_input
 
     if ( .not. l_ignore_forcings ) then
       call initialize_t_dependent_forcings &
-                   ( ngrdcol, iunit, input_path//trim(runtype)//forcings_path, nz, grid, & ! In
-                     p_in_Pa, & ! In
-                     l_add_dycore_grid, & ! In
-                     grid_adapt_in_time_method ) ! In
+                   ( iunit, input_path//trim(runtype)//forcings_path, nz, & ! Intent(in)
+                     grid, p_in_Pa,                                       & ! Intent(in)
+                     l_add_dycore_grid, grid_adapt_in_time_method )         ! Intent(in)
     end if
 
     if ( .not. l_sfc_already_initialized ) then
@@ -345,10 +342,9 @@ module time_dependent_input
   end subroutine initialize_t_dependent_sfc
 
   !================================================================================================
-  subroutine initialize_t_dependent_forcings( ngrdcol, iunit, input_file, nz, grid, & ! In
-                                              p_in_Pa, & ! In
-                                              l_add_dycore_grid, & ! In
-                                              grid_adapt_in_time_method ) ! In
+  subroutine initialize_t_dependent_forcings( iunit, input_file, nz, grid, p_in_Pa, &
+                                              l_add_dycore_grid, &
+                                              grid_adapt_in_time_method )
     !
     !  Description: This subroutine reads in a file that details time dependent
     !  input values that vary in two dimensions.
@@ -373,16 +369,15 @@ module time_dependent_input
     intrinsic :: spread
 
     ! Input Variable(s)
-    integer, intent(in) :: ngrdcol ! Number of model columns [-]
     integer, intent(in) :: iunit ! File I/O
 
     character(len=*), intent(in) :: input_file ! Path to the input file
 
     integer, intent(in) :: nz  ! Size of Model Grid [-]
 
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz) :: grid ! Altitudes of Grid [m]
+    real( kind = core_rknd ), intent(in), dimension(nz) :: grid ! Altitudes of Grid [m]
 
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz) :: p_in_Pa ! Pressure [Pa]
+    real( kind = core_rknd ), intent(in), dimension(nz) :: p_in_Pa ! Pressure [Pa]
 
     logical, intent(in) :: &
       l_add_dycore_grid     ! Flag to set remapping from dycore on or off
@@ -394,7 +389,7 @@ module time_dependent_input
 
     ! Local Variables
 
-    integer :: i, n, n_f_grid_z, n_f_grid_t ! Column, forcing and input dimensions [-]
+    integer :: i, n_f_grid_z, n_f_grid_t
 
     ! ----------------- Begin Code --------------------
 
@@ -413,39 +408,38 @@ module time_dependent_input
     ! remain that way thus marking them blank.
     call fill_blanks_two_dim_vars( nforcings, dimension_var, t_dependent_forcing_data_f_grid )
 
-    if ( .not. allocated(t_dependent_forcing_data) ) then
-      allocate( t_dependent_forcing_data(nforcings,ngrdcol) )
-    end if
-
-    ! The file is shared, but its interpolation coordinates belong to each column.
-    do i = 1, ngrdcol
-      do n = 1, nforcings
-        if ( .not. allocated(t_dependent_forcing_data(n,i)%values) ) then
-          allocate( t_dependent_forcing_data(n,i)%values(nz,n_f_grid_t) )
-        end if
-      end do
-
-      select case ( t_dependent_forcing_data_f_grid(1)%name )
-      case ( z_name )
-        t_dependent_forcing_data(1,i)%values = spread(grid(i,:),2,n_f_grid_t)
-      case ( pressure_name )
-        t_dependent_forcing_data(1,i)%values = spread(-p_in_Pa(i,:),2,n_f_grid_t)
-      case default
-        error stop "Incompatible grid type in first element of t_dependent_forcings."
-      end select
+    do i=1, nforcings
+      ! Only allocate t_dependent_forcing_data, if it isn't already stored in the global variable
+      if ( .not. allocated(t_dependent_forcing_data(i)%values) ) then
+        allocate( t_dependent_forcing_data(i)%values(1:nz,1:n_f_grid_t) )
+      end if
     end do
 
-    if ( t_dependent_forcing_data_f_grid(1)%name == pressure_name ) then
-      ! Retained raw pressure coordinates must stay negative across grid updates.
-      t_dependent_forcing_data_f_grid(1)%values = -abs(t_dependent_forcing_data_f_grid(1)%values)
-    end if
+    select case( t_dependent_forcing_data_f_grid(1)%name )
+    case( z_name )
 
-    do n = 2, nforcings
-      do i = 1, ngrdcol
-        t_dependent_forcing_data(n,i)%values = read_to_grid( nforcings, n_f_grid_z, n_f_grid_t, & ! In
-          nz, t_dependent_forcing_data(1,i)%values(:,1), & ! In
-          t_dependent_forcing_data_f_grid, t_dependent_forcing_data_f_grid(n)%name ) ! In
-      end do
+      t_dependent_forcing_data(1)%name = z_name
+      t_dependent_forcing_data(1)%values(:,1:n_f_grid_t) = spread(grid,2,n_f_grid_t)
+
+    case( pressure_name )
+
+      t_dependent_forcing_data(1)%name = pressure_name
+      t_dependent_forcing_data(1)%values(:,1:n_f_grid_t) = spread(-p_in_Pa, 2, n_f_grid_t )
+      t_dependent_forcing_data_f_grid(1)%values = -t_dependent_forcing_data_f_grid(1)%values
+
+    case default
+      error stop "Incompatible grid type in first element of t_dependent_forcings."
+    end select
+
+    ! Interpolate the time dependent input data to the appropriate grid.
+
+    do i=2, nforcings
+
+      t_dependent_forcing_data(i)%name = t_dependent_forcing_data_f_grid(i)%name
+      t_dependent_forcing_data(i)%values = read_to_grid( nforcings, n_f_grid_z, n_f_grid_t, &
+                         nz,t_dependent_forcing_data(1)%values(:,1), &
+                         t_dependent_forcing_data_f_grid, t_dependent_forcing_data(i)%name )
+
     end do
 
     if ( l_add_dycore_grid .or. grid_adapt_in_time_method == no_grid_adaptation ) then
@@ -486,7 +480,11 @@ module time_dependent_input
       end if
     end do
 
-    if ( allocated(t_dependent_forcing_data) ) deallocate( t_dependent_forcing_data )
+    do i=1, nforcings
+      if ( allocated( t_dependent_forcing_data(i)%values ) ) then
+        deallocate( t_dependent_forcing_data(i)%values )
+      end if
+    end do
 
     if ( allocated( dimension_var%values ) ) then
       deallocate( dimension_var%values )
@@ -532,7 +530,7 @@ module time_dependent_input
 
     use input_reader, only: read_x_table, two_dim_read_var
 
-    use interpolation, only: zlinterp
+    use interpolation, only: zlinterp_fnc
 
     use clubb_precision, only: &
       core_rknd ! Variable(s)
@@ -558,15 +556,16 @@ module time_dependent_input
 
     real( kind = core_rknd ), dimension(nz, other_dim_size) :: var
 
+    integer i
 
     ! ----------------- Begin Code --------------------
 
     temp_var = read_x_table( ntwo_dim_vars,  dim_size, other_dim_size, target_name, two_dim_vars )
 
-    ! Batch the file's time samples, then restore its level/time layout.
-    var = transpose( zlinterp( other_dim_size, nz, & ! In
-                               dim_size, spread(grid, 1, other_dim_size), & ! In
-                               transpose(two_dim_vars(1)%values), transpose(temp_var) ) ) ! In
+    do i=1, other_dim_size
+      var(:,i) = zlinterp_fnc( nz, dim_size, grid, &
+                                    two_dim_vars(1)%values(:,i), temp_var(:,i) )
+    end do
 
     return
 
@@ -673,16 +672,13 @@ module time_dependent_input
       edsclrm_forcing ! Edscalar forcing [-]
 
     !--------------------- Local Variables ---------------------
-    logical :: l_valid(ngrdcol) ! Columns with a complete forcing profile [-]
-    real( kind = core_rknd ) :: wm_zm_new(ngrdcol,nzm) ! Interpolated subsidence [m/s]
-
     integer :: i, k, n
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt) :: temp_array
 
     !--------------------- Begin Code ---------------------
 
-    !$acc data create( temp_array, l_valid )
+    !$acc data create( temp_array )
 
     ! Parse the values in t_dependent_forcing_data for CLUBB compatible forcing
     ! data.
@@ -693,23 +689,20 @@ module time_dependent_input
       ! Check to see if temp_array is an actual profile or a dummy profile
       ! If it is a dummy profile we dont want it to apply itself as it may
       ! overwrite legitimate information from another source.
-      l_valid = .not. any( abs(temp_array - (-999.9_core_rknd)) < &
-        abs(temp_array + (-999.9_core_rknd)) / 2 * eps, dim=2 )
+      if( .not. any( abs(temp_array - (-999.9_core_rknd)) < &
+          abs(temp_array + (-999.9_core_rknd)) / 2 * eps ) ) then
 
-      if ( any(l_valid) ) then
-
-        !$acc update device( temp_array, l_valid )
+        !$acc update device( temp_array )
           
-        select case (t_dependent_forcing_data_f_grid(n)%name)
+        select case (t_dependent_forcing_data(n)%name)
         case(temperature_f_name, theta_f_name, thetal_f_name)
 
-          select case(t_dependent_forcing_data_f_grid(n)%name)
+          select case(t_dependent_forcing_data(n)%name)
           case(temperature_f_name)
 
             !$acc parallel loop gang vector collapse(2) default(present)
             do k = 1, nzt
               do i = 1, ngrdcol
-                if ( .not. l_valid(i) ) cycle
                 thlm_f(i,k) = temp_array(i,k) / exner(i,k)
               end do
             end do
@@ -719,7 +712,6 @@ module time_dependent_input
             !$acc parallel loop gang vector collapse(2) default(present)
             do k = 1, nzt
               do i = 1, ngrdcol
-                if ( .not. l_valid(i) ) cycle
                 thlm_f(i,k) = temp_array(i,k) ! n am not sure on the conversion of this
               end do
             end do
@@ -729,7 +721,6 @@ module time_dependent_input
             !$acc parallel loop gang vector collapse(2) default(present)
             do k = 1, nzt
               do i = 1, ngrdcol
-                if ( .not. l_valid(i) ) cycle
                 thlm_f(i,k) = temp_array(i,k)
               end do
             end do
@@ -741,7 +732,6 @@ module time_dependent_input
             !$acc parallel loop gang vector collapse(2) default(present)
             do k = 1, nzt
               do i = 1, ngrdcol
-                if ( .not. l_valid(i) ) cycle
                 sclrm_forcing(i,k,sclr_idx%iisclr_thl) = thlm_f(i,k)
               end do
             end do
@@ -756,7 +746,6 @@ module time_dependent_input
             !$acc parallel loop gang vector collapse(2) default(present)
             do k = 1, nzt
               do i = 1, ngrdcol
-                if ( .not. l_valid(i) ) cycle
                 if ( l_do_expldiff_rtm_thlm .and. edsclr_dim > 1 ) then
                   edsclrm_forcing(i,k,sclr_idx%iiedsclr_thl) = zero
                 else
@@ -769,13 +758,12 @@ module time_dependent_input
 
         case(rt_f_name, sp_humidity_f_name)
 
-          select case(t_dependent_forcing_data_f_grid(n)%name)
+          select case(t_dependent_forcing_data(n)%name)
           case(sp_humidity_f_name)
 
             !$acc parallel loop gang vector collapse(2) default(present)
             do k = 1, nzt
               do i = 1, ngrdcol
-                if ( .not. l_valid(i) ) cycle
                 rtm_f(i,k) = temp_array(i,k) * ( 1._core_rknd + rtm(i,k) )**2
               end do
             end do
@@ -785,7 +773,6 @@ module time_dependent_input
             !$acc parallel loop gang vector collapse(2) default(present)
             do k = 1, nzt
               do i = 1, ngrdcol
-                if ( .not. l_valid(i) ) cycle
                 rtm_f(i,k) = temp_array(i,k)
               end do
             end do
@@ -797,7 +784,6 @@ module time_dependent_input
             !$acc parallel loop gang vector collapse(2) default(present)
             do k = 1, nzt
               do i = 1, ngrdcol
-                if ( .not. l_valid(i) ) cycle
                 sclrm_forcing(i,k,sclr_idx%iisclr_rt)  = rtm_f(i,k)
               end do
             end do
@@ -810,7 +796,6 @@ module time_dependent_input
             !$acc parallel loop gang vector collapse(2) default(present)
             do k = 1, nzt
               do i = 1, ngrdcol
-                if ( .not. l_valid(i) ) cycle
                 if ( l_do_expldiff_rtm_thlm .and. edsclr_dim > 1 ) then
                   edsclrm_forcing(i,k,sclr_idx%iiedsclr_rt)  = zero
                 else
@@ -826,7 +811,6 @@ module time_dependent_input
           !$acc parallel loop gang vector collapse(2) default(present)
             do k = 1, nzt
             do i = 1, ngrdcol
-              if ( .not. l_valid(i) ) cycle
               um_ref(i,k) = temp_array(i,k)
             end do
           end do
@@ -836,7 +820,6 @@ module time_dependent_input
           !$acc parallel loop gang vector collapse(2) default(present)
           do k = 1, nzt
             do i = 1, ngrdcol
-              if ( .not. l_valid(i) ) cycle
               vm_ref(i,k) = temp_array(i,k)
             end do
           end do
@@ -846,7 +829,6 @@ module time_dependent_input
           !$acc parallel loop gang vector collapse(2) default(present)
           do k = 1, nzt
             do i = 1, ngrdcol
-              if ( .not. l_valid(i) ) cycle
               um_f(i,k) = temp_array(i,k)
             end do
           end do
@@ -856,20 +838,18 @@ module time_dependent_input
           !$acc parallel loop gang vector collapse(2) default(present)
           do k = 1, nzt
             do i = 1, ngrdcol
-              if ( .not. l_valid(i) ) cycle
               vm_f(i,k) = temp_array(i,k)
             end do
           end do
 
         case(wm_name, omega_name, omega_mb_hr_name)
 
-          select case(t_dependent_forcing_data_f_grid(n)%name)
+          select case(t_dependent_forcing_data(n)%name)
           case(wm_name)
 
             !$acc parallel loop gang vector collapse(2) default(present)
             do k = 1, nzt
               do i = 1, ngrdcol
-                if ( .not. l_valid(i) ) cycle
                 wm_zt(i,k) = temp_array(i,k)
               end do
             end do
@@ -879,7 +859,6 @@ module time_dependent_input
             !$acc parallel loop gang vector collapse(2) default(present)
             do k = 1, nzt
               do i = 1, ngrdcol
-                if ( .not. l_valid(i) ) cycle
                 wm_zt(i,k) = - temp_array(i,k) / (grav * rho(i,k))
               end do
             end do
@@ -889,7 +868,6 @@ module time_dependent_input
             !$acc parallel loop gang vector collapse(2) default(present)
             do k = 1, nzt
               do i = 1, ngrdcol
-                if ( .not. l_valid(i) ) cycle
                 temp_array(i,k) = temp_array(i,k) * pascal_per_mb / sec_per_hr
               end do
             end do
@@ -897,7 +875,6 @@ module time_dependent_input
             !$acc parallel loop gang vector collapse(2) default(present)
             do k = 1, nzt
               do i = 1, ngrdcol
-                if ( .not. l_valid(i) ) cycle
 
                 wm_zt(i,k) = - temp_array(i,k) / (grav * rho(i,k))
 
@@ -906,15 +883,13 @@ module time_dependent_input
 
           end select
 
-          wm_zm_new = zt2zm_api( nzm, nzt, ngrdcol, gr, wm_zt )
-          where ( spread(l_valid, 2, nzm) ) wm_zm = wm_zm_new
+          wm_zm = zt2zm_api( nzm, nzt, ngrdcol, gr, wm_zt )
 
         case(ug_name)
 
           !$acc parallel loop gang vector collapse(2) default(present)
           do k = 1, nzt
             do i = 1, ngrdcol
-              if ( .not. l_valid(i) ) cycle
               ug(i,k) = temp_array(i,k)
             end do
           end do
@@ -924,14 +899,13 @@ module time_dependent_input
           !$acc parallel loop gang vector collapse(2) default(present)
           do k = 1, nzt
             do i = 1, ngrdcol
-              if ( .not. l_valid(i) ) cycle
               vg(i,k) = temp_array(i,k)
             end do
           end do
 
         case default
 
-          write(fstderr, *) "Incompatable forcing type: "//t_dependent_forcing_data_f_grid(n)%name
+          write(fstderr, *) "Incompatable forcing type: "//t_dependent_forcing_data(n)%name
           error stop
 
         end select
@@ -1025,7 +999,9 @@ module time_dependent_input
       edsclrm_forcing ! Edscalar forcing [-]
 
     !--------------------- Local Variables ---------------------
-    integer :: i, k, n, before_time, after_time
+    integer :: i, n, before_time, after_time
+
+    real( kind = core_rknd ), dimension(nzt) :: forcing_profile
 
     real( kind = core_rknd ), dimension(ngrdcol,nforcings,nzt) :: forcings_array
 
@@ -1038,13 +1014,13 @@ module time_dependent_input
     call time_select( time, size(dimension_var%values), dimension_var%values, &
                                  before_time, after_time, time_frac )
 
+    ! The forcings are read in on a single grid, so every column gets the same profile
     do n = 2, nforcings
-      do k = 1, nzt
-        do i = 1, ngrdcol
-          forcings_array(i,n,k) = linear_interp_factor &
-            ( time_frac, t_dependent_forcing_data(n,i)%values(k,after_time), &
-              t_dependent_forcing_data(n,i)%values(k,before_time) )
-        end do
+      forcing_profile = linear_interp_factor &
+                   ( time_frac, t_dependent_forcing_data(n)%values(:,after_time), &
+                     t_dependent_forcing_data(n)%values(:,before_time) )
+      do i = 1, ngrdcol
+        forcings_array(i,n,:) = forcing_profile
       end do
     end do
 
@@ -1163,7 +1139,9 @@ module time_dependent_input
     !--------------------- Local Variables ---------------------
     integer :: n, before_time, after_time, iv
 
-    integer :: i, k ! Column and level indices [-]
+    integer :: i
+
+    real( kind = core_rknd ), dimension(gr_dycore%nzt) :: forcing_profile_dycore
 
     real( kind = core_rknd ), dimension(ngrdcol,gr_dycore%nzt) :: temp_array_dycore
 
@@ -1184,12 +1162,13 @@ module time_dependent_input
 
     do n = 2, nforcings
 
-      do k = 1, gr_dycore%nzt
-        do i = 1, ngrdcol
-          temp_array_dycore(i,k) = linear_interp_factor &
-            ( time_frac, t_dependent_forcing_data(n,i)%values(k,after_time), &
-              t_dependent_forcing_data(n,i)%values(k,before_time) )
-        end do
+      ! The forcings are stored on a single dycore grid, so every column starts from the
+      ! same profile, but each column is remapped to its own physics grid
+      forcing_profile_dycore = linear_interp_factor &
+                               ( time_frac, t_dependent_forcing_data(n)%values(:,after_time), &
+                                 t_dependent_forcing_data(n)%values(:,before_time) )
+      do i = 1, ngrdcol
+        temp_array_dycore(i,:) = forcing_profile_dycore
       end do
 
       forcings_array(:,n,:) = remap_vals_to_target( ngrdcol, &

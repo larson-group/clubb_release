@@ -1,0 +1,93 @@
+{
+  "status": "Complete supported4-routine draft; separate final source audit and cleanup complete. Compilation and maintained model comparison pending.",
+  "canonical_source": "src/CLUBB_core/new_tsdadg_pdf.F90",
+  "canonical_sha256": "38a1467cb60e3ce5d061880815d9f351bcdab93922fed6dd854ad1dcd12d0f1c",
+  "full931line_Native_and_actual_JAX_read_before_code": true,
+  "Native_inventory_and_order": [
+    "tsdadg_pdf_driver",
+    "calc_setter_parameters",
+    "calc_L_x_Skx_fnc",
+    "calc_respnder_parameters"
+  ],
+  "public_inventory": [
+    "tsdadg_pdf_driver",
+    "calc_setter_parameters",
+    "calc_L_x_Skx_fnc"
+  ],
+  "private_inventory": [
+    "calc_respnder_parameters"
+  ],
+  "signatures": [
+    {
+      "name": "tsdadg_pdf_driver",
+      "required_arguments": 25,
+      "all_names_order_kinds_intents_checked": true
+    },
+    {
+      "name": "calc_setter_parameters",
+      "required_arguments": 13,
+      "all_names_order_kinds_intents_checked": true
+    },
+    {
+      "name": "calc_L_x_Skx_fnc",
+      "required_arguments": 6,
+      "all_names_order_kinds_intents_checked": true
+    },
+    {
+      "name": "calc_respnder_parameters",
+      "required_arguments": 12,
+      "all_names_order_kinds_intents_checked": true
+    }
+  ],
+  "source_review": {
+    "ordered_assignment_expression_trees": 53,
+    "separately_checked_immutable_small_l_values": 6,
+    "ordered_Native_IF_predicates": 14,
+    "Native_WHERE_sign_conditions_separately_reviewed": 2,
+    "ordered_helper_calls": 12,
+    "ordered_helper_arguments": 129,
+    "warning_text_and_data_labels_exact": 12,
+    "negative_payload_field_mapping": 6,
+    "complete_method_derivation_regions_in_source_position": 2,
+    "all_scalar_helper_outputs_references_and_full_write_paths": true,
+    "level_loop_bounds_and_independence": true,
+    "Native_grouping_comments_and_max100cols": true,
+    "no_tabs_or_trailing_whitespace": true,
+    "no_f2k_hostio_hostread_or_nestedlaunch_in_device_body": true
+  },
+  "execution_language_adaptations": [
+    "Native driver profile retains nz and all24rank1View arguments; policies and scratch retain firstinput execution/memory spaces, accepting current strided column subviews without transposing physical fields.",
+    "Native level-local sign/spread/coefficient arrays lowered to distinct scalar locals; six immutable small_l values set percall before kernel. Source formulas/branch/call order within each level retained.",
+    "Only integer warning count reduces; owned(level,6)LayoutLeft payload saves negative originalvalues, clipping variance and coefficient in Nativefieldorder. Stage payload onlywhen countnonzero; hostprints Nativelevel/fieldorder with max_digits10.",
+    "Native private helper retains name in named module-detail namespace following saturation/new-PDF owner pattern; public/device definitions remain Nativeorder.",
+    "Native integer squares lower to ordinary multiplication; same-kind eps materialization only at Kokkos min/max reference arguments, retaining exact existingconstant value.",
+    "Copied descriptions corrected to variance outputs and responder input-mixture semantics; full Native mathematical derivations retained."
+  ],
+  "missing_public_lower_contracts_or_constants": [],
+  "dependency_owner": "Existing array_types.hpp/constants_clubb.hpp/Kokkos math; Native calls no calc_roots procedure.",
+  "scope_exclusions": [],
+  "BFB_arithmetic_status": "No explicit FMA, forced reassociation, rounding barrier, new guard/floor or mismatch-driven workaround. No numerical evidence yet.",
+  "untested_paths": [
+    "All three setter selections and all skewness ties/covariance signs",
+    "Four normalized-mean epsilon mixture branches, signed denominator thresholds and Gaussian limit",
+    "All six negative-variance diagnostics and pre-clipping payloads, NaN/signed-zero behavior",
+    "HostSpace/execution-space strided profiles and full model selection ofTSDADG; defaultADG1cases do not exercise it"
+  ],
+  "runtime": {
+    "compilation_or_build": false,
+    "tests_or_model_runs": false,
+    "CPU_BFB": false,
+    "GPU_verification": false,
+    "performance_measurement": false,
+    "shared_production_CMake_generator_changes_by_owner": false
+  },
+  "integration_notes": "INTEGRATION.md",
+  "source_review_command": "python clubb_kokkos/drafts/new_tsdadg_pdf/source_audit.py",
+  "file_sha256": {
+    "SOURCE_OUTLINE.json": "68861b4aede8790964816fbf4ae90c762571efd302dc1387f0f6b432ce831020",
+    "source_audit.py": "59302f3501d15376761a464c3a9d70557713f9163a386a3819bcff64d806db93",
+    "expression_audit.json": "a59b2b486116354eb6ead91e4f6d67e1f5fa2df096b393dec17af7c0e75d557b",
+    "new_tsdadg_pdf.hpp": "4b27a8eeafbce37af7fb5d1a045d3dceb7f059869413ecc900190f08f4b89062",
+    "INTEGRATION.md": "dee0a4c269cd96501b9a8fbb940c96d1dbe73b9b6ab5a5e243511be4ef5acd0e"
+  }
+}

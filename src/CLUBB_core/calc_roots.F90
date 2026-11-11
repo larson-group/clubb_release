@@ -14,9 +14,8 @@ module calc_roots
   contains
 
   !=============================================================================
-  elemental subroutine cubic_solve( a_coef, b_coef, c_coef, d_coef, & ! In
-                                    root_1, root_2, & ! Out
-                                    root_3 ) ! Out
+  function cubic_solve( nz, a_coef, b_coef, c_coef, d_coef ) &
+  result( roots )
 
     ! Description:
     ! Solve for the roots of x in a cubic equation.
@@ -72,27 +71,29 @@ module calc_roots
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
+    ! Input Variables
+    integer, intent(in) :: &
+      nz    ! Number of vertical levels
 
-    real( kind = core_rknd ), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
       a_coef, & ! Coefficient a (of x^3) in a*x^3 + b*x^2 + c^x + d = 0    [-]
       b_coef, & ! Coefficient b (of x^2) in a*x^3 + b*x^2 + c^x + d = 0    [-]
       c_coef, & ! Coefficient c (of x) in a*x^3 + b*x^2 + c^x + d = 0      [-]
       d_coef    ! Coefficient d in a*x^3 + b*x^2 + c^x + d = 0             [-]
 
-    !--------------------------- Output Variables ---------------------------
-    complex( kind = core_rknd ), intent(out) :: &
-      root_1, root_2, root_3    ! Roots of x that satisfy a*x^3 + b*x^2 + c*x + d = 0       [-]
+    ! Return Variables
+    complex( kind = core_rknd ), dimension(nz,3) :: &
+      roots    ! Roots of x that satisfy a*x^3 + b*x^2 + c*x + d = 0       [-]
 
-    !--------------------------- Local Variables ---------------------------
-    real( kind = core_rknd ) :: &
+    ! Local Variables
+    real( kind = core_rknd ), dimension(nz) :: &
       cap_Q_coef,  & ! Coefficient Q in cubic formula     [-]
       cap_R_coef,  & ! Coefficient R in cubic formula     [-]
       discriminant, & ! discriminant D in cubic formula     [-]
       sgn_S,       & ! Sign of Re( R + sqrt( D ) )        [-]
       sgn_T          ! Sign of Re( R - sqrt( D ) )        [-]
 
-    complex( kind = core_rknd ) :: &
+    complex( kind = core_rknd ), dimension(nz) :: &
       sqrt_det,   & ! Square root of discriminant D in cubic formula     [-]
       cap_S_coef, & ! Coefficient S in cubic formula                    [-]
       cap_T_coef    ! Coefficient T in cubic formula                    [-]
@@ -104,8 +105,6 @@ module calc_roots
       sqrt_3,          & ! Sqrt 3 (complex data type)
       one_half_cmplx,  & ! 1/2 (complex data type)
       one_third_cmplx    ! 1/3 (complex data type)
-
-    !--------------------------- Begin Code ---------------------------
 
 
     ! Declare some constants as complex data types in order to prevent
@@ -151,7 +150,7 @@ module calc_roots
     ! Find the values of the roots.
     ! This root is always real-valued.
     ! x(1) = -(1/3)*(b/a) + ( S + T ).
-    root_1 &
+    roots(:,1) &
     = - one_third_cmplx * cmplx( b_coef/a_coef, kind = core_rknd ) &
       + ( cap_S_coef + cap_T_coef )
 
@@ -160,7 +159,7 @@ module calc_roots
     ! of a double or triple root).  When D > 0, this root is a complex number.
     ! It is the complex conjugate of roots(3).
     ! x(2) = -(1/3)*(b/a) - (1/2) * ( S + T ) + (1/2)i * sqrt(3) * ( S - T ).
-    root_2 &
+    roots(:,2) &
     = - one_third_cmplx * cmplx( b_coef/a_coef, kind = core_rknd ) &
       - one_half_cmplx * ( cap_S_coef + cap_T_coef ) &
       + one_half_cmplx * i_cmplx * sqrt_3 * ( cap_S_coef - cap_T_coef )
@@ -170,7 +169,7 @@ module calc_roots
     ! of a double or triple root).  When D > 0, this root is a complex number.
     ! It is the complex conjugate of roots(2).
     ! x(3) = -(1/3)*(b/a) - (1/2) * ( S + T ) - (1/2)i * sqrt(3) * ( S - T ).
-    root_3 &
+    roots(:,3) &
     = - one_third_cmplx * cmplx( b_coef/a_coef, kind = core_rknd ) &
       - one_half_cmplx * ( cap_S_coef + cap_T_coef ) &
       - one_half_cmplx * i_cmplx * sqrt_3 * ( cap_S_coef - cap_T_coef )
@@ -178,11 +177,11 @@ module calc_roots
 
     return
 
-  end subroutine cubic_solve
+  end function cubic_solve
 
   !=============================================================================
-  elemental subroutine quadratic_solve( a_coef, b_coef, c_coef, & ! In
-                                        root_1, root_2 ) ! Out
+  function quadratic_solve( nz, a_coef, b_coef, c_coef ) &
+  result( roots )
 
     ! Description:
     ! Solve for the roots of x in a quadratic equation.
@@ -220,25 +219,25 @@ module calc_roots
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
+    ! Input Variables
+    integer, intent(in) :: &
+      nz    ! Number of vertical levels
 
-    real( kind = core_rknd ), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
       a_coef, & ! Coefficient a (of x^2) in a*x^2 + b*x + c = 0    [-]
       b_coef, & ! Coefficient b (of x) in a*x^2 + b*x + c = 0      [-]
       c_coef    ! Coefficient c in a*x^2 + b*x + c = 0             [-]
 
-    !--------------------------- Output Variables ---------------------------
-    complex( kind = core_rknd ), intent(out) :: &
-      root_1, root_2    ! Roots of x that satisfy a*x^2 + b*x + c = 0       [-]
+    ! Return Variables
+    complex( kind = core_rknd ), dimension(nz,2) :: &
+      roots    ! Roots of x that satisfy a*x^2 + b*x + c = 0       [-]
 
-    !--------------------------- Local Variables ---------------------------
-    real( kind = core_rknd ) :: &
+    ! Local Variables
+    real( kind = core_rknd ), dimension(nz) :: &
       discriminant    ! discriminant D in quadratic formula     [-]
 
-    complex( kind = core_rknd ) :: &
+    complex( kind = core_rknd ), dimension(nz) :: &
       sqrt_det    ! Square root of discriminant D in quadratic formula     [-]
-
-    !--------------------------- Begin Code ---------------------------
 
 
     ! Find the value of the discriminant D; where
@@ -254,20 +253,20 @@ module calc_roots
     ! part of a double root).  When D < 0, this root is a complex number.  It is
     ! the complex conjugate of roots(2).
     ! x(1) = ( -b + sqrt( b^2 - 4*a*c ) ) / (2*a); and
-    root_1 = ( -cmplx( b_coef, kind = core_rknd ) + sqrt_det ) &
+    roots(:,1) = ( -cmplx( b_coef, kind = core_rknd ) + sqrt_det ) &
                  / cmplx( two * a_coef, kind = core_rknd )
 
     ! This root is real-valued when D > 0, as well as when D = 0 (when it is
     ! part of a double root).  When D < 0, this root is a complex number.  It is
     ! the complex conjugate of roots(1).
     ! x(2) = ( -b - sqrt( b^2 - 4*a*c ) ) / (2*a).
-    root_2 = ( -cmplx( b_coef, kind = core_rknd ) - sqrt_det ) &
+    roots(:,2) = ( -cmplx( b_coef, kind = core_rknd ) - sqrt_det ) &
                  / cmplx( two * a_coef, kind = core_rknd )
 
 
     return
 
-  end subroutine quadratic_solve
+  end function quadratic_solve
 
   !=============================================================================
   function cube_root( x )
@@ -292,11 +291,11 @@ module calc_roots
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
+    ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
       x  ! Variable x
 
-    !--------------------------- Output Variables ---------------------------
+    ! Return Variables
     real( kind = core_rknd ) :: &
       cube_root  ! Cube root of x
 

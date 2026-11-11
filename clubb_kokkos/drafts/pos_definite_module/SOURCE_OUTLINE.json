@@ -1,0 +1,181 @@
+{
+  "preimplementation_outline": true,
+  "source": "src/CLUBB_core/pos_definite_module.F90",
+  "native_lines": 223,
+  "jax": "clubb_jax/src/CLUBB_core/pos_definite_module.py",
+  "supported_scope": "Complete one public Native routine, all10 required arguments; JAX supports same complete algorithm and returns four changed arrays.",
+  "native_inventory_and_order": [
+    "pos_definite_adj"
+  ],
+  "routines": [
+    {
+      "name": "pos_definite_adj",
+      "module": "pos_definite_module",
+      "source": "src/CLUBB_core/pos_definite_module.F90",
+      "arguments": [
+        {
+          "name": "nzm",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "gr",
+          "kind": "grid",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "dt",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "field_np1",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "flux_np1",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "field_n",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "field_pd",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "flux_pd",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "ordered_control": [
+        "if ( clubb_at_least_debug_level_api( 1 ) ) then",
+        "end if",
+        "do k = 1, nzm, 1",
+        "do i = 1, ngrdcol",
+        "do k = 1, nzt, 1",
+        "do i = 1, ngrdcol",
+        "do k = 1, nzt, 1",
+        "do i = 1, ngrdcol",
+        "if ( gr%grid_dir_indx > 0 ) then",
+        "else",
+        "endif",
+        "do k = gr%k_lb_zm, gr%k_ub_zm-2*gr%grid_dir_indx, gr%grid_dir_indx",
+        "do i = 1, ngrdcol",
+        "if ( gr%grid_dir_indx > 0 ) then",
+        "else",
+        "endif",
+        "do i = 1, ngrdcol",
+        "if ( any( field_np1(i,:) < zero ) ) then",
+        "else",
+        "end if",
+        "do i = 1, ngrdcol",
+        "if ( any( field_np1(i,:) < zero ) ) then",
+        "else",
+        "end if"
+      ],
+      "ordered_function_calls": [
+        "clubb_at_least_debug_level_api(1)",
+        "ddzm(nzm,nzt,ngrdcol,gr,flux_lim-flux_np1)"
+      ]
+    }
+  ],
+  "ordered_behavior": [
+    "Host debug-level query and Correcting flux stdout message.",
+    "Flux-level positive/negative split with zero_threshold.",
+    "Thermodynamic dz_over_dt=(1/(grid_dir*invrs_dzt))/dt, preserving both divisions.",
+    "Directional outward flux index selection and eps floor.",
+    "Limiter loops from Native k_lb_zm through k_ub_zm-2*grid_dir_indx, stepping grid_dir_indx; direction-specific scalar/flux indices and min/max Eq10.",
+    "Unchanged lower/upper storage endpoint fluxes.",
+    "Per-column ANY(field_np1<zero), before update, controls all-level flux_pd budget; else zero.",
+    "Value-copy field_np1 into local field_nonlim, not View alias.",
+    "Apply -dt*ddzm(flux_lim-flux_np1)+field_np1.",
+    "Distinct per-column ANY(updated field_np1<zero), after update, controls all-level field_pd; else zero.",
+    "Value-copy limited flux to caller flux_np1."
+  ],
+  "index_semantics": [
+    "Grid metadata remains Native1-based; local k/i/index values remain Native1-based until View subscripts.",
+    "Physical-direction limiter loop flattened by ordinal; no float recurrence. Boundary indices remain storage1,nzm.",
+    "Native lower limiter term intentionally uses dz_over_dt(i,k_zt), not kp1."
+  ],
+  "ownership": "Six Native scratch fields plus one materialized ddzm array-expression argument/owned derivative result, all per-call column-first LayoutLeft. Concrete core Views plus generic adapters through existing array_types owner.",
+  "dependencies": [
+    "Existing C++ ddzm(nzm,nzt,ngrdcol,gr,Real2D)->Real2D.",
+    "Existing f2k::clubb_at_least_debug_level_api(int)->bool, host-only; no new bridge.",
+    "Existing constants eps,zero_threshold,zero and grid/array owners."
+  ],
+  "scientific_comments": "Preserve Native grid cartoons, citation, Eq2/A4/10 sequence and negative-at-nz FIXME; correct second copied flux_pd comment to field_pd.",
+  "numerical_evidence": "Pending: no compile, test, runtime or BFB claim."
+}

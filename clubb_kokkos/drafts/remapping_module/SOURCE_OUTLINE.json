@@ -1,0 +1,2068 @@
+{
+  "source": "src/CLUBB_core/remapping_module.F90",
+  "source_sha256": "09131e11129d771f41dda1522ead13e517da55c6a46af7b5a2eeadb7499cb6f5",
+  "native_lines": 1760,
+  "jax": "clubb_jax/src/CLUBB_core/remapping_module.py",
+  "jax_sha256": "2e9bc7df52cf25fbfd61be092028d19dc388a13b62d18db93dd08e2b41608a8d",
+  "jax_lines": 478,
+  "full_Native_and_JAX_read_before_implementation": true,
+  "native_inventory_and_order": [
+    "remap_iv_from_var_name",
+    "calc_mass_over_grid_intervals",
+    "matrix_vector_mult",
+    "vertical_integral_conserve_mass",
+    "check_conservation",
+    "check_monotonicity",
+    "check_consistency",
+    "remap_vals_to_target_helper",
+    "remap_vals_to_target",
+    "check_remap_matrix_conservation",
+    "check_remap_matrix_consistency",
+    "check_remap_matrix_monotonicity",
+    "remapping_matrix",
+    "kmppm",
+    "steepz",
+    "ppm2m",
+    "map1_ppm",
+    "remap_vals_ppm"
+  ],
+  "public_inventory": [
+    "remap_iv_from_var_name",
+    "remap_vals_to_target"
+  ],
+  "routines": [
+    {
+      "name": "remap_iv_from_var_name",
+      "kind": "function",
+      "source_lines": [
+        41,
+        80
+      ],
+      "public": true,
+      "arguments": [
+        {
+          "name": "var_name",
+          "kind": "character",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": "*"
+        }
+      ],
+      "result": {
+        "name": "iv",
+        "kind": "integer"
+      },
+      "ordered_calls": [],
+      "ordered_control": [
+        "select case (name)",
+        "case (\"rho\", \"rho_ds_zt\", \"invrs_rho_ds_zt\", \"thv_ds_zt\", \"rfrzm\", \"rtm_ref\", \"thlm_ref\", \"rtm\", \"thlm\", \"thvm\", \"rcm\", \"cloud_frac\", \"ice_supersat_frac\", \"rcm_in_layer\", \"cloud_cover\", \"cloudy_updraft_frac\", \"cloudy_downdraft_frac\", \"Kh_zt\", \"Lscale\", \"rho_zm\", \"rho_ds_zm\", \"invrs_rho_ds_zm\", \"thv_ds_zm\", \"up2\", \"vp2\", \"rtp2\", \"thlp2\", \"wp2\", \"rc_coef_zm\", \"wp4\", \"wp2up2\", \"wp2vp2\", \"invrs_tau_zm\", \"Kh_zm\")",
+        "case default",
+        "select case (name)",
+        "case (\"wm_zt\", \"um_ref\", \"vm_ref\", \"ug\", \"vg\", \"um\", \"vm\", \"um_pert\", \"vm_pert\", \"wm_zm\")",
+        "case default"
+      ],
+      "scientific_assignment_statements": [
+        "name = trim(adjustl(var_name))",
+        "iv = 1",
+        "iv = 0",
+        "iv = -1"
+      ]
+    },
+    {
+      "name": "calc_mass_over_grid_intervals",
+      "kind": "function",
+      "source_lines": [
+        80,
+        212
+      ],
+      "public": false,
+      "arguments": [
+        {
+          "name": "total_idx_lin_spline",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lin_spline_rho_vals",
+          "kind": "real",
+          "dims": [
+            "total_idx_lin_spline"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lin_spline_rho_levels",
+          "kind": "real",
+          "dims": [
+            "total_idx_lin_spline"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "grid_levels_idx",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "grid_levels",
+          "kind": "real",
+          "dims": [
+            "grid_levels_idx"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": {
+        "name": "mass_per_interval",
+        "kind": "real",
+        "dims": [
+          "grid_levels_idx-1"
+        ],
+        "intent": "",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      "ordered_calls": [],
+      "ordered_control": [
+        "if ( (grid_levels(grid_levels_idx) - lin_spline_rho_levels(total_idx_lin_spline) ) > tol ) then",
+        "error stop 'Cannot compute the remapping operator'",
+        "do while ( (.not. l_level_found) .and. (l <= total_idx_lin_spline) )",
+        "if ( abs( grid_levels(1) - lin_spline_rho_levels(l) ) < tol ) then",
+        "else if ( grid_levels(1) < lin_spline_rho_levels(l) ) then",
+        "if (l <= 1) then",
+        "error stop 'Cannot compute the remapping operator'",
+        "do k = 1, grid_levels_idx-1",
+        "do while ( (lin_spline_rho_levels(l) < grid_levels(k+1)) .and. (l < total_idx_lin_spline) )",
+        "if ( abs( grid_levels(k+1) - lin_spline_rho_levels(l) ) < tol ) then"
+      ],
+      "scientific_assignment_statements": [
+        "l = 1",
+        "l_level_found = .false.",
+        "val_below = lin_spline_rho_vals(l)",
+        "level_below = grid_levels(1)",
+        "l_level_found = .true.",
+        "val_below = lin_interpolate_two_points( grid_levels(1), lin_spline_rho_levels(l), lin_spline_rho_levels(l-1), lin_spline_rho_vals(l), lin_spline_rho_vals(l-1) )",
+        "level_below = grid_levels(1)",
+        "l_level_found = .true.",
+        "l = l - 1",
+        "l = l + 1",
+        "mass_over_interval = 0.0_core_rknd",
+        "mass_over_interval = mass_over_interval + (lin_spline_rho_levels(l) - level_below) *( val_below + lin_spline_rho_vals(l) )/2",
+        "level_below = lin_spline_rho_levels(l)",
+        "val_below = lin_spline_rho_vals(l)",
+        "l = l + 1",
+        "upper_zm_level_rho = lin_spline_rho_vals(l)",
+        "upper_zm_level_rho = lin_interpolate_two_points( grid_levels(k+1), lin_spline_rho_levels(l), lin_spline_rho_levels(l-1), lin_spline_rho_vals(l), lin_spline_rho_vals(l-1) )",
+        "mass_over_interval = mass_over_interval + (grid_levels(k+1) - level_below) *( val_below + upper_zm_level_rho )/2",
+        "mass_per_interval(k) = mass_over_interval",
+        "val_below = upper_zm_level_rho",
+        "level_below = grid_levels(k+1)"
+      ]
+    },
+    {
+      "name": "matrix_vector_mult",
+      "kind": "function",
+      "source_lines": [
+        212,
+        257
+      ],
+      "public": false,
+      "arguments": [
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "dim_input",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "dim_output",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "x_vectors",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "dim_input"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "A_matrices",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "dim_output",
+            "dim_input"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": {
+        "name": "y_vectors",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "dim_output"
+        ],
+        "intent": "",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      "ordered_calls": [],
+      "ordered_control": [
+        "do i = 1, ngrdcol",
+        "do k = 1, dim_output",
+        "do j = 1, dim_input"
+      ],
+      "scientific_assignment_statements": [
+        "y_vectors(i,k) = 0",
+        "y_vectors(i,k) = y_vectors(i,k) + A_matrices(i,k,j)*x_vectors(i,j)"
+      ]
+    },
+    {
+      "name": "vertical_integral_conserve_mass",
+      "kind": "function",
+      "source_lines": [
+        257,
+        325
+      ],
+      "public": false,
+      "arguments": [
+        {
+          "name": "total_idx_lin_spline",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lin_spline_rho_vals",
+          "kind": "real",
+          "dims": [
+            "total_idx_lin_spline"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lin_spline_rho_levels",
+          "kind": "real",
+          "dims": [
+            "total_idx_lin_spline"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "grid_levels_idx",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "grid_levels",
+          "kind": "real",
+          "dims": [
+            "grid_levels_idx"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "field",
+          "kind": "real",
+          "dims": [
+            "grid_levels_idx-1"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": {
+        "name": "vertical_integral_conserve_mass",
+        "kind": "real",
+        "dims": [],
+        "intent": "",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      "ordered_calls": [],
+      "ordered_control": [],
+      "scientific_assignment_statements": [
+        "vertical_integral_conserve_mass = zero",
+        "mass_per_interval = calc_mass_over_grid_intervals( total_idx_lin_spline, lin_spline_rho_vals, lin_spline_rho_levels, grid_levels_idx, grid_levels )",
+        "vertical_integral_conserve_mass = sum( field * mass_per_interval )"
+      ]
+    },
+    {
+      "name": "check_conservation",
+      "kind": "subroutine",
+      "source_lines": [
+        325,
+        400
+      ],
+      "public": false,
+      "arguments": [
+        {
+          "name": "total_idx_rho_lin_spline",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rho_lin_spline_vals",
+          "kind": "real",
+          "dims": [
+            "total_idx_rho_lin_spline"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rho_lin_spline_levels",
+          "kind": "real",
+          "dims": [
+            "total_idx_rho_lin_spline"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "levels_source_idx",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "levels_target_idx",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "levels_source",
+          "kind": "real",
+          "dims": [
+            "levels_source_idx"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "levels_target",
+          "kind": "real",
+          "dims": [
+            "levels_target_idx"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "field_source",
+          "kind": "real",
+          "dims": [
+            "levels_source_idx-1"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "field_target",
+          "kind": "real",
+          "dims": [
+            "levels_target_idx-1"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "ordered_calls": [],
+      "ordered_control": [
+        "if ( abs( integral_target - integral_source ) > abs( integral_source*err_percentage ) .and. abs( integral_target - integral_source ) > tol_cons ) then"
+      ],
+      "scientific_assignment_statements": [
+        "integral_source = vertical_integral_conserve_mass( total_idx_rho_lin_spline, rho_lin_spline_vals, rho_lin_spline_levels, levels_source_idx, levels_source, field_source )",
+        "integral_target = vertical_integral_conserve_mass( total_idx_rho_lin_spline, rho_lin_spline_vals, rho_lin_spline_levels, levels_target_idx, levels_target, field_target )",
+        "tol_cons = 1.e-3_core_rknd",
+        "err_percentage = 1.e-7_core_rknd"
+      ]
+    },
+    {
+      "name": "check_monotonicity",
+      "kind": "subroutine",
+      "source_lines": [
+        400,
+        465
+      ],
+      "public": false,
+      "arguments": [
+        {
+          "name": "field_source_idx",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "field_target_idx",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "field_source",
+          "kind": "real",
+          "dims": [
+            "field_source_idx"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "field_target",
+          "kind": "real",
+          "dims": [
+            "field_target_idx"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "grid_remap_method",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "ordered_calls": [],
+      "ordered_control": [
+        "if ( grid_remap_method == ppm_remap ) then",
+        "do k = start_index, end_index",
+        "if ( ( field_target(k) < source_minval .and. abs(field_target(k) - source_minval ) > tol ) .or. ( field_target(k) > source_maxval .and. abs(field_target(k) - source_maxval ) > tol ) ) then"
+      ],
+      "scientific_assignment_statements": [
+        "start_index = 1",
+        "end_index = field_target_idx",
+        "start_index = 4",
+        "end_index = field_target_idx-3",
+        "source_maxval = maxval( field_source )",
+        "source_minval = minval( field_source )"
+      ]
+    },
+    {
+      "name": "check_consistency",
+      "kind": "subroutine",
+      "source_lines": [
+        465,
+        521
+      ],
+      "public": false,
+      "arguments": [
+        {
+          "name": "dim_input",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "dim_output",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "R_ij",
+          "kind": "real",
+          "dims": [
+            "dim_output",
+            "dim_input"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "ordered_calls": [],
+      "ordered_control": [
+        "do k = 1, (dim_input)",
+        "do while (l_consistent .and. k <= dim_output)",
+        "if (abs( output_ones(1,k) - one ) > tol) then",
+        "if (.not. l_consistent) then"
+      ],
+      "scientific_assignment_statements": [
+        "ones(k) = one",
+        "output_ones = matrix_vector_mult( 1, dim_input, dim_output, ones, R_ij )",
+        "l_consistent = .true.",
+        "k = 1",
+        "l_consistent = .false.",
+        "k = k + 1"
+      ]
+    },
+    {
+      "name": "remap_vals_to_target_helper",
+      "kind": "function",
+      "source_lines": [
+        521,
+        715
+      ],
+      "public": false,
+      "arguments": [
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "levels_source_idx",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "levels_target_idx",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "levels_source",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "levels_source_idx"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "levels_target",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "levels_target_idx"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "total_idx_rho_lin_spline",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rho_lin_spline_vals",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "total_idx_rho_lin_spline"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rho_lin_spline_levels",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "total_idx_rho_lin_spline"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "source_values",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "levels_source_idx-1"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "iv",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "p_sfc",
+          "kind": "real",
+          "dims": [
+            "ngrdcol"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "grid_remap_method",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "R_ij",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "levels_target_idx-1",
+            "levels_source_idx-1"
+          ],
+          "intent": "in",
+          "optional": true,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": {
+        "name": "remap_vals_to_target",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "levels_target_idx-1"
+        ],
+        "intent": "",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      "ordered_calls": [
+        "call check_conservation( total_idx_rho_lin_spline, rho_lin_spline_vals(i,:), rho_lin_spline_levels(i,:), levels_source_idx, levels_target_idx, levels_source(i,:), levels_target(i,:), source_values(i,:), remap_vals_to_target(i,:) )",
+        "call check_monotonicity( levels_source_idx-1, levels_target_idx-1, source_values(i,:), remap_vals_to_target(i,:), grid_remap_method )",
+        "call check_consistency( levels_source_idx-1, levels_target_idx-1, R_ij(i,:,:) )",
+        "call check_consistency( levels_source_idx-1, levels_target_idx-1, R_ij_internal(i,:,:) )"
+      ],
+      "ordered_control": [
+        "do i = 1, ngrdcol",
+        "do k = 2, levels_source_idx",
+        "do k = 2, levels_target_idx",
+        "if ( grid_remap_method == cons_ullrich_remap .and. .not. present( R_ij ) ) then",
+        "if ( grid_remap_method == cons_ullrich_remap ) then",
+        "if ( present( R_ij ) ) then",
+        "else if ( grid_remap_method == ppm_remap ) then",
+        "error stop 'Please adjust the configurable model flags.'",
+        "if ( clubb_at_least_debug_level_api( 2 ) ) then",
+        "do i = 1, ngrdcol",
+        "if ( grid_remap_method == cons_ullrich_remap ) then",
+        "if ( present( R_ij ) ) then"
+      ],
+      "scientific_assignment_statements": [
+        "mass_on_source_cells(i,:) = calc_mass_over_grid_intervals( total_idx_rho_lin_spline, rho_lin_spline_vals(i,:), rho_lin_spline_levels(i,:), levels_source_idx, levels_source(i,:) )",
+        "mass_on_target_cells(i,:) = calc_mass_over_grid_intervals( total_idx_rho_lin_spline, rho_lin_spline_vals(i,:), rho_lin_spline_levels(i,:), levels_target_idx, levels_target(i,:) )",
+        "pressure_levels_source(i,1) = p_sfc(i)",
+        "pressure_levels_source(i,k) = pressure_levels_source(i,k-1) - mass_on_source_cells(i,k-1)*grav",
+        "pressure_levels_target(i,1) = p_sfc(i)",
+        "pressure_levels_target(i,k) = pressure_levels_target(i,k-1) - mass_on_target_cells(i,k-1)*grav",
+        "R_ij_internal(i,:,:) = remapping_matrix( levels_source_idx, levels_target_idx, pressure_levels_source(i,:), pressure_levels_target(i,:) )",
+        "remap_vals_to_target = matrix_vector_mult( ngrdcol, levels_source_idx-1, levels_target_idx-1, source_values, R_ij )",
+        "remap_vals_to_target = matrix_vector_mult( ngrdcol, levels_source_idx-1, levels_target_idx-1, source_values, R_ij_internal )",
+        "remap_vals_to_target = remap_vals_ppm( ngrdcol, levels_source_idx, levels_target_idx, pressure_levels_source, pressure_levels_target, source_values, iv )"
+      ]
+    },
+    {
+      "name": "remap_vals_to_target",
+      "kind": "function",
+      "source_lines": [
+        715,
+        837
+      ],
+      "public": true,
+      "arguments": [
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "gr_source",
+          "kind": "grid",
+          "dims": [],
+          "intent": "",
+          "optional": false,
+          "allocatable": false,
+          "character_length": "",
+          "verified_contract_override": "Read-only; complete body reads grid metadata/coordinates and does not modify either object. Native declaration omits INTENT; no source edit."
+        },
+        {
+          "name": "gr_target",
+          "kind": "grid",
+          "dims": [],
+          "intent": "",
+          "optional": false,
+          "allocatable": false,
+          "character_length": "",
+          "verified_contract_override": "Read-only; complete body reads grid metadata/coordinates and does not modify either object. Native declaration omits INTENT; no source edit."
+        },
+        {
+          "name": "source_values_idx",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "source_values",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "source_values_idx"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "target_values_idx",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "total_idx_rho_lin_spline",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rho_lin_spline_vals",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "total_idx_rho_lin_spline"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rho_lin_spline_levels",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "total_idx_rho_lin_spline"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "iv",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "p_sfc",
+          "kind": "real",
+          "dims": [
+            "ngrdcol"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "grid_remap_method",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_zt_variable",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": {
+        "name": "remap_vals_to_target",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "target_values_idx"
+        ],
+        "intent": "",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      "ordered_calls": [],
+      "ordered_control": [
+        "if ( l_zt_variable ) then",
+        "else if ( .not. l_zt_variable ) then",
+        "do i = 1, ngrdcol",
+        "do k = 1, gr_source%nzt",
+        "do k = 1, gr_target%nzt"
+      ],
+      "scientific_assignment_statements": [
+        "remap_vals_to_target = remap_vals_to_target_helper( ngrdcol, gr_source%nzm, gr_target%nzm, gr_source%zm, gr_target%zm, total_idx_rho_lin_spline, rho_lin_spline_vals, rho_lin_spline_levels, source_values, iv, p_sfc, grid_remap_method )",
+        "levels_source(i,1) = gr_source%zm(i,1)",
+        "levels_target(i,1) = gr_target%zm(i,1)",
+        "levels_source(i,k+1) = gr_source%zt(i,k)",
+        "levels_target(i,k+1) = gr_target%zt(i,k)",
+        "levels_source(i,gr_source%nzt+2) = gr_source%zm(i,gr_source%nzm)",
+        "levels_target(i,gr_target%nzt+2) = gr_target%zm(i,gr_target%nzm)",
+        "remap_vals_to_target = remap_vals_to_target_helper( ngrdcol, gr_source%nzt+2, gr_target%nzt+2, levels_source, levels_target, total_idx_rho_lin_spline, rho_lin_spline_vals, rho_lin_spline_levels, source_values, iv, p_sfc, grid_remap_method )"
+      ]
+    },
+    {
+      "name": "check_remap_matrix_conservation",
+      "kind": "subroutine",
+      "source_lines": [
+        847,
+        898
+      ],
+      "public": false,
+      "arguments": [
+        {
+          "name": "R_ij",
+          "kind": "real",
+          "dims": [
+            "dim1",
+            "dim2"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "dim1",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "dim2",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "levels_source",
+          "kind": "real",
+          "dims": [
+            "dim2+1"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "levels_target",
+          "kind": "real",
+          "dims": [
+            "dim1+1"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "ordered_calls": [],
+      "ordered_control": [
+        "do while (l_conservative .and. l <= dim2)",
+        "do k = 1, dim1",
+        "if (abs(weighted_col_sum - abs(levels_source(l+1) - levels_source(l))) > tol) then",
+        "if (.not. l_conservative) then",
+        "error stop 'Operator should be conservative, something went wrong...'"
+      ],
+      "scientific_assignment_statements": [
+        "l_conservative = .true.",
+        "l = 1",
+        "weighted_col_sum = 0",
+        "weighted_col_sum = weighted_col_sum + R_ij(k,l) * abs(levels_target(k+1) - levels_target(k))",
+        "l_conservative = .false.",
+        "l = l + 1"
+      ]
+    },
+    {
+      "name": "check_remap_matrix_consistency",
+      "kind": "subroutine",
+      "source_lines": [
+        898,
+        943
+      ],
+      "public": false,
+      "arguments": [
+        {
+          "name": "R_ij",
+          "kind": "real",
+          "dims": [
+            "dim1",
+            "dim2"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "dim1",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "dim2",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "ordered_calls": [],
+      "ordered_control": [
+        "do while (l_consistent .and. k <= dim1)",
+        "do l = 1, dim2",
+        "if (abs(row_sum - 1) > tol) then",
+        "if (.not. l_consistent) then",
+        "error stop 'Operator should be consistent, something went wrong...'"
+      ],
+      "scientific_assignment_statements": [
+        "l_consistent = .true.",
+        "k = 1",
+        "row_sum = 0",
+        "row_sum = row_sum + R_ij(k,l)",
+        "l_consistent = .false.",
+        "k = k + 1"
+      ]
+    },
+    {
+      "name": "check_remap_matrix_monotonicity",
+      "kind": "subroutine",
+      "source_lines": [
+        943,
+        982
+      ],
+      "public": false,
+      "arguments": [
+        {
+          "name": "R_ij",
+          "kind": "real",
+          "dims": [
+            "dim1",
+            "dim2"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "dim1",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "dim2",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "ordered_calls": [],
+      "ordered_control": [
+        "do while (l_monotone .and. k <= dim1)",
+        "do l = 1, dim2",
+        "if (R_ij(k,l) < 0) then",
+        "if (.not. l_monotone) then",
+        "error stop 'Operator should be monotone, something went wrong...'"
+      ],
+      "scientific_assignment_statements": [
+        "l_monotone = .true.",
+        "k = 1",
+        "l_monotone = .false.",
+        "k = k + 1"
+      ]
+    },
+    {
+      "name": "remapping_matrix",
+      "kind": "function",
+      "source_lines": [
+        982,
+        1039
+      ],
+      "public": false,
+      "arguments": [
+        {
+          "name": "levels_source_idx",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "levels_target_idx",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "levels_source",
+          "kind": "real",
+          "dims": [
+            "levels_source_idx"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "levels_target",
+          "kind": "real",
+          "dims": [
+            "levels_target_idx"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": {
+        "name": "remapping_matrix",
+        "kind": "real",
+        "dims": [
+          "levels_target_idx-1",
+          "levels_source_idx-1"
+        ],
+        "intent": "",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      "ordered_calls": [
+        "call check_remap_matrix_conservation( remapping_matrix, (levels_target_idx-1), (levels_source_idx-1), levels_source, levels_target )",
+        "call check_remap_matrix_consistency( remapping_matrix, (levels_target_idx-1), (levels_source_idx-1) )",
+        "call check_remap_matrix_monotonicity( remapping_matrix, (levels_target_idx-1), (levels_source_idx-1) )"
+      ],
+      "ordered_control": [
+        "do k = 1, (levels_target_idx-1)",
+        "do l = 1, (levels_source_idx-1)",
+        "if (omega_ov_upper < omega_ov_lower) then",
+        "if ( clubb_at_least_debug_level_api( 2 ) ) then"
+      ],
+      "scientific_assignment_statements": [
+        "omega_ov_upper = max(levels_target(k+1), levels_source(l+1))",
+        "omega_ov_lower = min(levels_target(k), levels_source(l))",
+        "omega_ov = abs(omega_ov_upper - omega_ov_lower)",
+        "omega_ov = 0",
+        "remapping_matrix(k,l) = omega_ov/abs(levels_target(k+1) - levels_target(k))"
+      ]
+    },
+    {
+      "name": "kmppm",
+      "kind": "subroutine",
+      "source_lines": [
+        1058,
+        1161
+      ],
+      "public": false,
+      "arguments": [
+        {
+          "name": "dm",
+          "kind": "real",
+          "dims": [
+            "*"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "a4",
+          "kind": "real",
+          "dims": [
+            "4",
+            "*"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "itot",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lmt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "ordered_calls": [],
+      "ordered_control": [
+        "if ( lmt == 3 ) return",
+        "if( lmt == 0 ) then",
+        "do i=1,itot",
+        "if(dm(i) == zero) then",
+        "if(a6da < -da2) then",
+        "elseif(a6da > da2) then",
+        "elseif ( lmt == 1 ) then",
+        "do i=1, itot",
+        "elseif (lmt == 2) then",
+        "do i=1,itot",
+        "if( abs(a4(3,i)-a4(2,i)) < -a4(4,i) ) then",
+        "if( fmin < zero ) then",
+        "if(a4(1,i)<a4(3,i) .and. a4(1,i)<a4(2,i)) then",
+        "elseif(a4(3,i) > a4(2,i)) then",
+        "return"
+      ],
+      "scientific_assignment_statements": [
+        "a4(2,i) = a4(1,i)",
+        "a4(3,i) = a4(1,i)",
+        "a4(4,i) = zero",
+        "da1  = a4(3,i) - a4(2,i)",
+        "da2  = da1**2",
+        "a6da = a4(4,i)*da1",
+        "a4(4,i) = three*(a4(2,i)-a4(1,i))",
+        "a4(3,i) = a4(2,i) - a4(4,i)",
+        "a4(4,i) = three*(a4(3,i)-a4(1,i))",
+        "a4(2,i) = a4(3,i) - a4(4,i)",
+        "qmp = two*dm(i)",
+        "a4(2,i) = a4(1,i)-sign(min(abs(qmp),abs(a4(2,i)-a4(1,i))), qmp)",
+        "a4(3,i) = a4(1,i)+sign(min(abs(qmp),abs(a4(3,i)-a4(1,i))), qmp)",
+        "a4(4,i) = three*( two*a4(1,i) - (a4(2,i)+a4(3,i)) )",
+        "fmin = a4(1,i)+one_fourth*(a4(3,i)-a4(2,i))**2/a4(4,i)+a4(4,i)*r12",
+        "a4(3,i) = a4(1,i)",
+        "a4(2,i) = a4(1,i)",
+        "a4(4,i) = zero",
+        "a4(4,i) = three*(a4(2,i)-a4(1,i))",
+        "a4(3,i) = a4(2,i) - a4(4,i)",
+        "a4(4,i) = three*(a4(3,i)-a4(1,i))",
+        "a4(2,i) = a4(3,i) - a4(4,i)"
+      ]
+    },
+    {
+      "name": "steepz",
+      "kind": "subroutine",
+      "source_lines": [
+        1161,
+        1232
+      ],
+      "public": false,
+      "arguments": [
+        {
+          "name": "i1",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "i2",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "km",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "a4",
+          "kind": "real",
+          "dims": [
+            "4",
+            "i1:i2",
+            "km"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "df2",
+          "kind": "real",
+          "dims": [
+            "i1:i2",
+            "km"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "dm",
+          "kind": "real",
+          "dims": [
+            "i1:i2",
+            "km"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "dq",
+          "kind": "real",
+          "dims": [
+            "i1:i2",
+            "km"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "dp",
+          "kind": "real",
+          "dims": [
+            "i1:i2",
+            "km"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "d4",
+          "kind": "real",
+          "dims": [
+            "i1:i2",
+            "km"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "ordered_calls": [],
+      "ordered_control": [
+        "do k=2,km",
+        "do i=i1,i2",
+        "do k=2,km-1",
+        "do i=i1,i2",
+        "do k=3,km-2",
+        "do i=i1,i2",
+        "if(f(i,k+1)*f(i,k-1)<zero .and. df2(i,k)/=zero) then",
+        "do k=4,km-2",
+        "do i=i1,i2",
+        "return"
+      ],
+      "scientific_assignment_statements": [
+        "rat(i,k) = dq(i,k-1) / d4(i,k)",
+        "f(i,k) = (rat(i,k+1) - rat(i,k)) / ( dp(i,k-1)+dp(i,k)+dp(i,k+1) )",
+        "dg2 = (f(i,k+1)-f(i,k-1))*((dp(i,k+1)-dp(i,k-1))**2 + d4(i,k)*d4(i,k+1) )",
+        "alfa(i,k) = max(zero, min(one_half, -three_sixteenth*dg2/df2(i,k)))",
+        "alfa(i,k) = zero",
+        "a4(2,i,k) = (one-alfa(i,k-1)-alfa(i,k)) * a4(2,i,k) + alfa(i,k-1)*(a4(1,i,k)-dm(i,k))    + alfa(i,k)*(a4(1,i,k-1)+dm(i,k-1))"
+      ]
+    },
+    {
+      "name": "ppm2m",
+      "kind": "subroutine",
+      "source_lines": [
+        1232,
+        1507
+      ],
+      "public": false,
+      "arguments": [
+        {
+          "name": "a4",
+          "kind": "real",
+          "dims": [
+            "4",
+            "i1:i2",
+            "km"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "delp",
+          "kind": "real",
+          "dims": [
+            "i1:i2",
+            "km"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "km",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "i1",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "i2",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "iv",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "kord",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "ordered_calls": [
+        "call steepz(i1, i2, km, a4, df2, dc, delq, delp, d4)",
+        "call kmppm(dc(i1,k), a4(1,i1,k), it, 0)",
+        "call kmppm(dc(i1,k), a4(1,i1,k), it, 2)",
+        "call kmppm(dc(i1,k), a4(1,i1,k), it, lmt)",
+        "call kmppm(dc(i1,k), a4(1,i1,k), it, 0)"
+      ],
+      "ordered_control": [
+        "do k=2,km",
+        "do i=i1,i2",
+        "do k=2,km1",
+        "do i=i1,i2",
+        "do k=3,km1",
+        "do i=i1,i2",
+        "do i=i1,i2",
+        "if( iv == 0 ) then",
+        "do i=i1,i2",
+        "elseif ( iv == -1 ) then",
+        "if( km > 32 ) then",
+        "do i=i1,i2",
+        "do i=i1,i2",
+        "if( a4(1,i,1)*a4(2,i,1) <=  zero ) then",
+        "do i=i1,i2",
+        "if ( iv == 0 ) then",
+        "do i=i1,i2",
+        "elseif ( iv == -1 ) then",
+        "do i=i1,i2",
+        "if( a4(1,i,km)*a4(3,i,km) <=  zero ) then",
+        "do k=1,km1",
+        "do i=i1,i2",
+        "do k=1,2",
+        "do i=i1,i2",
+        "if(kord >= 7) then",
+        "do k=2, km1",
+        "do i=i1,i2",
+        "if( kord == 7 ) then",
+        "do k=3, km-2",
+        "do i=i1,i2",
+        "if (iv == 0 .and. kord == 7) then",
+        "if (iv == 0) lmt = min(2, lmt)",
+        "do k=3, km-2",
+        "if( kord /= 4) then",
+        "do i=i1,i2",
+        "do k=km1,km",
+        "do i=i1,i2",
+        "return"
+      ],
+      "scientific_assignment_statements": [
+        "km1 = km - 1",
+        "it = i2 - i1 + 1",
+        "delq(i,k-1) =   a4(1,i,k) - a4(1,i,k-1)",
+        "d4(i,k  ) = delp(i,k-1) + delp(i,k)",
+        "c1  = (delp(i,k-1)+one_half*delp(i,k))/d4(i,k+1)",
+        "c2  = (delp(i,k+1)+one_half*delp(i,k))/d4(i,k)",
+        "tmp = delp(i,k)*(c1*delq(i,k) + c2*delq(i,k-1)) / (d4(i,k)+delp(i,k+1))",
+        "qmax = max(a4(1,i,k-1),a4(1,i,k),a4(1,i,k+1)) - a4(1,i,k)",
+        "qmin = a4(1,i,k) - min(a4(1,i,k-1),a4(1,i,k),a4(1,i,k+1))",
+        "dc(i,k) = sign(min(abs(tmp),qmax,qmin), tmp)",
+        "df2(i,k) = tmp",
+        "c1 = delq(i,k-1)*delp(i,k-1) / d4(i,k)",
+        "a1 = d4(i,k-1) / (d4(i,k) + delp(i,k-1))",
+        "a2 = d4(i,k+1) / (d4(i,k) + delp(i,k))",
+        "a4(2,i,k) = a4(1,i,k-1) + c1 + two/(d4(i,k-1)+d4(i,k+1)) * ( delp(i,k)*(c1*(a1 - a2)+a2*dc(i,k-1)) - delp(i,k-1)*a1*dc(i,k  ) )",
+        "d1 = delp(i,1)",
+        "d2 = delp(i,2)",
+        "qm = (d2*a4(1,i,1)+d1*a4(1,i,2)) / (d1+d2)",
+        "dq = two*(a4(1,i,2)-a4(1,i,1)) / (d1+d2)",
+        "c1 = four*(a4(2,i,3)-qm-d2*dq) / ( d2*(two*d2*d2+d1*(d2+three*d1)) )",
+        "c3 = dq - one_half*c1*(d2*(five*d1+d2)-three*d1**2)",
+        "a4(2,i,2) = qm - one_fourth*c1*d1*d2*(d2+three*d1)",
+        "a4(2,i,1) = d1*(two*c1*d1**2-c3) + a4(2,i,2)",
+        "dc(i,1) =  a4(1,i,1) - a4(2,i,1)",
+        "cmax = max(a4(1,i,1), a4(1,i,2))",
+        "cmin = min(a4(1,i,1), a4(1,i,2))",
+        "a4(2,i,2) = max(cmin,a4(2,i,2))",
+        "a4(2,i,2) = min(cmax,a4(2,i,2))",
+        "a4(2,i,1) = max(zero,a4(2,i,1))",
+        "a4(2,i,2) = max(zero,a4(2,i,2))",
+        "a4(2,i,1) = a4(1,i,1)",
+        "a4(3,i,1) = a4(1,i,1)",
+        "a4(2,i,1) = zero",
+        "a4(2,i,1) = sign(min(abs(a4(1,i,1)), abs(a4(2,i,1))), a4(1,i,1)  )",
+        "d1 = delp(i,km)",
+        "d2 = delp(i,km1)",
+        "qm = (d2*a4(1,i,km)+d1*a4(1,i,km1)) / (d1+d2)",
+        "dq = two*(a4(1,i,km1)-a4(1,i,km)) / (d1+d2)",
+        "c1 = (a4(2,i,km1)-qm-d2*dq) / (d2*(two*d2*d2+d1*(d2+three*d1)))",
+        "c3 = dq - two*c1*(d2*(five*d1+d2)-three*d1**2)",
+        "a4(2,i,km) = qm - c1*d1*d2*(d2+three*d1)",
+        "a4(3,i,km) = d1*(eight*c1*d1**2-c3) + a4(2,i,km)",
+        "dc(i,km) = a4(3,i,km) -  a4(1,i,km)",
+        "cmax = max(a4(1,i,km), a4(1,i,km1))",
+        "cmin = min(a4(1,i,km), a4(1,i,km1))",
+        "a4(2,i,km) = max(cmin,a4(2,i,km))",
+        "a4(2,i,km) = min(cmax,a4(2,i,km))",
+        "a4(3,i,km) = max(zero, a4(3,i,km))",
+        "a4(3,i,km) = zero",
+        "a4(3,i,km) = sign( min(abs(a4(1,i,km)), abs(a4(3,i,km))), a4(1,i,km)  )",
+        "a4(3,i,k) = a4(2,i,k+1)",
+        "a4(4,i,k) = three*(two*a4(1,i,k) - (a4(2,i,k)+a4(3,i,k)))",
+        "h2(i,k) = dc(i,k+1) - dc(i,k-1)",
+        "fac = three_halves",
+        "fac = one_eighth",
+        "pmp   = two*dc(i,k)",
+        "qmp   = a4(1,i,k) + pmp",
+        "lac   = a4(1,i,k) + fac*h2(i,k-1) + dc(i,k)",
+        "qmin  = min(a4(1,i,k), qmp, lac)",
+        "qmax  = max(a4(1,i,k), qmp, lac)",
+        "a4(3,i,k) = min(max(a4(3,i,k), qmin), qmax)",
+        "qmp   = a4(1,i,k) - pmp",
+        "lac   = a4(1,i,k) + fac*h2(i,k+1) - dc(i,k)",
+        "qmin  = min(a4(1,i,k), qmp, lac)",
+        "qmax  = max(a4(1,i,k), qmp, lac)",
+        "a4(2,i,k) = min(max(a4(2,i,k), qmin), qmax)",
+        "a4(4,i,k) = three*(two*a4(1,i,k) - (a4(2,i,k)+a4(3,i,k)))",
+        "lmt = kord - 3",
+        "lmt = max(0, lmt)",
+        "a4(4,i,k) = three*(two*a4(1,i,k) - (a4(2,i,k)+a4(3,i,k)))",
+        "a4(4,i,k) = three*(two*a4(1,i,k) - (a4(2,i,k)+a4(3,i,k)))"
+      ]
+    },
+    {
+      "name": "map1_ppm",
+      "kind": "subroutine",
+      "source_lines": [
+        1507,
+        1652
+      ],
+      "public": false,
+      "arguments": [
+        {
+          "name": "km",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "pe1",
+          "kind": "real",
+          "dims": [
+            "itot",
+            "km+1"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "q1",
+          "kind": "real",
+          "dims": [
+            "itot",
+            "jfirst-ng_s:jlast+ng_n",
+            "km"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "kn",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "pe2",
+          "kind": "real",
+          "dims": [
+            "itot",
+            "kn+1"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "q2",
+          "kind": "real",
+          "dims": [
+            "itot",
+            "jfirst-ng_s:jlast+ng_n",
+            "kn"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ng_s",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ng_n",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "itot",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "i1",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "i2",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "j",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "jfirst",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "jlast",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "iv",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "kord",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "ordered_calls": [
+        "call ppm2m( q4, dp1, km, i1, i2, iv, kord )"
+      ],
+      "ordered_control": [
+        "do k=1,km",
+        "do i=i1,i2",
+        "do i = i1, i2",
+        "do k = 1, kn+1",
+        "do kk = k0(i,k-1), km",
+        "if (pe2(i,k) <= pe1(i,kk+1)) then",
+        "exit",
+        "if (k0found < 0) then",
+        "return",
+        "do k = 1, kn",
+        "do i = i1, i2",
+        "do kl = k0(i,k)+1, k0(i,k+1)-1",
+        "do i = i1, i2",
+        "if (k0(i,k+1) == k0(i,k)) then"
+      ],
+      "scientific_assignment_statements": [
+        "dp1(i,k) = pe1(i,k+1) - pe1(i,k)",
+        "q4(1,i,k) = q1(i,j,k)",
+        "k0(i,0) = 1",
+        "k0found = -1",
+        "k0(i,k) = kk",
+        "k0found = kk",
+        "write(fstderr,*) 'mapz error - k0found i j k (kk,pe1,pe2) = ', k0found, i, j, k, (kk,pe1(i,kk),pe2(i,kk),kk=1,km+1)",
+        "qsumk(:,k) = zero",
+        "qsumk(i,k) = qsumk(i,k) + dp1(i,kl)*q4(1,i,kl)",
+        "kk = k0(i,k)",
+        "pl = (pe2(i,k)-pe1(i,kk)) / dp1(i,kk)",
+        "pr = (pe2(i,k+1)-pe1(i,kk)) / dp1(i,kk)",
+        "q2(i,j,k) = q4(2,i,kk) + one_half*(q4(4,i,kk)+q4(3,i,kk)-q4(2,i,kk)) *(pr+pl) - q4(4,i,kk)*r3*(pr*(pr+pl)+pl**2)",
+        "qsum = (pe1(i,kk+1)-pe2(i,k))*(q4(2,i,kk)+one_half*(q4(4,i,kk)+ q4(3,i,kk)-q4(2,i,kk))*(one+pl)-q4(4,i,kk)* (r3*(one+pl*(one+pl))))",
+        "qsum = qsum + qsumk(i,k)",
+        "kl = k0(i,k+1)",
+        "delp = pe2(i,k+1)-pe1(i,kl)",
+        "esl = delp / dp1(i,kl)",
+        "qsum = qsum + delp*(q4(2,i,kl)+one_half*esl* (q4(3,i,kl)-q4(2,i,kl)+q4(4,i,kl)*(one-r23*esl)))",
+        "q2(i,j,k) = qsum / ( pe2(i,k+1) - pe2(i,k) )"
+      ]
+    },
+    {
+      "name": "remap_vals_ppm",
+      "kind": "function",
+      "source_lines": [
+        1652,
+        1759
+      ],
+      "public": false,
+      "arguments": [
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "levels_source_idx",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "levels_target_idx",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "levels_source",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "levels_source_idx"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "levels_target",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "levels_target_idx"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "source_values",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "levels_source_idx-1"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "iv",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": {
+        "name": "remap_vals_ppm",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "levels_target_idx-1"
+        ],
+        "intent": "",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      "ordered_calls": [
+        "call map1_ppm( levels_source_idx-1, source_flipped, source_values_flipped, levels_target_idx-1, target_flipped, target_values_flipped, ghost_lat_south, ghost_lat_north, total_lat, start_long, finish_long, current_lat, start_lat, finish_lat, iv, kord )"
+      ],
+      "ordered_control": [
+        "do i = 1, ngrdcol",
+        "do k = 1, levels_source_idx",
+        "do k = 1, levels_target_idx",
+        "do k = 1, levels_source_idx-1",
+        "do k = 1, levels_target_idx-1"
+      ],
+      "scientific_assignment_statements": [
+        "ghost_lat_south = 0",
+        "ghost_lat_north = 0",
+        "total_lat = 1",
+        "start_long = 1",
+        "finish_long = 1",
+        "current_lat = 1",
+        "start_lat = 1",
+        "finish_lat = 1",
+        "kord = 4",
+        "source_flipped(k) = levels_source(i,levels_source_idx - k + 1)",
+        "target_flipped(k) = levels_target(i,levels_target_idx - k + 1)",
+        "source_values_flipped(k) = source_values(i,levels_source_idx - k)",
+        "remap_vals_ppm(i,k) = target_values_flipped(levels_target_idx - k)"
+      ]
+    }
+  ],
+  "supported_model_algorithms": [
+    "Ullrichmethod1",
+    "PPMmethod2withNativewrapperhard-codedkord4"
+  ],
+  "scope_choices": [
+    "Retain publicNative name selector despite actualJAX omission.",
+    "Retain all Native diagnostics and private optional R_ij reuse despite JAX omission.",
+    "Steepz is REQUIRED on activekord4: Native call1319 precedes Huynh gate1429; JAX call246 and definition312.",
+    "Retain Native km>32 wind-top sponge behavior that JAX implementation omits.",
+    "Prefer retaining the small Native-private Huynh branch for complete source fidelity while making no additional public model option/runtime claim; public wrapper remainskord4."
+  ],
+  "required_existing_owners": [
+    "array_types.hpp existing storage/adapters",
+    "grid_class.hpp sole grid schema",
+    "interpolation.hpp lin_interpolate_two_points scalar device API",
+    "constants_clubb.hpp physical/rational constants",
+    "error_code.hpp debug metadata host boundary",
+    "model_flags.hpp selectedcons_ullrich_remap1/ppm_remap2 (not currently emitted)"
+  ],
+  "state_ownership": [
+    "All arrays/caches/scratch call-owned Kokkos Views; no mutable globals.",
+    "Private R_ij is read-only optional input, not allocatable/recomputed when present. Native still computes source/target masses and pressure recurrences on reuse.",
+    "Public PPM wrapper calls map1_ppm once per column and reuses target_values_flipped; preserve source failure-return/state semantics."
+  ],
+  "numerical_rules": [
+    "Use Native ascending segment integration and pressure recurrences, ordered j matrix-vector fold and ordered kl PPM full-cell sums. Do not import JAX cumulative integrals/einsum/prefix sums.",
+    "Native formulas/branch orders/conditional divisions without JAX safe denominators or search-index clamps; no speculative FMA adjustments.",
+    "Keep physical-column first fields; document any internal PPM coefficient-axis adaptation from Native(4,column,level).",
+    "No current C++ caller; compilation/source audit cannot establish model/GPU/BFB behavior."
+  ],
+  "native_definedness_and_comment_notes": [
+    "map1_ppm missing-bracket error write loops kk1..km+1 and readspe2(kn+1); invalid-target prints can read outside pe2 whenkn<km. Preserve source range rather than silently truncating.",
+    "map1_ppm failure returns before writing q2; initial output may be unspecified, later public-column calls reuse the previous target profile. Do not invent zero/clamp fallback.",
+    "Density splines/grid edges must cover common region and be ascending; preserve original coverage checks without new interpolation conventions.",
+    "Correct copied source/target-count labels and density-vs-altitude comment units only where implementation makes meanings explicit."
+  ],
+  "caller_inventory": [
+    {
+      "source": "src/Benchmark_cases/atex.F90",
+      "procedure": "atex_tndcy",
+      "gate": "l_add_dycore_grid",
+      "calls": 2,
+      "status": "Native under Nativeprescribe_forcings; no C++remapcall"
+    },
+    {
+      "source": "src/Benchmark_cases/time_dependent_input.F90",
+      "procedure": "apply_time_dependent_forcings_from_dycore",
+      "gate": "dycore forcing path",
+      "state": "Native-helddimension_var/t_dependent_forcing_data",
+      "status": "Native outer IO/forcing owner"
+    },
+    {
+      "source": "src/CLUBB_core/stats_netcdf.F90",
+      "procedure": "sampledoutputwriter",
+      "gate": "l_different_output_grid and ZM/ZT and netCDFoutput",
+      "status": "Native statsbackend intentionally retained"
+    },
+    {
+      "source": "src/CLUBB_core/grid_adaptation_module.F90",
+      "procedure": "remap-all-fields",
+      "status": "Adaptivegrid outside supporteddriver scope"
+    }
+  ],
+  "status": "Source outline complete; no implementation/build/model claim yet."
+}

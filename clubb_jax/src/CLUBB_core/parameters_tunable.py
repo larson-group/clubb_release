@@ -32,56 +32,13 @@ from __future__ import annotations
 
 import re
 import sys
-from typing import NamedTuple
 
 import numpy as np
-import jax
 import jax.numpy as jnp
 
-from clubb_jax.src.CLUBB_core.file_functions import _read_namelist_groups
+from clubb_jax.src.Input_fields.namelist import _read_namelist_groups
 from clubb_jax.src.CLUBB_core.error_code import CLUBB_FATAL_ERROR
-
-
-
-_NU_STATIC_FIELDS = ("nzm",)
-
-_NU_ARRAY_FIELDS = (
-    "nu1",
-    "nu2",
-    "nu6",
-    "nu8",
-    "nu9",
-    "nu10",
-    "nu_hm",
-)
-
-
-@jax.tree_util.register_pytree_node_class
-class NuVertResDep(NamedTuple):
-    """Vertical-resolution-dependent nu coefficient arrays."""
-
-    nzm: int
-    nu1: jnp.ndarray
-    nu2: jnp.ndarray
-    nu6: jnp.ndarray
-    nu8: jnp.ndarray
-    nu9: jnp.ndarray
-    nu10: jnp.ndarray
-    nu_hm: jnp.ndarray
-
-    def replace(self, **kwargs):
-        return self._replace(**kwargs)
-
-    def tree_flatten(self):
-        children = tuple(getattr(self, name) for name in _NU_ARRAY_FIELDS)
-        aux_data = tuple(getattr(self, name) for name in _NU_STATIC_FIELDS)
-        return children, aux_data
-
-    @classmethod
-    def tree_unflatten(cls, aux_data, children):
-        data = dict(zip(_NU_STATIC_FIELDS, aux_data))
-        data.update(dict(zip(_NU_ARRAY_FIELDS, children)))
-        return cls(**data)
+from clubb_jax.src.CLUBB_core.nu_vert_res_dep import NuVertResDep
 
 
 # ---------------------------------------------------------------------------
@@ -308,60 +265,34 @@ def calc_derived_params(
     clubb_params: np.ndarray,                            # In
     l_prescribed_avg_deltaz: bool,                       # In
 ) -> tuple[NuVertResDep, np.ndarray, np.ndarray]:
-    """Calculates CLUBB parameters that should be derived from other quantities.
+    """Calculate parameters that should be derived from other quantities.
 
-    Adjusts the values of background eddy diffusivity based on
-    vertical grid spacing.
-    This code was made into a public subroutine so that it may be
-    called multiple times per model run in scenarios where grid
-    altitudes, and hence average grid spacing, change through space
-    and/or time.  This occurs, for example, when CLUBB is
-    implemented in WRF.  --ldgrant Jul 2010
+    Description:
+      Calculates CLUBB parameters that should be derived from other quantities.
 
-    Immutable returned values replace the Fortran inout allocations;
-    initialization and reset perform the Fortran lmin fatal check on the host.
+      Adjusts the values of background eddy diffusivity based on
+      vertical grid spacing.
+      This code was made into a public subroutine so that it may be
+      called multiple times per model run in scenarios where grid
+      altitudes, and hence average grid spacing, change through space
+      and/or time.  This occurs, for example, when CLUBB is
+      implemented in WRF.  --ldgrant Jul 2010
+
+    Args:
+      gr: Grid definition.
+      ngrdcol: Number of grid columns.
+      grid_type: Even grid (1), stretched thermodynamic (2), or momentum (3).
+      deltaz: Change per height level [m].
+      clubb_params: Tunable model parameters [-].
+      l_prescribed_avg_deltaz: If true, avg_deltaz = deltaz.
 
     Returns:
-        (nu_vert_res_dep, lmin, mixt_frac_max_mag)
+      nu_vert_res_dep: Vertical resolution dependent nu values.
+      lmin: Per-column minimum length, shape (ngrdcol,) [m].
+      mixt_frac_max_mag: Per-column maximum mixture fraction, shape (ngrdcol,) [-].
 
-    Fortran declarations (calc_derived_params in src/CLUBB_core/parameters_tunable.F90):
-
-        !------------------------------ Input Variables ------------------------------
-
-        ! Grid definition
-        type(grid), intent(in) :: &
-          gr
-
-        integer, intent(in) :: &
-          ngrdcol
-
-        ! If CLUBB is running on it's own, this option determines
-        ! if it is using:
-        ! 1) an evenly-spaced grid,
-        ! 2) a stretched (unevenly-spaced) grid entered on the
-        !    thermodynamic grid levels (with momentum levels set
-        !    halfway between thermodynamic levels), or
-        ! 3) a stretched (unevenly-spaced) grid entered on the
-        !    momentum grid levels (with thermodynamic levels set
-        !    halfway between momentum levels).
-        integer, intent(in) :: grid_type
-
-        real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
-          deltaz  ! Change per height level        [m]
-
-        logical, intent(in) :: &
-          l_prescribed_avg_deltaz ! used in calc_derived_params_api. If .true., avg_deltaz = deltaz
-
-        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nparams) :: &
-          clubb_params  ! Tuneable model parameters      [-]
-
-        !------------------------------ Output Variables ------------------------------
-        type(nu_vertical_res_dep), intent(inout) :: &
-          nu_vert_res_dep    ! Vertical resolution dependent nu values
-
-        real( kind = core_rknd ), dimension(ngrdcol), intent(inout) :: &
-          mixt_frac_max_mag, & ! Maximum allowable mag. of mixt_frac   [-]
-          lmin ! Min. value for the length scale    [m]
+    Adaptation: immutable output values replace source inout allocations;
+    initialization and reset perform the source lmin fatal check on the host.
     """
     # ------------------------------ Constant Parameters ------------------------------
     # Flag for adjusting the values of the constant background eddy diffusivity
@@ -467,21 +398,7 @@ def check_parameter_hard_bounds(
     clubb_params: np.ndarray,
     err_info,
 ):
-    """Apply the same inclusive hard-bound table as Fortran.
-
-    Fortran declarations (check_parameter_hard_bounds in src/CLUBB_core/parameters_tunable.F90):
-
-        !--------------------------- Input Variables ---------------------------
-        integer, intent(in) :: &
-          ngrdcol ! Number of grid columns [#]
-
-        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nparams) :: &
-          clubb_params ! Tunable model parameters [-]
-
-        !--------------------------- Input/Output Variables ---------------------------
-        type(err_info_type), intent(inout) :: &
-          err_info ! Shared CLUBB error state
-    """
+    """Apply the same inclusive hard-bound table as Fortran."""
     values = np.asarray(clubb_params, dtype=np.float64)
     if values.shape != (ngrdcol, len(PARAM_NAMES)):
         raise ValueError(

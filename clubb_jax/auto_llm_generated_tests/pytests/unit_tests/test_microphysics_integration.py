@@ -7,7 +7,7 @@ import jax.numpy as jnp
 
 from clubb_jax.src.Microphys import parameters_microphys as parameters
 from clubb_jax.src.Microphys.microphys_init_cleanup import init_microphys, cleanup_microphys
-from clubb_jax.src.CLUBB_core.stats_netcdf import JaxStats
+from clubb_jax.src.CLUBB_core.jax_stats import JaxStats
 from clubb_jax.auto_llm_generated_tests.pytests.microphysics_test_inputs import initialize
 
 
@@ -34,6 +34,7 @@ def test_species_lifecycle(scheme, ice, graupel, dimension):
         ({"lh_microphys_type": "interactive", "microphys_scheme": "none"}, "SILHS"),
         ({"microphys_scheme": "coamps"}, "Unsupported"),
         ({"microphys_scheme": "simplified_ice"}, "Unsupported"),
+        ({"l_gfdl_activation": True}, "GFDL"),
         ({"microphys_scheme": "morrison", "l_cloud_sed": True}, "sedimentation"),
         ({"microphys_scheme": "khairoutdinov_kogan", "l_predict_Nc": True}, "l_predict_Nc"),
         ({"l_morr_xp2_mc": True}, "l_morr_xp2_mc"),
@@ -81,7 +82,7 @@ def test_previous_tendencies_feed_next_core_step(monkeypatch):
 @pytest.mark.parametrize('ncol',[1,3])
 def test_cloud_sedimentation_closed_boundaries_conserve_column(ncol):
     from clubb_jax.src.CLUBB_core.grid_class import setup_grid
-    from clubb_jax.src.CLUBB_core.stats_netcdf import JaxStats
+    from clubb_jax.src.CLUBB_core.jax_stats import JaxStats
     from clubb_jax.src.Microphys.cloud_sed_module import cloud_drop_sed
     from clubb_jax.src.CLUBB_core.constants_clubb import Lv,Cp
     gr=setup_grid(ncol,100.,0.,600.)
@@ -144,8 +145,8 @@ def test_scheme_startup_returns_zero_tendencies_before_start():
 @pytest.mark.parametrize('upwind',[False,True])
 def test_hydrometeor_transport_surface_loss_and_column_independence(upwind):
     from clubb_jax.src.CLUBB_core.grid_class import setup_grid,zt2zm
-    from clubb_jax.src.CLUBB_core.stats_netcdf import JaxStats
-    from clubb_jax.src.CLUBB_core.err_info_type_module import ErrInfo
+    from clubb_jax.src.CLUBB_core.jax_stats import JaxStats
+    from clubb_jax.src.CLUBB_core.err_info import ErrInfo
     from clubb_jax.src.Microphys.advance_microphys_module import microphys_lhs,microphys_rhs,microphys_solve
     initialize(microphys_scheme='khairoutdinov_kogan',l_upwind_diff_sed=upwind)
     gr=setup_grid(2,100.,0.,600.)
@@ -189,8 +190,8 @@ def test_parameter_override_does_not_reuse_previous_jit_constants():
 @pytest.mark.parametrize('in_cloud',[True,False])
 def test_predicted_cloud_number_transport_and_clipping(in_cloud):
     from clubb_jax.src.CLUBB_core.grid_class import setup_grid
-    from clubb_jax.src.CLUBB_core.stats_netcdf import JaxStats
-    from clubb_jax.src.CLUBB_core.err_info_type_module import ErrInfo
+    from clubb_jax.src.CLUBB_core.jax_stats import JaxStats
+    from clubb_jax.src.CLUBB_core.err_info import ErrInfo
     from clubb_jax.src.Microphys.advance_microphys_module import advance_Ncm
     from clubb_jax.src.CLUBB_core.constants_clubb import Nc_in_cloud_min
     initialize(microphys_scheme='morrison', l_predict_Nc=True,

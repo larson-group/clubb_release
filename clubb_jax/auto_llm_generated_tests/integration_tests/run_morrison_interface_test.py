@@ -21,7 +21,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 from clubb_jax.src.Microphys.morrison_microphys_module import morrison_microphys_driver
-from clubb_jax.src.CLUBB_core.stats_netcdf import JaxStats
+from clubb_jax.src.CLUBB_core.jax_stats import JaxStats
 from clubb_jax.src.Microphys.microphys_init_cleanup import cleanup_microphys
 from clubb_jax.auto_llm_generated_tests.pytests.microphysics_test_inputs import initialize
 

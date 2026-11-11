@@ -1,0 +1,28 @@
+{
+  "date": "2026-11-05",
+  "phase": "Separate post-implementation source and cleanup audit",
+  "scope": "Both complete Native public operators; full Native/JAX files read before implementation; no omitted branch",
+  "reviewed": [
+    "Native routine/signature/required-argument order and full argument descriptions/units",
+    "All exact assignment operation trees and ordered predicates, including non-default branch",
+    "Native numeric boundaries, diagonal/weight index constants and output completeness",
+    "Bands-first operator storage retained without solver transpose; physical arrays column first",
+    "Public entry wrappers reuse actual array owner; no global scratch/raw bridge/extra physics helper",
+    "All meaningful derivation/conservation comments and private parameter labels restored",
+    "Every device body free of owning UDT/host/backend/nested-launch capture"
+  ],
+  "checked_assignment_trees": 32,
+  "ordered_predicates": 4,
+  "device_bodies": 9,
+  "local_constants": 10,
+  "final_sha256": {
+    "mean_adv.cpp": "a5908c3c8a4dae65c03d2dd735ec9299b43a2ec2f94f069baa5b265411246a27",
+    "mean_adv.hpp": "e131020227a464fad2e309702557a585287ed2d783a6f3f474848764edff7d24"
+  },
+  "native_sha256": "9402f91c35cb7b2ca68260e7dda58beeea6b88b4b99d77a4aabb48cae8b67ac8",
+  "verification": "Source comparisons/formatting only; no build/test/runtime/BFB claim",
+  "remaining": "Root-owned live-call promotion, obsolete bridge removal and CPU BFB gate",
+  "independent_review_repairs": [
+    "Precise owner-specific header/field documentation and Native science call grouping; exact executable-token stream unchanged"
+  ]
+}

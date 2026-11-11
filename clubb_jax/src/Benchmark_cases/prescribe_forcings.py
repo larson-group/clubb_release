@@ -287,6 +287,11 @@ def prescribe_forcings(
     # Boundary conditions for the second-order moments.
     ubar = compute_ubar(ngrdcol, um_bot, vm_bot)
 
+    upwp_sfc = jnp.asarray(upwp_sfc)
+    vpwp_sfc = jnp.asarray(vpwp_sfc)
+    wpthlp_sfc = jnp.asarray(wpthlp_sfc)
+    wprtp_sfc = jnp.asarray(wprtp_sfc)
+    T_sfc = jnp.asarray(T_sfc)
     ustar = jnp.zeros(ngrdcol)
 
     if runtype == "rico":
@@ -534,10 +539,15 @@ def prescribe_forcings(
         if sclr_idx.iisclr_rt > 0:
             wpsclrp = wpsclrp.at[:, :, sclr_idx.iisclr_rt - 1].set(latent_ht)
 
+    wpthlp_sfc = jnp.asarray(wpthlp_sfc)
+    wprtp_sfc = jnp.asarray(wprtp_sfc)
+    upwp_sfc = jnp.asarray(upwp_sfc)
+    vpwp_sfc = jnp.asarray(vpwp_sfc)
+    ustar = jnp.asarray(ustar)
+    T_sfc = jnp.asarray(T_sfc)
 
     # Store values of surface fluxes for statistics
-    def accumulate_stats(stats):
-        """Collect this diagnostic block only on sampled timesteps."""
+    if stats.l_sample:
         rho_zm_sfc = rho_zm[:, 0]
         stats = stats.update("sh", wpthlp_sfc * rho_zm_sfc * Cp)
         stats = stats.update("lh", wprtp_sfc * rho_zm_sfc * Lv)
@@ -547,10 +557,6 @@ def prescribe_forcings(
         stats = stats.update("vpwp_sfc", vpwp_sfc)
         stats = stats.update("ustar", ustar)
         stats = stats.update("T_sfc", T_sfc)
-
-        return stats
-
-    stats = stats.sampled(accumulate_stats)
 
     return (
         stats,

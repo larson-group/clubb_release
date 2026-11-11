@@ -58,6 +58,7 @@ def calc_ref_z_linear_thvm(thvm, exner):
       ref_z[k] = ref_z[k-1] - (Cp/g)(exner[k]-exner[k-1]) (thvm[k]-thvm[k-1]) / log(thvm[k]/thvm[k-1]),
     reducing to -(Cp/g)(exner[k]-exner[k-1]) thvm[k] when thvm[k]==thvm[k-1]. Differentiable (a cumulative sum).
     """
+    thvm = jnp.asarray(thvm); exner = jnp.asarray(exner)
     d_exner = exner[1:] - exner[:-1]
     dthvm = thvm[1:] - thvm[:-1]
     big = jnp.abs(dthvm) > _THVM_TOL * thvm[1:]
@@ -94,6 +95,7 @@ def inverse_hydrostatic(p_sfc, zm_init, thvm, exner):
     Returns:
         z (nlevels,) [m].
     """
+    thvm = jnp.asarray(thvm); exner = jnp.asarray(exner)
     ref_z_snd = calc_ref_z_linear_thvm(thvm, exner)
     exner_sfc = (p_sfc / p0) ** kappa
     e = np.asarray(exner)

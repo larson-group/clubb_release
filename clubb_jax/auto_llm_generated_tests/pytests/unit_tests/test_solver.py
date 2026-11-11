@@ -17,7 +17,7 @@ from clubb_jax.src.CLUBB_core.tridiag_lu_solver import tridiag_lu_solve
 
 
 def call_tridiag_lu_solve(lhs, rhs):
-    return tridiag_lu_solve(rhs.shape[1], rhs.shape[0], lhs, rhs)
+    return tridiag_lu_solve(rhs.shape[-1], lhs, rhs)
 
 
 def _make_lhs_from_bands(sup_np, mid_np, sub_np):

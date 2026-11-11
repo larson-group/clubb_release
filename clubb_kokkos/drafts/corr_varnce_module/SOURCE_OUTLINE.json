@@ -1,0 +1,547 @@
+{
+  "preimplementation_outline": true,
+  "source": "src/CLUBB_core/corr_varnce_module.F90",
+  "native_lines": 950,
+  "jax": "clubb_jax/src/CLUBB_core/corr_varnce_module.py",
+  "native_inventory_and_order": [
+    "def_corr_idx",
+    "set_corr_arrays_to_default",
+    "get_corr_var_index",
+    "init_pdf_hydromet_arrays_api",
+    "setup_corr_varnce_array_api",
+    "assert_corr_symmetric",
+    "print_corr_matrix"
+  ],
+  "routines": [
+    {
+      "name": "def_corr_idx",
+      "arguments": [
+        {
+          "name": "iiPDF_x",
+          "kind": "integer",
+          "intent": "in",
+          "optional": false
+        },
+        {
+          "name": "hm_metadata",
+          "kind": "hm_metadata_type",
+          "intent": "in",
+          "optional": false,
+          "native_note": "No INTENT; full body only reads this argument. Explicit source-analysis contract, no Native edits."
+        }
+      ],
+      "result": {
+        "name": "ii_def_corr",
+        "kind": "integer"
+      },
+      "ordered_control": [
+        "if (iiPDF_x == hm_metadata%iiPDF_chi) then",
+        "elseif (iiPDF_x == hm_metadata%iiPDF_eta) then",
+        "elseif (iiPDF_x == hm_metadata%iiPDF_w) then",
+        "elseif (iiPDF_x == hm_metadata%iiPDF_Ncn) then",
+        "elseif (iiPDF_x == hm_metadata%iiPDF_rr) then",
+        "elseif (iiPDF_x == hm_metadata%iiPDF_Nr) then",
+        "elseif (iiPDF_x == hm_metadata%iiPDF_ri) then",
+        "elseif (iiPDF_x == hm_metadata%iiPDF_Ni) then",
+        "elseif (iiPDF_x == hm_metadata%iiPDF_rs) then",
+        "elseif (iiPDF_x == hm_metadata%iiPDF_Ns) then",
+        "elseif (iiPDF_x == hm_metadata%iiPDF_rg) then",
+        "elseif (iiPDF_x == hm_metadata%iiPDF_Ng) then"
+      ],
+      "ordered_calls": []
+    },
+    {
+      "name": "set_corr_arrays_to_default",
+      "module": "corr_varnce_module",
+      "source": "src/CLUBB_core/corr_varnce_module.F90",
+      "arguments": [
+        {
+          "name": "pdf_dim",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "hm_metadata",
+          "kind": "hm_metadata_type",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "corr_array_n_cloud",
+          "kind": "real",
+          "dims": [
+            "pdf_dim",
+            "pdf_dim"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "corr_array_n_below",
+          "kind": "real",
+          "dims": [
+            "pdf_dim",
+            "pdf_dim"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "ordered_control": [
+        "do i = 1, pdf_dim",
+        "do i = 1, pdf_dim-1",
+        "do j = i+1, pdf_dim",
+        "if ( idx_i > idx_j ) then",
+        "else"
+      ],
+      "ordered_calls": []
+    },
+    {
+      "name": "get_corr_var_index",
+      "module": "corr_varnce_module",
+      "source": "src/CLUBB_core/corr_varnce_module.F90",
+      "arguments": [
+        {
+          "name": "var_name",
+          "kind": "character",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": "*"
+        },
+        {
+          "name": "hm_metadata",
+          "kind": "hm_metadata_type",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": {
+        "name": "i",
+        "kind": "integer",
+        "dims": [],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      "ordered_control": [
+        "select case( trim(var_name) )",
+        "case( \"chi\" )",
+        "case( \"eta\" )",
+        "case( \"w\" )",
+        "case( \"Ncn\" )",
+        "case( \"rr\" )",
+        "case( \"Nr\" )",
+        "case( \"ri\" )",
+        "case( \"Ni\" )",
+        "case( \"rs\" )",
+        "case( \"Ns\" )",
+        "case( \"rg\" )",
+        "case( \"Ng\" )"
+      ],
+      "ordered_calls": []
+    },
+    {
+      "name": "init_pdf_hydromet_arrays_api",
+      "module": "corr_varnce_module",
+      "source": "src/CLUBB_core/corr_varnce_module.F90",
+      "arguments": [
+        {
+          "name": "host_dx",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "host_dy",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "hydromet_dim",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "iirr",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "iiNr",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "iiri",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "iiNi",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "iirs",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "iiNs",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "iirg",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "iiNg",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "Ncnp2_on_Ncnm2",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "hm_metadata",
+          "kind": "hm_metadata_type",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "pdf_dim",
+          "kind": "integer",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "hmp2_ip_on_hmm2_ip_slope_in",
+          "kind": "hmp2_ip_on_hmm2_ip_slope_type",
+          "dims": [],
+          "intent": "in",
+          "optional": true,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "hmp2_ip_on_hmm2_ip_intrcpt_in",
+          "kind": "hmp2_ip_on_hmm2_ip_intrcpt_type",
+          "dims": [],
+          "intent": "in",
+          "optional": true,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "ordered_control": [
+        "if ( present( hmp2_ip_on_hmm2_ip_slope_in ) ) then",
+        "if ( present( hmp2_ip_on_hmm2_ip_intrcpt_in ) ) then",
+        "if ( iirr > 0 ) then",
+        "if ( iirs > 0 ) then",
+        "if ( iiri > 0 ) then",
+        "if ( iirg > 0 ) then",
+        "if ( iiNr > 0 ) then",
+        "if ( iiNs > 0 ) then",
+        "if ( iiNi > 0 ) then",
+        "if ( iiNg > 0 ) then",
+        "if ( iirr > 0 ) then",
+        "if ( iiri > 0 ) then",
+        "if ( iirs > 0 ) then",
+        "if ( iirg > 0 ) then",
+        "if ( iiNr > 0 ) then",
+        "if ( iiNi > 0 ) then",
+        "if ( iiNs > 0 ) then",
+        "if ( iiNg > 0 ) then",
+        "if ( hydromet_dim > 0 ) then",
+        "do i = 1, hydromet_dim, 1",
+        "if ( i == iirr ) then",
+        "if ( i == iiNr ) then",
+        "if ( i == iiri ) then",
+        "if ( i == iiNi ) then",
+        "if ( i == iirs ) then",
+        "if ( i == iiNs ) then",
+        "if ( i == iirg ) then",
+        "if ( i == iiNg ) then"
+      ],
+      "ordered_calls": []
+    },
+    {
+      "name": "setup_corr_varnce_array_api",
+      "module": "corr_varnce_module",
+      "source": "src/CLUBB_core/corr_varnce_module.F90",
+      "arguments": [
+        {
+          "name": "pdf_dim",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "hm_metadata",
+          "kind": "hm_metadata_type",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_fix_w_chi_eta_correlations",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "corr_array_n_cloud",
+          "kind": "real",
+          "dims": [
+            "pdf_dim",
+            "pdf_dim"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "corr_array_n_below",
+          "kind": "real",
+          "dims": [
+            "pdf_dim",
+            "pdf_dim"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "corr_array_n_cloud_default",
+          "kind": "real",
+          "dims": [
+            "pdf_dim",
+            "pdf_dim"
+          ],
+          "intent": "in",
+          "optional": true,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "corr_array_n_below_default",
+          "kind": "real",
+          "dims": [
+            "pdf_dim",
+            "pdf_dim"
+          ],
+          "intent": "in",
+          "optional": true,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "ordered_control": [
+        "if ( present( corr_array_n_cloud_default ) .and. present( corr_array_n_below_default ) ) then",
+        "else",
+        "if ( clubb_at_least_debug_level_api( 2 ) ) then",
+        "if ( .not. l_fix_w_chi_eta_correlations .and. hm_metadata%iiPDF_Ncn > 0 ) then",
+        "do i = 1, pdf_dim",
+        "if ( ( (abs(corr_array_n_cloud(i,hm_metadata%iiPDF_Ncn)) > eps) .or. (abs(corr_array_n_below(i,hm_metadata%iiPDF_Ncn))) > eps) .and. i /= hm_metadata%iiPDF_Ncn ) then",
+        "if ( l_warning ) then"
+      ],
+      "ordered_calls": [
+        "call set_corr_arrays_to_default( pdf_dim, hm_metadata, corr_array_n_cloud, corr_array_n_below )",
+        "call mirror_lower_triangular_matrix( pdf_dim, corr_array_n_cloud )",
+        "call mirror_lower_triangular_matrix( pdf_dim, corr_array_n_below )"
+      ]
+    },
+    {
+      "name": "assert_corr_symmetric",
+      "module": "corr_varnce_module",
+      "source": "src/CLUBB_core/corr_varnce_module.F90",
+      "arguments": [
+        {
+          "name": "corr_array_n",
+          "kind": "real",
+          "dims": [
+            "pdf_dim",
+            "pdf_dim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "pdf_dim",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "err_info",
+          "kind": "err_info_type",
+          "dims": [],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "ordered_control": [
+        "do n_col = 1, pdf_dim",
+        "do n_row = 1, pdf_dim",
+        "if ( abs(corr_array_n(n_col, n_row) - corr_array_n(n_row, n_col)) > tol ) then",
+        "if ( n_col == n_row .and. abs(corr_array_n(n_col, n_row)-one) > eps ) then"
+      ],
+      "ordered_calls": []
+    },
+    {
+      "name": "print_corr_matrix",
+      "module": "corr_varnce_module",
+      "source": "src/CLUBB_core/corr_varnce_module.F90",
+      "arguments": [
+        {
+          "name": "pdf_dim",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "corr_array_n",
+          "kind": "real",
+          "dims": [
+            "pdf_dim",
+            "pdf_dim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "ordered_control": [
+        "do n = 1, pdf_dim",
+        "do m = 1, pdf_dim"
+      ],
+      "ordered_calls": []
+    }
+  ],
+  "shared_type_owner": "Existing generated clubb_kokkos/src/CLUBB_core/corr_varnce_module.hpp::hm_metadata_type,26 fields; unchanged; reuse exact converters.",
+  "numerical_evidence": "Uncompiled/untested; no runtime/BFB claim.",
+  "scope": "All seven Native procedures: two private helpers + five public routines; JAX supports same behavior with reduced diagnostics, target keeps full Native errors. Three public scalar Native parameter types also required.",
+  "types": [
+    "hmp2_ip_on_hmm2_ip_ratios_type:8 real species defaults1",
+    "hmp2_ip_on_hmm2_ip_slope_type:8 defaults2.12e-5[1/m]",
+    "hmp2_ip_on_hmm2_ip_intrcpt_type:8 defaults.54[-]",
+    "Existing hm_metadata_type remains exact26-field generated owner."
+  ],
+  "ordered_behavior": [
+    "def_corr_idx:12ordered metadata-to-default slots1..12; initial-1.",
+    "set_corr_arrays_to_default:zero matrices,unit diagonal,lower triangle chosen by mapped source indices.",
+    "get_corr_var_index:case-sensitive string lookup, Native TRIM removes trailing blanks only; initial-1.",
+    "init_pdf_hydromet_arrays_api:INTENT OUT reset,save species indices/Ncn ratio, optional slopes/intercepts, allocate/zero variance ratios, eight ordered species ratio formulas, allocate species arrays, eight ordered names/flags/tolerances, initialize PDF1:4,hydrometeor-order sequential PDF counting.",
+    "setup_corr_varnce_array_api:both-present overrides or defaults; cloud then below mirroring; debug2 warning check and exact two messages.",
+    "assert_corr_symmetric:ordered col/row checks; asymmetry first then diagonal, fatal all columns, distinct header array/global diagnostics,matrix print and first-failure return.",
+    "print_corr_matrix:column-oriented row display, F5.2 into LEN10 then6-character stride and LEN72 truncation,stdout."
+  ],
+  "global_storage_decision": "Resolved by root: immutable Native-named constexpr std::array<real_t,144> tables with exact Fortran-flat values; optional call-local const unmanaged HostSpace aliases, no mutable/thread_local state or global Kokkos allocation. External mutation of former public Fortran arrays is not a supported new C++ API.",
+  "ownership": "Stage small correlation matrices/metadata locally on host; existing Kokkos View fields own persistent metadata. No device bridge.",
+  "remaining_lower": [
+    "Existing host f2k debug-level API",
+    "Missing public mirror_lower_triangular_matrix(nvars IN integer,matrix INOUT real(nvars,nvars)); invoked cloud then below."
+  ],
+  "generator_merge": "Draft Native declaration/procedure fragments only; generator currently replaces whole corr_varnce header. Root must preserve marker-owned hm_metadata region and add required Native scalar types once in that owner.",
+  "literal_kinds": "All table/parameter/ratio/tolerance literals inspected carry _c (c=core_rknd) or _core_rknd; initialize real_t directly, with no default-single round trip."
+}

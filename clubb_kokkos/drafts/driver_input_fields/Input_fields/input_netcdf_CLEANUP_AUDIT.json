@@ -1,0 +1,20 @@
+{
+  "date_UTC": "2026-11-06T08:21:28.552216+00:00",
+  "attribution": "Separate owner source/format cleanup after scientific reread.",
+  "checks": [
+    "Native physical signature groups restored with accurate intent tags; source argument order preserved.",
+    "Public/file/procedure purposes, units, date/level/index conventions and explicit error/I/O ownership checked.",
+    "No trailing whitespace or lines over100columns; no source-wide format or unrelated live edit.",
+    "All headers use actual existing array/calendar/constants APIs; primitive bridge declarations agree on C ABI."
+  ],
+  "sha256": {
+    "src/Input_fields/input_netcdf.F90": "ab126cba1e34ccf00cbca900109c407a26dda4bea9cb7bd9201e616aab5c6e4c",
+    "clubb_kokkos/drafts/driver_input_fields/Input_fields/input_netcdf.cpp": "b88c6203ab7be60c838c374ae53fbf883eec305c3f9876b05476900e2ca9e6a7",
+    "clubb_kokkos/drafts/driver_input_fields/Input_fields/input_netcdf.hpp": "a20eb1ec6a57841933912503c184232b41841b17eaca6665b8397076f4b45968",
+    "clubb_kokkos/drafts/driver_input_fields/f2k/input_netcdf_io_bridge.hpp": "f3be148276f52f3f08b069d13afbb344349745c498fe934fb5ccafca58c8bae6",
+    "clubb_kokkos/drafts/driver_input_fields/f2k/input_netcdf_io_bridge.F90": "d7f7cb2c36f6574f9886dc176b1490ac33384226f059ce85d2f23a536485220b",
+    "clubb_kokkos/drafts/driver_input_fields/Input_fields/stat_file_module.hpp": "0a0b001e649591b5bc17c244e5a16bd80df3237980fc94f2b2ce3edab1ca1e99",
+    "clubb_kokkos/drafts/driver_input_fields/Input_fields/inputfields_state.hpp": "f40f74853977cfc35d6cce2f3533ffbb07e2514b0582cae89afe0de0b24dbfc9"
+  },
+  "runtime_status": "UNCOMPILED/UNTESTED; CPU/CUDA/model/BFB evidence pending Root compatible-group integration."
+}

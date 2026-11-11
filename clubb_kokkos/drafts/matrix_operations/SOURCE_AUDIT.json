@@ -1,0 +1,51 @@
+{
+  "canonical_source": "src/CLUBB_core/matrix_operations.F90",
+  "canonical_sha256": "0a42d51665544e4c657dc3b16ff90e4c9cb418b073b2c265d057a693f158e930",
+  "hashes": {
+    "matrix_operations.hpp": "a0f7fdfd27cd6499da153b21299051a4e18c90a5418facfdf2c9a36bcdffc365",
+    "lapack_dependencies.hpp": "014cdf9e0f7e4e24b21c056c84086004ed35c0f4fb87a586422e8eb8f707a9af"
+  },
+  "routines": [
+    {
+      "name": "symm_covar_matrix_2_corr_matrix",
+      "required_arguments": 3,
+      "ordered_assignment_trees": 2,
+      "ordered_lower_calls": 0
+    },
+    {
+      "name": "Cholesky_factor",
+      "required_arguments": 5,
+      "ordered_assignment_trees": 13,
+      "ordered_lower_calls": 6
+    },
+    {
+      "name": "Symm_matrix_eigenvalues",
+      "required_arguments": 3,
+      "ordered_assignment_trees": 1,
+      "ordered_lower_calls": 1
+    },
+    {
+      "name": "mirror_lower_triangular_matrix",
+      "required_arguments": 2,
+      "ordered_assignment_trees": 1,
+      "ordered_lower_calls": 0
+    }
+  ],
+  "excluded_unused_public_JAX_routines": [
+    "row_mult_lower_tri_matrix",
+    "set_lower_triangular_matrix",
+    "get_lower_triangular_matrix",
+    "print_lower_triangular_matrix"
+  ],
+  "manual_review": [
+    "Full565line Native and173line actualJAX scope read before outline; root approved four-routine supported scope.",
+    "Native scaling/character flags/info branches, ten attempts total, retry restore/minimum scan/tau association and final-failed-iteration modification retained.",
+    "Complete debug1/2 matrix/eigen/correlation diagnostics with field-specific payloads; no JAX retry-count/trace omissions imported.",
+    "Private eigen helper preserves fixed lwork180 and returns after diagnostics for either LAPACK status failure; source-owned scratch copies remain per call.",
+    "Raw buffers cross only public lapack_interfaces boundary; transient ABI extension is pending in existing shim owner, no raw Fortran symbols in science.",
+    "Two simple kernels retain matrix input/output memory space, unchanged lower/diagonal ownership and explicit void enclosing types. No mutable cache/global state/device bridge.",
+    "Separate cleanup covers Native arguments/order/case, core-kind constants, scientific comments, complete payloads,100columns/whitespace."
+  ],
+  "remaining_lower": "Four typed LAPACK entry extensions in existing core/shim owners: potrf,poequ,laqsy,syev; existing host Native debug query. No new physical constant.",
+  "limits": "Diagnostic numbers use local width/precision streams; exact compiler-specific G/E formatting is unverified. Uncompiled/untested; no runtime/BFB claim or speculative arithmetic workaround."
+}

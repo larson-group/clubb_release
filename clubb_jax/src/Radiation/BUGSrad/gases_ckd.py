@@ -22,6 +22,7 @@ def pscale(ppl, stanp):
     """Bracket each layer pressure `ppl` (ncol, nlm) in the ascending standard-pressure grid `stanp`
     (n,). Returns (pkd, ip1, ip2): the linear weight and the 0-based bracketing indices (faithful to
     pscale's 3-case logic: below stanp[0] → ip1=ip2=0; ≥ stanp[-1] → top bracket; else interior)."""
+    stanp = jnp.asarray(stanp)
     n = stanp.shape[0]
     j = jnp.clip(jnp.searchsorted(stanp, ppl, side='right') - 1, 0, n - 2)   # interior lower bracket
     below = ppl < stanp[0]
@@ -35,6 +36,7 @@ def pscale(ppl, stanp):
 
 
 def _qk_core(coefk, tt, pkd, ip1, ip2, t0, ylo, yhi, yhi_set):
+    coefk = jnp.asarray(coefk)         # (3, n)
     y1 = tt - t0
     y1 = jnp.where(y1 < ylo, ylo, y1)
     y1 = jnp.where(y1 > yhi, yhi_set, y1)                 # qkio3: >75 sets 70 (asymmetric, faithful)
@@ -61,32 +63,32 @@ def qkio3(coefk, tt, pkd, ip1, ip2):
 
 def qoph2o(fkg, dp, rmix):
     """H2O transmission optical depth (gases_ckd.F90:qoph2o)."""
-    return fkg * rmix * dp * MOLAR_VOLUME / MW_H2O * 10.0 / GRAVITY
+    return jnp.asarray(fkg) * jnp.asarray(rmix) * jnp.asarray(dp) * MOLAR_VOLUME / MW_H2O * 10.0 / GRAVITY
 
 
 def qopo3i(fkg, dp, o3mix):
     """O3 IR-band transmission (gases_ckd.F90:qopo3i)."""
-    return fkg * o3mix * dp * MOLAR_VOLUME / MW_O3 * 10.0 / GRAVITY
+    return jnp.asarray(fkg) * jnp.asarray(o3mix) * jnp.asarray(dp) * MOLAR_VOLUME / MW_O3 * 10.0 / GRAVITY
 
 
 def qopo3s(fk, dp, o3mix):
     """O3 non-gray (SW) transmission with scalar k `fk` (gases_ckd.F90:qopo3s)."""
-    return o3mix * dp * fk * MOLAR_VOLUME / MW_O3 * 10.0 / GRAVITY
+    return jnp.asarray(o3mix) * jnp.asarray(dp) * fk * MOLAR_VOLUME / MW_O3 * 10.0 / GRAVITY
 
 
 def qophc(fkg, dp):
     """H2O/CO2 band-overlap transmission (gases_ckd.F90:qophc): tg = fkg·dp."""
-    return fkg * dp
+    return jnp.asarray(fkg) * jnp.asarray(dp)
 
 
 def qopch4(fkg, dp):
     """CH4 transmission (gases_ckd.F90:qopch4), ch4_conc = 1.6e-6 ppv (hardcoded in the Fortran)."""
-    return fkg * dp * MOLAR_VOLUME * 10.0 / GRAVITY * _CH4_CONC / MW_DRY_AIR
+    return jnp.asarray(fkg) * jnp.asarray(dp) * MOLAR_VOLUME * 10.0 / GRAVITY * _CH4_CONC / MW_DRY_AIR
 
 
 def qopn2o(fkg, dp):
     """N2O transmission (gases_ckd.F90:qopn2o), n2o_conc = 0.28e-6 ppv (hardcoded in the Fortran)."""
-    return fkg * dp * MOLAR_VOLUME * 10.0 / GRAVITY * _N2O_CONC / MW_DRY_AIR
+    return jnp.asarray(fkg) * jnp.asarray(dp) * MOLAR_VOLUME * 10.0 / GRAVITY * _N2O_CONC / MW_DRY_AIR
 
 
 # Per-band solar energy (Wm^-2) for the SW bands 1-6 that scale hk (gases_ckd.F90); LW bands use hk directly.
@@ -124,7 +126,7 @@ def gases(ib, ig, dp, tt, rmix, o3mix, umco2, umch4, umn2o, pkd, ip1, ip2, pp):
         tg2 = qoph2o(k2('c12h2o'), dp, rmix)
         tg = tg1 + tg2; hk = T['hk12'][ig]
     elif ib in (14, 15):                                   # H2O + CO2 overlap (Fu approach 2)
-        pq = jnp.where(pp[:, :-1] >= 63.1, rmix, 0.0)   # pp level≥63.1 hPa
+        pq = jnp.where(jnp.asarray(pp)[:, :-1] >= 63.1, jnp.asarray(rmix), 0.0)   # pp level≥63.1 hPa
         fkga = k3(f'c{ib}hca'); fkgb = k3(f'c{ib}hcb')
         fkg = fkga / 330.0 * umco2 + pq * fkgb
         tg = qophc(fkg, dp); hk = T[f'hk{ib}'][ig]

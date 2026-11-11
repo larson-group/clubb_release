@@ -1,0 +1,1627 @@
+{
+  "status": "owner source audit; compilation/model evidence separate",
+  "Native_files": 11,
+  "Native_lines": 8662,
+  "Native_specific_procedures": 116,
+  "non_MT95_contracts": [
+    {
+      "routine": "est_kessler_microphys_api",
+      "Native_argument_count": 18,
+      "C++_contracts": [
+        [
+          "nzt",
+          "num_samples",
+          "pdf_dim",
+          "ngrdcol",
+          "X_nl_all_levs",
+          "pdf_params",
+          "rcm",
+          "cloud_frac",
+          "X_mixt_comp_all_levs",
+          "lh_sample_point_weights",
+          "l_lh_importance_sampling",
+          "lh_AKm",
+          "AKm",
+          "AKstd",
+          "AKstd_cld",
+          "AKm_rcm",
+          "AKm_rcc",
+          "lh_rcm_avg"
+        ],
+        [
+          "nzt",
+          "num_samples",
+          "pdf_dim",
+          "ngrdcol",
+          "X_nl_all_levs",
+          "pdf_params",
+          "rcm",
+          "cloud_frac",
+          "X_mixt_comp_all_levs",
+          "lh_sample_point_weights",
+          "l_lh_importance_sampling",
+          "lh_AKm",
+          "AKm",
+          "AKstd",
+          "AKstd_cld",
+          "AKm_rcm",
+          "AKm_rcc",
+          "lh_rcm_avg"
+        ]
+      ]
+    },
+    {
+      "routine": "calc_estimate",
+      "Native_argument_count": 11,
+      "C++_contracts": [
+        [
+          "num_samples",
+          "mixt_frac",
+          "cloud_frac_1",
+          "cloud_frac_2",
+          "rc",
+          "X_mixt_comp_one_lev",
+          "lh_sample_point_weights",
+          "l_lh_importance_sampling",
+          "coeff",
+          "r_crit",
+          "est_m"
+        ]
+      ]
+    },
+    {
+      "routine": "rand_uniform_real",
+      "Native_argument_count": 0,
+      "C++_contracts": [
+        [
+          "rng"
+        ]
+      ]
+    },
+    {
+      "routine": "generate_uniform_lh_sample",
+      "Native_argument_count": 6,
+      "C++_contracts": [
+        [
+          "iter",
+          "num_samples",
+          "sequence_length",
+          "n_vars",
+          "l_lh_deterministic_test",
+          "X_u_one_lev",
+          "sampling_state",
+          "rng"
+        ],
+        [
+          "iter",
+          "num_samples",
+          "sequence_length",
+          "n_vars",
+          "l_lh_deterministic_test",
+          "X_u_one_lev",
+          "sampling_state",
+          "rng"
+        ]
+      ]
+    },
+    {
+      "routine": "choose_permuted_random",
+      "Native_argument_count": 2,
+      "C++_contracts": [
+        [
+          "nt_repeat",
+          "p_matrix_element",
+          "rng"
+        ]
+      ]
+    },
+    {
+      "routine": "permute_height_time",
+      "Native_argument_count": 3,
+      "C++_contracts": [
+        [
+          "nt_repeat",
+          "n_vars",
+          "one_height_time_matrix",
+          "rng"
+        ],
+        [
+          "nt_repeat",
+          "n_vars",
+          "one_height_time_matrix",
+          "rng"
+        ]
+      ]
+    },
+    {
+      "routine": "rand_permute",
+      "Native_argument_count": 2,
+      "C++_contracts": [
+        [
+          "n",
+          "pvect",
+          "rng"
+        ],
+        [
+          "n",
+          "pvect",
+          "rng"
+        ]
+      ]
+    },
+    {
+      "routine": "cleanup_latin_hypercube_arrays",
+      "Native_argument_count": 0,
+      "C++_contracts": [
+        [
+          "sampling_state"
+        ]
+      ]
+    },
+    {
+      "routine": "generate_silhs_sample",
+      "Native_argument_count": 27,
+      "C++_contracts": [
+        [
+          "iter",
+          "pdf_dim",
+          "num_samples",
+          "sequence_length",
+          "nzt",
+          "ngrdcol",
+          "l_calc_weights_all_levs_itime",
+          "gr",
+          "pdf_params",
+          "delta_zm",
+          "Lscale",
+          "lh_seed",
+          "hm_metadata",
+          "mu1",
+          "mu2",
+          "sigma1",
+          "sigma2",
+          "corr_cholesky_mtx_1",
+          "corr_cholesky_mtx_2",
+          "precip_fracs",
+          "silhs_config_flags",
+          "vert_decorr_coef",
+          "err_info",
+          "X_nl_all_levs",
+          "X_mixt_comp_all_levs",
+          "lh_sample_point_weights",
+          "stats",
+          "sampling_state",
+          "rng",
+          "silhs"
+        ],
+        [
+          "iter",
+          "pdf_dim",
+          "num_samples",
+          "sequence_length",
+          "nzt",
+          "ngrdcol",
+          "l_calc_weights_all_levs_itime",
+          "gr",
+          "pdf_params",
+          "delta_zm",
+          "Lscale",
+          "lh_seed",
+          "hm_metadata",
+          "mu1",
+          "mu2",
+          "sigma1",
+          "sigma2",
+          "corr_cholesky_mtx_1",
+          "corr_cholesky_mtx_2",
+          "precip_fracs",
+          "silhs_config_flags",
+          "vert_decorr_coef",
+          "err_info",
+          "X_nl_all_levs",
+          "X_mixt_comp_all_levs",
+          "lh_sample_point_weights",
+          "stats",
+          "sampling_state",
+          "rng",
+          "silhs"
+        ]
+      ]
+    },
+    {
+      "routine": "generate_random_pool",
+      "Native_argument_count": 9,
+      "C++_contracts": [
+        [
+          "nzt",
+          "ngrdcol",
+          "pdf_dim",
+          "num_samples",
+          "d_uniform_extra",
+          "lh_seed",
+          "gr",
+          "l_lh_deterministic_test",
+          "rand_pool",
+          "rng"
+        ]
+      ]
+    },
+    {
+      "routine": "generate_all_uniform_samples",
+      "Native_argument_count": 26,
+      "C++_contracts": [
+        [
+          "iter",
+          "pdf_dim",
+          "d_uniform_extra",
+          "num_samples",
+          "sequence_length",
+          "nzt",
+          "ngrdcol",
+          "k_lh_start",
+          "X_vert_corr",
+          "rand_pool",
+          "iiPDF_chi",
+          "cloud_frac_1",
+          "cloud_frac_2",
+          "mixt_frac",
+          "precip_fracs",
+          "cluster_allocation_strategy",
+          "l_lh_importance_sampling",
+          "l_lh_straight_mc",
+          "l_lh_clustered_sampling",
+          "l_lh_limit_weights",
+          "l_lh_var_frac",
+          "l_lh_normalize_weights",
+          "l_lh_deterministic_test",
+          "l_calc_weights_all_levs_itime",
+          "X_u_all_levs",
+          "lh_sample_point_weights",
+          "sampling_state",
+          "rng",
+          "silhs"
+        ]
+      ]
+    },
+    {
+      "routine": "compute_k_lh_start",
+      "Native_argument_count": 9,
+      "C++_contracts": [
+        [
+          "gr",
+          "nzt",
+          "ngrdcol",
+          "rcm_pdf",
+          "pdf_params",
+          "l_rcm_in_cloud_k_lh_start",
+          "l_random_k_lh_start",
+          "lh_seed",
+          "k_lh_start",
+          "rng"
+        ]
+      ]
+    },
+    {
+      "routine": "clip_transform_silhs_output",
+      "Native_argument_count": 15,
+      "C++_contracts": [
+        [
+          "nzt",
+          "ngrdcol",
+          "num_samples",
+          "pdf_dim",
+          "hydromet_dim",
+          "hm_metadata",
+          "X_mixt_comp_all_levs",
+          "X_nl_all_levs",
+          "pdf_params",
+          "l_use_Ncn_to_Nc",
+          "lh_rt_clipped",
+          "lh_thl_clipped",
+          "lh_rc_clipped",
+          "lh_rv_clipped",
+          "lh_Nc_clipped"
+        ],
+        [
+          "nzt",
+          "ngrdcol",
+          "num_samples",
+          "pdf_dim",
+          "hydromet_dim",
+          "hm_metadata",
+          "X_mixt_comp_all_levs",
+          "X_nl_all_levs",
+          "pdf_params",
+          "l_use_Ncn_to_Nc",
+          "lh_rt_clipped",
+          "lh_thl_clipped",
+          "lh_rc_clipped",
+          "lh_rv_clipped",
+          "lh_Nc_clipped"
+        ]
+      ]
+    },
+    {
+      "routine": "assert_consistent_cloud_frac",
+      "Native_argument_count": 7,
+      "C++_contracts": [
+        [
+          "chi_1",
+          "chi_2",
+          "cloud_frac_1",
+          "cloud_frac_2",
+          "stdev_chi_1",
+          "stdev_chi_2",
+          "l_error"
+        ]
+      ]
+    },
+    {
+      "routine": "assert_consistent_cf_component",
+      "Native_argument_count": 4,
+      "C++_contracts": [
+        [
+          "mu_chi_i",
+          "sigma_chi_i",
+          "cloud_frac_i",
+          "l_error"
+        ]
+      ]
+    },
+    {
+      "routine": "assert_correct_cloud_normal",
+      "Native_argument_count": 7,
+      "C++_contracts": [
+        [
+          "num_samples",
+          "X_u_chi",
+          "X_nl_chi",
+          "X_mixt_comp",
+          "cloud_frac_1",
+          "cloud_frac_2",
+          "l_error"
+        ]
+      ]
+    },
+    {
+      "routine": "latin_hypercube_2D_output_api",
+      "Native_argument_count": 7,
+      "C++_contracts": [
+        [
+          "nzt",
+          "zt",
+          "pdf_dim",
+          "num_samples",
+          "hm_metadata",
+          "stats",
+          "err_info"
+        ],
+        [
+          "nzt",
+          "zt",
+          "pdf_dim",
+          "num_samples",
+          "hm_metadata",
+          "stats",
+          "err_info"
+        ]
+      ]
+    },
+    {
+      "routine": "compute_arb_overlap",
+      "Native_argument_count": 9,
+      "C++_contracts": [
+        [
+          "nzt",
+          "ngrdcol",
+          "num_samples",
+          "pdf_dim",
+          "d_uniform_extra",
+          "k_lh_start",
+          "vert_corr",
+          "rand_pool",
+          "X_u_all_levs"
+        ]
+      ]
+    },
+    {
+      "routine": "stats_accumulate_lh_api",
+      "Native_argument_count": 16,
+      "C++_contracts": [
+        [
+          "gr",
+          "nzt",
+          "ngrdcol",
+          "num_samples",
+          "pdf_dim",
+          "rho_ds_zt",
+          "hydromet_dim",
+          "hm_metadata",
+          "lh_sample_point_weights",
+          "X_nl_all_levs",
+          "lh_rt_clipped",
+          "lh_thl_clipped",
+          "lh_rc_clipped",
+          "lh_rv_clipped",
+          "lh_Nc_clipped",
+          "stats"
+        ],
+        [
+          "gr",
+          "nzt",
+          "ngrdcol",
+          "num_samples",
+          "pdf_dim",
+          "rho_ds_zt",
+          "hydromet_dim",
+          "hm_metadata",
+          "lh_sample_point_weights",
+          "X_nl_all_levs",
+          "lh_rt_clipped",
+          "lh_thl_clipped",
+          "lh_rc_clipped",
+          "lh_rv_clipped",
+          "lh_Nc_clipped",
+          "stats"
+        ]
+      ]
+    },
+    {
+      "routine": "stats_accumulate_uniform_lh",
+      "Native_argument_count": 10,
+      "C++_contracts": [
+        [
+          "nzt",
+          "num_samples",
+          "ngrdcol",
+          "l_in_precip_all_levs",
+          "X_mixt_comp_all_levs",
+          "X_u_chi_all_levs",
+          "pdf_params",
+          "lh_sample_point_weights",
+          "k_lh_start",
+          "stats"
+        ]
+      ]
+    },
+    {
+      "routine": "copy_X_nl_into_hydromet_all_pts",
+      "Native_argument_count": 10,
+      "C++_contracts": [
+        [
+          "nzt",
+          "pdf_dim",
+          "num_samples",
+          "ngrdcol",
+          "X_nl_all_levs",
+          "hydromet_dim",
+          "hm_metadata",
+          "hydromet",
+          "hydromet_all_points",
+          "Ncn_all_points"
+        ],
+        [
+          "nzt",
+          "pdf_dim",
+          "num_samples",
+          "ngrdcol",
+          "X_nl_all_levs",
+          "hydromet_dim",
+          "hm_metadata",
+          "hydromet",
+          "hydromet_all_points",
+          "Ncn_all_points"
+        ]
+      ]
+    },
+    {
+      "routine": "lh_microphys_var_covar_driver_api",
+      "Native_argument_count": 18,
+      "C++_contracts": [
+        [
+          "nzt",
+          "num_samples",
+          "ngrdcol",
+          "dt",
+          "lh_sample_point_weights",
+          "pdf_params",
+          "lh_rt_all",
+          "lh_thl_all",
+          "lh_w_all",
+          "lh_rcm_mc_all",
+          "lh_rvm_mc_all",
+          "lh_thlm_mc_all",
+          "l_lh_instant_var_covar_src",
+          "lh_rtp2_mc_zt",
+          "lh_thlp2_mc_zt",
+          "lh_wprtp_mc_zt",
+          "lh_wpthlp_mc_zt",
+          "lh_rtpthlp_mc_zt"
+        ],
+        [
+          "nzt",
+          "num_samples",
+          "ngrdcol",
+          "dt",
+          "lh_sample_point_weights",
+          "pdf_params",
+          "lh_rt_all",
+          "lh_thl_all",
+          "lh_w_all",
+          "lh_rcm_mc_all",
+          "lh_rvm_mc_all",
+          "lh_thlm_mc_all",
+          "l_lh_instant_var_covar_src",
+          "lh_rtp2_mc_zt",
+          "lh_thlp2_mc_zt",
+          "lh_wprtp_mc_zt",
+          "lh_wpthlp_mc_zt",
+          "lh_rtpthlp_mc_zt"
+        ]
+      ]
+    },
+    {
+      "routine": "compute_sample_mean",
+      "Native_argument_count": 5,
+      "C++_contracts": [
+        [
+          "n_levels",
+          "n_samples",
+          "ngrdcol",
+          "weight",
+          "x_sample"
+        ],
+        [
+          "n_levels",
+          "n_samples",
+          "ngrdcol",
+          "weight",
+          "x_sample"
+        ]
+      ]
+    },
+    {
+      "routine": "compute_sample_variance",
+      "Native_argument_count": 6,
+      "C++_contracts": [
+        [
+          "n_levels",
+          "n_samples",
+          "ngrdcol",
+          "x_sample",
+          "weight",
+          "x_mean"
+        ],
+        [
+          "n_levels",
+          "n_samples",
+          "ngrdcol",
+          "x_sample",
+          "weight",
+          "x_mean"
+        ]
+      ]
+    },
+    {
+      "routine": "compute_sample_covariance",
+      "Native_argument_count": 8,
+      "C++_contracts": [
+        [
+          "n_levels",
+          "n_samples",
+          "ngrdcol",
+          "weight",
+          "x_sample",
+          "x_mean",
+          "y_sample",
+          "y_mean"
+        ],
+        [
+          "n_levels",
+          "n_samples",
+          "ngrdcol",
+          "weight",
+          "x_sample",
+          "x_mean",
+          "y_sample",
+          "y_mean"
+        ]
+      ]
+    },
+    {
+      "routine": "rand_integer_in_range",
+      "Native_argument_count": 2,
+      "C++_contracts": [
+        [
+          "low",
+          "high",
+          "rng"
+        ]
+      ]
+    },
+    {
+      "routine": "set_default_silhs_config_flags_api",
+      "Native_argument_count": 13,
+      "C++_contracts": [
+        [
+          "cluster_allocation_strategy",
+          "l_lh_importance_sampling",
+          "l_Lscale_vert_avg",
+          "l_lh_straight_mc",
+          "l_lh_clustered_sampling",
+          "l_rcm_in_cloud_k_lh_start",
+          "l_random_k_lh_start",
+          "l_max_overlap_in_cloud",
+          "l_lh_instant_var_covar_src",
+          "l_lh_limit_weights",
+          "l_lh_var_frac",
+          "l_lh_normalize_weights",
+          "l_lh_deterministic_test"
+        ]
+      ]
+    },
+    {
+      "routine": "initialize_silhs_config_flags_type_api",
+      "Native_argument_count": 14,
+      "C++_contracts": [
+        [
+          "cluster_allocation_strategy",
+          "l_lh_importance_sampling",
+          "l_Lscale_vert_avg",
+          "l_lh_straight_mc",
+          "l_lh_clustered_sampling",
+          "l_rcm_in_cloud_k_lh_start",
+          "l_random_k_lh_start",
+          "l_max_overlap_in_cloud",
+          "l_lh_instant_var_covar_src",
+          "l_lh_limit_weights",
+          "l_lh_var_frac",
+          "l_lh_normalize_weights",
+          "l_lh_deterministic_test",
+          "silhs_config_flags"
+        ]
+      ]
+    },
+    {
+      "routine": "print_silhs_config_flags_api",
+      "Native_argument_count": 2,
+      "C++_contracts": [
+        [
+          "iunit",
+          "silhs_config_flags"
+        ],
+        [
+          "iunit",
+          "silhs_config_flags"
+        ]
+      ]
+    },
+    {
+      "routine": "generate_silhs_sample_api",
+      "Native_argument_count": 27,
+      "C++_contracts": [
+        [
+          "iter",
+          "pdf_dim",
+          "num_samples",
+          "sequence_length",
+          "nzt",
+          "ngrdcol",
+          "l_calc_weights_all_levs_itime",
+          "gr",
+          "pdf_params",
+          "delta_zm",
+          "Lscale",
+          "lh_seed",
+          "hm_metadata",
+          "mu1",
+          "mu2",
+          "sigma1",
+          "sigma2",
+          "corr_cholesky_mtx_1",
+          "corr_cholesky_mtx_2",
+          "precip_fracs",
+          "silhs_config_flags",
+          "vert_decorr_coef",
+          "err_info",
+          "X_nl_all_levs",
+          "X_mixt_comp_all_levs",
+          "lh_sample_point_weights",
+          "stats",
+          "sampling_state",
+          "rng",
+          "silhs"
+        ],
+        [
+          "iter",
+          "pdf_dim",
+          "num_samples",
+          "sequence_length",
+          "nzt",
+          "ngrdcol",
+          "l_calc_weights_all_levs_itime",
+          "gr",
+          "pdf_params",
+          "delta_zm",
+          "Lscale",
+          "lh_seed",
+          "hm_metadata",
+          "mu1",
+          "mu2",
+          "sigma1",
+          "sigma2",
+          "corr_cholesky_mtx_1",
+          "corr_cholesky_mtx_2",
+          "precip_fracs",
+          "silhs_config_flags",
+          "vert_decorr_coef",
+          "err_info",
+          "X_nl_all_levs",
+          "X_mixt_comp_all_levs",
+          "lh_sample_point_weights",
+          "stats",
+          "sampling_state",
+          "rng",
+          "silhs"
+        ]
+      ]
+    },
+    {
+      "routine": "clip_transform_silhs_output_api",
+      "Native_argument_count": 15,
+      "C++_contracts": [
+        [
+          "nzt",
+          "ngrdcol",
+          "num_samples",
+          "pdf_dim",
+          "hydromet_dim",
+          "hm_metadata",
+          "X_mixt_comp_all_levs",
+          "X_nl_all_levs",
+          "pdf_params",
+          "l_use_Ncn_to_Nc",
+          "lh_rt_clipped",
+          "lh_thl_clipped",
+          "lh_rc_clipped",
+          "lh_rv_clipped",
+          "lh_Nc_clipped"
+        ],
+        [
+          "nzt",
+          "ngrdcol",
+          "num_samples",
+          "pdf_dim",
+          "hydromet_dim",
+          "hm_metadata",
+          "X_mixt_comp_all_levs",
+          "X_nl_all_levs",
+          "pdf_params",
+          "l_use_Ncn_to_Nc",
+          "lh_rt_clipped",
+          "lh_thl_clipped",
+          "lh_rc_clipped",
+          "lh_rv_clipped",
+          "lh_Nc_clipped"
+        ]
+      ]
+    },
+    {
+      "routine": "importance_sampling_driver",
+      "Native_argument_count": 15,
+      "C++_contracts": [
+        [
+          "num_samples",
+          "cloud_frac_1",
+          "cloud_frac_2",
+          "mixt_frac",
+          "precip_frac_1",
+          "precip_frac_2",
+          "cluster_allocation_strategy",
+          "l_lh_clustered_sampling",
+          "l_lh_limit_weights",
+          "l_lh_var_frac",
+          "l_lh_normalize_weights",
+          "X_u_chi_one_lev",
+          "X_u_dp1_one_lev",
+          "X_u_dp2_one_lev",
+          "lh_sample_point_weights",
+          "rng",
+          "silhs"
+        ]
+      ]
+    },
+    {
+      "routine": "define_importance_categories",
+      "Native_argument_count": 0,
+      "C++_contracts": [
+        []
+      ]
+    },
+    {
+      "routine": "compute_category_real_probs",
+      "Native_argument_count": 6,
+      "C++_contracts": [
+        [
+          "importance_categories",
+          "cloud_frac_1",
+          "cloud_frac_2",
+          "mixt_frac",
+          "precip_frac_1",
+          "precip_frac_2"
+        ]
+      ]
+    },
+    {
+      "routine": "compute_category_sample_weights",
+      "Native_argument_count": 2,
+      "C++_contracts": [
+        [
+          "category_real_probs",
+          "category_prescribed_probs"
+        ]
+      ]
+    },
+    {
+      "routine": "limit_category_weights",
+      "Native_argument_count": 2,
+      "C++_contracts": [
+        [
+          "category_real_probs",
+          "category_prescribed_probs"
+        ]
+      ]
+    },
+    {
+      "routine": "pick_sample_categories",
+      "Native_argument_count": 3,
+      "C++_contracts": [
+        [
+          "num_samples",
+          "category_prescribed_probs",
+          "rand_vect"
+        ]
+      ]
+    },
+    {
+      "routine": "scale_sample_to_category",
+      "Native_argument_count": 9,
+      "C++_contracts": [
+        [
+          "category",
+          "cloud_frac_1",
+          "cloud_frac_2",
+          "mixt_frac",
+          "precip_frac_1",
+          "precip_frac_2",
+          "X_u_chi",
+          "X_u_dp1",
+          "X_u_dp2"
+        ]
+      ]
+    },
+    {
+      "routine": "two_cluster_cp_nocp",
+      "Native_argument_count": 3,
+      "C++_contracts": [
+        [
+          "importance_categories",
+          "category_real_probs",
+          "l_lh_var_frac",
+          "silhs"
+        ]
+      ]
+    },
+    {
+      "routine": "eight_cluster_allocation",
+      "Native_argument_count": 3,
+      "C++_contracts": [
+        [
+          "importance_categories",
+          "category_real_probs",
+          "l_lh_var_frac",
+          "silhs"
+        ]
+      ]
+    },
+    {
+      "routine": "four_cluster_no_precip",
+      "Native_argument_count": 3,
+      "C++_contracts": [
+        [
+          "importance_categories",
+          "category_real_probs",
+          "l_lh_var_frac",
+          "silhs"
+        ]
+      ]
+    },
+    {
+      "routine": "compute_clust_category_probs",
+      "Native_argument_count": 7,
+      "C++_contracts": [
+        [
+          "category_real_probs",
+          "num_clusters",
+          "max_num_categories_in_cluster",
+          "num_categories_in_cluster",
+          "cluster_categories",
+          "cluster_fractions",
+          "l_lh_var_frac",
+          "silhs"
+        ]
+      ]
+    },
+    {
+      "routine": "clust_cat_probs_frm_var_fracs",
+      "Native_argument_count": 6,
+      "C++_contracts": [
+        [
+          "category_real_probs",
+          "num_clusters",
+          "max_num_categories_in_cluster",
+          "num_categories_in_cluster",
+          "cluster_categories",
+          "cluster_variance_fractions"
+        ]
+      ]
+    },
+    {
+      "routine": "clust_cat_probs_frm_presc_prb",
+      "Native_argument_count": 6,
+      "C++_contracts": [
+        [
+          "category_real_probs",
+          "num_clusters",
+          "max_num_categories_in_cluster",
+          "num_categories_in_cluster",
+          "cluster_categories",
+          "cluster_prescribed_probs",
+          "silhs"
+        ]
+      ]
+    },
+    {
+      "routine": "cloud_importance_sampling",
+      "Native_argument_count": 5,
+      "C++_contracts": [
+        [
+          "importance_categories",
+          "category_real_probs",
+          "cloud_frac_1",
+          "cloud_frac_2",
+          "mixt_frac"
+        ]
+      ]
+    },
+    {
+      "routine": "importance_sampling_assertions",
+      "Native_argument_count": 17,
+      "C++_contracts": [
+        [
+          "num_samples",
+          "importance_categories",
+          "category_real_probs",
+          "category_prescribed_probs",
+          "category_sample_weights",
+          "X_u_chi_one_lev",
+          "X_u_dp1_one_lev",
+          "X_u_dp2_one_lev",
+          "lh_sample_point_weights",
+          "int_sample_category",
+          "cloud_frac_1",
+          "cloud_frac_2",
+          "mixt_frac",
+          "precip_frac_1",
+          "precip_frac_2",
+          "l_lh_normalize_weights",
+          "l_error"
+        ]
+      ]
+    },
+    {
+      "routine": "cloud_weighted_sampling_driver",
+      "Native_argument_count": 9,
+      "C++_contracts": [
+        [
+          "num_samples",
+          "p_matrix_chi",
+          "p_matrix_dp1",
+          "cloud_frac_1",
+          "cloud_frac_2",
+          "mixt_frac",
+          "X_u_chi",
+          "X_u_dp1",
+          "lh_sample_point_weights",
+          "rng"
+        ]
+      ]
+    },
+    {
+      "routine": "generate_strat_uniform_variate",
+      "Native_argument_count": 1,
+      "C++_contracts": [
+        [
+          "num_samples",
+          "rng"
+        ]
+      ]
+    },
+    {
+      "routine": "choose_X_u_scaled",
+      "Native_argument_count": 9,
+      "C++_contracts": [
+        [
+          "l_cloudy_sample",
+          "p_matrix_element",
+          "num_samples",
+          "cloud_frac_1",
+          "cloud_frac_2",
+          "mixt_frac",
+          "mixt_rand_element",
+          "X_u_dp1_element",
+          "X_u_chi_element",
+          "rng"
+        ]
+      ]
+    },
+    {
+      "routine": "determine_sample_categories",
+      "Native_argument_count": 6,
+      "C++_contracts": [
+        [
+          "num_samples",
+          "pdf_dim",
+          "hm_metadata",
+          "X_nl_one_lev",
+          "X_mixt_comp_one_lev",
+          "importance_categories"
+        ]
+      ]
+    },
+    {
+      "routine": "transform_uniform_samples_to_pdf",
+      "Native_argument_count": 15,
+      "C++_contracts": [
+        [
+          "nzt",
+          "ngrdcol",
+          "num_samples",
+          "pdf_dim",
+          "d_uniform_extra",
+          "hm_metadata",
+          "Sigma_Cholesky1",
+          "Sigma_Cholesky2",
+          "mu1",
+          "mu2",
+          "X_mixt_comp_all_levs",
+          "X_u_all_levs",
+          "cloud_frac",
+          "l_in_precip_all_levs",
+          "X_nl_all_levs"
+        ]
+      ]
+    },
+    {
+      "routine": "cdfnorminv",
+      "Native_argument_count": 6,
+      "C++_contracts": [
+        [
+          "pdf_dim",
+          "nzt",
+          "ngrdcol",
+          "num_samples",
+          "X_u_all_levs",
+          "std_normal"
+        ]
+      ]
+    },
+    {
+      "routine": "ltqnorm",
+      "Native_argument_count": 1,
+      "C++_contracts": [
+        [
+          "p_core_rknd"
+        ]
+      ]
+    },
+    {
+      "routine": "multiply_Cholesky",
+      "Native_argument_count": 11,
+      "C++_contracts": [
+        [
+          "nzt",
+          "ngrdcol",
+          "num_samples",
+          "pdf_dim",
+          "std_normal",
+          "Sigma_Cholesky1",
+          "Sigma_Cholesky2",
+          "mu1",
+          "mu2",
+          "X_mixt_comp_all_levs",
+          "X_nl_all_levs"
+        ]
+      ]
+    },
+    {
+      "routine": "chi_eta_2_rtthl",
+      "Native_argument_count": 18,
+      "C++_contracts": [
+        [
+          "nzt",
+          "ngrdcol",
+          "num_samples",
+          "rt_1",
+          "thl_1",
+          "rt_2",
+          "thl_2",
+          "crt_1",
+          "cthl_1",
+          "crt_2",
+          "cthl_2",
+          "mu_chi_1",
+          "mu_chi_2",
+          "chi",
+          "eta",
+          "X_mixt_comp_all_levs",
+          "lh_rt",
+          "lh_thl"
+        ]
+      ]
+    }
+  ],
+  "ordered_calls": [
+    {
+      "routine": "generate_silhs_sample",
+      "ordered_Native_calls": [
+        "compute_k_lh_start",
+        "generate_random_pool",
+        "generate_all_uniform_samples",
+        "transform_uniform_samples_to_pdf",
+        "stats_accumulate_uniform_lh",
+        "stats_lh_samples_write_lognormal",
+        "stats_lh_samples_write_uniform",
+        "assert_consistent_cloud_frac",
+        "assert_correct_cloud_normal"
+      ]
+    },
+    {
+      "routine": "generate_all_uniform_samples",
+      "ordered_Native_calls": [
+        "generate_uniform_lh_sample",
+        "cloud_weighted_sampling_driver",
+        "importance_sampling_driver",
+        "compute_arb_overlap",
+        "generate_uniform_lh_sample",
+        "cloud_weighted_sampling_driver",
+        "importance_sampling_driver"
+      ]
+    },
+    {
+      "routine": "compute_k_lh_start",
+      "ordered_Native_calls": [
+        "genrand_init_api"
+      ]
+    },
+    {
+      "routine": "clip_transform_silhs_output",
+      "ordered_Native_calls": [
+        "chi_eta_2_rtthl",
+        "clip_hydromet_conc_mvr"
+      ]
+    },
+    {
+      "routine": "assert_consistent_cloud_frac",
+      "ordered_Native_calls": [
+        "assert_consistent_cf_component",
+        "assert_consistent_cf_component"
+      ]
+    },
+    {
+      "routine": "latin_hypercube_2D_output_api",
+      "ordered_Native_calls": [
+        "stats_lh_samples_init"
+      ]
+    },
+    {
+      "routine": "est_kessler_microphys_api",
+      "ordered_Native_calls": [
+        "calc_estimate",
+        "calc_estimate"
+      ]
+    }
+  ],
+  "Kessler_assignment_trees": [
+    {
+      "variable": "chi_n_1_crit",
+      "assignment_trees": 1
+    },
+    {
+      "variable": "cloud_frac_1_crit",
+      "assignment_trees": 1
+    },
+    {
+      "variable": "AK1",
+      "assignment_trees": 1
+    },
+    {
+      "variable": "chi_n_2_crit",
+      "assignment_trees": 1
+    },
+    {
+      "variable": "cloud_frac_2_crit",
+      "assignment_trees": 1
+    },
+    {
+      "variable": "AK2",
+      "assignment_trees": 1
+    },
+    {
+      "variable": "AKm",
+      "assignment_trees": 1
+    },
+    {
+      "variable": "AK1var",
+      "assignment_trees": 1
+    },
+    {
+      "variable": "AK2var",
+      "assignment_trees": 1
+    },
+    {
+      "variable": "AKstd",
+      "assignment_trees": 1
+    },
+    {
+      "variable": "AKstd_cld",
+      "assignment_trees": 2
+    },
+    {
+      "variable": "AKm_rcm",
+      "assignment_trees": 1
+    },
+    {
+      "variable": "AKm_rcc",
+      "assignment_trees": 2
+    }
+  ],
+  "stats_order": [
+    {
+      "routine": "stats_accumulate_lh_api",
+      "ordered_literal_stats_names": [
+        "lh_rcm",
+        "lh_lwp",
+        "lh_sample_weights_sum",
+        "lh_sample_weights_avg",
+        "lh_thlm",
+        "lh_rvm",
+        "lh_vwp",
+        "lh_wm",
+        "lh_Ncnm",
+        "lh_Ncm",
+        "lh_cloud_frac",
+        "lh_cloud_frac_unweighted",
+        "lh_chi",
+        "lh_chip2",
+        "lh_eta",
+        "lh_wp2_zt",
+        "lh_rcp2_zt",
+        "lh_rtp2_zt",
+        "lh_thlp2_zt",
+        "lh_rrp2_zt",
+        "lh_Ncnp2_zt",
+        "lh_Ncp2_zt",
+        "lh_Nrp2_zt",
+        "lh_rrm",
+        "lh_Nrm",
+        "lh_rim",
+        "lh_Nim",
+        "lh_rsm",
+        "lh_Nsm",
+        "lh_rgm",
+        "lh_Ngm"
+      ]
+    },
+    {
+      "routine": "stats_accumulate_uniform_lh",
+      "ordered_literal_stats_names": [
+        "lh_precip_frac",
+        "lh_precip_frac_unweighted",
+        "lh_mixt_frac",
+        "lh_mixt_frac_unweighted",
+        "k_lh_start"
+      ]
+    }
+  ],
+  "MT95": {
+    "specifics": 61,
+    "six_scalar_draw_bodies": true,
+    "42_rank_wrapper_bodies": "six equivalent rank-generic host-packed LayoutLeft loops preserve rank1..7 Native stream order",
+    "unsigned_word_arithmetic": "defined modulo2^32 adaptation, no float changes",
+    "signed_real_formulas_verified": true
+  },
+  "hashes": {
+    "est_kessler_microphys_module.cpp": "344263e65d268f886e8378a7809f01239d7aa0d8b75d0185d42db674f5a6e116",
+    "est_kessler_microphys_module.hpp": "187354b3cf0a2631a7ecaf31910a1deed57b9135ca8b5b00dceb8573f137616d",
+    "generate_uniform_sample_module.cpp": "e291cf9babfcbb8af4b2581cf19b7c89b1e8b14a1e01149b4577d2c69776c93d",
+    "generate_uniform_sample_module.hpp": "579e8334b3dc23ef9f869ffe2661b37b2f2ed774c195d7102da6fe069a0607bc",
+    "latin_hypercube_arrays.cpp": "6605388792b4a17795870be2c0c3a88947c553b45858c0c9cc922cb1c8b0d8a8",
+    "latin_hypercube_arrays.hpp": "53156f5b13f64a045fa7e620b8c760fb28f244986c09f443107791f7eb6c9de4",
+    "latin_hypercube_driver_module.cpp": "541ccc827236c99856ff5fd699c50d0a37dd814a59cbd62e3511a8801616a995",
+    "latin_hypercube_driver_module.hpp": "dedd5d7e3c6e1bffd4d58690ef8b7d8bff5e1ee44621d7697e88b94c4859890d",
+    "lh_microphys_var_covar_module.cpp": "f1ce2f9fd32f4fb26efc84d1e576872c5aa380d4a4ce2595906f5ef76d489d3c",
+    "lh_microphys_var_covar_module.hpp": "95987ae7cf9a0b3e38410bafbdbb52bcbddbe3b407ab6d69bb6469985139c3a8",
+    "math_utilities.cpp": "fe30498188d7422a8ff9e3b39dfc8d4f5db3497b65bd1c91fb10a574a23d7c51",
+    "math_utilities.hpp": "460f90c12228d1308913be8eea5f2fc438c2dad3b3a72acdcfb482b2895b72de",
+    "mt95.cpp": "4c7ed19ba7e05606ad80e2e68a696cdd9fdf8b9f3dde1467cb8697af17914c44",
+    "mt95.hpp": "eaed48bbec0dea571483eb3f1c41ef5733d532ebf8638c512d2be7768ddf5774",
+    "parameters_silhs.cpp": "30a1d0e6230534db0d48c141744b906f13d8d363de9d60bd72713fa58d97e119",
+    "parameters_silhs.hpp": "80f7e025643b541b8e2d2e3a95283868a6055ce44824e392cb1d2dd419ec90ba",
+    "silhs_api_module.cpp": "db7546129742e857b4732ded8b9093f5dc340e75c824fef68a37e1f464ab4b83",
+    "silhs_api_module.hpp": "cc99e7a43e5c0e71ec0915913f5523efd10491f9a9a62ebd2569e281ea5684a8",
+    "silhs_importance_sample_module.cpp": "436a1f68c277dcd4fbb86b13a3e71d18aa34b4c027469f37581e670c24f30de3",
+    "silhs_importance_sample_module.hpp": "1a0ab456d3421939bedfbf40d4eeaf4208c674b05534c83d20f5cfca334aedc7",
+    "transform_to_pdf_module.cpp": "10cf74b0b46101a07ad734288a9472133f4954dee8415f1e4ca4b413290ec22e",
+    "transform_to_pdf_module.hpp": "232c094457f19c12297768c1f9b81ca3e74203fedf781f03f0a5542e315b4d77"
+  },
+  "runtime": "pending Root combined maintained CPU whole-model gate; SUM/compiler contraction equality unresolved",
+  "kernel_capture_scan": {
+    "kernels": 44,
+    "records": [
+      {
+        "file": "math_utilities.cpp",
+        "line": 12,
+        "safe_owner_capture_scan": true
+      },
+      {
+        "file": "math_utilities.cpp",
+        "line": 27,
+        "safe_owner_capture_scan": true
+      },
+      {
+        "file": "math_utilities.cpp",
+        "line": 47,
+        "safe_owner_capture_scan": true
+      },
+      {
+        "file": "est_kessler_microphys_module.cpp",
+        "line": 48,
+        "safe_owner_capture_scan": true
+      },
+      {
+        "file": "est_kessler_microphys_module.cpp",
+        "line": 54,
+        "safe_owner_capture_scan": true
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 153,
+        "safe_owner_capture_scan": true
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 164,
+        "safe_owner_capture_scan": true
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 173,
+        "safe_owner_capture_scan": true
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 179,
+        "safe_owner_capture_scan": true
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 229,
+        "safe_owner_capture_scan": true
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 322,
+        "safe_owner_capture_scan": true
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 344,
+        "safe_owner_capture_scan": true
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 401,
+        "safe_owner_capture_scan": true
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 503,
+        "safe_owner_capture_scan": true
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 601,
+        "safe_owner_capture_scan": true
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 606,
+        "safe_owner_capture_scan": true
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 620,
+        "safe_owner_capture_scan": true
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 665,
+        "safe_owner_capture_scan": true
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 697,
+        "safe_owner_capture_scan": true
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 703,
+        "safe_owner_capture_scan": true
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 873,
+        "safe_owner_capture_scan": true
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 898,
+        "safe_owner_capture_scan": true
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 963,
+        "safe_owner_capture_scan": true
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 973,
+        "safe_owner_capture_scan": true
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 1038,
+        "safe_owner_capture_scan": true
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 1050,
+        "safe_owner_capture_scan": true
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 1098,
+        "safe_owner_capture_scan": true
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 1187,
+        "safe_owner_capture_scan": true
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 1206,
+        "safe_owner_capture_scan": true
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 1222,
+        "safe_owner_capture_scan": true
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 1231,
+        "safe_owner_capture_scan": true
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 1295,
+        "safe_owner_capture_scan": true
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 1301,
+        "safe_owner_capture_scan": true
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 1307,
+        "safe_owner_capture_scan": true
+      },
+      {
+        "file": "lh_microphys_var_covar_module.cpp",
+        "line": 30,
+        "safe_owner_capture_scan": true
+      },
+      {
+        "file": "lh_microphys_var_covar_module.cpp",
+        "line": 36,
+        "safe_owner_capture_scan": true
+      },
+      {
+        "file": "lh_microphys_var_covar_module.cpp",
+        "line": 75,
+        "safe_owner_capture_scan": true
+      },
+      {
+        "file": "lh_microphys_var_covar_module.cpp",
+        "line": 98,
+        "safe_owner_capture_scan": true
+      },
+      {
+        "file": "transform_to_pdf_module.cpp",
+        "line": 35,
+        "safe_owner_capture_scan": true
+      },
+      {
+        "file": "transform_to_pdf_module.cpp",
+        "line": 44,
+        "safe_owner_capture_scan": true
+      },
+      {
+        "file": "transform_to_pdf_module.cpp",
+        "line": 51,
+        "safe_owner_capture_scan": true
+      },
+      {
+        "file": "transform_to_pdf_module.cpp",
+        "line": 79,
+        "safe_owner_capture_scan": true
+      },
+      {
+        "file": "transform_to_pdf_module.cpp",
+        "line": 108,
+        "safe_owner_capture_scan": true
+      },
+      {
+        "file": "transform_to_pdf_module.cpp",
+        "line": 151,
+        "safe_owner_capture_scan": true
+      }
+    ],
+    "limits": "source scan plus manual review; no CUDA compile evidence in this agent lane"
+  },
+  "manual_file_review": {
+    "parameters_silhs": "13defaults,13field assignments,13print labels and untouched generated wire schema; settings are caller-owned",
+    "math_utilities": "ordered per-cell sample folds, Native N normalization, signed integer MOD and absolute-value bias",
+    "latin_hypercube_arrays": "single allocation owner and release; prior_iter lifetime mirrors allocation diagnostic",
+    "mt95": "all seed/twist/tempering/conversion/encode/decode branches read; uint word arithmetic plus actual signed-branch UIDIV/UIMOD; by-value state and assignment operators",
+    "generate_uniform_sample_module": "Native allocation/prior iteration warning, refresh modulo, deterministic offsets, first sample rows and ordered Fisher-Yates double draws",
+    "silhs_importance_sample_module": "all19procedures,8categories,three allocation strategies,weight floor/limit/normalization,threshold transfer order,old cloud branch and diagnostics; host profile execution explicit",
+    "transform_to_pdf_module": "CDF coefficient kinds/Horner tree, Native special scratch shapes, ordered triangular products, lognormal/precip clipping boundaries and exact thl deviation limit",
+    "latin_hypercube_driver_module": "all13bodies,optional stats,all start-height and MC/LH/all-level branches,source draw order,overlap recurrences,error/assert/stat order,metadata priorities and inactive private clipping/output branches",
+    "lh_microphys_var_covar_module": "exact analytic component means,ordered mean/covariance calls and instantaneous/finite-dt five output formulas",
+    "est_kessler_microphys_module": "public/private call mapping,forced component CF=1,Native max/floor/conditional branches,source-ordered host fatal precheck,13variable algebra audit",
+    "silhs_api_module": "optional stats branches and complete Native leading interfaces; actual C++ parent calls, no Native sampler delegation"
+  },
+  "cleanup": {
+    "Native_interfaces_grouped": 123,
+    "science_calls_grouped": 103,
+    "Native_declaration_explanations": 555,
+    "format": "clang-format on owned .cpp/.hpp; long argument prose wrapped",
+    "independent_review": "pending; this is owner self-audit",
+    "review_corrections": [
+      "Kessler AKstd second-component variance grouping restored",
+      "old-cloud first-branch staged chi/dp1 restored",
+      "actual shared from_execution_space helper name",
+      "private UIDIV/UIMOD exact Native signed partitions",
+      "generic permutation argument name mirrors Native",
+      "ostream print argument uses Native iunit name"
+    ]
+  },
+  "scope_exclusions": [
+    "BUGSrad and SILHS-radiation engine exclusion belongs to Radiation handoff",
+    "Native external CURAND implementation is superseded by caller-owned portable C++ MT95 stream, with no Native-science forwarding"
+  ]
+}

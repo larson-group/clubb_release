@@ -1,0 +1,44 @@
+{
+  "status": "Separate source audit passes; no compilation, tests or numerical/BFB claim",
+  "routine": "calc_w_up_in_cloud",
+  "native_lines": [
+    3143,
+    3340
+  ],
+  "public_required_arguments": 13,
+  "required_inputs": 9,
+  "required_outputs": 4,
+  "signature_header_definition_native_match": true,
+  "ordered_assignment_operation_trees": 36,
+  "ordered_component_branch_predicates": 4,
+  "branches_per_component": 3,
+  "native_scalar_locals": [
+    "w_up_1",
+    "w_up_2",
+    "w_down_1",
+    "w_down_2",
+    "stdev_w_1",
+    "stdev_w_2",
+    "ratio_w_1",
+    "ratio_w_2",
+    "erf_ratio_w_1",
+    "erf_ratio_w_2",
+    "exp_neg_ratio_w_1_sqd",
+    "exp_neg_ratio_w_2_sqd",
+    "updraft_frac_1",
+    "updraft_frac_2",
+    "downdraft_frac_1",
+    "downdraft_frac_2"
+  ],
+  "source_body_comments_preserved_in_order": 22,
+  "column_first_cell_kernels": 1,
+  "max_second_operand_tie_choices": 4,
+  "private_scratch": "Cell-local scalars only; no allocation, reduction, UDT capture or bridge",
+  "bfb_adaptations": "None; integer-square and ordered MAX lowerings are source/language translations",
+  "comment_correction": "varnce_w_1/2 are variances, verified from sqrt(varnce) and squared units",
+  "reviewed_sha256": {
+    "src/CLUBB_core/pdf_closure_module.F90": "11776506ccb2aa64b4d8cc3a801a4d8bb058c5416587729f728b3ee76244c196",
+    "clubb_kokkos/drafts/pdf_closure_module_updraft/pdf_closure_module.cpp": "21e533596502d0bdbff881bbd06cf727edbdf675e13306d95b8413ac61f29b22",
+    "clubb_kokkos/drafts/pdf_closure_module_updraft/pdf_closure_module.hpp": "468a80922c56a46afe2a794e2fa62b88d3da1742cd922670bad49cc927a7164a"
+  }
+}

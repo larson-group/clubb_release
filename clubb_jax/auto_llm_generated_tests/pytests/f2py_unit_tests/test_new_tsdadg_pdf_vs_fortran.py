@@ -50,7 +50,7 @@ def test_driver_f2py():
         # Skewness with varying magnitudes so each of w/rt/thl is the setter at some points.
         Skw = rng.uniform(-3, 3, (ng, nz)); Skrt = rng.uniform(-3, 3, (ng, nz)); Skthl = rng.uniform(-3, 3, (ng, nz))
         wprtp = rng.uniform(-1, 1, (ng, nz)); wpthlp = rng.uniform(-1, 1, (ng, nz))
-        f = fortran.tsdadg_pdf_driver(nz, ng, wm, rtm, thlm, wp2, rtp2, thlp2, Skw, Skrt, Skthl, wprtp, wpthlp)
+        f = fortran.tsdadg_pdf_driver(nz, wm, rtm, thlm, wp2, rtp2, thlp2, Skw, Skrt, Skthl, wprtp, wpthlp)
         g = tsdadg_pdf_driver(wm, rtm, thlm, wp2, rtp2, thlp2, Skw, Skrt, Skthl, wprtp, wpthlp)
         worst = max(worst, max_abs_diff("new_tsdadg_pdf", tuple(np.asarray(x) for x in g), tuple(np.asarray(x) for x in f)))
     assert worst < 1e-11, f"tsdadg_pdf_driver Fortran mismatch {worst:.2e}"

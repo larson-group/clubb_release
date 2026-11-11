@@ -15,6 +15,7 @@ from tuner.taylor_metrics import (
     LOSS_METRIC_NAMES,
     LOSS_POLICY_VERSION,
     aggregate_losses,
+    blended_mean_max_loss,
     normalize_aggregation_weights,
 )
 from tuner.request import load_request
@@ -22,10 +23,12 @@ from tuner.job_runtime import TunerJob
 from tuner import status as status_module
 from tuner.status import atomic_write_json, renew_keepalive, should_stop, stop_reason, write_control
 from input.scripts.create_case_namelist import build_loss_settings
-from tuner.algorithms.simann import EnhancedSimulatedAnnealingStrategy
-from tuner.algorithms.random import RandomUniformStrategy
-from tuner.algorithms.resolve import ResolveGridStrategy
-from tuner.tuning_strategy import normalize_strategy_config
+from tuner.enhanced_simann_strategy import EnhancedSimulatedAnnealingStrategy
+from tuner.tuning_strategy import (
+    RandomUniformStrategy,
+    ResolveGridStrategy,
+    normalize_strategy_config,
+)
 
 
 def _prepared_cases(cases):
@@ -41,8 +44,8 @@ def _prepared_cases(cases):
     return result
 
 
-def test_mean_max_aggregation_uses_normalized_mean_and_worst_loss():
-    loss = aggregate_losses([1.0, 3.0], [1.0, 1.0], "mean_max")["loss"]
+def test_blended_mean_max_loss_uses_normalized_mean_and_worst_loss():
+    loss = blended_mean_max_loss([1.0, 3.0], [1.0, 1.0])
 
     assert loss == 0.6 * 2.0 + 0.4 * 3.0
 
@@ -85,8 +88,14 @@ def test_quantile_weights_normalize_and_require_four_nonnegative_entries():
         normalize_aggregation_weights([0.1, -0.1, 0.4, 0.6])
 
 
+def test_normalize_strategy_accepts_legacy_max_samples():
+    strategy = normalize_strategy_config({"max_samples": "12"})
+
+    assert strategy == {"name": "random", "options": {"max_samples": 12}}
+
+
 def test_normalize_strategy_accepts_simann_defaults():
-    strategy = normalize_strategy_config({"strategy": {"name": "simann"}})
+    strategy = normalize_strategy_config({"strategy": "simann"})
 
     assert strategy["name"] == "simann"
     assert strategy["options"]["max_iters"] == 200
@@ -175,7 +184,7 @@ def test_load_request_defaults_loss_policy_metadata(tmp_path, monkeypatch):
     request_path.write_text(
         json.dumps(
             {
-                "cases": ["atex"],
+                "case_name": "atex",
                 "selected_fields": ["cloud_frac"],
                 "parameter_ranges": [{"name": "C8", "min": 0.1, "max": 0.2}],
                 "batch_size": 1,
@@ -186,7 +195,7 @@ def test_load_request_defaults_loss_policy_metadata(tmp_path, monkeypatch):
         encoding="utf-8",
     )
     monkeypatch.setattr(
-        "tuner.request.read_case_defaults",
+        "tuner.request.read_case_tuner_defaults",
         lambda _case, overrides=None: {
             "les_stats_file": "benchmark.nc",
             "altitude_comparison_range": [0.0, 1000.0],
@@ -211,6 +220,7 @@ def test_load_request_defaults_loss_policy_metadata(tmp_path, monkeypatch):
             "num_time_windows": 1,
         }
     ]
+    assert "time_window_mode" not in request
     assert "invalid_rmse_penalty" in request["loss_policy_constants"]
 
 
@@ -220,7 +230,7 @@ def test_load_request_accepts_named_tunable_config(tmp_path, monkeypatch):
         json.dumps(
             {
                 "config": "compatible_r8029",
-                "cases": ["atex"],
+                "case_name": "atex",
                 "selected_fields": ["cloud_frac"],
                 "parameter_ranges": [{"name": "C8", "min": 0.1, "max": 0.2}],
                 "batch_size": 1,
@@ -231,7 +241,7 @@ def test_load_request_accepts_named_tunable_config(tmp_path, monkeypatch):
         encoding="utf-8",
     )
     monkeypatch.setattr(
-        "tuner.request.read_case_defaults",
+        "tuner.request.read_case_tuner_defaults",
         lambda _case, overrides=None: {
             "les_stats_file": "benchmark.nc",
             "altitude_comparison_range": [0.0, 1000.0],
@@ -285,7 +295,7 @@ def test_load_request_accepts_per_case_window_counts(tmp_path, monkeypatch):
         ),
         encoding="utf-8",
     )
-    monkeypatch.setattr("tuner.request.read_case_defaults", fake_defaults)
+    monkeypatch.setattr("tuner.request.read_case_tuner_defaults", fake_defaults)
     monkeypatch.setattr("tuner.request.supported_fields", lambda: ["cloud_frac"])
 
     request = load_request(request_path)
@@ -301,7 +311,7 @@ def test_load_request_normalizes_simann_strategy_and_chain_count(tmp_path, monke
     request_path.write_text(
         json.dumps(
             {
-                "cases": ["atex"],
+                "case_name": "atex",
                 "selected_fields": ["cloud_frac"],
                 "parameter_ranges": [{"name": "C8", "min": 0.1, "max": 0.2}],
                 "batch_size": 8,
@@ -312,7 +322,7 @@ def test_load_request_normalizes_simann_strategy_and_chain_count(tmp_path, monke
         encoding="utf-8",
     )
     monkeypatch.setattr(
-        "tuner.request.read_case_defaults",
+        "tuner.request.read_case_tuner_defaults",
         lambda _case, overrides=None: {
             "les_stats_file": "benchmark.nc",
             "altitude_comparison_range": [0.0, 1000.0],

@@ -1,0 +1,41 @@
+{
+  "explicit_assignment_operation_trees": {
+    "clip_covars_denom": 4,
+    "clip_covar": 10,
+    "clip_variance": 10,
+    "clip_skewness": 0,
+    "clip_skewness_core": 8,
+    "clip_rcm": 1
+  },
+  "total": 33,
+  "whole_array_operation_trees": {
+    "clip_covars_denom": 0,
+    "clip_covar": 0,
+    "clip_variance": 0,
+    "clip_skewness": 0,
+    "clip_skewness_core": 0,
+    "clip_rcm": 0
+  },
+  "whole_array_total": 0,
+  "ordered_if_predicates": {
+    "clip_covars_denom": 14,
+    "clip_covar": 3,
+    "clip_variance": 0,
+    "clip_skewness": 2,
+    "clip_skewness_core": 4,
+    "clip_rcm": 3
+  },
+  "total_if_predicates": 26,
+  "manual_minmax_or_storage_cases": {
+    "clip_covars_denom": 0,
+    "clip_covar": 0,
+    "clip_variance": "Optional guard/debug host-mirror dispatch predicates audited separately; physics assignments checked in both paths",
+    "clip_skewness": 0,
+    "clip_skewness_core": 0,
+    "clip_rcm": 0
+  },
+  "manual_variance_native_predicates": 9,
+  "native_sha256": "d05ccb611d9512a7e00ddc74e864dc6391c7cf525915c4fa2ad0b9797a54be8b",
+  "target_sha256": "f906bad6de0d5159a6156c093634d7ffea1088e22ec1465a85a616d00cc10372",
+  "scope": "Source operation structure only; no compilation or numeric execution"
+}

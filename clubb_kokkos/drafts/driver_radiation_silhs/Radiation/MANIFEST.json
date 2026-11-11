@@ -1,0 +1,36 @@
+{
+  "status": "Stable Radiation source/owner-audit handoff. No builds/tests. Two local-variable radiation-setting I/O services remain to implement in shared owner.",
+  "files": {
+    "Radiation/BFB_NOTES.md": "2d849fdbd24de870eaa0f65bc8b54b42ff3dac70f6f0efd39f9176d0241cf266",
+    "Radiation/INTEGRATION.md": "409349dc70866c048946a64aee13d7645704ffdcb0c6f719910fe75f15114e05",
+    "Radiation/SOURCE_AUDIT.json": "3d8dc8b21521db652d3640502801d1818a8f8797858db898cf9602afb2ae62e0",
+    "Radiation/SOURCE_OUTLINE.json": "c38e5163fe51dce88b820f1283cfbef7e9970b778453cfbe377c491168a100bf",
+    "Radiation/STATE_API_CONTRACT.json": "8c8a9354679616407a63b511b29d1ab01d2a5cfd278372865a8c0a258fec3593",
+    "Radiation/cos_solar_zen_module.cpp": "64dcb43372a08f251833c34b1aeeb5c54366c8eeb4cbf1b9b2bc64b0f0ff4673",
+    "Radiation/cos_solar_zen_module.hpp": "65deb69f855edb53fdacc35b2f8fe91d817e29ecaf154b3d04e68f54a2fd0d79",
+    "Radiation/extended_atmosphere_module.cpp": "5d6803841b338c62f96cf9a5a70ee01e80301ed3aca9a1065430743b1d0f5889",
+    "Radiation/extended_atmosphere_module.hpp": "4c70ad73ab6ddff6dbaf97cacf42d87f1c471a020680df019e1d093f3288bcdc",
+    "Radiation/parameters_radiation.cpp": "64ebf77e0033b018661e6fe30224bd13cb35a5ab0caba2b1d2c6d4b6ced244d4",
+    "Radiation/parameters_radiation.hpp": "469fca2e45487f6b3398c0fd500495df2ce50d07a38bf4907dc170fc88cac98a",
+    "Radiation/rad_lwsw_module.cpp": "1476dcf9a93dcba2d5a93a12fde594b26569ce848e3af36ff9a52700d50c490c",
+    "Radiation/rad_lwsw_module.hpp": "5cb1e46043c022c633bd47f12417d02e9eea975ae73b187c8fc95fc2b93e2b19",
+    "Radiation/radiation_module.cpp": "f760e5e65f749458c8b949b37bae55ca0fdb33f63cbb72bd1f6e261852b8fed4",
+    "Radiation/radiation_module.hpp": "2907027905eca7821ccf09ff4f9393140fecce7e7d4f6828410122cc9b44948a",
+    "Radiation/radiation_variables_module.cpp": "9708969f095a68c1272c8770cb2e0e6da754fa759fcaa5b5777cc8574128348b",
+    "Radiation/radiation_variables_module.hpp": "1a56d19e22a8ca56821ecaae335a4c98971045f20ec31c4f9fe8688e6009ec70",
+    "Radiation/simple_rad_module.cpp": "d0d703f5359c5718dc80ac187d15ac0ea9a40236ee8aa5d84ad7a4953c709899",
+    "Radiation/simple_rad_module.hpp": "c832c61894cc72357ab14144fe6d2af4e639a93b42f0883b626aafb03c2c0b44",
+    "Radiation/soil_vegetation.cpp": "58a5aa460f4f2c0d9500ea1587e1999301774c56d59b44708a8e1ac8a3cdf992",
+    "Radiation/soil_vegetation.hpp": "39625d053055f697fec0c2ac0824d07f08321863aeae0951819323a3941d60d1",
+    "f2k/radiation_io.hpp": "70e73c227f2d9ed0a6671a774f6ecda8a0fa16fae615ed7e7db01a20ec924009"
+  },
+  "source_CPP_count": 8,
+  "source_header_count": 8,
+  "supported_Native_routines_including_common_initializer": 21,
+  "explicit_excluded_SILHS_radiation_interface": 1,
+  "Native_top_level_files": 8,
+  "pending_IOfunctions": [
+    "read_radiation_setting",
+    "append_radiation_setting"
+  ]
+}

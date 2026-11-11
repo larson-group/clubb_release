@@ -1,0 +1,374 @@
+{
+  "native_inventory_and_order": [
+    "init_pdf_params",
+    "zero_pdf_params_api",
+    "init_pdf_implicit_coefs_terms_api",
+    "zero_pdf_implicit_coefs_terms_api",
+    "print_pdf_params",
+    "pack_pdf_params_api",
+    "unpack_pdf_params_api"
+  ],
+  "routines": [
+    {
+      "name": "init_pdf_params",
+      "module": "pdf_parameter_module",
+      "source": "src/CLUBB_core/pdf_parameter_module.F90",
+      "arguments": [
+        {
+          "name": "nz",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "pdf_params",
+          "kind": "pdf_parameter",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "source_lines": [
+        183,
+        259
+      ],
+      "calls_in_order": [
+        "call zero_pdf_params_api( pdf_params )"
+      ],
+      "branches_in_order": []
+    },
+    {
+      "name": "zero_pdf_params_api",
+      "module": "pdf_parameter_module",
+      "source": "src/CLUBB_core/pdf_parameter_module.F90",
+      "arguments": [
+        {
+          "name": "pdf_params",
+          "kind": "pdf_parameter",
+          "dims": [],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "source_lines": [
+        262,
+        362
+      ],
+      "calls_in_order": [],
+      "branches_in_order": []
+    },
+    {
+      "name": "init_pdf_implicit_coefs_terms_api",
+      "module": "pdf_parameter_module",
+      "source": "src/CLUBB_core/pdf_parameter_module.F90",
+      "arguments": [
+        {
+          "name": "nz",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sclr_dim",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "pdf_implicit_coefs_terms",
+          "kind": "implicit_coefs_terms",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "source_lines": [
+        365,
+        431
+      ],
+      "calls_in_order": [
+        "call zero_pdf_implicit_coefs_terms_api( pdf_implicit_coefs_terms)"
+      ],
+      "branches_in_order": [
+        "if ( sclr_dim > 0 ) then"
+      ]
+    },
+    {
+      "name": "zero_pdf_implicit_coefs_terms_api",
+      "module": "pdf_parameter_module",
+      "source": "src/CLUBB_core/pdf_parameter_module.F90",
+      "arguments": [
+        {
+          "name": "pdf_implicit_coefs_terms",
+          "kind": "implicit_coefs_terms",
+          "dims": [],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "source_lines": [
+        432,
+        500
+      ],
+      "calls_in_order": [],
+      "branches_in_order": [
+        "if ( pdf_implicit_coefs_terms%sclr_dim > 0 ) then"
+      ]
+    },
+    {
+      "name": "print_pdf_params",
+      "module": "pdf_parameter_module",
+      "source": "src/CLUBB_core/pdf_parameter_module.F90",
+      "arguments": [
+        {
+          "name": "pdf_params",
+          "kind": "pdf_parameter",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "source_lines": [
+        503,
+        589
+      ],
+      "calls_in_order": [],
+      "branches_in_order": []
+    },
+    {
+      "name": "pack_pdf_params_api",
+      "module": "pdf_parameter_module",
+      "source": "src/CLUBB_core/pdf_parameter_module.F90",
+      "arguments": [
+        {
+          "name": "pdf_params",
+          "kind": "pdf_parameter",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "nz",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "r_param_array",
+          "kind": "real",
+          "dims": [
+            "nz",
+            "num_pdf_params"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "k_start_in",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": true,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "k_end_in",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": true,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "source_lines": [
+        596,
+        671
+      ],
+      "calls_in_order": [],
+      "branches_in_order": [
+        "if( present( k_start_in ) .and. present( k_end_in ) ) then",
+        "else"
+      ]
+    },
+    {
+      "name": "unpack_pdf_params_api",
+      "module": "pdf_parameter_module",
+      "source": "src/CLUBB_core/pdf_parameter_module.F90",
+      "arguments": [
+        {
+          "name": "r_param_array",
+          "kind": "real",
+          "dims": [
+            "nz",
+            "num_pdf_params"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "nz",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "pdf_params",
+          "kind": "pdf_parameter",
+          "dims": [],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "k_start_in",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": true,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "k_end_in",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": true,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "source_lines": [
+        673,
+        747
+      ],
+      "calls_in_order": [],
+      "branches_in_order": [
+        "if( present( k_start_in ) .and. present( k_end_in ) ) then",
+        "else"
+      ]
+    }
+  ],
+  "read_evidence": {
+    "native_lines": 899,
+    "jax_actual_file": "clubb_jax/src/CLUBB_core/pdf_params.py",
+    "jax_lines": 326,
+    "full_read_before_implementation": true
+  },
+  "native_sha256": "89b257f0846adc29a40fded75f67196a6cc15b6223b64c8966adc22725b7e0fa",
+  "jax_sha256": "202286b883e96b7fc101a45022bf24fb45d29b1d1cf1ca8ea01cdc1d158a4fae",
+  "mirror_owner": "Existing generated clubb_kokkos/src/CLUBB_core/pdf_parameter_module.hpp; no duplicate type definition or shared edit.",
+  "deliverable": "Procedure definition and declaration merge fragments; root preserves generator-owned schema region.",
+  "storage": "Existing case-owned Kokkos Views and scalar metadata; no mutable global C++ storage.",
+  "public_inventory": [
+    "init_pdf_params",
+    "zero_pdf_params_api",
+    "init_pdf_implicit_coefs_terms_api",
+    "zero_pdf_implicit_coefs_terms_api",
+    "print_pdf_params",
+    "pack_pdf_params_api",
+    "unpack_pdf_params_api"
+  ],
+  "native_public_constant": {
+    "num_pdf_params": 47
+  },
+  "excluded_no_JAX_no_call_sites": [
+    "copy_single_pdf_params_to_multi",
+    "copy_multi_pdf_params_to_single"
+  ],
+  "exclusion_evidence": {
+    "native_definitions": [
+      "src/CLUBB_core/pdf_parameter_module.F90:757,831",
+      "src/CLUBB_core/clubb_api_module.F90:2465,2539"
+    ],
+    "call_sites": [],
+    "repository_search": "rg explicit routine-name opening-parenthesis matches only four definitions; public USE/export mentions do not call them.",
+    "external_host_API_scope": "Not removed from Native; no new C++ external-host surface inferred."
+  },
+  "adaptations": [
+    "IntentOut initializers reset only their caller-owned object, allocate every Native field in source order and set metadata.",
+    "Zero functions mutate existing allocations in Native per-cell field order; scalar arrays guarded by sclr_dim>0.",
+    "Pack/unpack retain Native first-column-only 47-slot mapping, original required/optional order and Native one-based optional bounds; use range only when both optionals present.",
+    "Unpack preserves other columns and untouched levels, unlike JAX zeroed reconstruction.",
+    "Print all 47 fields per column on host, original labels/order; compiler-specific list-directed spacing unverified."
+  ],
+  "required_existing_API_forwarder": {
+    "native_source": "src/CLUBB_core/clubb_api_module.F90:2437\u20132455",
+    "name": "init_pdf_params_api",
+    "arguments": [
+      "nz",
+      "ngrdcol",
+      "pdf_params"
+    ],
+    "body": "call init_pdf_params(nz,ngrdcol,pdf_params)",
+    "reason": "Actual live C++ driver calls this existing Native API wrapper twice; preserve its name/owner rather than rename driver calls or create a competing helper."
+  }
+}

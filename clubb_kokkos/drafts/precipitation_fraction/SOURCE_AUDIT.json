@@ -1,0 +1,143 @@
+{
+  "canonical_source": "src/CLUBB_core/precipitation_fraction.F90",
+  "canonical_sha256": "f093801bb2a4352787342ff0147e6375f9a60e934a13258def68622b8af1dcbd",
+  "hashes": {
+    "precipitation_fraction.cpp": "dcc182ff1931658e0a1425bf70af780bf5b417647ca019f81c86c28955b49e6a",
+    "precipitation_fraction.hpp": "98d184cbdd7786ccc2038a6d0389a787d19eee84606d151ad3fc6b29c6891498"
+  },
+  "routines": [
+    {
+      "name": "precip_fraction",
+      "arguments": 22,
+      "ordered_assignment_trees": 17,
+      "assignment_mismatches": [],
+      "ordered_predicates": 11,
+      "predicate_mismatches": []
+    },
+    {
+      "name": "component_precip_frac_weighted",
+      "arguments": 16,
+      "ordered_assignment_trees": 27,
+      "assignment_mismatches": [],
+      "ordered_predicates": 12,
+      "predicate_mismatches": []
+    },
+    {
+      "name": "component_precip_frac_specify",
+      "arguments": 11,
+      "ordered_assignment_trees": 18,
+      "assignment_mismatches": [],
+      "ordered_predicates": 9,
+      "predicate_mismatches": []
+    },
+    {
+      "name": "precip_frac_assert_check",
+      "arguments": 10,
+      "ordered_assignment_trees": 0,
+      "assignment_mismatches": [],
+      "ordered_predicates": 13,
+      "predicate_mismatches": []
+    }
+  ],
+  "ordered_CALLs": [
+    {
+      "name": "precip_fraction",
+      "ordered_calls": 4,
+      "actuals": 40
+    },
+    {
+      "name": "component_precip_frac_weighted",
+      "ordered_calls": 0,
+      "actuals": 0
+    },
+    {
+      "name": "component_precip_frac_specify",
+      "ordered_calls": 0,
+      "actuals": 0
+    },
+    {
+      "name": "precip_frac_assert_check",
+      "ordered_calls": 0,
+      "actuals": 0
+    }
+  ],
+  "kernels_reviewed": 26,
+  "manual_boundaries": [
+    [
+      "precip_fraction",
+      "err_info%err_code = clubb_fatal_error",
+      "Native all-column fatal boundary"
+    ],
+    [
+      "precip_frac_assert_check",
+      "err_info%err_code = clubb_fatal_error",
+      "Native all-column fatal boundary"
+    ],
+    [
+      "precip_frac_assert_check",
+      "err_info%err_code = clubb_fatal_error",
+      "Native all-column fatal boundary"
+    ],
+    [
+      "precip_frac_assert_check",
+      "err_info%err_code = clubb_fatal_error",
+      "Native all-column fatal boundary"
+    ],
+    [
+      "precip_frac_assert_check",
+      "err_info%err_code = clubb_fatal_error",
+      "Native all-column fatal boundary"
+    ],
+    [
+      "precip_frac_assert_check",
+      "err_info%err_code = clubb_fatal_error",
+      "Native all-column fatal boundary"
+    ],
+    [
+      "precip_frac_assert_check",
+      "err_info%err_code = clubb_fatal_error",
+      "Native all-column fatal boundary"
+    ],
+    [
+      "precip_frac_assert_check",
+      "err_info%err_code = clubb_fatal_error",
+      "Native all-column fatal boundary"
+    ],
+    [
+      "precip_frac_assert_check",
+      "err_info%err_code = clubb_fatal_error",
+      "Native all-column fatal boundary"
+    ],
+    [
+      "precip_frac_assert_check",
+      "err_info%err_code = clubb_fatal_error",
+      "Native all-column fatal boundary"
+    ],
+    [
+      "precip_frac_assert_check",
+      "err_info%err_code = clubb_fatal_error",
+      "Native all-column fatal boundary"
+    ],
+    [
+      "precip_frac_assert_check",
+      "err_info%err_code = clubb_fatal_error",
+      "Native all-column fatal boundary"
+    ],
+    [
+      "precip_frac_assert_check",
+      "err_info%err_code = clubb_fatal_error",
+      "Native all-column fatal boundary"
+    ]
+  ],
+  "review_kind": "Owner complete source review, with separate cleanup; independent full-file review pending.",
+  "manual_review": [
+    "Both selector branches, warm/frozen options and both physical grid directions preserved. Four top-to-bottom recurrences remain serial within independent columns; physical bounds and step keep Native1based metadata.",
+    "MAXVAL profile scans use increasing storage level and negative HUGE identity; only immutable frozen-species flags use integer reductions. No reassociated floating reduction. Compiled MAXVAL tie/nonfinite behavior remains untested.",
+    "ANY(hydromet>=tol) and ALL(hydromet<tol) are separately computed, preserving empty-species and NaN distinctions; no complement/finite-value shortcut. Species boost order and all corrective formula associations remain Native.",
+    "Full12check helper runs one ordered profile work item. First failure metadata and four values cross to host; exact source diagnostics are printed, then every error column is marked fatal. Parent still calls/checks each column in Native order, including preexisting all-column fatal status.",
+    "Case6 preserves Native absence of the global header. The final consistency check remains a one-sided residual>eps; no abs or extra finite check. Diagnostic spacing is not a numerical claim.",
+    "Native sampled rank1 stats update uses the existing explicit const-element overload; no new stats/UDT owner or device bridge. Generic staging restores four caller outputs. No JAX fp==tol identity, optimization barrier or safe denominator imported."
+  ],
+  "remaining_lower_contracts": "None: only existing constants, Kokkos scalar math, grid/types/array owner, Native stats/debug service.",
+  "runtime_status": "No builds/tests, CPU/GPU comparisons or BFB claim. All scalar branches, thresholds, selector1/2, grid directions, stats/errors and array surfaces remain runtime-unverified."
+}

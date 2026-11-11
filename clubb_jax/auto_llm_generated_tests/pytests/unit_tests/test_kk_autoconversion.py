@@ -15,8 +15,6 @@ Checks against numerical quadrature and differentiation:
 
 Run from the repo root: bash human_reviewed_tests/run_pytests.sh -jax -k test_kk_autoconversion
 """
-
-from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
 import numpy as np
 import jax
 
@@ -72,7 +70,7 @@ def test_bivar_general_vs_quadrature():
     ]
     worst = 0.0
     for c in cases:
-        closed = float(call_jax(bivar_NL_mean, c["mu_x1"], c["mu_x2_n"], c["sigma_x1"],
+        closed = float(bivar_NL_mean(c["mu_x1"], c["mu_x2_n"], c["sigma_x1"],
                                      c["sigma_x2_n"], c["rho"], ALPHA, BETA))
         quad = _quad_bivar_NL(c["mu_x1"], c["mu_x2_n"], c["sigma_x1"],
                               c["sigma_x2_n"], c["rho"], ALPHA, BETA)
@@ -91,7 +89,7 @@ def test_bivar_const_variants_vs_quadrature():
     ref_x1 = mu_x1 ** ALPHA * np.exp(BETA * mu_x2_n + 0.5 * BETA ** 2 * sigma_x2_n ** 2)
     assert abs(f_x1 - ref_x1) / abs(ref_x1) < 1e-12
     # const_x2: x2 constant -> mu_x2^b * INT_{x1>0} x1^a phi du
-    f_x2 = float(call_jax(bivar_NL_mean_const_x2, mu_x1, mu_x2, sigma_x1, ALPHA, BETA))
+    f_x2 = float(bivar_NL_mean_const_x2(mu_x1, mu_x2, sigma_x1, ALPHA, BETA))
     u = np.linspace(-12.0, 12.0, 400001)
     x1 = mu_x1 + sigma_x1 * u
     inner = np.trapezoid(np.where(x1 > 0, np.power(np.maximum(x1, 0.0), ALPHA), 0.0)
@@ -124,7 +122,7 @@ def test_accretion_bivar_vs_quadrature():
     ]
     worst = 0.0
     for c in cases:
-        closed = float(call_jax(bivar_NL_mean, c["mu_x1"], c["mu_x2_n"], c["sigma_x1"],
+        closed = float(bivar_NL_mean(c["mu_x1"], c["mu_x2_n"], c["sigma_x1"],
                                      c["sigma_x2_n"], c["rho"], ACCR_A, ACCR_B))
         quad = _quad_bivar_NL(c["mu_x1"], c["mu_x2_n"], c["sigma_x1"],
                               c["sigma_x2_n"], c["rho"], ACCR_A, ACCR_B)
@@ -166,7 +164,7 @@ def test_trivar_general_vs_quadrature():
     ]
     worst = 0.0
     for c in cases:
-        closed = float(call_jax(trivar_NLL_mean, c["mu_x1"], c["mu_x2_n"], c["mu_x3_n"],
+        closed = float(trivar_NLL_mean(c["mu_x1"], c["mu_x2_n"], c["mu_x3_n"],
                                        c["sigma_x1"], c["sigma_x2_n"], c["sigma_x3_n"],
                                        c["rho12"], c["rho13"], c["rho23"],
                                        EVAP_A, EVAP_B, EVAP_G))

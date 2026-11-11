@@ -1,0 +1,417 @@
+{
+  "status": "mechanical name/order check only; full source/cleanup/numerical audit pending",
+  "files": [
+    {
+      "source": "src/Benchmark_cases/arm.F90",
+      "native": [
+        "arm_sfclyr"
+      ],
+      "cpp": [
+        "arm_sfclyr"
+      ],
+      "match": true
+    },
+    {
+      "source": "src/Benchmark_cases/arm_0003.F90",
+      "native": [
+        "arm_0003_sfclyr"
+      ],
+      "cpp": [
+        "arm_0003_sfclyr"
+      ],
+      "match": true
+    },
+    {
+      "source": "src/Benchmark_cases/arm_3year.F90",
+      "native": [
+        "arm_3year_sfclyr"
+      ],
+      "cpp": [
+        "arm_3year_sfclyr"
+      ],
+      "match": true
+    },
+    {
+      "source": "src/Benchmark_cases/arm_97.F90",
+      "native": [
+        "arm_97_sfclyr"
+      ],
+      "cpp": [
+        "arm_97_sfclyr"
+      ],
+      "match": true
+    },
+    {
+      "source": "src/Benchmark_cases/astex_a209.F90",
+      "native": [
+        "astex_a209_tndcy",
+        "astex_a209_sfclyr"
+      ],
+      "cpp": [
+        "astex_a209_tndcy",
+        "astex_a209_sfclyr"
+      ],
+      "match": true
+    },
+    {
+      "source": "src/Benchmark_cases/atex.F90",
+      "native": [
+        "calc_forcings",
+        "atex_tndcy",
+        "atex_sfclyr"
+      ],
+      "cpp": [
+        "calc_forcings",
+        "atex_tndcy",
+        "atex_sfclyr"
+      ],
+      "match": true
+    },
+    {
+      "source": "src/Benchmark_cases/atex_long.F90",
+      "native": [
+        "calc_forcings",
+        "atex_long_tndcy",
+        "atex_long_sfclyr"
+      ],
+      "cpp": [
+        "calc_forcings",
+        "atex_long_tndcy",
+        "atex_long_sfclyr"
+      ],
+      "match": true
+    },
+    {
+      "source": "src/Benchmark_cases/bomex.F90",
+      "native": [
+        "bomex_tndcy",
+        "bomex_sfclyr"
+      ],
+      "cpp": [
+        "bomex_tndcy",
+        "bomex_sfclyr"
+      ],
+      "match": true
+    },
+    {
+      "source": "src/Benchmark_cases/clex9_nov02.F90",
+      "native": [
+        "clex9_nov02_read_t_dependent"
+      ],
+      "cpp": [
+        "clex9_nov02_read_t_dependent"
+      ],
+      "match": true
+    },
+    {
+      "source": "src/Benchmark_cases/clex9_oct14.F90",
+      "native": [
+        "clex9_oct14_read_t_dependent"
+      ],
+      "cpp": [
+        "clex9_oct14_read_t_dependent"
+      ],
+      "match": true
+    },
+    {
+      "source": "src/Benchmark_cases/cloud_feedback.F90",
+      "native": [
+        "cloud_feedback_sfclyr"
+      ],
+      "cpp": [
+        "cloud_feedback_sfclyr"
+      ],
+      "match": true
+    },
+    {
+      "source": "src/Benchmark_cases/cobra.F90",
+      "native": [
+        "cobra_sfclyr"
+      ],
+      "cpp": [
+        "cobra_sfclyr"
+      ],
+      "match": true
+    },
+    {
+      "source": "src/Benchmark_cases/diag_ustar_module.F90",
+      "native": [
+        "diag_ustar"
+      ],
+      "cpp": [
+        "diag_ustar"
+      ],
+      "match": true
+    },
+    {
+      "source": "src/Benchmark_cases/dycoms2_rf01.F90",
+      "native": [
+        "dycoms2_rf01_tndcy",
+        "dycoms2_rf01_sfclyr"
+      ],
+      "cpp": [
+        "dycoms2_rf01_tndcy",
+        "dycoms2_rf01_sfclyr"
+      ],
+      "match": true
+    },
+    {
+      "source": "src/Benchmark_cases/dycoms2_rf02.F90",
+      "native": [
+        "dycoms2_rf02_tndcy",
+        "dycoms2_rf02_sfclyr"
+      ],
+      "cpp": [
+        "dycoms2_rf02_tndcy",
+        "dycoms2_rf02_sfclyr"
+      ],
+      "match": true
+    },
+    {
+      "source": "src/Benchmark_cases/ekman.F90",
+      "native": [
+        "ekman_sfclyr"
+      ],
+      "cpp": [
+        "ekman_sfclyr"
+      ],
+      "match": true
+    },
+    {
+      "source": "src/Benchmark_cases/fire.F90",
+      "native": [
+        "fire_sfclyr"
+      ],
+      "cpp": [
+        "fire_sfclyr"
+      ],
+      "match": true
+    },
+    {
+      "source": "src/Benchmark_cases/gabls2.F90",
+      "native": [
+        "gabls2_tndcy",
+        "gabls2_sfclyr"
+      ],
+      "cpp": [
+        "gabls2_tndcy",
+        "gabls2_sfclyr"
+      ],
+      "match": true
+    },
+    {
+      "source": "src/Benchmark_cases/gabls3.F90",
+      "native": [
+        "gabls3_sfclyr"
+      ],
+      "cpp": [
+        "gabls3_sfclyr"
+      ],
+      "match": true
+    },
+    {
+      "source": "src/Benchmark_cases/gabls3_night.F90",
+      "native": [
+        "gabls3_night_sfclyr",
+        "psi_h",
+        "gm1",
+        "gh1",
+        "fm1",
+        "fh1",
+        "landflx"
+      ],
+      "cpp": [
+        "gabls3_night_sfclyr",
+        "psi_h",
+        "gm1",
+        "gh1",
+        "fm1",
+        "fh1",
+        "landflx"
+      ],
+      "match": true
+    },
+    {
+      "source": "src/Benchmark_cases/jun25.F90",
+      "native": [
+        "jun25_altocu_read_t_dependent"
+      ],
+      "cpp": [
+        "jun25_altocu_read_t_dependent"
+      ],
+      "match": true
+    },
+    {
+      "source": "src/Benchmark_cases/lba.F90",
+      "native": [
+        "lba_tndcy",
+        "lba_sfclyr"
+      ],
+      "cpp": [
+        "lba_tndcy",
+        "lba_sfclyr"
+      ],
+      "match": true
+    },
+    {
+      "source": "src/Benchmark_cases/mpace_a.F90",
+      "native": [
+        "mpace_a_tndcy",
+        "mpace_a_sfclyr",
+        "mpace_a_init"
+      ],
+      "cpp": [
+        "mpace_a_tndcy",
+        "mpace_a_sfclyr",
+        "mpace_a_init"
+      ],
+      "match": true
+    },
+    {
+      "source": "src/Benchmark_cases/mpace_b.F90",
+      "native": [
+        "mpace_b_tndcy",
+        "mpace_b_sfclyr"
+      ],
+      "cpp": [
+        "mpace_b_tndcy",
+        "mpace_b_sfclyr"
+      ],
+      "match": true
+    },
+    {
+      "source": "src/Benchmark_cases/neutral_case.F90",
+      "native": [
+        "neutral_case_sfclyr"
+      ],
+      "cpp": [
+        "neutral_case_sfclyr"
+      ],
+      "match": true
+    },
+    {
+      "source": "src/Benchmark_cases/nov11.F90",
+      "native": [
+        "nov11_altocu_rtm_adjust",
+        "nov11_altocu_read_t_dependent"
+      ],
+      "cpp": [
+        "nov11_altocu_rtm_adjust",
+        "nov11_altocu_read_t_dependent"
+      ],
+      "match": true
+    },
+    {
+      "source": "src/Benchmark_cases/prescribe_forcings.F90",
+      "native": [
+        "prescribe_forcings",
+        "read_surface_var_for_bc"
+      ],
+      "cpp": [
+        "prescribe_forcings",
+        "read_surface_var_for_bc"
+      ],
+      "match": true
+    },
+    {
+      "source": "src/Benchmark_cases/rico.F90",
+      "native": [
+        "rico_tndcy",
+        "rico_sfclyr"
+      ],
+      "cpp": [
+        "rico_tndcy",
+        "rico_sfclyr"
+      ],
+      "match": true
+    },
+    {
+      "source": "src/Benchmark_cases/sfc_flux.F90",
+      "native": [
+        "compute_momentum_flux",
+        "compute_ubar",
+        "compute_ht_mostr_flux",
+        "compute_wpthlp_sfc",
+        "compute_wprtp_sfc",
+        "set_sclr_sfc_rtm_thlm",
+        "convert_sens_ht_to_km_s",
+        "convert_latent_ht_to_m_s"
+      ],
+      "cpp": [
+        "compute_momentum_flux",
+        "compute_ubar",
+        "compute_ht_mostr_flux",
+        "compute_wpthlp_sfc",
+        "compute_wprtp_sfc",
+        "set_sclr_sfc_rtm_thlm",
+        "convert_sens_ht_to_km_s",
+        "convert_latent_ht_to_m_s"
+      ],
+      "match": true
+    },
+    {
+      "source": "src/Benchmark_cases/spec_hum_to_mixing_ratio.F90",
+      "native": [
+        "flux_spec_hum_to_mixing_ratio",
+        "force_spec_hum_to_mixing_ratio"
+      ],
+      "cpp": [
+        "flux_spec_hum_to_mixing_ratio",
+        "force_spec_hum_to_mixing_ratio"
+      ],
+      "match": true
+    },
+    {
+      "source": "src/Benchmark_cases/time_dependent_input.F90",
+      "native": [
+        "initialize_t_dependent_input",
+        "finalize_t_dependent_input",
+        "initialize_t_dependent_sfc",
+        "initialize_t_dependent_forcings",
+        "finalize_t_dependent_forcings",
+        "finalize_t_dependent_sfc",
+        "read_to_grid",
+        "apply_time_dependent_forcings_from_array",
+        "apply_time_dependent_forcings",
+        "apply_time_dependent_forcings_from_dycore",
+        "time_select"
+      ],
+      "cpp": [
+        "time_select",
+        "initialize_t_dependent_input",
+        "finalize_t_dependent_input",
+        "initialize_t_dependent_sfc",
+        "initialize_t_dependent_forcings",
+        "finalize_t_dependent_forcings",
+        "finalize_t_dependent_sfc",
+        "read_to_grid",
+        "apply_time_dependent_forcings_from_array",
+        "apply_time_dependent_forcings",
+        "apply_time_dependent_forcings_from_dycore"
+      ],
+      "match": true
+    },
+    {
+      "source": "src/Benchmark_cases/twp_ice.F90",
+      "native": [
+        "twp_ice_sfclyr"
+      ],
+      "cpp": [
+        "twp_ice_sfclyr"
+      ],
+      "match": true
+    },
+    {
+      "source": "src/Benchmark_cases/wangara.F90",
+      "native": [
+        "wangara_tndcy",
+        "wangara_sfclyr"
+      ],
+      "cpp": [
+        "wangara_tndcy",
+        "wangara_sfclyr"
+      ],
+      "match": true
+    }
+  ]
+}

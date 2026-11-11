@@ -1,0 +1,26 @@
+{
+  "provenance": "Owner-written static expression/index check; not independent numerical evidence.",
+  "cpp_sha256": "f6a961233fcbec94c6428d689bda2803d4735e7d794b6ed278921b603e3f14b2",
+  "routines": {
+    "kmppm": {
+      "Native_scientific_assignment_trees": 22,
+      "Cpp_scientific_assignment_trees": 22,
+      "mismatches": []
+    },
+    "steepz": {
+      "Native_scientific_assignment_trees": 6,
+      "Cpp_scientific_assignment_trees": 6,
+      "mismatches": []
+    },
+    "ppm2m": {
+      "Native_scientific_assignment_trees": 67,
+      "Cpp_scientific_assignment_trees": 67,
+      "mismatches": []
+    },
+    "map1_ppm": {
+      "Native_scientific_assignment_trees": 13,
+      "Cpp_scientific_assignment_trees": 13,
+      "mismatches": []
+    }
+  }
+}

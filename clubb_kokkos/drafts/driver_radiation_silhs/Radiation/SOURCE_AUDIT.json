@@ -1,0 +1,476 @@
+{
+  "status": "Owner source and separate cleanup audit complete; integration/compile/numerical evidence pending.",
+  "routines_in_eight_Native_files": 21,
+  "additional_common_initializer": 1,
+  "formal_contracts_checked": 22,
+  "kernels_checked": 31,
+  "files": [
+    {
+      "Native_source": "src/Radiation/cos_solar_zen_module.F90",
+      "Native_sha256": "fd83bbd63c9047efbb210f728f6f5acce0c135d698140cb8c16c052200b41dd6",
+      "CPP": "Radiation/cos_solar_zen_module.cpp",
+      "CPP_sha256": "64dcb43372a08f251833c34b1aeeb5c54366c8eeb4cbf1b9b2bc64b0f0ff4673",
+      "header_sha256": "65deb69f855edb53fdacc35b2f8fe91d817e29ecaf154b3d04e68f54a2fd0d79",
+      "procedures": [
+        {
+          "name": "cos_solar_zen",
+          "Native_owner": "src/Radiation/cos_solar_zen_module.F90",
+          "Native_args": 6,
+          "leading_formals_and_adapters_match": true,
+          "status": "source drafted"
+        }
+      ],
+      "kernels_capture_checked": 0,
+      "stats_in_source_order": [],
+      "owner_manual_review": [
+        "complete Native and actual JAX read",
+        "intents/kinds/required argument status",
+        "calls/fatal returns and Native stats payload order",
+        "all supported branches and ordered recurrences",
+        "case-owned state, shapes and captured ownership",
+        "mutable first-use and cleanup",
+        "scientific comments/equations/units and Native argument groups"
+      ],
+      "build_or_model_evidence": "pending"
+    },
+    {
+      "Native_source": "src/Radiation/extended_atmosphere_module.F90",
+      "Native_sha256": "485bdb8956e2ce3da2d4c2bd5b691beead265a566ae203a48dc3f871bdd6dff6",
+      "CPP": "Radiation/extended_atmosphere_module.cpp",
+      "CPP_sha256": "5d6803841b338c62f96cf9a5a70ee01e80301ed3aca9a1065430743b1d0f5889",
+      "header_sha256": "4c70ad73ab6ddff6dbaf97cacf42d87f1c471a020680df019e1d093f3288bcdc",
+      "procedures": [
+        {
+          "name": "determine_extended_atmos_bounds",
+          "Native_owner": "src/Radiation/extended_atmosphere_module.F90",
+          "Native_args": 9,
+          "leading_formals_and_adapters_match": true,
+          "status": "source drafted"
+        },
+        {
+          "name": "finalize_extended_atm",
+          "Native_owner": "src/Radiation/extended_atmosphere_module.F90",
+          "Native_args": 0,
+          "leading_formals_and_adapters_match": true,
+          "status": "source drafted"
+        }
+      ],
+      "kernels_capture_checked": 2,
+      "stats_in_source_order": [],
+      "owner_manual_review": [
+        "complete Native and actual JAX read",
+        "intents/kinds/required argument status",
+        "calls/fatal returns and Native stats payload order",
+        "all supported branches and ordered recurrences",
+        "case-owned state, shapes and captured ownership",
+        "mutable first-use and cleanup",
+        "scientific comments/equations/units and Native argument groups"
+      ],
+      "build_or_model_evidence": "pending"
+    },
+    {
+      "Native_source": "src/Radiation/parameters_radiation.F90",
+      "Native_sha256": "6692919a50b4528c07eee24811e011afbf31fd9be97aab7f84ce4701320d0a2a",
+      "CPP": "Radiation/parameters_radiation.cpp",
+      "CPP_sha256": "64ebf77e0033b018661e6fe30224bd13cb35a5ab0caba2b1d2c6d4b6ced244d4",
+      "header_sha256": "469fca2e45487f6b3398c0fd500495df2ce50d07a38bf4907dc170fc88cac98a",
+      "procedures": [
+        {
+          "name": "init_radiation",
+          "Native_owner": "src/Radiation/bugsrad_driver.F90",
+          "Native_args": 4,
+          "leading_formals_and_adapters_match": true,
+          "status": "source drafted"
+        }
+      ],
+      "kernels_capture_checked": 0,
+      "stats_in_source_order": [],
+      "owner_manual_review": [
+        "complete Native and actual JAX read",
+        "intents/kinds/required argument status",
+        "calls/fatal returns and Native stats payload order",
+        "all supported branches and ordered recurrences",
+        "case-owned state, shapes and captured ownership",
+        "mutable first-use and cleanup",
+        "scientific comments/equations/units and Native argument groups"
+      ],
+      "build_or_model_evidence": "pending"
+    },
+    {
+      "Native_source": "src/Radiation/rad_lwsw_module.F90",
+      "Native_sha256": "9134bc3229029232a23afcd5fa6cb6785e3fa070dd00af764402c11ebf6734ca",
+      "CPP": "Radiation/rad_lwsw_module.cpp",
+      "CPP_sha256": "1476dcf9a93dcba2d5a93a12fde594b26569ce848e3af36ff9a52700d50c490c",
+      "header_sha256": "5cb1e46043c022c633bd47f12417d02e9eea975ae73b187c8fc95fc2b93e2b19",
+      "procedures": [
+        {
+          "name": "sunray_sw",
+          "Native_owner": "src/Radiation/rad_lwsw_module.F90",
+          "Native_args": 15,
+          "leading_formals_and_adapters_match": true,
+          "status": "source drafted"
+        }
+      ],
+      "kernels_capture_checked": 4,
+      "stats_in_source_order": [],
+      "owner_manual_review": [
+        "complete Native and actual JAX read",
+        "intents/kinds/required argument status",
+        "calls/fatal returns and Native stats payload order",
+        "all supported branches and ordered recurrences",
+        "case-owned state, shapes and captured ownership",
+        "mutable first-use and cleanup",
+        "scientific comments/equations/units and Native argument groups"
+      ],
+      "build_or_model_evidence": "pending"
+    },
+    {
+      "Native_source": "src/Radiation/radiation_module.F90",
+      "Native_sha256": "19a6a90e91ba17859dcdca7f9432ef7bd0084164bb6b7a057cbe243b980e28cd",
+      "CPP": "Radiation/radiation_module.cpp",
+      "CPP_sha256": "f760e5e65f749458c8b949b37bae55ca0fdb33f63cbb72bd1f6e261852b8fed4",
+      "header_sha256": "2907027905eca7821ccf09ff4f9393140fecce7e7d4f6828410122cc9b44948a",
+      "procedures": [
+        {
+          "name": "advance_clubb_radiation",
+          "Native_owner": "src/Radiation/radiation_module.F90",
+          "Native_args": 39,
+          "leading_formals_and_adapters_match": true,
+          "status": "source drafted"
+        },
+        {
+          "name": "radiation_driver",
+          "Native_owner": "src/Radiation/radiation_module.F90",
+          "Native_args": 29,
+          "leading_formals_and_adapters_match": true,
+          "status": "source drafted"
+        },
+        {
+          "name": "update_radiation_variables",
+          "Native_owner": "src/Radiation/radiation_module.F90",
+          "Native_args": 10,
+          "leading_formals_and_adapters_match": true,
+          "status": "source drafted"
+        },
+        {
+          "name": "silhs_radiation_driver",
+          "Native_owner": "src/Radiation/radiation_module.F90",
+          "Native_args": 34,
+          "leading_formals_and_adapters_match": true,
+          "status": "approved exclusion"
+        }
+      ],
+      "kernels_capture_checked": 6,
+      "stats_in_source_order": [
+        "Frad",
+        "radht",
+        "Frad_SW_up",
+        "Frad_LW_up",
+        "Frad_SW_down",
+        "Frad_LW_down",
+        "radht_LW",
+        "radht_SW",
+        "Frad_SW",
+        "Frad_LW"
+      ],
+      "owner_manual_review": [
+        "complete Native and actual JAX read",
+        "intents/kinds/required argument status",
+        "calls/fatal returns and Native stats payload order",
+        "all supported branches and ordered recurrences",
+        "case-owned state, shapes and captured ownership",
+        "mutable first-use and cleanup",
+        "scientific comments/equations/units and Native argument groups"
+      ],
+      "build_or_model_evidence": "pending"
+    },
+    {
+      "Native_source": "src/Radiation/radiation_variables_module.F90",
+      "Native_sha256": "894f92ef126d098c03dd2215f136a1f5a9a2071f8b18da8b89ab19e612a03178",
+      "CPP": "Radiation/radiation_variables_module.cpp",
+      "CPP_sha256": "9708969f095a68c1272c8770cb2e0e6da754fa759fcaa5b5777cc8574128348b",
+      "header_sha256": "1a56d19e22a8ca56821ecaae335a4c98971045f20ec31c4f9fe8688e6009ec70",
+      "procedures": [
+        {
+          "name": "setup_radiation_variables",
+          "Native_owner": "src/Radiation/radiation_variables_module.F90",
+          "Native_args": 3,
+          "leading_formals_and_adapters_match": true,
+          "status": "source drafted"
+        },
+        {
+          "name": "reset_radiation_variables",
+          "Native_owner": "src/Radiation/radiation_variables_module.F90",
+          "Native_args": 0,
+          "leading_formals_and_adapters_match": true,
+          "status": "source drafted"
+        },
+        {
+          "name": "setup_bugsrad_variables",
+          "Native_owner": "src/Radiation/radiation_variables_module.F90",
+          "Native_args": 6,
+          "leading_formals_and_adapters_match": true,
+          "status": "source drafted"
+        },
+        {
+          "name": "reset_bugsrad_variables",
+          "Native_owner": "src/Radiation/radiation_variables_module.F90",
+          "Native_args": 0,
+          "leading_formals_and_adapters_match": true,
+          "status": "source drafted"
+        },
+        {
+          "name": "cleanup_radiation_variables",
+          "Native_owner": "src/Radiation/radiation_variables_module.F90",
+          "Native_args": 0,
+          "leading_formals_and_adapters_match": true,
+          "status": "source drafted"
+        },
+        {
+          "name": "cleanup_bugsrad_variables",
+          "Native_owner": "src/Radiation/radiation_variables_module.F90",
+          "Native_args": 0,
+          "leading_formals_and_adapters_match": true,
+          "status": "source drafted"
+        }
+      ],
+      "kernels_capture_checked": 8,
+      "stats_in_source_order": [],
+      "owner_manual_review": [
+        "complete Native and actual JAX read",
+        "intents/kinds/required argument status",
+        "calls/fatal returns and Native stats payload order",
+        "all supported branches and ordered recurrences",
+        "case-owned state, shapes and captured ownership",
+        "mutable first-use and cleanup",
+        "scientific comments/equations/units and Native argument groups"
+      ],
+      "build_or_model_evidence": "pending"
+    },
+    {
+      "Native_source": "src/Radiation/simple_rad_module.F90",
+      "Native_sha256": "b35b69c8f6eb928b6c73c50decdbc2761e6b565099dca67e7ff89aeec2209192",
+      "CPP": "Radiation/simple_rad_module.cpp",
+      "CPP_sha256": "d0d703f5359c5718dc80ac187d15ac0ea9a40236ee8aa5d84ad7a4953c709899",
+      "header_sha256": "c832c61894cc72357ab14144fe6d2af4e639a93b42f0883b626aafb03c2c0b44",
+      "procedures": [
+        {
+          "name": "simple_rad",
+          "Native_owner": "src/Radiation/simple_rad_module.F90",
+          "Native_args": 10,
+          "leading_formals_and_adapters_match": true,
+          "status": "source drafted"
+        },
+        {
+          "name": "simple_rad_bomex",
+          "Native_owner": "src/Radiation/simple_rad_module.F90",
+          "Native_args": 3,
+          "leading_formals_and_adapters_match": true,
+          "status": "source drafted"
+        },
+        {
+          "name": "simple_rad_lba",
+          "Native_owner": "src/Radiation/simple_rad_module.F90",
+          "Native_args": 5,
+          "leading_formals_and_adapters_match": true,
+          "status": "source drafted"
+        },
+        {
+          "name": "simple_rad_lba_init",
+          "Native_owner": "src/Radiation/simple_rad_module.F90",
+          "Native_args": 2,
+          "leading_formals_and_adapters_match": true,
+          "status": "source drafted"
+        },
+        {
+          "name": "liq_water_path",
+          "Native_owner": "src/Radiation/simple_rad_module.F90",
+          "Native_args": 6,
+          "leading_formals_and_adapters_match": true,
+          "status": "source drafted"
+        }
+      ],
+      "kernels_capture_checked": 9,
+      "stats_in_source_order": [
+        "z_inversion"
+      ],
+      "owner_manual_review": [
+        "complete Native and actual JAX read",
+        "intents/kinds/required argument status",
+        "calls/fatal returns and Native stats payload order",
+        "all supported branches and ordered recurrences",
+        "case-owned state, shapes and captured ownership",
+        "mutable first-use and cleanup",
+        "scientific comments/equations/units and Native argument groups"
+      ],
+      "build_or_model_evidence": "pending"
+    },
+    {
+      "Native_source": "src/Radiation/soil_vegetation.F90",
+      "Native_sha256": "823f9275eb082400f3367cec89db6a247d23e45b101a6d069289bfe89a63ac92",
+      "CPP": "Radiation/soil_vegetation.cpp",
+      "CPP_sha256": "58a5aa460f4f2c0d9500ea1587e1999301774c56d59b44708a8e1ac8a3cdf992",
+      "header_sha256": "39625d053055f697fec0c2ac0824d07f08321863aeae0951819323a3941d60d1",
+      "procedures": [
+        {
+          "name": "advance_soil_veg",
+          "Native_owner": "src/Radiation/soil_vegetation.F90",
+          "Native_args": 13,
+          "leading_formals_and_adapters_match": true,
+          "status": "source drafted"
+        },
+        {
+          "name": "initialize_soil_veg",
+          "Native_owner": "src/Radiation/soil_vegetation.F90",
+          "Native_args": 4,
+          "leading_formals_and_adapters_match": true,
+          "status": "source drafted"
+        }
+      ],
+      "kernels_capture_checked": 2,
+      "stats_in_source_order": [
+        "veg_T_in_K",
+        "sfc_soil_T_in_K",
+        "deep_soil_T_in_K",
+        "soil_heat_flux"
+      ],
+      "owner_manual_review": [
+        "complete Native and actual JAX read",
+        "intents/kinds/required argument status",
+        "calls/fatal returns and Native stats payload order",
+        "all supported branches and ordered recurrences",
+        "case-owned state, shapes and captured ownership",
+        "mutable first-use and cleanup",
+        "scientific comments/equations/units and Native argument groups"
+      ],
+      "build_or_model_evidence": "pending"
+    }
+  ],
+  "final_format_token_equality": [
+    {
+      "file": "Radiation/cos_solar_zen_module.cpp",
+      "tokens_unchanged": true,
+      "tokens": 433,
+      "sha256": "64dcb43372a08f251833c34b1aeeb5c54366c8eeb4cbf1b9b2bc64b0f0ff4673"
+    },
+    {
+      "file": "Radiation/extended_atmosphere_module.cpp",
+      "tokens_unchanged": true,
+      "tokens": 1000,
+      "sha256": "5d6803841b338c62f96cf9a5a70ee01e80301ed3aca9a1065430743b1d0f5889"
+    },
+    {
+      "file": "Radiation/parameters_radiation.cpp",
+      "tokens_unchanged": true,
+      "tokens": 486,
+      "sha256": "64ebf77e0033b018661e6fe30224bd13cb35a5ab0caba2b1d2c6d4b6ced244d4"
+    },
+    {
+      "file": "Radiation/rad_lwsw_module.cpp",
+      "tokens_unchanged": true,
+      "tokens": 1457,
+      "sha256": "1476dcf9a93dcba2d5a93a12fde594b26569ce848e3af36ff9a52700d50c490c"
+    },
+    {
+      "file": "Radiation/radiation_module.cpp",
+      "tokens_unchanged": true,
+      "tokens": 2092,
+      "sha256": "f760e5e65f749458c8b949b37bae55ca0fdb33f63cbb72bd1f6e261852b8fed4"
+    },
+    {
+      "file": "Radiation/radiation_variables_module.cpp",
+      "tokens_unchanged": true,
+      "tokens": 2584,
+      "sha256": "9708969f095a68c1272c8770cb2e0e6da754fa759fcaa5b5777cc8574128348b"
+    },
+    {
+      "file": "Radiation/simple_rad_module.cpp",
+      "tokens_unchanged": true,
+      "tokens": 1820,
+      "sha256": "d0d703f5359c5718dc80ac187d15ac0ea9a40236ee8aa5d84ad7a4953c709899"
+    },
+    {
+      "file": "Radiation/soil_vegetation.cpp",
+      "tokens_unchanged": true,
+      "tokens": 671,
+      "sha256": "58a5aa460f4f2c0d9500ea1587e1999301774c56d59b44708a8e1ac8a3cdf992"
+    },
+    {
+      "file": "Radiation/cos_solar_zen_module.hpp",
+      "tokens_unchanged": true,
+      "tokens": 32,
+      "sha256": "65deb69f855edb53fdacc35b2f8fe91d817e29ecaf154b3d04e68f54a2fd0d79"
+    },
+    {
+      "file": "Radiation/extended_atmosphere_module.hpp",
+      "tokens_unchanged": true,
+      "tokens": 197,
+      "sha256": "4c70ad73ab6ddff6dbaf97cacf42d87f1c471a020680df019e1d093f3288bcdc"
+    },
+    {
+      "file": "Radiation/parameters_radiation.hpp",
+      "tokens_unchanged": true,
+      "tokens": 191,
+      "sha256": "469fca2e45487f6b3398c0fd500495df2ce50d07a38bf4907dc170fc88cac98a"
+    },
+    {
+      "file": "Radiation/rad_lwsw_module.hpp",
+      "tokens_unchanged": true,
+      "tokens": 194,
+      "sha256": "5cb1e46043c022c633bd47f12417d02e9eea975ae73b187c8fc95fc2b93e2b19"
+    },
+    {
+      "file": "Radiation/radiation_module.hpp",
+      "tokens_unchanged": true,
+      "tokens": 1355,
+      "sha256": "2907027905eca7821ccf09ff4f9393140fecce7e7d4f6828410122cc9b44948a"
+    },
+    {
+      "file": "Radiation/radiation_variables_module.hpp",
+      "tokens_unchanged": true,
+      "tokens": 307,
+      "sha256": "1a56d19e22a8ca56821ecaae335a4c98971045f20ec31c4f9fe8688e6009ec70"
+    },
+    {
+      "file": "Radiation/simple_rad_module.hpp",
+      "tokens_unchanged": true,
+      "tokens": 389,
+      "sha256": "c832c61894cc72357ab14144fe6d2af4e639a93b42f0883b626aafb03c2c0b44"
+    },
+    {
+      "file": "Radiation/soil_vegetation.hpp",
+      "tokens_unchanged": true,
+      "tokens": 361,
+      "sha256": "39625d053055f697fec0c2ac0824d07f08321863aeae0951819323a3941d60d1"
+    },
+    {
+      "file": "f2k/radiation_io.hpp",
+      "tokens_unchanged": true,
+      "tokens": 59,
+      "sha256": "70e73c227f2d9ed0a6671a774f6ecda8a0fa16fae615ed7e7db01a20ec924009"
+    }
+  ],
+  "independent_review": false,
+  "tests_builds_or_shared_edits": false,
+  "supported_science": "Simplified LW/SW,BOMEX,LBA,solar geometry,soil/vegetation; shared extension geometry and array lifecycle also ported.",
+  "approved_exclusions": [
+    "BUGSrad engine and its extended output stats",
+    "SILHS radiation (actual JAX/current driver initialization gate,explicitly retained by root)"
+  ],
+  "pending_IO": [
+    "read_radiation_setting: local22-member namelist,CPP defaults supplied,derived nparam excluded",
+    "append_radiation_setting: Native stdout/setup record order and dp-to-core print conversions"
+  ],
+  "existing_shared_IO": [
+    "generated f2k::file_read_1d exact5args",
+    "generated f2k::file_read_2d exact6args"
+  ],
+  "BFB": "No speculative FMA/association workaround. Fourth-power integer expansion is ordinary. Case-initial nparam0 is a separate Native-definedness choice.",
+  "cleanup_followups": "Root broadened shared generic stats_update to rank1/2, so direct rank1 Views replaced no-longer-needed const-view casts. Root generated shared file_read_1d/2d, so local concrete declarations were removed. These are public-boundary cleanup, not arithmetic changes.",
+  "corrected_source_finding": {
+    "finder": "Microphys consumer template instantiation",
+    "issue": "Draft adapters named a nonexistent copy_from_execution_space helper.",
+    "correction": "Use actual shared from_execution_space(destination,source), verified at array_types.hpp79; exact rename in four Radiation and three SILHS headers. No new helper, argument order or arithmetic change.",
+    "evidence_limit": "No Radiation compile/model verification by this owner; root will compile before integration."
+  }
+}

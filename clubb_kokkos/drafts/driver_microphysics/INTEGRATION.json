@@ -1,0 +1,108 @@
+{
+  "date": "2026-11-06",
+  "revision": "ac37a3898",
+  "status": "compilable draft; primary CPU saved-file BFB gate required before acceptance",
+  "promote_top_level": [
+    "Microphys/KK_microphys_module.hpp",
+    "Microphys/advance_microphys_module.hpp",
+    "Microphys/cloud_sed_module.hpp",
+    "Microphys/estimate_scm_microphys_module.hpp",
+    "Microphys/ice_dfsn_module.hpp",
+    "Microphys/lh_microphys_driver_module.hpp",
+    "Microphys/microphys_diagnostics.hpp",
+    "Microphys/microphys_driver.hpp",
+    "Microphys/microphys_host_types.hpp",
+    "Microphys/microphys_init_cleanup.hpp",
+    "Microphys/mixed_moment_PDF_integrals.hpp",
+    "Microphys/morrison_microphys_module.hpp",
+    "Microphys/parameters_microphys.hpp",
+    "Microphys/pdf_hydromet_microphys_wrapper.hpp",
+    "Microphys/silhs_category_variance_module.hpp",
+    "Microphys/cloud_sed_module.cpp"
+  ],
+  "promote_kk_closure": [
+    "Microphys/KK_microphys/parameters_KK.hpp",
+    "Microphys/KK_microphys/KK_microphys.hpp",
+    "Microphys/KK_microphys/engine_contracts.hpp",
+    "Microphys/KK_microphys/Parabolic.hpp",
+    "Microphys/KK_microphys/KK_utilities.hpp",
+    "Microphys/KK_microphys/KK_local_means.hpp",
+    "Microphys/KK_microphys/KK_Nrm_tendencies.hpp",
+    "Microphys/KK_microphys/KK_upscaled_means.hpp",
+    "Microphys/KK_microphys/KK_upscaled_covariances.hpp",
+    "Microphys/KK_microphys/KK_upscaled_turbulent_sed.hpp",
+    "Microphys/KK_microphys/KK_upscaled_variances.hpp",
+    "Microphys/KK_microphys/PDF_integrals_means.hpp",
+    "Microphys/KK_microphys/PDF_integrals_covar.hpp"
+  ],
+  "namelist_bridge": [
+    "f2k/microphys_io.hpp",
+    "f2k/microphys_io.F90",
+    "f2k/generate_microphys_io.py"
+  ],
+  "shared_bridge_delta": {
+    "procedure_names": [
+      "stats_accumulate_hydromet_api",
+      "stats_accumulate_lh_tend"
+    ],
+    "integration": "Root added both to canonical generator and regenerated52interfaces. All drafts include permanent f2k/procedure_bridge.hpp; manual duplicate C++/Fortran snippets were deleted."
+  },
+  "pending_dependencies": {
+    "SILHS": "Actual sampler/clip/RNG/permutation/header contracts included; owner reports all11 actual C++ TUs compile Serial. Adapted PDF wrapper compiles Serial+CUDA. Parent coordinated full live source/linkage batch remains.",
+    "Morrison": "All9 reachable numerical bodies now C++; module_mp_graupel.hpp and Morrison_engine_audit.json are complete draft handoffs; maintained CPU model BFB pending.",
+    "matrix_setter": "Root promoted set_lower_triangular_matrix; no fragment injection needed",
+    "flags": "Root exported l_morr_xp2_mc,l_evaporate_cold_rcm,l_silhs_rad Nativefalse constants; no Native environment reads in adapted PDF wrapper."
+  },
+  "driver_calls": {
+    "init_microphys": "Native prefix + parameters_microphys&, parameters_KK&, morrison_microphysics_state&, parameters_silhs_state&; typed host/strided adapter allocates both returned correlation fields",
+    "cleanup_microphys": "Native noargprefix + parameters_microphys&",
+    "advance_microphys": "Native prefix + const parameters_microphys&",
+    "calc_microphys_scheme_tendcies": "Native prefix + const parameters_microphys&, const parameters_KK&, morrison_microphysics_state&",
+    "KK_local_microphys_driver": "Native prefix + const parameters_microphys&,const parameters_KK&",
+    "morrison_microphys_driver": "Native prefix + const parameters_microphys&,morrison_microphysics_state&",
+    "pdf_hydromet_microphys_prep": "Full Native prefix including nullable hydromet_pdf_params pointer without C++ default, then const parameters_microphys&,const parameters_silhs_state&,latin_hypercube_arrays_state&,mt95&. Calls C++ mixed moments, sampling, clipping and LH stats reductions."
+  },
+  "adaptations": [
+    "Explicit appended caller-owned Native module state, never mutable C++ model globals",
+    "C++ forward declarations preserve Native routine body order; Native internal procedures become same-named capture lambdas declared before first use",
+    "Column-first LayoutLeft Views; one-based grid/species metadata converted at local indexing boundaries",
+    "Public host engine staging preserves float conversion and arithmetic order; GPU performance deferred",
+    "Matrix band-first Native arrays transpose only at existing matrix solver ABI",
+    "Namelist syntax only uses actual Fortran call-local readers; no saved model state or global type copies",
+    "Algorithm850 retains proven a>=1.5 mode0 closure; KK_engine_closure.json records source call sites and dead code distinction",
+    "BFB-022 at pdf_hydromet_microphys_wrapper.hpp seed product: uint32 multiply+bit_cast<int32> preserves Native seed wrap bits without C++ signed overflow; no observed float/mismatch fix; model verification pending. Root owns central log entry."
+  ],
+  "audit": {
+    "source": "Native routine/argument inventory in source_outline.json; scalar engine contracts in KK_engine_outline.json; Native kinds and call order carried mechanically with parser rejecting unknown statements",
+    "cleanup": "Re-read init/settings defaults, species mapping, option gates, mixed-moment factorial, category sample ordering, solver transpose, host API calls and Native comments/units. Fixed case-sensitive SILHS name, source diagnostic percent-sign labels, cout state restoration, declaration-comment associations, and host interpolation mistakenly emitted inside Kokkos lambda",
+    "remaining": "Parent maintained CPU whole-model gate and post-gate corrections; no scientific implementation remains pending in owned microphysics draft.",
+    "engine": "Morrison_engine_audit.json covers9 bodies/labels/default kinds/DATA/complex conversions and dead WRF adapter exclusions. KK_engine_closure.json covers every Dv call, fixed alpha range, inverse-Nc and mixed-moment distinction, recursive seeds and dead all-MM module."
+  },
+  "verification": [
+    "Serial full scheme-dispatcher templates passed against actual KK/Morrison bodies and actual owner SILHS headers",
+    "Serial HostSpace init adapter instantiation passed with actual Input_fields and SILHS parameters headers",
+    "Serial cloud_sed_module.cpp object compilation passed",
+    "Fortran four-group namelist reader compiled nvfortran -O0 -g -Mbounds after shared bridge formatter",
+    "CUDA full scheme dispatcher templates compiled nvcc_wrapper sm86 after host interpolation launch correction; no host call inside device kernel warnings; no GPU runtime claim",
+    "Context-adapted PDF wrapper actual HostSpace template instantiation passed Serial and CUDA against actual C++ sampler/RNG/permutation/clip/stat headers"
+  ],
+  "numerical": "No model or leaf oracle tests run by child. Root owns maintained CPU Kokkos_vs_Fortran gates. BFB-022 is integer seed-bit preservation, not a floating math workaround.",
+  "promote_morrison": [
+    "Microphys/Morrison_microphys/module_mp_graupel_state.hpp",
+    "Microphys/Morrison_microphys/engine_contracts.hpp",
+    "Microphys/Morrison_microphys/module_mp_graupel.hpp"
+  ],
+  "obsolete_bridge_entries_after_hookup": [
+    "init_microphys",
+    "cleanup_microphys",
+    "hydrometeor_mixed_moments",
+    "calc_microphys_scheme_tendcies",
+    "advance_microphys",
+    "cloud_drop_sed",
+    "generate_silhs_sample_api",
+    "clip_transform_silhs_output_api",
+    "stats_accumulate_lh_api (last three after SILHS source owner definitions)"
+  ],
+  "runtime_review": "RUNTIME_CONTRACT_REVIEW.json records intents, aliases/copyback, Native bounds/kinds, helper storage and seed adaptation; final from_execution_space/stride cleanup in fresh compilation now.",
+  "sha_manifest": "SHA256_MANIFEST.json"
+}

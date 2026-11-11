@@ -330,14 +330,10 @@ module mixing_length
       ! Compute Lscale first using the buoyant parcel calculation.
 
       ! Interpolate thlp2 and rtp2 to thermodynamic levels.
-      ! Positive def. quantity
-      thlp2_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, & ! In
-                                 thlp2(:,:), & ! In
-                                 thl_tol**2 )
-      ! Positive def. quantity
-      rtp2_zt(:,:)  = zm2zt_api( nzm, nzt, ngrdcol, gr, & ! In
-                                 rtp2(:,:), & ! In
-                                 rt_tol**2 )
+      thlp2_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, thlp2(:,:), &
+                                  thl_tol**2 )  ! Positive def. quantity
+      rtp2_zt(:,:)  = zm2zt_api( nzm, nzt, ngrdcol, gr, rtp2(:,:), &
+                                  rt_tol**2 )   ! Positive def. quantity
 
       call calc_Lscale_directly ( ngrdcol, nzm, nzt, gr,                             & ! In
                                   l_implemented, p_in_Pa,                            & ! In
@@ -1613,10 +1609,9 @@ module mixing_length
       !$acc update host( Lscale, Lscale_up, Lscale_down, &
       !$acc              thvm, thlm, rtm, em, exner, p_in_Pa, thv_ds )
 
-      call length_check( nzt, ngrdcol, Lscale, Lscale_up, Lscale_down, & ! In
-                         err_info ) ! InOut
-
       do i = 1, ngrdcol
+        call length_check( nzt, Lscale(i,:), Lscale_up(i,:), Lscale_down(i,:), & ! intent(in)
+                           err_info ) ! intent(inout)
 
         if ( err_info%err_code(i) == clubb_fatal_error ) then
 

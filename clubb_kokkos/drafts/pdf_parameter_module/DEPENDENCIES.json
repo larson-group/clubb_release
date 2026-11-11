@@ -1,0 +1,45 @@
+{
+  "reused_schema_owner": "clubb_kokkos/src/CLUBB_core/pdf_parameter_module.hpp",
+  "existing_schema_fields": {
+    "pdf_parameter_rank2": 47,
+    "implicit_coefs_terms_rank2": 19,
+    "implicit_coefs_terms_rank3": 8
+  },
+  "native_public_constant": {
+    "name": "num_pdf_params",
+    "value": 47,
+    "type": "integer"
+  },
+  "constants": [
+    "zero"
+  ],
+  "actual_existing_API_forwarder": {
+    "name": "init_pdf_params_api",
+    "owner": "clubb_api_module.hpp",
+    "arguments": [
+      "nz",
+      "ngrdcol",
+      "pdf_params"
+    ],
+    "callee": "init_pdf_params"
+  },
+  "retire_after_replacement": [
+    "init_pdf_params_api",
+    "init_pdf_implicit_coefs_terms_api",
+    "zero_pdf_params_api",
+    "zero_pdf_implicit_coefs_terms_api"
+  ],
+  "required_shared_merge": [
+    "preserved type-generator procedure/constant regions",
+    "permanent procedure translation unit",
+    "existing API forwarder"
+  ],
+  "explicit_exclusions": [
+    "copy_single_pdf_params_to_multi: no JAX body or current CALL sites",
+    "copy_multi_pdf_params_to_single: no JAX body or current CALL sites"
+  ],
+  "remaining_scientific_lower_contracts": [],
+  "shared_array_owner": "array_types.hpp",
+  "state_ownership": "Existing case-owned mirror Views/scalars only. No C++ mutable global or thread-local cache.",
+  "status": "Isolated source draft only. No shared edits, compilation, model runs or BFB claim. Owner source review and separate cleanup only; independent review and CPU zero-tolerance integration remain pending."
+}

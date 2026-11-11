@@ -31,45 +31,36 @@ def pos_definite_adj(
     flux_np1,
     field_n,
 ):
-    """Applies a  flux conservative positive definite scheme to a variable
+    """Applies a flux conservative positive definite scheme to a variable.
+
+    Description:
+      Applies a  flux conservative positive definite scheme to a variable
+
+    There are two possible grids:
+    (1) flux on zm  field on zt
+    then
+    flux_zt(k) = ( flux_zm(k+1) + flux_zm(k) ) / 2
+
+          CLUBB grid                  Smolarkiewicz grid
+      m +-- flux  zm(k+1) --+               flux        k + 1/2
+      t +-- field zt(k)   --+               field, fout k
+      m +-- flux  zm(k)   --+               flux        k - 1/2
+      t +-- field zt(k-1) --+
+
+    (2) flux on zt field on zm
+    then
+    flux_zm(k) = ( flux_zt(k) + flux_zt(k-1) ) / 2
+
+          CLUBB grid                  Smolarkiewicz grid
+      m +-- field  (k+1)  --+
+      t +-- flux   (k)    --+               flux        k + 1/2
+      m +-- field  (k)    --+               field, fout k
+      t +-- flux   (k-1)  --+               flux        k - 1/2
 
     References:
-    ``A Positive Definite Advection Scheme Obtained by
-      Nonlinear Renormalization of the Advective Fluxes'' Smolarkiewicz (1989)
-      Monthly Weather Review, Vol. 117, pp. 2626--2632
-
-    Returns:
-        (field_np1, flux_lim, field_pd, flux_pd)
-
-    Fortran declarations (pos_definite_adj in src/CLUBB_core/pos_definite_module.F90):
-
-        ! -------------------- Input variables --------------------
-        integer, intent(in) :: &
-          nzm, &
-          nzt, &
-          ngrdcol
-
-        type (grid), intent(in) :: gr
-
-        real( kind = core_rknd ), intent(in) :: &
-          dt ! Timestep    [s]
-
-        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) ::  &
-          field_n ! The field (e.g. rtm) at n, prior to n+1
-
-        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) ::  &
-          flux_pd     ! Budget of the change in the flux term due to the scheme
-
-        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) ::  &
-          field_pd    ! Budget of the change in the mean term due to the scheme
-
-        ! Output Variables
-
-        real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzt) :: &
-          field_np1   ! Field at n+1 (e.g. rtm in [kg/kg])
-
-        real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzm) :: &
-          flux_np1    ! Flux applied to field
+      ``A Positive Definite Advection Scheme Obtained by
+        Nonlinear Renormalization of the Advective Fluxes'' Smolarkiewicz (1989)
+        Monthly Weather Review, Vol. 117, pp. 2626--2632
     """
     if clubb_at_least_debug_level(1):
         jax.debug.print("Correcting flux", ordered=True)

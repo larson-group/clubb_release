@@ -71,7 +71,7 @@ module sigma_sqd_w_module
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
+    ! Input Variables
     integer, intent(in) :: &
       nzm, &
       nzt, &
@@ -104,7 +104,7 @@ module sigma_sqd_w_module
                           ! approximated by eddy diffusivity when <u> and <v> are advanced in
                           ! subroutine advance_windm_edsclrm.
 
-    !--------------------------- Output Variables ---------------------------
+    ! Output Variable
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) :: &
       sigma_sqd_w ! PDF width parameter      [-]
 

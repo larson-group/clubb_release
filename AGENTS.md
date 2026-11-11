@@ -28,6 +28,7 @@ requirements; selecting a child does not automatically load its parent.
 | **Fix Python API**: repair F2PY/wrappers, update Python drivers after Fortran changes, make Python/JAX drivers match Fortran, or repair `run_python_vs_fortran_cases.py` / `run_jax_vs_fortran_cases.py`. | [API and drivers](.agents/skills/clubb-python-api/SKILL.md) |
 | **Port Underlying Fortran**: port, re-port, audit or “similarize” a target file; align routines, calls, comments, argument lists; remove target-only helpers/aliases/optionals/reordered logic. | [Faithful port](.agents/skills/clubb-fortran-port/SKILL.md) |
 | **JAXize CLUBB Core File**: translate `src/CLUBB_core` into `clubb_jax/src`, replace a `clubb_api` call, wire `advance_clubb_core_module.py`, or continue a file port such as `advance_xm_wpxp`. | [JAX workflow](.agents/skills/clubb-jax-port/SKILL.md), with the faithful-port standards |
+| **Port or Tune CLUBB C++/Kokkos**: translate Fortran into `clubb_kokkos/`, design GPU kernels/layout, use the temporary bridge, or profile the port. | [Kokkos workflow](.agents/skills/clubb-kokkos-port/SKILL.md), with the faithful-port standards |
 | **Format Fortran Routines**: format interfaces/calls, extract a helper, document arguments/local variables, or apply routine formatting. | [Fortran formatting](.agents/skills/clubb-fortran-format/SKILL.md) |
 | **Refactor Column Loops**: move computation/column loops into routines, change multi-column interfaces or stats dimensions. | [Column refactor](.agents/skills/clubb-column-refactor/SKILL.md), with routine formatting |
 | **Change Script Arguments**: options, forwarding, worker defaults, multicolumn settings, or Jenkins/documentation callers. | [CLI workflow](.agents/skills/clubb-script-cli/SKILL.md) |
@@ -66,13 +67,8 @@ requirements; selecting a child does not automatically load its parent.
   change human-reviewed tests only when the user asks. Keep Jenkins additions
   within the requested scope.
 - Reuse the existing utility/parser/state owner. Keep UI/runner adapters thin;
-  justify a new abstraction by actual shared behavior.
-- A requested replacement should remove the old implementation, interface and
-  format adapters where possible. Add or retain backward compatibility only
-  when the user explicitly requests it. Clearly report concrete consequences
-  such as old saved files no longer loading; a warning does not imply permission
-  to preserve the old path. Update current callers and remove obsolete tests
-  instead of adding silent fallback/retry machinery.
+  justify a new abstraction by actual shared behavior. Remove obsolete paths
+  in the authorized change instead of adding silent fallback/retry machinery.
 - Write user-facing documentation around purpose, a usable quick start, then
   needed detail. Update relevant sections of the existing document; keep implementation detail
   in its owner and define scientific symbols/units when they matter.

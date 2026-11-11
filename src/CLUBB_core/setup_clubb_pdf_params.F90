@@ -1114,7 +1114,7 @@ module setup_clubb_pdf_params
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
+    ! Input Variables
     integer, intent(in) :: &
       nzt,     & ! Number of thermodynamic vertical levels
       pdf_dim, & ! Number of variables in the corr/mean/stdev arrays
@@ -1137,7 +1137,7 @@ module setup_clubb_pdf_params
                     ! w, chi, and eta) portion of CLUBB's multivariate,
                     ! two-component PDF.
 
-    !--------------------------- Output Variables ---------------------------
+    ! Output Variables
     real( kind = core_rknd ), dimension(ngrdcol,nzt,pdf_dim,pdf_dim), intent(out) :: &
       corr_array_1_n,       & ! Corr. array (normal space) of PDF vars. (comp. 1)  [-]
       corr_array_2_n,       & ! Corr. array (normal space) of PDF vars. (comp. 2)  [-]
@@ -2126,7 +2126,7 @@ module setup_clubb_pdf_params
 
     implicit none
     
-    !--------------------------- Input Variables ---------------------------
+    ! Input Variables
     integer, intent(in) :: &
       nzt,     & ! Number of model thermodynamic vertical grid levels
       ngrdcol    ! Number of grid columns
@@ -2152,7 +2152,7 @@ module setup_clubb_pdf_params
       omicron,           & ! Relative width parameter, omicron = R / Rmax    [-]
       zeta_vrnce_rat_in    ! Width parameter for sigma_hm_1^2 / mu_hm_1^2    [-]
 
-    !--------------------------- Output Variables ---------------------------
+    ! Output Variables
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) :: &
       mu_hm_1,    & ! Mean of hm (1st PDF component) in-precip (ip)      [hm un]
       mu_hm_2,    & ! Mean of hm (2nd PDF component) ip                  [hm un]
@@ -2483,7 +2483,7 @@ module setup_clubb_pdf_params
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
+    ! Input Variables
     integer, intent(in) :: &
       nzt,     & ! Number of model thermodynamic vertical grid levels
       ngrdcol    ! Number of grid columns
@@ -2502,7 +2502,7 @@ module setup_clubb_pdf_params
                     ! w, chi, and eta) portion of CLUBB's multivariate,
                     ! two-component PDF.
 
-    !--------------------------- Output Variables ---------------------------
+    ! Output Variable
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) :: &
       corr_w_x_1, & ! Correlation of w and x (1st PDF component)  [-]
       corr_w_x_2    ! Correlation of w and x (2nd PDF component)  [-]
@@ -2582,7 +2582,7 @@ module setup_clubb_pdf_params
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
+    ! Input Variables
     integer, intent(in) :: &
       nzt,     & ! Number of model thermodynamic vertical grid levels
       ngrdcol    ! Number of grid columns
@@ -2602,7 +2602,7 @@ module setup_clubb_pdf_params
                               ! perfect correlation of chi and eta was found to
                               ! be unrealizable.
 
-    !--------------------------- Output Variables ---------------------------
+    ! Output Variable
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) :: &
       corr_chi_eta_1, & ! Correlation of chi and eta (1st PDF component)     [-]
       corr_chi_eta_2    ! Correlation of chi and eta (2nd PDF component)     [-]
@@ -2698,7 +2698,7 @@ module setup_clubb_pdf_params
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
+    ! Input Variables
     integer, intent(in) :: &
       nzt,     & ! Number of model thermodynamic vertical grid levels
       ngrdcol    ! Number of grid columns
@@ -2716,7 +2716,7 @@ module setup_clubb_pdf_params
     logical, intent(in) :: &
       l_calc_w_corr ! Calculate the correlations between w and the hydrometeors
 
-    !--------------------------- Output Variables ---------------------------
+    ! Output Variables
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) :: &
       corr_w_hm_1_n, & ! Correlation of w and ln hm (1st PDF component) ip   [-]
       corr_w_hm_2_n    ! Correlation of w and ln hm (2nd PDF component) ip   [-]
@@ -2783,7 +2783,7 @@ module setup_clubb_pdf_params
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
+    ! Input Variables
     integer, intent(in) :: &
       nzt,     & ! Number of model thermodynamic vertical grid levels
       ngrdcol    ! Number of grid columns
@@ -2797,7 +2797,7 @@ module setup_clubb_pdf_params
       corr_x_hm_n_NL_cloud, & ! Corr. of x and ln hm (ith PDF comp.) ip     [-]
       corr_x_hm_n_NL_below    ! Corr. of x and ln hm (ith PDF comp.) ip     [-]
 
-    !--------------------------- Output Variables ---------------------------
+    ! Output Variables
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) :: &
       corr_x_hm_1_n, & ! Correlation of x and ln hm (1st PDF component) ip  [-]
       corr_x_hm_2_n    ! Correlation of x and ln hm (2nd PDF component) ip  [-]
@@ -2851,7 +2851,7 @@ module setup_clubb_pdf_params
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
+    ! Input Variables
     integer, intent(in) :: &
       nzt,     & ! Number of model thermodynamic vertical grid levels
       ngrdcol    ! Number of grid columns
@@ -2864,7 +2864,7 @@ module setup_clubb_pdf_params
       corr_hmx_hmy_n_LL_cloud, & ! Corr.: ln hmx & ln hmy (ith PDF comp.) ip [-]
       corr_hmx_hmy_n_LL_below    ! Corr.: ln hmx & ln hmy (ith PDF comp.) ip [-]
 
-    !--------------------------- Output Variables ---------------------------
+    ! Output Variable
     real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
       corr_hmx_hmy_1_n, & ! Corr. of ln hmx & ln hmy (ith PDF comp.) ip      [-]
       corr_hmx_hmy_2_n    ! Corr. of ln hmx & ln hmy (ith PDF comp.) ip      [-]
@@ -2920,7 +2920,7 @@ module setup_clubb_pdf_params
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
+    ! Input Variables
     integer, intent(in) :: &
       nzt,     & ! Number of model thermodynamic vertical grid levels
       ngrdcol    ! Number of grid columns
@@ -2932,7 +2932,7 @@ module setup_clubb_pdf_params
       corr_chi_hm_n_1, & ! Component correlation of chi and ln hm            [-]
       corr_chi_hm_n_2    ! Component correlation of chi and ln hm            [-]
 
-    !--------------------------- Output Variables ---------------------------
+    ! Output Variables
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) :: &
       corr_eta_hm_n_1, & ! Component correlation of eta and ln hm            [-]
       corr_eta_hm_n_2    ! Component correlation of eta and ln hm            [-]
@@ -3519,7 +3519,7 @@ module setup_clubb_pdf_params
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
+    ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
       wm,            & ! Mean vertical velocity (overall), <w>             [m/s]
       wphydrometp,   & ! Covariance of w and hm (overall), <w'hm'>  [m/s(hm un)]
@@ -3540,7 +3540,7 @@ module setup_clubb_pdf_params
     real( kind = core_rknd ), intent(in) :: &
       hm_tol           ! Hydrometeor tolerance value                     [hm un]
 
-    !--------------------------- Output Variables ---------------------------
+    ! Output Variables
     real( kind = core_rknd ), intent(out) :: &
       corr_w_hm_1_n, & ! Correlation of w and ln hm (1st PDF component) ip   [-]
       corr_w_hm_2_n    ! Correlation of w and ln hm (2nd PDF component) ip   [-]
@@ -4322,7 +4322,7 @@ module setup_clubb_pdf_params
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
+    ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
       sigma_chi_1,         & ! Standard deviation of chi (1st PDF comp.) [kg/kg]
       sigma_chi_2,         & ! Standard deviation of chi (2nd PDF comp.) [kg/kg]
@@ -4338,7 +4338,7 @@ module setup_clubb_pdf_params
       corr_chi_eta_1, & ! Correlation of chi and eta in 1st PDF component [-]
       corr_chi_eta_2    ! Correlation of chi and eta in 2nd PDF component [-]
 
-    !--------------------------- Output Variables ---------------------------
+    ! Output Variable
     real( kind = core_rknd ) :: &
       rtp2_zt_from_chi    ! Grid-box variance of rtp2 on thermo. levels  [kg/kg]
 

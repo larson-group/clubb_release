@@ -1,0 +1,63 @@
+{
+  "review_kind": "Owner full five-body/source-contract audit, separate cleanup. Not an independent review.",
+  "Native_source_sha256": "a5c86824a01af155e24114cf0e23166d228b616716d650fac8d715a7a991d603",
+  "hashes": {
+    "prefix_definitions.cpp.inc": "e12e0d55a8523a2743af133149829a790323aceea6918d273014106642d496e8",
+    "calc_zt2zm_weights.cpp.inc": "83e23294604a1f6faa47c155f3535864594525b0f6a02c920c45ac219920437f",
+    "calc_zm2zt_weights.cpp.inc": "fc19ddd9a3330da514a373e8ffc08a1b44a864cec0698b0de84755bd76384284",
+    "private_declarations.cpp.inc": "86f4af55dd2d501df794432aae20f10b610b5e78992a775ac2f1f57e40a38a6d",
+    "procedure_declarations.hpp.inc": "965b1baacd6766dea529cb9947bf95201bf54e450b837bb63446a1aca8d7ec3b",
+    "procedure_includes.hpp.inc": "2c4fa6396621649dd2811297b1827d509d71e174e454441cfa3660c75c6a120c",
+    "clubb_api_module.hpp.inc": "009b4a64ce4ac4bbba4c90a0908f43524a9438808b761803460d652f440fce08",
+    "api_includes.hpp.inc": "9932182bb835d9ddca5800f257382e07219b61e41b7f54bd5da6d6f2ca43c944",
+    "cpp_includes.inc": "ba61fb682dbb0f83199e5f9cb512178ebe4e62e15483dae6cdb6e0152672b3c4"
+  },
+  "new_definitions_in_Native_merge_order": [
+    "setup_grid",
+    "cleanup_grid_api",
+    "setup_grid_heights",
+    "calc_zt2zm_weights",
+    "calc_zm2zt_weights"
+  ],
+  "argument_signatures": 5,
+  "Native_API_specifics": [
+    "setup_grid_heights_api_single_col",
+    "setup_grid_heights_api_multi_col",
+    "setup_grid_api_single_col",
+    "setup_grid_api_multi_col"
+  ],
+  "API_generic_overloads": 4,
+  "weight_formulas": 8,
+  "View_only_kernels": 5,
+  "allocation_and_cleanup_order": [
+    "zm",
+    "zt",
+    "dzm",
+    "dzt",
+    "invrs_dzm",
+    "invrs_dzt",
+    "weights_zm2zt",
+    "weights_zt2zm"
+  ],
+  "reviewed_branches": [
+    "implemented/standalone",
+    "uniform/stretched_zt/stretched_zm",
+    "ascending/descending",
+    "all four first-column range failure exits",
+    "allocation failure and already-allocated components",
+    "debug-gated height fatal handling",
+    "first failing surface column only",
+    "direct setup_heights invalid grid type before writes",
+    "signed spacings and direct reciprocals",
+    "two boundary linear extensions",
+    "direction metadata only after weights"
+  ],
+  "deliberate_language_boundaries": [
+    "read_grid_heights remains entire existing Native file/validation service",
+    "Kokkos reference-count release cannot return Fortran DEALLOCATE STAT",
+    "bad-allocation exception handling does not assert recovery from a Kokkos runtime abort",
+    "API single-column packing and generic array staging use the shared owner",
+    "independent boundary/interior weights share one kernel; no arithmetic reassociation or FMA added"
+  ],
+  "runtime_status": "Draft only; no shared edits/build/tests/CPU/GPU/BFB claim. All runtime branches pending root integration."
+}

@@ -15,7 +15,7 @@ def remap_vals_to_target(
     ngrdcol: int, gr_source: Grid | None, gr_target: Grid | None, source_values_idx: int | None,
     source_values, target_values_idx: int | None, total_idx_rho_lin_spline: int | None,
     rho_lin_spline_vals, rho_lin_spline_levels,
-    iv: int, p_sfc, grid_remap_method: int, l_zt_variable: bool, l_remap=None,
+    iv: int, p_sfc, grid_remap_method: int, l_zt_variable: bool,
 ):
     """Remap values using remapping_module with source and target set to the same grid."""
     if gr_source is None or gr_target is None:
@@ -34,9 +34,15 @@ def remap_vals_to_target(
         nzm=int(nzm), nzt=int(nzt), ngrdcol=int(ngrdcol),
         source_values_idx=int(source_values_idx),
         total_idx_rho_lin_spline=int(total_idx_rho_lin_spline),
-        l_apply_remap_mask=l_remap is not None,
-        l_remap=np.ones(ngrdcol, dtype=bool) if l_remap is None else np.asarray(l_remap, dtype=bool),
     )
-    return clubb_f2py.f2py_remap_vals_to_target_same_grid(
-        l_zt_variable=l_zt_variable, **kwargs
-    )
+    try:
+        return clubb_f2py.f2py_remap_vals_to_target_same_grid(
+            l_zt_variable=l_zt_variable, **kwargs
+        )
+    except TypeError as exc:
+        # Keep compatibility with an already-built extension exposing the old keyword.
+        if "il_zt_variable" not in str(exc):
+            raise
+        return clubb_f2py.f2py_remap_vals_to_target_same_grid(
+            il_zt_variable=l_zt_variable, **kwargs
+        )

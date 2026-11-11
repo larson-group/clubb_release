@@ -1,0 +1,28 @@
+{
+  "date": "2026-11-05",
+  "phase": "Separate post-implementation source and cleanup audit",
+  "scope": "Both complete Native public operators; full Native/JAX files read before implementation; no omitted branch",
+  "reviewed": [
+    "Native routine/signature/required-argument order and full argument descriptions/units",
+    "All exact assignment operation trees and ordered predicates, including non-default branch",
+    "Native numeric boundaries, diagonal/weight index constants and output completeness",
+    "Bands-first operator storage retained without solver transpose; physical arrays column first",
+    "Public entry wrappers reuse actual array owner; no global scratch/raw bridge/extra physics helper",
+    "All meaningful derivation/conservation comments and private parameter labels restored",
+    "Every device body free of owning UDT/host/backend/nested-launch capture"
+  ],
+  "checked_assignment_trees": 59,
+  "ordered_predicates": 7,
+  "device_bodies": 23,
+  "local_constants": 6,
+  "final_sha256": {
+    "diffusion.cpp": "9bfbf4fb8f9fb2b363c5f8dfbb6d2cd42babffc0169f2bdb5a37fbab957e2552",
+    "diffusion.hpp": "607d8043bed0b78aaf81810fb4e64644b13b55c61a0dc85d50a6f7ffd9b14fff"
+  },
+  "native_sha256": "eb60047bb545ea86e181ba992e1458a03b9b3fe7427529e032e736fd34bae3d8",
+  "verification": "Source comparisons/formatting only; no build/test/runtime/BFB claim",
+  "remaining": "Root-owned live-call promotion, obsolete bridge removal and CPU BFB gate; selected l_upwind_Kh_dp_term constant still missing from model_flags owner",
+  "independent_review_repairs": [
+    "Precise owner-specific header/field documentation and Native science call grouping; exact executable-token stream unchanged"
+  ]
+}

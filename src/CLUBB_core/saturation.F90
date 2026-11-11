@@ -1118,7 +1118,7 @@ module saturation
     ! External
     intrinsic :: max, abs
 
-    !--------------------------- Input Variables ---------------------------
+    ! Input Variable(s)
     real( kind = core_rknd ), intent(in) :: &
       thlm,    & ! Liquid Water Potential Temperature [K]
       rtm,     & ! Total Water Mixing Ratio       [kg/kg]
@@ -1128,7 +1128,7 @@ module saturation
     integer, intent(in) :: &
       saturation_formula
 
-    !--------------------------- Output Variables ---------------------------
+    ! Output Variable(s)
     real( kind = core_rknd ) :: rcm ! Cloud water mixing ratio      [kg/kg]
 
     ! Local Variable(s)

@@ -54,7 +54,6 @@ bash human_reviewed_tests/run_pytests.sh -dash
 bash human_reviewed_tests/run_pytests.sh -api
 bash human_reviewed_tests/run_pytests.sh -jax
 bash human_reviewed_tests/run_pytests.sh -jax_f2py_unit_tests -k advance_xp3
-bash human_reviewed_tests/run_pytests.sh -jax_f2py_human_reviewed
 ```
 
 `-unit` runs the input, utilities, tuner and root generated pytests. `-dash`
@@ -70,9 +69,8 @@ library or Python API, so it ignores the `f2py_unit_tests` folder.
 `-jax_f2py_unit_tests` runs that folder, which compares JAX routines with the
 same Fortran routines called through the Python API; it uses the JAX
 environment with the `-api` build on the import path and fails setup when that
-build is missing. `-jax_f2py_human_reviewed` runs
-`clubb_jax/human_reviewed_tests/f2py_unit_tests` the same way. `-all` runs unit,
-Dash, API, JAX and both JAX F2PY folders in that order. Each mode is one ordinary pytest session, and pytest options such
+build is missing. `-all` runs unit, Dash, API, JAX and JAX F2PY unit tests in
+that order. Each mode is one ordinary pytest session, and pytest options such
 as `-q`, `-k`, `--durations=10` and `--junitxml` are forwarded unchanged.
 There is no root pytest configuration: bare `python -m pytest` uses pytest's
 own discovery and does not apply the wrappers' environment setup.
@@ -80,13 +78,11 @@ own discovery and does not apply the wrappers' environment setup.
 | Tests | Jenkins job | Stage |
 | --- | --- | --- |
 | `input/`, `utilities/`, `tuner/` and root `auto_llm_generated_tests/pytests` | `clubb_python` | Auto-LLM-generated Python unit tests |
-| `tuner/auto_llm_generated_tests/pytests` | `clubb_tuner` | Tuner unit tests (first, before compilation) |
 | `clubb_python_api/auto_llm_generated_tests/pytests` | `clubb_python` | Auto-LLM-generated F2PY pytests |
 | `clubb_jax/auto_llm_generated_tests/pytests` (except `f2py_unit_tests`) | `clubb_jax` | Auto-LLM-generated JAX pytests |
 | `clubb_jax/auto_llm_generated_tests/pytests/f2py_unit_tests` | `clubb_jax` | Auto-LLM-generated JAX F2PY unit tests |
 | `dash_app/auto_llm_generated_tests/pytests` | `clubb_dash` | Auto-LLM-generated Dash pytests |
 | `clubb_jax/human_reviewed_tests/test_file_name_parity.py` | `clubb_jax` | File-name parity |
-| `clubb_jax/human_reviewed_tests/f2py_unit_tests` | `clubb_jax` | JAX vs Fortran hole filling |
 
 Each generated suite has its own stage, so a suite can be skipped by
 commenting out its stage. The corresponding `clubb_branch_*` jobs use the same
@@ -335,9 +331,8 @@ Examples:
 Runs selected cases with both the JAX driver and the Fortran standalone driver,
 then compares outputs with `run_bindiff_all.py`.
 
-Every case runs once per flag set. The unmodified "default" flag set is
-included unless `-skip_default_flags` is given with `-flag_config_file`.
-Results are written as
+Every case runs once per flag set. The unmodified "default" flag set is always
+included for every run. Results are written as
 
     output/tests/jax_driver_test_results/
       jax_output/<flag set>/*.nc
@@ -373,8 +368,7 @@ Examples:
 
 - `python3 human_reviewed_tests/run_jax_vs_fortran_cases.py -flag_config_file input/flag_sets/run_bindiff_w_flags_config_example.json`
   Also runs every case under each flag set in the JSON file, using the same
-  config format as `run_scripts/run_clubb_w_varying_flags.py`. Add
-  `-skip_default_flags` to run only the flag sets from the file.
+  config format as `run_scripts/run_clubb_w_varying_flags.py`.
 
 ### `run_loss_output_consistency.py`
 

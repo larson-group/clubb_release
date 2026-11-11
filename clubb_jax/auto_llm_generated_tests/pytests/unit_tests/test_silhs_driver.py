@@ -3,7 +3,7 @@
 import jax
 import jax.numpy as jnp
 import numpy as np
-from clubb_jax.src.CLUBB_core.stats_netcdf import JaxStats
+from clubb_jax.src.CLUBB_core.jax_stats import JaxStats
 
 
 def test_subtimestep_statistics_preserve_previous_window_and_count_once():

@@ -6,17 +6,29 @@ import os
 import re
 
 from dash_app.run_tab.discovery import load_available_cases
-from dash_app.shared.tunable_configs import config_entries
+from dash_app.shared.tunable_configs import (
+    available_tunable_configs as _available_tunable_configs,
+    default_tunable_config_name as _default_tunable_config_name,
+    tunable_config_names as _tunable_config_names,
+    config_entries,
+)
 
 from .state import REPO_ROOT
 
-from tuner.case_defaults import (
+
+# Keep the historical Tune-discovery import surface while the canonical
+# implementations live in shared configuration discovery.
+available_tunable_configs = _available_tunable_configs
+default_tunable_config_name = _default_tunable_config_name
+tunable_config_names = _tunable_config_names
+
+from tuner.case_defaults import (  # noqa: E402
     CASE_DEFAULTS_PATH,
     DEFAULT_LOSS_FIELDS,
     load_case_defaults as load_tuner_case_defaults,
 )
-from tuner.parameter_ranges import default_parameter_ranges
-from input.scripts.benchmark_converter import supported_fields
+from tuner.parameter_ranges import default_parameter_ranges  # noqa: E402
+from input.scripts.benchmark_converter import supported_fields  # noqa: E402
 
 
 TUNING_STATS_FILE = "all_tuning_stats"
@@ -72,8 +84,9 @@ def _format_tune_range_value(value):
 def load_tunable_default_ranges(config_name=None):
     """Return Fortran-bound-aware, UI-formatted default Tune ranges.
 
-    The resolver uses the checked-in mirror of Fortran hard bounds for finite
-    endpoints and quarter-to-four-times-default suggestions on open sides.
+    The shared resolver uses the compiled Fortran hard-bound table whenever an
+    endpoint exists and uses the legacy quarter-to-four-times-default envelope
+    only on open sides.
     """
     return {
         name: {

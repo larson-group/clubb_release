@@ -1,0 +1,695 @@
+{
+  "source_revision": "ac37a3898",
+  "files": {
+    "spec_hum_to_mixing_ratio": {
+      "ordered_routines": [
+        "flux_spec_hum_to_mixing_ratio",
+        "force_spec_hum_to_mixing_ratio"
+      ],
+      "branches": [],
+      "call_order": [],
+      "state": "none",
+      "adaptations": [
+        "zero-based Views",
+        "integer square as product",
+        "stage via existing array owner"
+      ],
+      "comments": "preserve linearized flux/forcing equations and neglected higher-order explanation"
+    },
+    "diag_ustar_module": {
+      "ordered_routines": [
+        "diag_ustar"
+      ],
+      "branches": [
+        "abs(bflx)>1e-6",
+        "four ordered iterations",
+        "stable zeta>0",
+        "large zeta>1e10 early exit",
+        "unstable double-square-root similarity"
+      ],
+      "call_order": [],
+      "state": "scalar locals",
+      "adaptations": [
+        "device callable scalar math",
+        "integer cube as product"
+      ],
+      "comments": "Businger1973,Stevens1999 and original test disclaimer retained"
+    },
+    "sfc_flux": {
+      "ordered_routines": [
+        "compute_momentum_flux",
+        "compute_ubar",
+        "compute_ht_mostr_flux",
+        "compute_wpthlp_sfc",
+        "compute_wprtp_sfc",
+        "set_sclr_sfc_rtm_thlm",
+        "convert_sens_ht_to_km_s",
+        "convert_latent_ht_to_m_s"
+      ],
+      "branches": [
+        "heat/moisture endpoint holds and complete interval loop",
+        "passive dimension>0 and index>0",
+        "final eddy dimension>0 zeroing AFTER copies"
+      ],
+      "call_order": {
+        "compute_ht_mostr_flux": [
+          "linear_interp_factor(heat)",
+          "linear_interp_factor(moisture)"
+        ]
+      },
+      "state": "none; series explicit Native arguments",
+      "adaptations": [
+        "Kokkos independent column/level work",
+        "host scalar time interpolation",
+        "integer squares as products"
+      ],
+      "comments": "surface flux units,minimum speed,scalar copy and final zeroing order"
+    },
+    "time_dependent_input": {
+      "ordered_routines": [
+        "initialize_t_dependent_input",
+        "finalize_t_dependent_input",
+        "initialize_t_dependent_sfc",
+        "initialize_t_dependent_forcings",
+        "finalize_t_dependent_forcings",
+        "finalize_t_dependent_sfc",
+        "read_to_grid",
+        "apply_time_dependent_forcings_from_array",
+        "apply_time_dependent_forcings",
+        "apply_time_dependent_forcings_from_dycore",
+        "time_select"
+      ],
+      "branches": [
+        "ignore-forcings versus initialize/finalize",
+        "initialize surface once",
+        "readiop surface versus text",
+        "each named surface profile only when found",
+        "raw forcing allocation,blank fill,height versus negative-pressure grid",
+        "retain raw data only for non-dycore adaptive grids",
+        "all forcing names and sentinel-any whole-profile skip",
+        "thlm/rt passive and eddy flags incl explicit-diffusion zeroing",
+        "omega conversions and zt2zm",
+        "normal versus dycore remap",
+        "time below/above/sorted/interior-first bracket checks"
+      ],
+      "call_order": {
+        "initialize": [
+          "initialize_t_dependent_forcings",
+          "initialize_t_dependent_sfc"
+        ],
+        "finalize": [
+          "finalize_t_dependent_forcings",
+          "finalize_t_dependent_sfc"
+        ],
+        "apply": [
+          "time_select",
+          "linear_interp_factor per profile",
+          "apply_time_dependent_forcings_from_array"
+        ],
+        "dycore": [
+          "time_select",
+          "linear_interp_factor per profile",
+          "remap_vals_to_target per profile",
+          "apply_time_dependent_forcings_from_array"
+        ]
+      },
+      "state": "case-owned11surfaceViews,2x10records,dimension record,4flags",
+      "adaptations": [
+        "explicit appended context replaces threadprivate globals",
+        "preserve1-based bracketing indices",
+        "reader owned host I/O boundary"
+      ],
+      "comments": "preserve placeholder skip,unit conversions,raw-data retention and scalar double-forcing explanation"
+    },
+    "arm": {
+      "ordered_routines": [
+        "arm_sfclyr"
+      ],
+      "branches": [],
+      "call_order": [
+        "compute_ht_mostr_flux(ntimes7)",
+        "convert_sens_ht_to_km_s(rho1.1)",
+        "convert_latent_ht_to_m_s(rho1.1)",
+        "diag_ustar per column"
+      ],
+      "state": "explicit time_dependent_input_state",
+      "comments": "Brown2002GCSS ARM and kinematic buoyancy flux"
+    },
+    "arm_0003": {
+      "ordered_routines": [
+        "arm_0003_sfclyr"
+      ],
+      "branches": [],
+      "call_order": [
+        "compute_ht_mostr_flux(alltimes)",
+        "convert_sens_ht_to_km_s per column",
+        "convert_latent_ht_to_m_s per column",
+        "diag_ustar per column"
+      ],
+      "state": "explicit time_dependent_input_state",
+      "comments": "Xie2005ARM March2000 and units"
+    },
+    "arm_3year": {
+      "ordered_routines": [
+        "arm_3year_sfclyr"
+      ],
+      "branches": [],
+      "call_order": [
+        "compute_ht_mostr_flux(alltimes)",
+        "convert_sens_ht_to_km_s per column",
+        "convert_latent_ht_to_m_s per column",
+        "diag_ustar per column"
+      ],
+      "state": "explicit time_dependent_input_state"
+    },
+    "arm_97": {
+      "ordered_routines": [
+        "arm_97_sfclyr"
+      ],
+      "branches": [
+        "l_t_dependent true; outputs unchanged otherwise"
+      ],
+      "call_order": [
+        "time_select",
+        "linear_interp_factor sensible",
+        "linear_interp_factor latent",
+        "conversions and diag_ustar per column"
+      ],
+      "state": "explicit time_dependent_input_state",
+      "comments": "ARM IOP A July26\u201330 1997"
+    },
+    "bomex": {
+      "ordered_routines": [
+        "bomex_tndcy",
+        "bomex_sfclyr"
+      ],
+      "branches": [
+        "height0..300,300..500,else",
+        "positive scalar dimensions and indices",
+        "surface time_select errors delegated"
+      ],
+      "call_order": [
+        "moisture/theta profiles",
+        "force_spec_hum_to_mixing_ratio",
+        "scalar copies",
+        "time_select(surface)",
+        "linear_interp_factor heat/moisture",
+        "ustar/flux assignment",
+        "flux_spec_hum_to_mixing_ratio"
+      ],
+      "state": "explicit time-dependent state only at surface",
+      "comments": "specific humidity specs and mixing-ratio conversions; disabled readiop block remains disabled"
+    },
+    "astex_a209": {
+      "ordered_routines": [
+        "astex_a209_tndcy",
+        "astex_a209_sfclyr"
+      ],
+      "branches": [
+        "positive scalar indices"
+      ],
+      "call_order": [
+        "subsidence",
+        "zt2zm_api",
+        "surface/top zero",
+        "theta/water zero",
+        "scalar copies",
+        "time_select(ntimes41)",
+        "temperature interpolation",
+        "ustar/saturation/C_h/C_q per column",
+        "compute_wpthlp_sfc",
+        "compute_wprtp_sfc"
+      ],
+      "state": "explicit time-dependent state at surface",
+      "comments": "ATEX scaling and RICO coefficients"
+    },
+    "ekman": {
+      "ordered_routines": [
+        "ekman_sfclyr"
+      ],
+      "branches": [],
+      "call_order": [
+        "zero heat/moisture and ustar0.3",
+        "compute_momentum_flux"
+      ],
+      "state": "none"
+    },
+    "fire": {
+      "ordered_routines": [
+        "fire_sfclyr"
+      ],
+      "branches": [],
+      "call_order": [
+        "time_select",
+        "linear_interp_factor temperature",
+        "assign T/Cz0.0013/ustar0.3, scalar saturation per column",
+        "compute_wpthlp_sfc",
+        "compute_wprtp_sfc"
+      ],
+      "state": "appended time-dependent input context",
+      "comments": "Moeng et al.1996 BAMS77,261\u2013278; aerodynamic fluxes"
+    },
+    "neutral_case": {
+      "ordered_routines": [
+        "neutral_case_sfclyr"
+      ],
+      "branches": [
+        "time>80880s zero heat else0.05; not source comment3000s"
+      ],
+      "call_order": [
+        "heat/moisture/ustar0.5",
+        "compute_momentum_flux"
+      ],
+      "state": "none",
+      "comments": "Moeng and Sullivan1994/shear-driven CM1; preserve actual threshold rather than stale source comment"
+    },
+    "clex9_nov02": {
+      "ordered_routines": [
+        "clex9_nov02_read_t_dependent"
+      ],
+      "branches": [],
+      "call_order": [
+        "time_select",
+        "linear_interp_factor sensible",
+        "linear_interp_factor latent"
+      ],
+      "state": "appended time-dependent input context",
+      "comments": "bottom point is not surface; output physical heat flux W/m^2"
+    },
+    "clex9_oct14": {
+      "ordered_routines": [
+        "clex9_oct14_read_t_dependent"
+      ],
+      "branches": [],
+      "call_order": [
+        "time_select",
+        "linear_interp_factor sensible",
+        "linear_interp_factor latent"
+      ],
+      "state": "appended time-dependent input context",
+      "comments": "bottom point is not surface; output physical heat flux W/m^2"
+    },
+    "jun25": {
+      "ordered_routines": [
+        "jun25_altocu_read_t_dependent"
+      ],
+      "branches": [],
+      "call_order": [
+        "time_select",
+        "linear_interp_factor sensible",
+        "linear_interp_factor latent"
+      ],
+      "state": "appended time-dependent input context",
+      "comments": "bottom point is not surface; output physical heat flux W/m^2"
+    },
+    "dycoms2_rf01": {
+      "ordered_routines": [
+        "dycoms2_rf01_tndcy",
+        "dycoms2_rf01_sfclyr"
+      ],
+      "state": "appended case time-series context at DYCOMS surface routines; LBA stateless",
+      "branches": [
+        "scalar dimensions/indices",
+        "sfctype0 physicalflux conversion",
+        "sfctype1 saturation/bulk",
+        "invalid sfctype fatal"
+      ],
+      "call_order": [
+        "zero theta/water profiles",
+        "passive copies",
+        "eddy copies",
+        "time_select",
+        "interp heat/water/temperature",
+        "fixed flux OR saturation then bulk heat then bulk water"
+      ]
+    },
+    "dycoms2_rf02": {
+      "ordered_routines": [
+        "dycoms2_rf02_tndcy",
+        "dycoms2_rf02_sfclyr"
+      ],
+      "state": "appended case time-series context at DYCOMS surface routines; LBA stateless",
+      "branches": [
+        "zero subsidence at both model tops",
+        "scalar dimensions/indices"
+      ],
+      "call_order": [
+        "modeltop zero",
+        "theta/water zero",
+        "passive theneddy copies",
+        "time_select",
+        "interp sensible thenlatent",
+        "ustar0.25 thenconversions rho1.21"
+      ]
+    },
+    "lba": {
+      "ordered_routines": [
+        "lba_tndcy",
+        "lba_sfclyr"
+      ],
+      "state": "appended case time-series context at DYCOMS surface routines; LBA stateless",
+      "branches": [
+        "scalar dimensions/indices",
+        "max(0,cos) surface modulation"
+      ],
+      "call_order": [
+        "theta/water zero",
+        "passive theneddy copies",
+        "elapsedtime/ft",
+        "heat andwater conversions",
+        "buoyancy then diag_ustar"
+      ]
+    },
+    "prescribe_forcings": {
+      "ordered_routines": [
+        "prescribe_forcings",
+        "read_surface_var_for_bc"
+      ],
+      "branches": [
+        "allNative runtype tendency/surface cases includingCLEXNov",
+        "time-dependent orlegacy,dycore ornormal",
+        "ATEX fatalreturn debug0",
+        "scalar dimensions/indices",
+        "fixed flux sfctype0 gated",
+        "stats l_sample",
+        "default invalidruntype fatal",
+        "defaultbottom versusfixed25m",
+        "debug1 closestlevel sanity",
+        "constant_height_option1 versus2 eventhough2constant"
+      ],
+      "call_order": [
+        "reset thermoforcing",
+        "reset momentumforcings",
+        "time-dependent/legacytendencies",
+        "topforcingzero onlytimedep",
+        "read_surface_var_for_bc",
+        "compute_ubar",
+        "case surfacecall",
+        "conditional compute_momentum_flux",
+        "conditional set_sclr_sfc_rtm_thlm",
+        "fixedfluxoverrides",
+        "stats sh/lh/wpthlp_sfc/wprtp_sfc/upwp_sfc/vpwp_sfc/ustar/T_sfc"
+      ],
+      "private_helper_order": [
+        "nearest height index percolumn",
+        "debugcheck",
+        "option1 copy ORzt2zm um/vm/thlm/rtm/exner",
+        "surfaceexner",
+        "monocubic um/vm/exner/thlm/rtm,unchangedrho nearestlevel"
+      ],
+      "state": "appended time-dependent input andMPACE initialization state; statsremainsNativebackend",
+      "adaptations": "Nativearray slice operands become owned localViews or noncopying subviews; retain actualmonocubic indexboundary convention"
+    },
+    "gabls2": {
+      "ordered_routines": [
+        "gabls2_tndcy",
+        "gabls2_sfclyr"
+      ],
+      "branches": [
+        "time>initial+93600 andheight<=1000",
+        "scalar dimensions/indices",
+        "SSTtime<=17.4/30/41.9/53.3/65.6/else"
+      ],
+      "call_order": [
+        "verticalmotion",
+        "zt2zm",
+        "boundaryzero",
+        "theta/waterzero",
+        "scalarcopies",
+        "time-hourscastafterdoubleexpression",
+        "SSTpiecewise",
+        "Cz/T+273.15/saturation",
+        "compute_wpthlp_sfc",
+        "compute_wprtp_sfc",
+        "waterflux*0.025/sstheta/bflx/diag_ustar"
+      ],
+      "state": "none",
+      "comments": "MichaelFalk2006,GABLS2 spec,26hsubsidence,2.5% potential latentflux"
+    },
+    "gabls3": {
+      "ordered_routines": [
+        "gabls3_sfclyr"
+      ],
+      "branches": [],
+      "call_order": [
+        "offset0.0099/C_10.00195",
+        "bulkheat",
+        "bulkwater",
+        "waterflux*10/vegtheta/bflx/diag_ustar"
+      ],
+      "state": "none; vegetation temperature supplied",
+      "comments": "GABLS3spec andNative active constants; disabled oldtime tables not needed"
+    },
+    "gabls3_night": {
+      "ordered_routines": [
+        "gabls3_night_sfclyr",
+        "psi_h",
+        "gm1",
+        "gh1",
+        "fm1",
+        "fh1",
+        "landflx"
+      ],
+      "branches": [
+        "timeDependent false leavesoutputs unchanged",
+        "inputXpwpSfc versus computedmomentum",
+        "landflx unstable3explicitupdates versus stablequadratic",
+        "xsi>=0positivefloor versus negativefloor"
+      ],
+      "call_order": [
+        "time_select",
+        "interpolate thlm thenrtm",
+        "landflx percolumn",
+        "interpolate momentum ORcompute_momentum_flux",
+        "landflx log/vel/r,unstable/stable,velrecompute,ustar,xsifloor,xlmo,heat,water"
+      ],
+      "state": "explicit appended time-dependent context",
+      "comments": "SAM6.7.5,JoshuaFaschingJan2009GABLS3nightflux modifications; retainindependentiterations and Native9.81 constant"
+    },
+    "cloud_feedback": {
+      "ordered_routines": [
+        "cloud_feedback_sfclyr"
+      ],
+      "branches": [
+        "sfctype!=1 fatal"
+      ],
+      "call_order": [
+        "time_select",
+        "temperature interpolation",
+        "surfaceexner/ustar0.3/temperature/Ch/Cq/saturation",
+        "bulkheat",
+        "bulkwater"
+      ],
+      "state": "appendedtime-dependentcontext",
+      "comments": "CFMIPcase,Stevens2000eq3,ATEXheightscaling,RICOcoefficients; Native disabledemailalternatives remain inactive"
+    },
+    "cobra": {
+      "ordered_routines": [
+        "cobra_sfclyr"
+      ],
+      "branches": [
+        "scalar dims/index>0",
+        "explicitdiffusion andeddy>1 zeros thl/rtfluxcopies"
+      ],
+      "call_order": [
+        "time_select(ntimes49)",
+        "interpolate sensible/latent/CO2/temperature",
+        "temperature/conversions/CO2mix/bflx/diagustar/fluxoutputs",
+        "passiveCO2/thl/rt",
+        "eddyCO2/thl/rt"
+      ],
+      "state": "appendedtime-dependentcontext",
+      "comments": "CO2umol to ppmv flux via dryairmolar mass0.02897/rho,roughness1.75; preventduplicateeddyforcing"
+    },
+    "twp_ice": {
+      "ordered_routines": [
+        "twp_ice_sfclyr"
+      ],
+      "branches": [],
+      "call_order": [
+        "time_select",
+        "temperatureinterpolation",
+        "temperature/ustar0.3/Ch/Cq/saturation",
+        "bulkheat",
+        "bulkwater"
+      ],
+      "state": "appendedtime-dependentcontext",
+      "comments": "Jan2006TWPICEGCSSspec,Stevens2000eq3,RICOcoefficients/ATEXroughness"
+    },
+    "rico": {
+      "ordered_routines": [
+        "rico_tndcy",
+        "rico_sfclyr"
+      ],
+      "branches": [
+        "tempz<4000/5000/else",
+        "waterz<3000/4000/5000/else",
+        "scalar dims/index",
+        "l_use_old_atex=false butretainbothbranches"
+      ],
+      "call_order": [
+        "temp advection/radiation/exner",
+        "specific-humidityadvection/g_per_kg",
+        "force_spec_hum_to_mixing_ratio",
+        "passive theneddy",
+        "time_select/tempinterp",
+        "compute_ubar",
+        "T/ustar0.3/saturation",
+        "ATEXCz thenheat/water/momentum ORRICO Cm/Ch/Cq thenheat/water/directmomentum"
+      ],
+      "state": "appendedtime-dependentcontext",
+      "comments": "MichaelFalkDec2006,RICO3DLESandATEXheightscaling"
+    },
+    "wangara": {
+      "ordered_routines": [
+        "wangara_tndcy",
+        "wangara_sfclyr"
+      ],
+      "branches": [
+        "scalar dims/index",
+        "localESToutside7:30..17:30fatal"
+      ],
+      "call_order": [
+        "wm_zm0",
+        "wm_zt/rtm/thlm0",
+        "passive theneddy",
+        "UTCfmod86400",
+        "ESTfmodUTC+36000",
+        "timecheck",
+        "ustar0.13/thetafluxcos/waterflux"
+      ],
+      "state": "none",
+      "comments": "Wangaraday33,Golaz2002JAS59,3552\u20133571; time in doubleuntilNativecorecast"
+    },
+    "nov11": {
+      "ordered_routines": [
+        "nov11_altocu_rtm_adjust",
+        "nov11_altocu_read_t_dependent"
+      ],
+      "branches": [
+        "time in[initial3600,initial3600+dt)",
+        "height>2900+zm1"
+      ],
+      "call_order": [
+        "rtm*.89 onlyselectedcloudabovelevels",
+        "time_select",
+        "interp sensible",
+        "interp latent"
+      ],
+      "state": "appendedtime-dependentcontextonlyread",
+      "excluded": "obsolete nov11_altocu_tndcy is entirelycommented inNative,noactiveprocedure",
+      "comments": "Larson2006JGR111D19207doi10.1029/2005JD007002; firststepafter3600evenifnondivisibledt"
+    },
+    "mpace_b": {
+      "ordered_routines": [
+        "mpace_b_tndcy",
+        "mpace_b_sfclyr"
+      ],
+      "branches": [
+        "min cappedomega andtendencies",
+        "scalar dims/index"
+      ],
+      "call_order": [
+        "omega thenwm conversion",
+        "zt2zm",
+        "boundaryzero",
+        "temp/power/secperday,water/gperkg/secperday",
+        "passive theneddy",
+        "time_select",
+        "interpolate sensible thenlatent",
+        "ustar0.25 thenheat/waterconversion"
+      ],
+      "state": "appendedtime-dependentcontextat surface",
+      "comments": "FalkJul\u2013Nov2006,Liou/WallaceHobbs/ShettleWeinman,ARMintercomparison"
+    },
+    "mpace_a": {
+      "ordered_routines": [
+        "mpace_a_tndcy",
+        "mpace_a_sfclyr",
+        "mpace_a_init"
+      ],
+      "branches": [
+        "debug1 indexsanity",
+        "scalar index>0(no dimensionguard)"
+      ],
+      "call_order": [
+        "time_select139",
+        "sixprofiletimeinterpolations",
+        "eachcolumn sixzlinterp_fnc",
+        "wm_zm0",
+        "wm_zt0+temp/watercombinations+scalarcopies",
+        "surfacetime_select",
+        "debugcheck",
+        "latentthen sensibleinterp",
+        "heat/waterdivide thenustar0.25",
+        "init3raw1Dreads+6raw2Dreads+2raw1Dheatreads"
+      ],
+      "state": "case-owned3coords+6profiles+2surfacefluxes,38levels139times; sharedfile_read_1d/2dIO boundary",
+      "comments": "Falkomegaobliteration keptinactive,JoshuaFasching2007state/2008sanity; file_pressure readbutunusedstillretained"
+    },
+    "atex_long": {
+      "ordered_routines": [
+        "calc_forcings",
+        "atex_long_tndcy",
+        "atex_long_sfclyr"
+      ],
+      "branches": [
+        "thetaheight0..1400/1650/2990/else",
+        "water0..1050",
+        "subsidence0..1050/1650/else",
+        "time<spinup43200",
+        "scalar dims/index",
+        "l_compute_flux=true retaininactiveprescribedfluxbranchandspinup86400"
+      ],
+      "call_order": [
+        "subsidence",
+        "calc_forcings",
+        "spinupscale heat/water/wm withtime_precisionmixedtype",
+        "zt2zm",
+        "boundaryzero",
+        "passive theneddy",
+        "time_select/tempinterp",
+        "prescribedbranch(guardfalse)",
+        "coefficients/adjustment.0194664/ustar/T",
+        "bulkheat thenbulkwater"
+      ],
+      "state": "time-dependentcontextsurface",
+      "comments": "OngnontraditionalCoriolis trade-windcumuli; Stevens2000/2001ATEX"
+    },
+    "atex": {
+      "ordered_routines": [
+        "calc_forcings",
+        "atex_tndcy",
+        "atex_sfclyr"
+      ],
+      "branches": [
+        "theta/waterstrictheightbounds",
+        "time>=initial+5400",
+        "6.5g/kgsearch/debug2fatal",
+        "l_add_dycore_grid interpolateremapsequence",
+        "before5400zeroforcing",
+        "scalar dims/index"
+      ],
+      "call_order": [
+        "identify6.5g/kglevel",
+        "debugfatal",
+        "inversionheight",
+        "subsidence",
+        "zt2zm/boundaries",
+        "dycore interp/search/debug/calc_forcings/remaptheta/remapwater ORnormalcalc_forcings",
+        "passive/eddy",
+        "surface time_select/tempinterp",
+        "coeff0.0013/adjust.0198293/ustar.3/temp",
+        "bulkheat thenwater"
+      ],
+      "state": "time-dependentcontextsurface; gridremappingownerpermanent",
+      "adaptations": [
+        "prescribeNativep_sfc(1) sequenceassociationtorealarray becomesfullView",
+        "existinginterpolation0basedindicesatAPIboundary",
+        "Nativeerror-onlyrtm(nzt+1)diagnosticisundefinedwheninversionmissing,mustretainexplicitlyboundeddiagnosticadaptationatboundaryratherthanunexplainedmemoryaccess"
+      ],
+      "comments": "Stevens2000JAS58,1870\u20131891; thresholds/callorderretained"
+    }
+  },
+  "status": "draft implementation; source cleanup and whole-model BFB pending"
+}

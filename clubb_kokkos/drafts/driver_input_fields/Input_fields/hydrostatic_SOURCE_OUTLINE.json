@@ -1,0 +1,73 @@
+{
+  "Native_file": "src/Input_fields/hydrostatic_module.F90",
+  "full_Native_and_actual_JAX_read": true,
+  "routines": [
+    {
+      "name": "hydrostatic",
+      "line": 19,
+      "arguments": "ngrdcol,gr,thvm,p_sfc,p_in_Pa,p_in_Pa_zm,exner,exner_zm,rho,rho_zm",
+      "calls": [
+        "init_pressure",
+        "zt2zm_api"
+      ],
+      "loops": [
+        "zt density",
+        "zm density"
+      ],
+      "state": "none"
+    },
+    {
+      "name": "inverse_hydrostatic",
+      "line": 158,
+      "arguments": "p_sfc,zm_init,nlevels,thvm,exner,z",
+      "calls": [
+        "calc_ref_z_linear_thvm",
+        "calc_ref_z_sfc_linear_thvm below all levels",
+        "binary_search reverse Exner",
+        "calc_ref_z_sfc_linear_thvm bracketed"
+      ],
+      "branches": [
+        "surface above entire sounding: print and error stop",
+        "surface below all levels: first two level extension",
+        "otherwise reversed binary search gives low/high Native indices"
+      ],
+      "loops": [
+        "reverse Exner",
+        "assign altitude from reference profile"
+      ],
+      "state": "call-local scratch"
+    },
+    {
+      "name": "calc_ref_z_linear_thvm",
+      "line": 327,
+      "arguments": "nlevels,thvm,exner",
+      "return": "z(nlevels)",
+      "branches": [
+        "Native epsilon(thvm[k])*thvm[k] cutoff",
+        "logarithmic form vs equal-temperature form"
+      ],
+      "recurrence": "ascending k2:nlevels, z[k-1] dependency"
+    },
+    {
+      "name": "calc_ref_z_sfc_linear_thvm",
+      "line": 418,
+      "arguments": "thvm_km1,thvm_k,z_km1,z_k,exner_km1,exner_sfc",
+      "return": "ref_z_sfc",
+      "branches": [
+        "Native epsilon(thvm_k)*thvm_k cutoff",
+        "exponential form vs equal-temperature form"
+      ]
+    }
+  ],
+  "JAX_differences_not_copied": [
+    "1e-12 relative threshold replaces Native epsilon",
+    "cumulative sum association replaces Native recurrence",
+    "inverse high index clamped at last sounding level; Native binary search selects its own interval"
+  ],
+  "adaptations": [
+    "Kokkos Views with shared host/strided array staging at public boundary",
+    "single ordered inverse profile kernel; fatal flag copied to host before throwing",
+    "no speculative FMA or numerical change"
+  ],
+  "runtime_status": "pending; source draft not compiled/tested"
+}

@@ -1,0 +1,2248 @@
+{
+  "canonical_source": "src/CLUBB_core/advance_helper_module.F90",
+  "canonical_sha256": "56879d6527a62625bfd5c2f2cc2247700ac312bb533ba5f69ae3636b2c39cc41",
+  "read_complete_before_code": true,
+  "scope": "All 26 native procedures and three generics; all scalar/array ranks, optionals, private helpers and dormant branches. JAX secondary scope does not override Native.",
+  "routines": [
+    {
+      "name": "calc_ddzt_umvm_sqd",
+      "module": "advance_helper_module",
+      "source": "src/CLUBB_core/advance_helper_module.F90",
+      "arguments": [
+        {
+          "name": "nzm",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "gr",
+          "kind": "grid",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "um",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "vm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ddzt_umvm_sqd",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "line": 83,
+      "kind": "subroutine"
+    },
+    {
+      "name": "calc_wp3_on_wp2",
+      "module": "advance_helper_module",
+      "source": "src/CLUBB_core/advance_helper_module.F90",
+      "arguments": [
+        {
+          "name": "nzm",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "gr",
+          "kind": "grid",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp3",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp3_on_wp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp3_on_wp2_zt",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "line": 150,
+      "kind": "subroutine"
+    },
+    {
+      "name": "set_boundary_conditions_lhs",
+      "module": "advance_helper_module",
+      "source": "src/CLUBB_core/advance_helper_module.F90",
+      "arguments": [
+        {
+          "name": "diag_index",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "low_bound",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "high_bound",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs",
+          "kind": "real",
+          "dims": [
+            ":",
+            ":"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "diag_index2",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": true,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "low_bound2",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": true,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "high_bound2",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": true,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "line": 237,
+      "kind": "subroutine"
+    },
+    {
+      "name": "set_boundary_conditions_rhs",
+      "module": "advance_helper_module",
+      "source": "src/CLUBB_core/advance_helper_module.F90",
+      "arguments": [
+        {
+          "name": "low_value",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "low_bound",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "high_value",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "high_bound",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rhs",
+          "kind": "real",
+          "dims": [
+            ":"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "low_value2",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": true,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "low_bound2",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": true,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "high_value2",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": true,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "high_bound2",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": true,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "line": 308,
+      "kind": "subroutine"
+    },
+    {
+      "name": "calc_stability_correction",
+      "module": "advance_helper_module",
+      "source": "src/CLUBB_core/advance_helper_module.F90",
+      "arguments": [
+        {
+          "name": "nzm",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "brunt_vaisala_freq_sqd",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "Lscale_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "em",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lambda0_stability_coef",
+          "kind": "real",
+          "dims": [
+            "ngrdcol"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "stability_correction",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "line": 378,
+      "kind": "subroutine"
+    },
+    {
+      "name": "calc_brunt_vaisala_freq_sqd",
+      "module": "advance_helper_module",
+      "source": "src/CLUBB_core/advance_helper_module.F90",
+      "arguments": [
+        {
+          "name": "nzm",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "gr",
+          "kind": "grid",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "thlm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "exner",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rtm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rcm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "p_in_Pa",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "thvm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ice_supersat_frac",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "saturation_formula",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_brunt_vaisala_freq_moist",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_use_thvm_in_bv_freq",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_modify_limiters_for_cnvg_test",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "bv_efold",
+          "kind": "real",
+          "dims": [
+            "ngrdcol"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "T0",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "brunt_vaisala_freq_sqd",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "brunt_vaisala_freq_sqd_mixed",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "brunt_vaisala_freq_sqd_smth",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "stats",
+          "kind": "stats_type",
+          "dims": [],
+          "intent": "inout",
+          "optional": true,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "line": 445,
+      "kind": "subroutine"
+    },
+    {
+      "name": "compute_Cx_fnc_Richardson",
+      "module": "advance_helper_module",
+      "source": "src/CLUBB_core/advance_helper_module.F90",
+      "arguments": [
+        {
+          "name": "nzm",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "gr",
+          "kind": "grid",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "Lscale_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ddzt_umvm_sqd",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rho_ds_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "brunt_vaisala_freq_sqd",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "brunt_vaisala_freq_sqd_mixed",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "clubb_params",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nparams"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_use_shear_Richardson",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_modify_limiters_for_cnvg_test",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "Cx_fnc_Richardson",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "line": 719,
+      "kind": "subroutine"
+    },
+    {
+      "name": "calc_Ri_zm",
+      "module": "advance_helper_module",
+      "source": "src/CLUBB_core/advance_helper_module.F90",
+      "arguments": [
+        {
+          "name": "nzm",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "bv_freq_sqd",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "shear",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lim_bv",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lim_shear",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "Ri_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "line": 944,
+      "kind": "subroutine"
+    },
+    {
+      "name": "Lscale_width_vert_avg",
+      "module": "advance_helper_module",
+      "source": "src/CLUBB_core/advance_helper_module.F90",
+      "arguments": [
+        {
+          "name": "nzm",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "gr",
+          "kind": "grid",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "smth_type",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "var_profile",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "Lscale_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rho_ds_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "var_below_ground_value",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": {
+        "name": "Lscale_width_vert_avg_output",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      "line": 991,
+      "kind": "function"
+    },
+    {
+      "name": "wp23_term_splat_lhs",
+      "module": "advance_helper_module",
+      "source": "src/CLUBB_core/advance_helper_module.F90",
+      "arguments": [
+        {
+          "name": "nzm",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "gr",
+          "kind": "grid",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "C_wp2_splat",
+          "kind": "real",
+          "dims": [
+            "ngrdcol"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "brunt_vaisala_freq_sqd_mixed",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "Lscale_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rho_ds_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "stats",
+          "kind": "stats_type",
+          "dims": [],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs_splat_wp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs_splat_wp3",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "line": 1167,
+      "kind": "subroutine"
+    },
+    {
+      "name": "smooth_min_sclr_idx",
+      "module": "advance_helper_module",
+      "source": "src/CLUBB_core/advance_helper_module.F90",
+      "arguments": [
+        {
+          "name": "nz",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "input_var1",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "input_var2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "smth_coef",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": {
+        "name": "output_var",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nz"
+        ],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      "line": 1302,
+      "kind": "function"
+    },
+    {
+      "name": "smooth_min_array_scalar",
+      "module": "advance_helper_module",
+      "source": "src/CLUBB_core/advance_helper_module.F90",
+      "arguments": [
+        {
+          "name": "nz",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "input_var1",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "input_var2",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "smth_coef",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": {
+        "name": "output_var",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nz"
+        ],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      "line": 1357,
+      "kind": "function"
+    },
+    {
+      "name": "smooth_min_arrays",
+      "module": "advance_helper_module",
+      "source": "src/CLUBB_core/advance_helper_module.F90",
+      "arguments": [
+        {
+          "name": "nz",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "input_var1",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "input_var2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "smth_coef",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": {
+        "name": "output_var",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nz"
+        ],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      "line": 1412,
+      "kind": "function"
+    },
+    {
+      "name": "smooth_min_scalars",
+      "module": "advance_helper_module",
+      "source": "src/CLUBB_core/advance_helper_module.F90",
+      "arguments": [
+        {
+          "name": "input_var1",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "input_var2",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "smth_coef",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": {
+        "name": "output_var",
+        "kind": "real",
+        "dims": [],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      "line": 1467,
+      "kind": "function"
+    },
+    {
+      "name": "smooth_max_sclr_idx",
+      "module": "advance_helper_module",
+      "source": "src/CLUBB_core/advance_helper_module.F90",
+      "arguments": [
+        {
+          "name": "nz",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "input_var1",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "input_var2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "smth_coef",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": {
+        "name": "output_var",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nz"
+        ],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      "line": 1506,
+      "kind": "function"
+    },
+    {
+      "name": "smooth_max_array_scalar",
+      "module": "advance_helper_module",
+      "source": "src/CLUBB_core/advance_helper_module.F90",
+      "arguments": [
+        {
+          "name": "nz",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "input_var1",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "input_var2",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "smth_coef",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": {
+        "name": "output_var",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nz"
+        ],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      "line": 1561,
+      "kind": "function"
+    },
+    {
+      "name": "smooth_max_array_1D_scalar",
+      "module": "advance_helper_module",
+      "source": "src/CLUBB_core/advance_helper_module.F90",
+      "arguments": [
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "input_var1",
+          "kind": "real",
+          "dims": [
+            "ngrdcol"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "input_var2",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "smth_coef",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": {
+        "name": "output_var",
+        "kind": "real",
+        "dims": [
+          "ngrdcol"
+        ],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      "line": 1616,
+      "kind": "function"
+    },
+    {
+      "name": "smooth_max_arrays",
+      "module": "advance_helper_module",
+      "source": "src/CLUBB_core/advance_helper_module.F90",
+      "arguments": [
+        {
+          "name": "nz",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "input_var1",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "input_var2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "smth_coef",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": {
+        "name": "output_var",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nz"
+        ],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      "line": 1668,
+      "kind": "function"
+    },
+    {
+      "name": "smooth_max_scalars",
+      "module": "advance_helper_module",
+      "source": "src/CLUBB_core/advance_helper_module.F90",
+      "arguments": [
+        {
+          "name": "input_var1",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "input_var2",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "smth_coef",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": {
+        "name": "output_var",
+        "kind": "real",
+        "dims": [],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      "line": 1723,
+      "kind": "function"
+    },
+    {
+      "name": "smooth_heaviside_peskin",
+      "module": "advance_helper_module",
+      "source": "src/CLUBB_core/advance_helper_module.F90",
+      "arguments": [
+        {
+          "name": "nz",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "input",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "smth_range",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": {
+        "name": "smth_output",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nz"
+        ],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      "line": 1763,
+      "kind": "function"
+    },
+    {
+      "name": "calc_xpwp_1D",
+      "module": "advance_helper_module",
+      "source": "src/CLUBB_core/advance_helper_module.F90",
+      "arguments": [
+        {
+          "name": "gr",
+          "kind": "grid",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "Km_zm",
+          "kind": "real",
+          "dims": [
+            "gr%nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "xm",
+          "kind": "real",
+          "dims": [
+            "gr%nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "xpwp",
+          "kind": "real",
+          "dims": [
+            "gr%nzm"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "line": 1833,
+      "kind": "subroutine"
+    },
+    {
+      "name": "calc_xpwp_2D",
+      "module": "advance_helper_module",
+      "source": "src/CLUBB_core/advance_helper_module.F90",
+      "arguments": [
+        {
+          "name": "nzm",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "gr",
+          "kind": "grid",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "Km_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "xm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "xpwp",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "line": 1877,
+      "kind": "subroutine"
+    },
+    {
+      "name": "vertical_avg",
+      "module": "advance_helper_module",
+      "source": "src/CLUBB_core/advance_helper_module.F90",
+      "arguments": [
+        {
+          "name": "total_idx",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rho_ds",
+          "kind": "real",
+          "dims": [
+            "total_idx"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "field",
+          "kind": "real",
+          "dims": [
+            "total_idx"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "dz",
+          "kind": "real",
+          "dims": [
+            "total_idx"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": {
+        "name": "vertical_avg",
+        "kind": "real",
+        "dims": [],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      "line": 1932,
+      "kind": "function"
+    },
+    {
+      "name": "vertical_integral",
+      "module": "advance_helper_module",
+      "source": "src/CLUBB_core/advance_helper_module.F90",
+      "arguments": [
+        {
+          "name": "total_idx",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rho_ds",
+          "kind": "real",
+          "dims": [
+            "total_idx"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "field",
+          "kind": "real",
+          "dims": [
+            "total_idx"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "dz",
+          "kind": "real",
+          "dims": [
+            "total_idx"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": {
+        "name": "vertical_integral",
+        "kind": "real",
+        "dims": [],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      "line": 2083,
+      "kind": "function"
+    },
+    {
+      "name": "pvertinterp",
+      "module": "advance_helper_module",
+      "source": "src/CLUBB_core/advance_helper_module.F90",
+      "arguments": [
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "gr",
+          "kind": "grid",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "p_mid",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "p_out",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "input_var",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "interp_var",
+          "kind": "real",
+          "dims": [
+            "ngrdcol"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "line": 2140,
+      "kind": "subroutine"
+    },
+    {
+      "name": "calculate_thlp2_rad",
+      "module": "advance_helper_module",
+      "source": "src/CLUBB_core/advance_helper_module.F90",
+      "arguments": [
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "nzm",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "gr",
+          "kind": "grid",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rcm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "thlprcp",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "radht",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "clubb_params",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nparams"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "thlp2_forcing",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "line": 2238,
+      "kind": "subroutine"
+    }
+  ],
+  "generics": {
+    "calc_xpwp": [
+      "calc_xpwp_1D",
+      "calc_xpwp_2D"
+    ],
+    "smooth_min": [
+      "smooth_min_sclr_idx",
+      "smooth_min_array_scalar",
+      "smooth_min_arrays",
+      "smooth_min_scalars"
+    ],
+    "smooth_max": [
+      "smooth_max_sclr_idx",
+      "smooth_max_array_scalar",
+      "smooth_max_arrays",
+      "smooth_max_array_1D_scalar",
+      "smooth_max_scalars"
+    ]
+  },
+  "branches_and_order": [
+    "calc_ddzt_umvm_sqd: ddzt(um), ddzt(vm), sum of squares.",
+    "calc_wp3_on_wp2: zm2zt wp2 floor, ratio and sign-dependent clamp, zt2zm ratio, zm2zt ratio.",
+    "Boundary LHS: validate optional bound/diag, lower1,upper1,optional lower2,optional upper2. RHS: validate optional bound/value, lower1,upper1,optional lower2,optional upper2.",
+    "Stability: positive BV lambda or zero, min ratio vs three, plus one.",
+    "Brunt Vaisala: dry thvm/T0 choices; temperature/saturation; dry/moist/mixed; convergence/smooth/default clipping; optional moist override; five sampled stats in source order.",
+    "Cx Richardson: shear ratio or inverse multiplication; smooth/default limiter; false-constant vertical average; final zero-one clip.",
+    "calc_Ri_zm: independent numerator/denominator floors.",
+    "Lscale_width_vert_avg: smth1 max(width,500), smth2=60; density terms; grid-direction upper/lower searches preserving Fortran post-DO indices; below-ground init then ordered above-ground sums.",
+    "wp23 splat: width average,sqrt clip,roundtrip smoothing,thermo interpolation; wp2 then wp3; sampled splat stat.",
+    "Smooth min/max: all distinct rank variants and source operand order.",
+    "Peskin: below ->0; above ->1; inclusive middle sine, no extra zero-range guard.",
+    "calc_xpwp: levels2:nzm-1 only; boundary output unwritten.",
+    "vertical_avg: ascending numerator/denominator recurrence then quotient. vertical_integral: source SUM, explicit ascending accumulation to avoid unordered parallel reduction.",
+    "pvertinterp: surface/lid extension else first bracket search, k_upper=1 fallback, unused l_error retained.",
+    "calculate_thlp2_rad: rcm then radht interpolation, strict rc_tol gate and forcing accumulation."
+  ],
+  "source_constants_and_options": [
+    "l_smooth_min_max=false; preserve both branches",
+    "l_Cx_fnc_Richardson_vert_avg=false; preserve dormant Native logic",
+    "Native optional integer boundary indices remain one-based",
+    "Optional stats pointer; f2k stats ownership; no f2k inside kernels"
+  ],
+  "known_native_dormant_issue": "The false-constant Cx vertical-average path overwrites the width-average result with uninitialized Cx_fnc_Richardson_avg. Preserve Native branch and false parameter; no substantive Native repair authorized.",
+  "dependencies": [
+    "Production grid and temperature APIs",
+    "Full saturation draft sat_mixrat_liq_api array overload",
+    "Existing f2k stats backend",
+    "Exact partial smooth_max_scalars helper from stable PDF utility draft merged in Native order"
+  ],
+  "verification": "Outline before implementation. No builds/tests/numerical evidence."
+}

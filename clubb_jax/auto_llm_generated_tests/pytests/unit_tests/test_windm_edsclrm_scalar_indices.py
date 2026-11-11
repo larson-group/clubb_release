@@ -7,7 +7,7 @@ import jax.numpy as jnp
 from clubb_jax.src.CLUBB_core import ErrInfo, NuVertResDep, SclrIdx
 from clubb_jax.src.CLUBB_core.advance_windm_edsclrm_module import advance_windm_edsclrm
 from clubb_jax.src.CLUBB_core.grid_class import setup_grid
-from clubb_jax.src.CLUBB_core.stats_netcdf import JaxStats
+from clubb_jax.src.CLUBB_core.jax_stats import JaxStats
 from clubb_jax.src.CLUBB_core.model_flags import get_default_config_flags
 from clubb_jax.src.CLUBB_core.numerical_check import check_clubb_settings
 from clubb_jax.src.CLUBB_core.parameter_indices import nparams

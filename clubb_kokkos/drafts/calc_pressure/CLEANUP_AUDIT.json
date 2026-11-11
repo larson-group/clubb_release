@@ -1,0 +1,16 @@
+{
+  "scope": "Separate final source/format/caller-ownership cleanup",
+  "target_sha256": "479d15185c9873be7aae29e1aaa9c4d28dbee41fb813532ecd2c0715af7ea849",
+  "checks": [
+    "Both Native definitions in source order,16required arguments total and one thin existing-owner initialization adapter; no extra options/helper.",
+    "All13ordered assignment expression trees and3threshold predicates matched, including full zt2zm call, real powers and distinct momentum epsilon reference.",
+    "Surface/interpolation/first-thermo/first-pressure/ordered-thermo/momentum phase order and exact increasing storage bounds checked. Each column recurrence preserves source floating order.",
+    "Six kernels capture Views/scalars only; no owning grid, host function, bridge, global cache, nested launch or parallel floating reduction.",
+    "Direct calculate_thvm policy follows output memory space for current core and host/strided driver callers. Initialization adapter restores four original outputs.",
+    "Alloutputs written before use; interpolation scratch owned per call. Existing constants/lower API reused; no selected constant/generator change.",
+    "Full hydrostatic equations/scientific descriptions/field units and Native physical argument groups retained; copied first-level wording corrected to actual storage semantics.",
+    "Explicit void enclosing types,case-sensitive API names,100columns/no tabs or trailing whitespace checked."
+  ],
+  "remaining_dependencies": "None beyond live grid/array/constants owners.",
+  "runtime_status": "No compilation, unit/model execution, CPU/GPU equality or BFB claim."
+}

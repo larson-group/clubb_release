@@ -1,0 +1,19 @@
+{
+  "canonical_sha256": "f58b3d0bc610faa8b9612d2a84f8afcd54c28a89e0911312fb8a75d3deb50c23",
+  "target_sha256": "159bb61dadfd6d087cd5a2c73b1b326136705f4ccedefe1011ffb1079653b371",
+  "reviews": [
+    {
+      "name": "advance_wp2_wp3",
+      "ordered_explicit_indexed_assignments": 37
+    },
+    {
+      "name": "wp23_solve",
+      "ordered_explicit_indexed_assignments": 21
+    },
+    {
+      "name": "wp23_rhs",
+      "ordered_explicit_indexed_assignments": 58
+    }
+  ],
+  "note": "Explicit indexed scientific/budget assignment expression trees; whole-array language adapters and wp2_min MAX/warning/ceiling retained separate manual review."
+}

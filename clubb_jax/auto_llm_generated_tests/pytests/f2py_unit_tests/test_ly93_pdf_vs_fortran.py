@@ -24,7 +24,7 @@ def test_f2py_oracle():
     worst = 0.0
     for seed in (11, 22, 33):
         xm, xp2, Skx, mf = _inputs(seed)
-        f = fortran.calc_params_ly93(NZ, NG, xm, xp2, Skx, mf)
+        f = fortran.calc_params_ly93(NZ, xm, xp2, Skx, mf)
         g = calc_params_LY93(xm, xp2, Skx, mf)
         worst = max(worst, max_abs_diff("ly93_pdf", tuple(g), tuple(f)))
     assert worst < 1e-11, f"calc_params_ly93 Fortran mismatch {worst:.2e}"
@@ -38,7 +38,7 @@ def test_driver_f2py():
         wp2 = rng.uniform(0.05, 2.0, (NG, NZ)); rtp2 = rng.uniform(1e-8, 1e-6, (NG, NZ)); thlp2 = rng.uniform(0.01, 1.0, (NG, NZ))
         # Skewness spanning both the 0.75 branch (|Sk|<=0.84) and the iterative branch.
         Skw = rng.uniform(-3, 3, (NG, NZ)); Skrt = rng.uniform(-1, 1, (NG, NZ)); Skthl = rng.uniform(-2, 2, (NG, NZ))
-        f = fortran.ly93_driver(NZ, NG, wm, rtm, thlm, wp2, rtp2, thlp2, Skw, Skrt, Skthl)
+        f = fortran.ly93_driver(NZ, wm, rtm, thlm, wp2, rtp2, thlp2, Skw, Skrt, Skthl)
         g = LY93_driver(wm, rtm, thlm, wp2, rtp2, thlp2, Skw, Skrt, Skthl)
         worst = max(worst, max_abs_diff("ly93_pdf", tuple(g), tuple(f)))
     assert worst < 1e-9, f"ly93_driver Fortran mismatch {worst:.2e}"

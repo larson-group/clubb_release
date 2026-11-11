@@ -1,0 +1,93 @@
+{
+  "date_UTC": "2026-11-06T06:33:31.051969+00:00",
+  "review": "Owner full Native/JAX read, implementation and separate source reread; no independent reviewer claim.",
+  "scope": "All4Native routines in source order, public2+required private2. Both public entries have thin shared-owner host/strided overloads.",
+  "contracts": [
+    {
+      "routine": "hydrostatic",
+      "arguments": [
+        "ngrdcol",
+        "gr",
+        "thvm",
+        "p_sfc",
+        "p_in_Pa",
+        "p_in_Pa_zm",
+        "exner",
+        "exner_zm",
+        "rho",
+        "rho_zm"
+      ]
+    },
+    {
+      "routine": "inverse_hydrostatic",
+      "arguments": [
+        "p_sfc",
+        "zm_init",
+        "nlevels",
+        "thvm",
+        "exner",
+        "z"
+      ]
+    },
+    {
+      "routine": "calc_ref_z_linear_thvm",
+      "arguments": [
+        "nlevels",
+        "thvm",
+        "exner"
+      ]
+    },
+    {
+      "routine": "calc_ref_z_sfc_linear_thvm",
+      "arguments": [
+        "thvm_km1",
+        "thvm_k",
+        "z_km1",
+        "z_k",
+        "exner_km1",
+        "exner_sfc"
+      ]
+    }
+  ],
+  "Native_ordered_scientific_calls": [
+    "init_pressure(8args)",
+    "zt2zm_api(5args,no floor)",
+    "calc_ref_z_linear_thvm(3args)",
+    "calc_ref_z_sfc_linear_thvm(6args,extension)",
+    "binary_search(3args,+1existingCppindexboundary)",
+    "calc_ref_z_sfc_linear_thvm(6args,bracketed)"
+  ],
+  "manual_source_checks": [
+    "density formulas and p/exner output-order checked",
+    "forward init_pressure uses existing permanentCppowner",
+    "epsilon(thvm[k])*thvm[k] exactlyNative, noJAX1e-12threshold",
+    "ordered referenceheight recurrence retained, no cumsum/reduction",
+    "reverseExner/Native1based low/high indices and exactendpoint selection retained",
+    "below/above/bracketed branch order retained; Nativefataltext onhost beforethrow, znotwrittenonfatal",
+    "scalar exponential formula keeps every source grouping; no speculativefma",
+    "source derivations/comments/argument groups and units retained",
+    "kernel captures only scalar/View data, no owningUDT capture or Native devicecall",
+    "public generic adapters use existingarrayowner once, restore everyoutfield"
+  ],
+  "adaptations": [
+    "sourceprivate procedures retainstatic linkage; scalarprivatehelper deviceinline",
+    "Native errorstop uses call-local deviceflag then hostthrow; ref_z_sfc initialization is inside the ordered profilekernel after separate scratch-producing helpercall",
+    "existing binary_search returnsCpp0based, converted once beforeNativeindexlogic",
+    "View ownership and stage/restore at existing shared arrayboundary"
+  ],
+  "BFB_specific_adaptations": [],
+  "remaining_dependencies": [
+    "live init_pressure",
+    "live zt2zm_api",
+    "live binary_search",
+    "live constants_clubb",
+    "installed KokkosNumericTraits epsilon_v confirmed in actualheader macro"
+  ],
+  "sha256": {
+    "src/Input_fields/hydrostatic_module.F90": "1b406593e3b75ed2e6e50040860cb2e1d273480d05a67db8bd3befb37a834d8f",
+    "clubb_jax/src/Input_fields/hydrostatic_module.py": "d3ae20e2effdc7cd7f65359c63783bd8cce783907ccd485da8d85dcae3e0d3ca",
+    "clubb_kokkos/drafts/driver_input_fields/Input_fields/hydrostatic_module.cpp": "65ab47b80ab186ecdbed7ff37b0eebb5d62658949f499d389b307ddfa94be0d5",
+    "clubb_kokkos/drafts/driver_input_fields/Input_fields/hydrostatic_module.hpp": "2eccfab9938979c88db1560a1ead4fb9e5aae08379a40a857a420cdb255250ae"
+  },
+  "runtime_status": "UNCOMPILED/UNTESTED; no BFB/Serial/CUDA/runtime/whole-model claim. Root owns integration+CPU model gate."
+}

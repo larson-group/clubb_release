@@ -1,0 +1,16 @@
+{
+  "date_UTC": "2026-11-06T08:21:28.552216+00:00",
+  "attribution": "Separate owner schema cleanup; no procedures or independent review claim.",
+  "checks": [
+    "All3types and every source field/group stay in Native order.",
+    "Only source-initialized scalar defaults supplied; precision and explicit file-close lifetime documented.",
+    "115Native defaultfalse flags preserved exactly in source order; date globals belong to samecaseowner.",
+    "Linewidth100 and whitespace checked."
+  ],
+  "sha256": {
+    "src/Input_fields/stat_file_module.F90": "450c4e6de0f1729237989207b52eaf3b0b8397afb8dccdcd6090c9140371b80b",
+    "clubb_kokkos/drafts/driver_input_fields/Input_fields/stat_file_module.hpp": "0a0b001e649591b5bc17c244e5a16bd80df3237980fc94f2b2ce3edab1ca1e99",
+    "clubb_kokkos/drafts/driver_input_fields/Input_fields/inputfields_state.hpp": "f40f74853977cfc35d6cce2f3533ffbb07e2514b0582cae89afe0de0b24dbfc9"
+  },
+  "runtime_status": "UNCOMPILED/UNTESTED."
+}

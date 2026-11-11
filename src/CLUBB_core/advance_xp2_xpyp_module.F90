@@ -336,8 +336,8 @@ module advance_xp2_xpyp_module
       C2rtthl    ! CLUBB tunable parameter C2rtthl
 
     real( kind = core_rknd ), dimension(ngrdcol,nzm) :: & 
-      C2sclr_zm, C2rt_zm, C2thl_zm, C2rtthl_zm, &
-      C4_zm, C14_zm
+      C2sclr_1d, C2rt_1d, C2thl_1d, C2rtthl_1d, &
+      C4_1d, C14_1d
 
     real( kind = core_rknd ) :: & 
       threshold     ! Minimum value for variances                   [units vary]
@@ -440,8 +440,8 @@ module advance_xp2_xpyp_module
     !------------------------------ Begin Code ------------------------------
     
     !$acc enter data create( rtp2_old, thlp2_old, rtpthlp_old, up2_old, vp2_old, &
-    !$acc                    C2sclr_zm, C2rt_zm, C2thl_zm, &
-    !$acc                    C2rtthl_zm, C4_zm, C14_zm, threshold_array, lhs, uv_rhs, &
+    !$acc                    C2sclr_1d, C2rt_1d, C2thl_1d, &
+    !$acc                    C2rtthl_1d, C4_1d, C14_1d, threshold_array, lhs, uv_rhs, &
     !$acc                    uv_solution, Kw2, Kw9, Kw2_zm, Kw9_zm, rtpthlp_chnge, &
     !$acc                    lhs_ta_wprtp2, lhs_ta_wpthlp2, &
     !$acc                    lhs_ta_wprtpthlp, lhs_ta_wpup2, lhs_ta_wpvp2, rhs_ta_wprtp2, &
@@ -471,16 +471,16 @@ module advance_xp2_xpyp_module
         do i = 1, ngrdcol
 
           if ( cloud_frac_zm(i,k) >= cloud_frac_min ) then
-            C2rt_zm(i,k)    = clubb_params(i,iC2rt)    * max( min_cloud_frac_mult, &
+            C2rt_1d(i,k)    = clubb_params(i,iC2rt)    * max( min_cloud_frac_mult, &
                                                               cloud_frac_zm(i,k) )
-            C2thl_zm(i,k)   = clubb_params(i,iC2thl)   * max( min_cloud_frac_mult, &
+            C2thl_1d(i,k)   = clubb_params(i,iC2thl)   * max( min_cloud_frac_mult, &
                                                               cloud_frac_zm(i,k) )
-            C2rtthl_zm(i,k) = clubb_params(i,iC2rtthl) * max( min_cloud_frac_mult, &
+            C2rtthl_1d(i,k) = clubb_params(i,iC2rtthl) * max( min_cloud_frac_mult, &
                                                               cloud_frac_zm(i,k) )
           else ! cloud_frac(k) < cloud_frac_min
-            C2rt_zm(i,k)    = clubb_params(i,iC2rt)
-            C2thl_zm(i,k)   = clubb_params(i,iC2thl)
-            C2rtthl_zm(i,k) = clubb_params(i,iC2rtthl)
+            C2rt_1d(i,k)    = clubb_params(i,iC2rt)
+            C2thl_1d(i,k)   = clubb_params(i,iC2thl)
+            C2rtthl_1d(i,k) = clubb_params(i,iC2rtthl)
           end if ! cloud_frac(k) >= cloud_frac_min
 
         end do
@@ -490,9 +490,9 @@ module advance_xp2_xpyp_module
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nzm
         do i = 1, ngrdcol
-          C2rt_zm(i,k)    = clubb_params(i,iC2rt)
-          C2thl_zm(i,k)   = clubb_params(i,iC2thl)
-          C2rtthl_zm(i,k) = clubb_params(i,iC2rtthl)
+          C2rt_1d(i,k)    = clubb_params(i,iC2rt)
+          C2thl_1d(i,k)   = clubb_params(i,iC2thl)
+          C2rtthl_1d(i,k) = clubb_params(i,iC2rtthl)
         end do
       end do
       !$acc end parallel loop
@@ -501,9 +501,9 @@ module advance_xp2_xpyp_module
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nzm
       do i = 1, ngrdcol
-        C2sclr_zm(i,k) = clubb_params(i,iC2rt)  ! Use rt value for now
-        C4_zm(i,k)     = two_thirds * clubb_params(i,iC4)
-        C14_zm(i,k)    = one_third  * clubb_params(i,iC14)
+        C2sclr_1d(i,k) = clubb_params(i,iC2rt)  ! Use rt value for now
+        C4_1d(i,k)     = two_thirds * clubb_params(i,iC4)
+        C14_1d(i,k)    = one_third  * clubb_params(i,iC14)
       end do
     end do
     !$acc end parallel loop
@@ -630,7 +630,7 @@ module advance_xp2_xpyp_module
       ! Thus only one solve is neccesary, using combined right hand sides
       call solve_xp2_xpyp_with_single_lhs( nzm, nzt, ngrdcol, sclr_dim, sclr_tol, gr,   & ! In
                                            sclr_idx,                                    & ! In
-                                           C2rt_zm, invrs_tau_xp2_zm, rtm, thlm, wprtp, & ! In
+                                           C2rt_1d, invrs_tau_xp2_zm, rtm, thlm, wprtp, & ! In
                                            wpthlp, rtp2_forcing, thlp2_forcing,         & ! In
                                            rtpthlp_forcing, sclrm, wpsclrp,             & ! In
                                            lhs_ta_wprtp2, lhs_ma, lhs_diff,             & ! In
@@ -648,7 +648,7 @@ module advance_xp2_xpyp_module
       ! Left hand sides are potentially different, this requires multiple solves
       call solve_xp2_xpyp_with_multiple_lhs( nzm, nzt, ngrdcol, sclr_dim, sclr_tol, gr,    & ! In
                                              sclr_idx,                                     & ! In
-                                             C2rt_zm, C2thl_zm, C2rtthl_zm, C2sclr_zm,     & ! In
+                                             C2rt_1d, C2thl_1d, C2rtthl_1d, C2sclr_1d,     & ! In
                                              invrs_tau_xp2_zm, rtm, thlm, wprtp, wpthlp,   & ! In
                                              rtp2_forcing, thlp2_forcing, rtpthlp_forcing, & ! In
                                              sclrm, wpsclrp,                               & ! In
@@ -688,12 +688,12 @@ module advance_xp2_xpyp_module
 
     ! Dissipation term 1 using C4
     call term_dp1_lhs( nzm, ngrdcol, gr, &
-                       C4_zm, invrs_tau_C4_zm, &
+                       C4_1d, invrs_tau_C4_zm, &
                        lhs_dp1_C4 )
 
     ! Dissipation term 1 using C14
     call term_dp1_lhs( nzm, ngrdcol, gr, &
-                       C14_zm, invrs_tau_C14_zm, &
+                       C14_1d, invrs_tau_C14_zm, &
                        lhs_dp1_C14 )
 
     !$acc parallel loop gang vector collapse(2) default(present)
@@ -1187,11 +1187,15 @@ module advance_xp2_xpyp_module
           call stats_begin_budget( "vp2_sdmp", vp2 / dt, stats )
       end if
 
-      up2 = sponge_damp_xp2( ngrdcol, nzm, gr, dt, gr%zm, up2, w_tol_sqd, & ! In
-                             up2_vp2_sponge_damp_profile ) ! In
+      do i = 1, ngrdcol
+        up2(i,:) = sponge_damp_xp2( gr, nzm, dt, gr%zm(i,:), up2(i,:), w_tol_sqd, &
+                                    up2_vp2_sponge_damp_profile )
+      end do
 
-      vp2 = sponge_damp_xp2( ngrdcol, nzm, gr, dt, gr%zm, vp2, w_tol_sqd, & ! In
-                             up2_vp2_sponge_damp_profile ) ! In
+      do i = 1, ngrdcol
+        vp2(i,:) = sponge_damp_xp2( gr, nzm, dt, gr%zm(i,:), vp2(i,:), w_tol_sqd, &
+                                    up2_vp2_sponge_damp_profile )
+      end do
 
       if ( stats%l_sample ) then
           call stats_finalize_budget( "up2_sdmp", up2 / dt, stats )
@@ -1414,8 +1418,8 @@ module advance_xp2_xpyp_module
     end if
 
     !$acc exit data delete( rtp2_old, thlp2_old, rtpthlp_old, up2_old, vp2_old, &
-    !$acc                    C2sclr_zm, C2rt_zm, C2thl_zm, &
-    !$acc                    C2rtthl_zm, C4_zm, C14_zm, threshold_array, lhs, uv_rhs, &
+    !$acc                    C2sclr_1d, C2rt_1d, C2thl_1d, &
+    !$acc                    C2rtthl_1d, C4_1d, C14_1d, threshold_array, lhs, uv_rhs, &
     !$acc                    uv_solution, Kw2, Kw9, Kw2_zm, Kw9_zm, rtpthlp_chnge, &
     !$acc                    lhs_ta_wprtp2, lhs_ta_wpthlp2, &
     !$acc                    lhs_ta_wprtpthlp, lhs_ta_wpup2, lhs_ta_wpvp2, rhs_ta_wprtp2, &
@@ -1620,31 +1624,28 @@ module advance_xp2_xpyp_module
 
     ! Calculate rhs matricies
     call xp2_xpyp_rhs( nzm, nzt, ngrdcol, gr, xp2_xpyp_rtp2, dt, & ! In
-                       wprtp, wprtp, & ! In
-                       rtm, rtm, rtp2, & ! In
-                       rtp2_forcing, & ! In
-                       C2x, invrs_tau_xp2_zm, rt_tol**2, & ! In
-                       lhs_ta, rhs_ta_wprtp2, & ! In
-                       stats, & ! InOut
-                       rhs(:,:,1) ) ! Out
+                       wprtp, wprtp,                        & ! In
+                       rtm, rtm, rtp2, rtp2_forcing,        & ! In
+                       C2x, invrs_tau_xp2_zm, rt_tol**2,    & ! In
+                       lhs_ta, rhs_ta_wprtp2,               & ! In
+                       stats,         & ! InOut
+                       rhs(:,:,1) )                           ! Out
 
     call xp2_xpyp_rhs( nzm, nzt, ngrdcol, gr, xp2_xpyp_thlp2, dt, & ! In
-                       wpthlp, wpthlp, & ! In
-                       thlm, thlm, thlp2, & ! In
-                       thlp2_forcing, & ! In
-                       C2x, invrs_tau_xp2_zm, thl_tol**2, & ! In
-                       lhs_ta, rhs_ta_wpthlp2, & ! In
-                       stats, & ! InOut
-                       rhs(:,:,2) ) ! Out
+                       wpthlp, wpthlp,                            & ! In
+                       thlm, thlm, thlp2, thlp2_forcing,          & ! In
+                       C2x, invrs_tau_xp2_zm, thl_tol**2,         & ! In
+                       lhs_ta, rhs_ta_wpthlp2,                    & ! In
+                       stats,         & ! InOut
+                       rhs(:,:,2) )                                 ! Out
 
     call xp2_xpyp_rhs( nzm, nzt, ngrdcol, gr, xp2_xpyp_rtpthlp, dt, & ! In
-                       wprtp, wpthlp, & ! In
-                       rtm, thlm, rtpthlp, & ! In
-                       rtpthlp_forcing, & ! In
-                       C2x, invrs_tau_xp2_zm, zero_threshold, & ! In
-                       lhs_ta, rhs_ta_wprtpthlp, & ! In
-                       stats, & ! InOut
-                       rhs(:,:,3) ) ! Out
+                       wprtp, wpthlp,                               & ! In
+                       rtm, thlm, rtpthlp, rtpthlp_forcing,         & ! In
+                       C2x, invrs_tau_xp2_zm, zero_threshold,       & ! In
+                       lhs_ta, rhs_ta_wprtpthlp,                    & ! In
+                       stats,         & ! InOut
+                       rhs(:,:,3) )                                   ! Out
 
     if ( l_scalar_calc ) then
 
@@ -1661,13 +1662,13 @@ module advance_xp2_xpyp_module
 
         !!!!!***** sclr'^2 *****!!!!!
         call xp2_xpyp_rhs( nzm, nzt, ngrdcol, gr, xp2_xpyp_sclrp2, dt, & ! In
-                           wpsclrp(:,:,sclr), wpsclrp(:,:,sclr), & ! In
-                           sclrm(:,:,sclr), sclrm(:,:,sclr), sclrp2(:,:,sclr), & ! In
-                           sclrp2_forcing, & ! In
-                           C2x, invrs_tau_xp2_zm, sclr_tol(sclr)**2, & ! In
-                           lhs_ta, rhs_ta_wpsclrp2(:,:,sclr), & ! In
-                           stats, & ! InOut
-                           rhs(:,:,3+sclr) ) ! Out
+                           wpsclrp(:,:,sclr), wpsclrp(:,:,sclr),       & ! In
+                           sclrm(:,:,sclr), sclrm(:,:,sclr),           & ! In
+                           sclrp2(:,:,sclr), sclrp2_forcing,           & ! In
+                           C2x, invrs_tau_xp2_zm, sclr_tol(sclr)**2,   & ! In
+                           lhs_ta, rhs_ta_wpsclrp2(:,:,sclr),          & ! In
+                           stats,         & ! InOut
+                           rhs(:,:,3+sclr) )                             ! Out
 
         !!!!!***** sclr'r_t' *****!!!!!
         if ( sclr == sclr_idx%iisclr_rt ) then
@@ -1841,7 +1842,7 @@ module advance_xp2_xpyp_module
   !============================================================================================
   subroutine solve_xp2_xpyp_with_multiple_lhs( nzm, nzt, ngrdcol, sclr_dim, sclr_tol, gr, &
                                                sclr_idx, &
-                                               C2rt_zm, C2thl_zm, C2rtthl_zm, C2sclr_zm, &
+                                               C2rt_1d, C2thl_1d, C2rtthl_1d, C2sclr_1d, &
                                                invrs_tau_xp2_zm, rtm, thlm, wprtp, wpthlp, &
                                                rtp2_forcing, thlp2_forcing, rtpthlp_forcing, &
                                                sclrm, wpsclrp, &
@@ -1914,7 +1915,7 @@ module advance_xp2_xpyp_module
       sclr_idx
       
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) ::  & 
-      C2rt_zm, C2thl_zm, C2rtthl_zm, C2sclr_zm, &
+      C2rt_1d, C2thl_1d, C2rtthl_1d, C2sclr_1d, &
       invrs_tau_xp2_zm, & ! Inverse time-scale for xp2 on momentum levels [1/s]
       wprtp,           & ! <w'r_t'> (momentum levels)            [(m/s)(kg/kg)]
       wpthlp,          & ! <w'th_l'> (momentum levels)           [(m K)/s]
@@ -2038,7 +2039,7 @@ module advance_xp2_xpyp_module
 
     !!!!!***** r_t'^2 *****!!!!!
     call term_dp1_lhs( nzm, ngrdcol, gr, &
-                       C2rt_zm, invrs_tau_xp2_zm, &
+                       C2rt_1d, invrs_tau_xp2_zm, &
                        lhs_dp1 )
 
     !$acc parallel loop gang vector collapse(2) default(present)
@@ -2056,9 +2057,8 @@ module advance_xp2_xpyp_module
 
     call xp2_xpyp_rhs( nzm, nzt, ngrdcol, gr, xp2_xpyp_rtp2, dt, & ! In
                        wprtp, wprtp, & ! In
-                       rtm, rtm, rtp2, & ! In
-                       rtp2_forcing, & ! In
-                       C2rt_zm, invrs_tau_xp2_zm, rt_tol**2, & ! In
+                       rtm, rtm, rtp2, rtp2_forcing, & ! In
+                       C2rt_1d, invrs_tau_xp2_zm, rt_tol**2, & ! In
                        lhs_ta_wprtp2, rhs_ta_wprtp2, & ! In
                        stats,         & ! InOut
                        rhs ) ! Out
@@ -2106,7 +2106,7 @@ module advance_xp2_xpyp_module
       
     !!!!!***** th_l'^2 *****!!!!!
     call term_dp1_lhs( nzm, ngrdcol, gr, &
-                       C2thl_zm, invrs_tau_xp2_zm, &
+                       C2thl_1d, invrs_tau_xp2_zm, &
                        lhs_dp1 )
 
     !$acc parallel loop gang vector collapse(2) default(present)
@@ -2125,9 +2125,8 @@ module advance_xp2_xpyp_module
     ! Explicit contributions to thlp2
     call xp2_xpyp_rhs( nzm, nzt, ngrdcol, gr, xp2_xpyp_thlp2, dt, & ! In
                        wpthlp, wpthlp, & ! In
-                       thlm, thlm, thlp2, & ! In
-                       thlp2_forcing, & ! In
-                       C2thl_zm, invrs_tau_xp2_zm, thl_tol**2, & ! In
+                       thlm, thlm, thlp2, thlp2_forcing, & ! In
+                       C2thl_1d, invrs_tau_xp2_zm, thl_tol**2, & ! In
                        lhs_ta_wpthlp2, rhs_ta_wpthlp2, & ! In
                        stats,         & ! InOut
                        rhs ) ! Out
@@ -2175,7 +2174,7 @@ module advance_xp2_xpyp_module
 
     !!!!!***** r_t'th_l' *****!!!!!
     call term_dp1_lhs( nzm, ngrdcol, gr, &
-                       C2rtthl_zm, invrs_tau_xp2_zm, &
+                       C2rtthl_1d, invrs_tau_xp2_zm, &
                        lhs_dp1 )
 
     !$acc parallel loop gang vector collapse(2) default(present)
@@ -2194,9 +2193,8 @@ module advance_xp2_xpyp_module
     ! Explicit contributions to rtpthlp
     call xp2_xpyp_rhs( nzm, nzt, ngrdcol, gr, xp2_xpyp_rtpthlp, dt, & ! In
                        wprtp, wpthlp, & ! In
-                       rtm, thlm, rtpthlp, & ! In
-                       rtpthlp_forcing, & ! In
-                       C2rtthl_zm, invrs_tau_xp2_zm, zero_threshold, & ! In
+                       rtm, thlm, rtpthlp, rtpthlp_forcing, & ! In
+                       C2rtthl_1d, invrs_tau_xp2_zm, zero_threshold, & ! In
                        lhs_ta_wprtpthlp, rhs_ta_wprtpthlp, & ! In
                        stats,         & ! InOut
                        rhs ) ! Out
@@ -2245,7 +2243,7 @@ module advance_xp2_xpyp_module
     if ( l_scalar_calc ) then
 
       call term_dp1_lhs( nzm, ngrdcol, gr, &
-                         C2sclr_zm, invrs_tau_xp2_zm, &
+                         C2sclr_1d, invrs_tau_xp2_zm, &
                          lhs_dp1 )
 
       !$acc parallel loop gang vector collapse(2) default(present)
@@ -2272,9 +2270,9 @@ module advance_xp2_xpyp_module
 
           call xp2_xpyp_rhs( nzm, nzt, ngrdcol, gr, xp2_xpyp_sclrp2, dt, & ! In
                              wpsclrp(:,:,sclr), wpsclrp(:,:,sclr), & ! In
-                             sclrm(:,:,sclr), sclrm(:,:,sclr), sclrp2(:,:,sclr), & ! In
-                             sclrp2_forcing(:,:), & ! In
-                             C2sclr_zm, invrs_tau_xp2_zm(:,:), sclr_tol(sclr)**2, & ! In
+                             sclrm(:,:,sclr), sclrm(:,:,sclr), & ! In
+                             sclrp2(:,:,sclr), sclrp2_forcing(:,:), & ! In
+                             C2sclr_1d, invrs_tau_xp2_zm(:,:), sclr_tol(sclr)**2, & ! In
                              lhs_ta_wpsclrp2(:,:,:,sclr), rhs_ta_wpsclrp2(:,:,sclr), & ! In
                              stats,         & ! InOut
                              rhs ) ! Out
@@ -2322,7 +2320,7 @@ module advance_xp2_xpyp_module
                              wpsclrp(:,:,sclr), wprtp, & ! In
                              sclrm(:,:,sclr), rtm, sclrprtp(:,:,sclr), & ! In
                              sclrprtp_forcing, & ! In
-                             C2sclr_zm, invrs_tau_xp2_zm, threshold, & ! In
+                             C2sclr_1d, invrs_tau_xp2_zm, threshold, & ! In
                              lhs_ta_wprtpsclrp(:,:,:,sclr), rhs_ta_wprtpsclrp(:,:,sclr), & ! In
                              stats,         & ! InOut
                              rhs ) ! Out
@@ -2370,7 +2368,7 @@ module advance_xp2_xpyp_module
                              wpsclrp(:,:,sclr), wpthlp, & ! In
                              sclrm(:,:,sclr), thlm, sclrpthlp(:,:,sclr), & ! In
                              sclrpthlp_forcing, & ! In
-                             C2sclr_zm, invrs_tau_xp2_zm, threshold, & ! In
+                             C2sclr_1d, invrs_tau_xp2_zm, threshold, & ! In
                              lhs_ta_wpthlpsclrp(:,:,:,sclr), rhs_ta_wpthlpsclrp(:,:,sclr), & ! In
                              stats,         & ! InOut
                              rhs ) ! Out
@@ -2429,9 +2427,9 @@ module advance_xp2_xpyp_module
           !!!!!***** sclr'^2 *****!!!!!
           call xp2_xpyp_rhs( nzm, nzt, ngrdcol, gr, xp2_xpyp_sclrp2, dt, & ! In
                              wpsclrp(:,:,sclr), wpsclrp(:,:,sclr), & ! In
-                             sclrm(:,:,sclr), sclrm(:,:,sclr), sclrp2(:,:,sclr), & ! In
-                             sclrp2_forcing, & ! In
-                             C2sclr_zm, invrs_tau_xp2_zm, sclr_tol(sclr)**2, & ! In
+                             sclrm(:,:,sclr), sclrm(:,:,sclr), & ! In
+                             sclrp2(:,:,sclr), sclrp2_forcing, & ! In
+                             C2sclr_1d, invrs_tau_xp2_zm, sclr_tol(sclr)**2, & ! In
                              lhs_ta_wpsclrp2(:,:,:,1), rhs_ta_wpsclrp2(:,:,sclr), & ! In
                              stats,         & ! InOut
                              sclr_rhs(:,:,sclr) ) ! Out
@@ -2466,7 +2464,7 @@ module advance_xp2_xpyp_module
                              wpsclrp(:,:,sclr), wprtp, & ! In
                              sclrm(:,:,sclr), rtm, sclrprtp(:,:,sclr), & ! In
                              sclrprtp_forcing, & ! In
-                             C2sclr_zm, invrs_tau_xp2_zm, threshold, & ! In
+                             C2sclr_1d, invrs_tau_xp2_zm, threshold, & ! In
                              lhs_ta_wpsclrp2(:,:,:,1), rhs_ta_wprtpsclrp(:,:,sclr), & ! In
                              stats,         & ! InOut
                              sclr_rhs(:,:,sclr+sclr_dim) ) ! Out
@@ -2501,7 +2499,7 @@ module advance_xp2_xpyp_module
                              wpsclrp(:,:,sclr), wpthlp, & ! In
                              sclrm(:,:,sclr), thlm, sclrpthlp(:,:,sclr), & ! In
                              sclrpthlp_forcing, & ! In
-                             C2sclr_zm, invrs_tau_xp2_zm, threshold, & ! In
+                             C2sclr_1d, invrs_tau_xp2_zm, threshold, & ! In
                              lhs_ta_wpsclrp2(:,:,:,1), rhs_ta_wpthlpsclrp(:,:,sclr), & ! In
                              stats,         & ! InOut
                              sclr_rhs(:,:,sclr+2*sclr_dim) ) ! Out
@@ -3433,8 +3431,7 @@ module advance_xp2_xpyp_module
   !=============================================================================
   subroutine xp2_xpyp_rhs( nzm, nzt, ngrdcol, gr, solve_type, dt, & ! In
                            wpxap, wpxbp, & ! In
-                           xam, xbm, xapxbp, & ! In
-                           xpyp_forcing, & ! In
+                           xam, xbm, xapxbp, xpyp_forcing, & ! In
                            Cn, invrs_tau_zm, threshold, & ! In
                            lhs_ta, rhs_ta, & ! In
                            stats,         & ! InOut

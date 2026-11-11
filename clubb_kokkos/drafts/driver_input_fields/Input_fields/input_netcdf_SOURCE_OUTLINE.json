@@ -1,0 +1,26 @@
+{
+  "Native_source": "src/Input_fields/input_netcdf.F90",
+  "Native_full_read_lines": 600,
+  "actual_JAX_scope": "No distinct input_netcdf module; actual input_fields.py1052-1186 and loss-driver coordinate reader mirror a subset. Native remains authority.",
+  "routines_in_order": [
+    "open_netcdf_read",
+    "get_netcdf_var",
+    "close_netcdf_read"
+  ],
+  "source_contracts": [
+    "open: original test_variable,path,ncf,l_error then constinputfields_state date owner; ncf intentout allocation release; alldimension aliases/validation/timeunitparse/Gregorianoffset/corewriteinterval math",
+    "get: original6formals;3/4Dfloat/doubleguard,Native1basedstart/count/firstcolumn,entire-outputMKSconversion anderrorreturn order",
+    "close: originalstat_file input; explicitnf90_close thenprint, fatalonerror; no inferredRAIIclose"
+  ],
+  "required_IO_primitives": [
+    "nf90_open",
+    "nf90_close",
+    "nf90_inq_varid",
+    "nf90_inquire_variable",
+    "nf90_inquire_dimension",
+    "nf90_get_att:text",
+    "nf90_get_var:core-real profile",
+    "nf90_strerror"
+  ],
+  "ownership": "No UDTcrossing; case descriptor+arrays C++; rawopenID lifetimeexplicit."
+}

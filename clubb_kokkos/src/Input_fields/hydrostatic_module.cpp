@@ -1,0 +1,376 @@
+// Hydrostatic and inverse sounding integration; see hydrostatic_module.hpp.
+#include "scratch_workspace.hpp"
+#include "hydrostatic_module.hpp"
+#include "CLUBB_core/calc_pressure.hpp"
+#include "CLUBB_core/constants_clubb.hpp"
+#include "CLUBB_core/interpolation.hpp"
+#include <iostream>
+#include <limits>
+#include <stdexcept>
+
+namespace clubb_kokkos {
+
+static Real1D calc_ref_z_linear_thvm(ScratchWorkspace& workspace,             // InOut
+                                     int nlevels, Real1D thvm, Real1D exner); // In
+KOKKOS_INLINE_FUNCTION static real_t calc_ref_z_sfc_linear_thvm(real_t thvm_km1, real_t thvm_k,
+                                                                real_t z_km1, real_t z_k, // In
+                                                                real_t exner_km1,
+                                                                real_t exner_sfc); // In
+
+//=============================================================================
+void hydrostatic(ScratchWorkspace& workspace,                            // InOut
+                 int ngrdcol, const grid& gr, Real2D thvm, Real1D p_sfc, // In
+                 Real2D p_in_Pa, Real2D p_in_Pa_zm,                      // Out
+                 Real2D exner, Real2D exner_zm,                          // Out
+                 Real2D rho, Real2D rho_zm)                              // Out
+{
+  // Description:
+  // This subroutine integrates the hydrostatic equation.
+  //
+  // The hydrostatic equation is of the form:
+  //
+  // dp/dz = - rho * grav.
+  //
+  // This equation can be re-written in terms of d(exner)/dz, such that:
+  //
+  // [ { p0^(R_d/C_p) * p^(C_v/C_p) } / { R_d * rho } ] * d(exner)/dz
+  // = - grav / C_p;
+  //
+  // which can also be expressed as:
+  //
+  // [ { p0^(R_d/C_p) * p^(C_v/C_p) } / { R_d * rho_d * ( 1 + r_v + r_c ) } ]
+  //    * d(exner)/dz
+  // = - grav / C_p.
+  //
+  // Furthermore, the moist equation of state can be written as:
+  //
+  // theta =
+  // [ { p0^(R_d/C_p) * p^(C_v/C_p) }
+  //   / { R_d * rho_d * ( 1 + (R_v/R_d)*r_v ) } ].
+  //
+  // The relationship between theta and theta_v (including water vapor and
+  // cloud water) is:
+  //
+  // theta_v = theta * [ ( 1 + (R_v/R_d)*r_v ) / ( 1 + r_v + r_c ) ];
+  //
+  // which, when substituted into the above equation, changes the equation of
+  // state to:
+  //
+  // theta_v =
+  // [ { p0^(R_d/C_p) * p^(C_v/C_p) }
+  //   / { R_d * rho_d * ( 1 + r_v + r_c ) } ].
+  //
+  // This equation is substituted into the d(exner)/dz form of the hydrostatic
+  // equation, resulting in:
+  //
+  // theta_v * d(exner)/dz = - grav / C_p;
+  //
+  // which can be re-written as:
+  //
+  // d(exner)/dz = - grav / ( C_p * theta_v ).
+  //
+  // This subroutine integrates the above equation to solve for exner, such
+  // that:
+  //
+  // INT(exner_1:exner_2) d(exner) =
+  // - ( grav / C_p ) * INT(z_1:z_2) ( 1 / theta_v ) dz.
+  //
+  //
+  // The resulting value of exner is used to calculate pressure.  Then, the
+  // values of pressure, exner, and theta_v can be used to calculate density.
+
+  // References:
+  //
+  //------------------------------------------------------------------------
+
+  // p_sfc: surface pressure[Pa]. thvm: theta_v on thermodynamic levels[K].
+  // p_in_Pa/exner/rho: pressure[Pa], Exner[-], density[kg/m^3] on zt.
+  // p_in_Pa_zm/exner_zm/rho_zm: corresponding quantities on momentum levels.
+  const int nzt = gr.nzt;
+  const int nzm = gr.nzm;
+
+  // Calculate pressure and exner on both thermodynamic and momentum levels.
+  init_pressure(workspace, ngrdcol, gr, thvm, p_sfc,   // In
+                p_in_Pa, exner, p_in_Pa_zm, exner_zm); // Out
+
+  // Interpolate thvm from thermodynamic to momentum levels. Linear
+  // interpolation is used, except for the uppermost momentum level, where a
+  // linear extension is used. Since thvm is considered to either be constant
+  // or vary linearly over the depth of a grid level, this interpolation is
+  // consistent with the rest of this code.
+  auto workspace_scope = workspace.scope();
+  const auto thvm_zm   = workspace_scope.view<Real2D>(Kokkos::WithoutInitializing,
+                                                      "hydrostatic::thvm_zm", ngrdcol, nzm);
+  zt2zm_api(workspace, nzm, nzt, ngrdcol, gr, thvm, thvm_zm);
+
+  // Calculate density based on pressure, exner, and thvm.
+  Kokkos::parallel_for(
+      "hydrostatic::rho", ngrdcol * nzt, KOKKOS_LAMBDA(int cell) {
+        const int i = cell % ngrdcol;
+        const int k = cell / ngrdcol;
+        rho(i, k)   = p_in_Pa(i, k) / (Rd * thvm(i, k) * exner(i, k));
+      });
+  Kokkos::parallel_for(
+      "hydrostatic::rho_zm", ngrdcol * nzm, KOKKOS_LAMBDA(int cell) {
+        const int i  = cell % ngrdcol;
+        const int k  = cell / ngrdcol;
+        rho_zm(i, k) = p_in_Pa_zm(i, k) / (Rd * thvm_zm(i, k) * exner_zm(i, k));
+      });
+}
+
+//=============================================================================
+void inverse_hydrostatic(ScratchWorkspace& workspace,               // InOut
+                         real_t p_sfc, real_t zm_init, int nlevels, // In
+                         Real1D thvm, Real1D exner,                 // In
+                         Real1D z)                                  // Out
+{
+  // Description:
+  // Subprogram to integrate the inverse of hydrostatic equation
+
+  // References:
+  //
+  //------------------------------------------------------------------------
+
+  // thvm/exner: sounding theta_v[K] and Exner[-]. z: altitude[m].
+  // ref_z_snd: altitude relative to the lowest sounding level[m].
+  // exner_reverse_array: reversed sounding Exner[-] for ascending search.
+  auto workspace_scope       = workspace.scope();
+  Real1D exner_reverse_array = workspace_scope.view<Real1D>(
+      Kokkos::WithoutInitializing, "inverse_hydrostatic::exner_reverse_array", nlevels);
+
+  // The variable ref_z_snd is the altitude of each sounding level compared to
+  // the altitude of the lowest sounding level.  Thus, the value of ref_z_snd
+  // at sounding level 1 is 0.  The lowest sounding level may or may not be
+  // right at the surface, and therefore an adjustment may be required to find
+  // the actual altitude above ground.
+  const Real1D ref_z_snd = calc_ref_z_linear_thvm(workspace, nlevels, thvm, exner);
+  // Native ERROR STOP is reported on the host after the single profile kernel;
+  // no output altitude is written in that branch. No Native science is called.
+  using Status = Kokkos::View<int*, Kokkos::LayoutLeft>;
+  auto fatal   = workspace_scope.view<Status>("inverse_hydrostatic::fatal", 1);
+  Kokkos::parallel_for(
+      "inverse_hydrostatic", 1, KOKKOS_LAMBDA(int) {
+        // Variable ref_z_sfc is initialized to0.0 to avoid a compiler warning.
+        real_t ref_z_sfc = real_t(0.0);
+        // Find the actual (above ground) altitude of the sounding levels from the
+        // reference altitudes.
+        // The pressure at the surface (or model lower boundary), p_sfc, is found at
+        // the altitude of the surface (or model lower boundary), zm_init.
+        // Find the value of exner at the surface from the pressure at the surface.
+        const real_t exner_sfc = Kokkos::pow(p_sfc / p0, kappa);
+        // Find the value of exner_sfc compared to the values of exner in the exner
+        // sounding profile.
+        if (exner_sfc < exner(nlevels - 1)) {
+          // Since the values of exner decrease monotonically with height (and thus
+          // with sounding level), the value of exner_sfc is less than all the
+          // values of exner in the sounding (and thus the surface is located above
+          // all the levels of the sounding), then there is insufficient information
+          // to run the model.  Stop the run.
+          fatal(0) = 1;
+          return;
+        } else if (exner_sfc > exner(0)) {
+          // Since the values of exner decrease monotonically with height (and thus
+          // with sounding level), the value of exner_sfc is greater than all the
+          // values of exner in the sounding (and thus the surface is located below
+          // all the levels of the sounding), use a linear extension of thvm to find
+          // thvm at the surface.  Thus, d(thvm)/d(exner) is the same as its value
+          // between sounding levels 1 and 2.  If the surface is so far below the
+          // sounding that gr%zt(1,2) is below the first sounding level, the code in
+          // subroutine read_sounding (found in sounding.F90) will stop the run.
+          // Calculate the difference between the altitude of the surface (or model
+          // lower boundary) and the altitude of the lowest level of the sounding.
+          ref_z_sfc = calc_ref_z_sfc_linear_thvm(thvm(0), thvm(1), ref_z_snd(0), ref_z_snd(1), // In
+                                                 exner(0), exner_sfc);                         // In
+        } else {
+          // Since the values of exner decrease monotonically with height (and thus
+          // with sounding level), the value of exner_sfc is between two values of
+          // exner (at some levels k-1 and k) in the sounding, and the value of
+          // d(thvm)/d(exner) is the same as between those two levels in the above
+          // calculation.
+          // The value of exner_sfc is between two levels of the exner sounding.
+          // Find the index of the lower level.
+          // In order to use the binary search, the array must be sorted from least
+          // value to greatest value.  Since exner decreases with altitude (and
+          // vertical level), the array that is sent to function binary_search must
+          // be the exact reverse of exner.
+          // Thus, exner(1) becomes exner_reverse_array(nlevels), exner(nlevels)
+          // becomes exner_reverse_array(1), etc.
+          for (int k = 0; k < nlevels; ++k)
+            exner_reverse_array(k) = exner(nlevels - k - 1);
+          // The output from the binary search yields the first value in the
+          // exner_reverse_array that is greater than or equal to exner_sfc.  Thus,
+          // in regards to the regular exner array, this is the reverse index of
+          // the lower sounding level for exner_sfc.  For example, if exner_sfc
+          // is found between exner(1) and exner(2), the binary search for exner_sfc
+          // in regards to exner_reverse_index will return a value of nlevels.
+          // Once the actual lower level index is calculated, the result will be 1.
+          // The search and the resulting sounding brackets are zero-based.
+          const int rev_low_idx = binary_search(nlevels, exner_reverse_array, exner_sfc);
+          // Find the lower level index for the regular exner profile from the
+          // lower level index for the reverse exner profile.
+          const int low_idx = nlevels - rev_low_idx - 1;
+          // Find the index of the upper level.
+          const int high_idx = low_idx + 1;
+          // Calculate the difference between the altitude of the surface (or model
+          // lower boundary) and the altitude of the lowest level of the sounding.
+          ref_z_sfc = calc_ref_z_sfc_linear_thvm(thvm(low_idx), thvm(high_idx),           // In
+                                                 ref_z_snd(low_idx), ref_z_snd(high_idx), // In
+                                                 exner(low_idx), exner_sfc);              // In
+        }
+        // Find the altitude of the bottom of the sounding.
+        const real_t z_snd_bottom = zm_init - ref_z_sfc;
+        // Calculate the sounding altitude profile based
+        // on z_snd_bottom and ref_z_snd.
+        for (int k = 0; k < nlevels; ++k)
+          z(k) = z_snd_bottom + ref_z_snd(k);
+      });
+  const auto fatal_host = to_host_space(workspace, fatal);
+  if (fatal_host(0)) {
+    std::cerr << "The entire sounding is below the model surface.\n";
+    throw std::runtime_error("");
+  }
+}
+
+//=============================================================================
+static Real1D calc_ref_z_linear_thvm(ScratchWorkspace& workspace,            // InOut
+                                     int nlevels, Real1D thvm, Real1D exner) // In
+{
+  // Description:
+  // This function solves for z (altitude) at a level, given altitude at
+  // another level, the values of exner at both levels, and a value of thvm
+  // that is considered to vary linearly over the depth of the level.
+  //
+  // The derivative of exner is given by the following equation:
+  //
+  // d(exner)/dz = - grav / (Cp * thvm).
+  //
+  // This equation is integrated to solve for z, such that:
+  //
+  // INT(exner_1:exner_2) d(exner) = - ( grav / Cp ) INT(z_1:z_2) (1/thvm) dz.
+  //
+  // The value of mean theta_v (thvm) is calculated at each level, and linear
+  // interpolation is used in the integral equation for all altitudes
+  // in-between successive levels, such that:
+  //
+  // thvm(z) = ( ( thvm2 - thvm1 ) / ( z2 - z1 ) ) * ( z - z1 ) + thvm1.
+  //
+  // The integrals are solved, and the equation can be solved for the thickness
+  // z2 - z1, such that:
+  //
+  // z2 - z1
+  //   | - ( Cp / grav )
+  //   |   * ( exner2 - exner1 ) * ( thvm2 - thvm1 ) / ln( thvm2 / thvm1 );
+  // = | where thvm2 /= thvm1;
+  //   |
+  //   | - ( Cp / grav ) * ( exner2 - exner1 ) * thvm;
+  //   | where thvm2 = thvm1 (= thvm).
+  //
+  // The value of height (z) can be calculated using the above equation at all
+  // levels once the value of height is known at one level.
+
+  // References:
+  //-------------------------------------------------------------------
+
+  // thvm/exner: sounding theta_v[K] and Exner[-]. z: reference altitude[m].
+  auto z =
+      workspace.view<Real1D>(Kokkos::WithoutInitializing, "calc_ref_z_linear_thvm::z", nlevels);
+  const real_t thvm_epsilon = std::numeric_limits<real_t>::epsilon();
+  // Successive altitudes depend on the prior altitude. Keep the Native k2:n
+  // recurrence within one profile, rather than replacing it with a reduction.
+  Kokkos::parallel_for(
+      "calc_ref_z_linear_thvm", 1, KOKKOS_LAMBDA(int) {
+        z(0) = real_t(0.0);
+        // Calculate the value of the reference height at sounding level k, based
+        // the value of thvm at sounding levels k-1 and k, the value of exner at
+        // sounding levels k-1 and k, and the reference altitude at sounding level
+        // k-1.
+        for (int k = 1; k < nlevels; ++k) {
+          if (Kokkos::abs(thvm(k) - thvm(k - 1)) > thvm_epsilon * thvm(k)) {
+            z(k) = z(k - 1) - (Cp / grav) * (exner(k) - exner(k - 1)) * (thvm(k) - thvm(k - 1)) /
+                                  Kokkos::log(thvm(k) / thvm(k - 1));
+          } else { // thvm(k)=thvm(k-1).
+            z(k) = z(k - 1) - (Cp / grav) * (exner(k) - exner(k - 1)) * thvm(k);
+          }
+        }
+      });
+  return z;
+}
+
+//=============================================================================
+KOKKOS_INLINE_FUNCTION static real_t
+calc_ref_z_sfc_linear_thvm(real_t thvm_km1, real_t thvm_k, real_t z_km1, real_t z_k, // In
+                           real_t exner_km1, real_t exner_sfc)                       // In
+{
+  // Description:
+  // This function solves for the difference between the altitude of the model
+  // lower boundary and the altitude of a sounding level.  Since the altitude
+  // of the model lower boundary is known, this routine allows the actual
+  // altitude of a sounding level to be calculated.  Once a sounding level
+  // altitude is known, the altitudes of the remaining sounding levels can also
+  // be calculated.
+  //
+  // The derivative of exner is given by the following equation:
+  //
+  // d(exner)/dz = - grav / (Cp * thvm).
+  //
+  // This equation is integrated to solve for ref_z_sfc, such that:
+  //
+  // INT(exner1:exner_sfc) d(exner)
+  // = - ( grav / Cp ) INT(z1:ref_z_sfc) (1/thvm) dz;
+  //
+  // where exner1 and z1 are exner and altitude, respectively, at a sounding
+  // level, exner_sfc is surface exner (calculated from surface pressure), and
+  // ref_z_sfc is the height of the surface relative to sounding level z1.
+  //
+  // The value of mean theta_v (thvm) is calculated at each level, and linear
+  // interpolation is used in the integral equation for all altitudes
+  // in-between successive levels, such that:
+  //
+  // thvm(z) = ( ( thvm2 - thvm1 ) / ( z2 - z1 ) ) * ( z - z1 ) + thvm1.
+  //
+  // In the above equation, z2 - z1 is the thickness between two sounding
+  // levels (which has already been calculated), and thvm1 and thvm2 are the
+  // values of thvm at those two sounding levels.  The thickness z - z1 is
+  // the difference between altitude z and the sounding level z1.
+  //
+  // The integrals are solved, and the equation can be solved for ref_z_sfc,
+  // such that:
+  //
+  // ref_z_sfc
+  //   | ( ( z2 - z1 ) / ( thvm2 - thvm1 ) )
+  //   | * ( thvm1 * exp{ - ( Cp / grav ) * ( exner_sfc - exner1 )
+  //   |                    * ( ( thvm2 - thvm1 ) / ( z2 - z1 ) ) }
+  // = |     - thvm1 + ( ( thvm2 - thvm1 ) / ( z2 - z1 ) ) * z1 );
+  //   | where thvm2 /= thvm1;
+  //   |
+  //   | z1 - ( Cp / grav ) * ( exner2 - exner1 ) * thvm;
+  //   | where thvm2 = thvm1 (= thvm).
+  //
+  // Prior to calculating ref_z_sfc, the thickness between all sounding levels
+  // were already calculated.  The calculation of ref_z_sfc allows for the
+  // difference between the surface and a sounding level to be calculated
+  // (ref_z_sfc - z1).  Since the altitude of the surface is already provided
+  // (zm_init), the ref_z_sfc - z1 calculation allows for the calculation of
+  // the altitude of a sounding level.  Once the altitude of a sounding level
+  // is calculated, the altitude of all other sounding levels are known, since
+  // the thicknesses between all sounding levels were already calculated.
+
+  // References:
+  //-------------------------------------------------------------------
+
+  // theta_v[K] and reference altitude[m] at levels k-1/k; sounding and
+  // surface Exner[-]. Return surface altitude relative to sounding level k-1[m].
+  real_t ref_z_sfc;
+  // Calculate z at sounding level k.
+  if (Kokkos::abs(thvm_k - thvm_km1) > Kokkos::epsilon_v<real_t> * thvm_k) {
+    ref_z_sfc = ((z_k - z_km1) / (thvm_k - thvm_km1)) *
+                (thvm_km1 * Kokkos::exp(-(Cp / grav) * (exner_sfc - exner_km1) *
+                                        ((thvm_k - thvm_km1) / (z_k - z_km1))) -
+                 thvm_km1 + ((thvm_k - thvm_km1) / (z_k - z_km1)) * z_km1);
+  } else { // thvm_k=thvm_km1.
+    ref_z_sfc = z_km1 - (Cp / grav) * (exner_sfc - exner_km1) * thvm_k;
+  }
+  return ref_z_sfc;
+}
+
+} // namespace clubb_kokkos

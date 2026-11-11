@@ -1,0 +1,53 @@
+{
+  "date_UTC": "2026-11-06T08:09:12.505468+00:00",
+  "attribution": "Owner full Native and actual JAX read, followed by complete target reread; no independent reviewer claim.",
+  "Native_lines": 1205,
+  "actual_JAX_lines": 457,
+  "routines_in_source_order": [
+    "read_sounding",
+    "read_sounding_file",
+    "read_sclr_sounding_file",
+    "read_edsclr_sounding_file",
+    "read_profile",
+    "convert_snd2extended_atm",
+    "load_extended_std_atm"
+  ],
+  "public_contract": "27 Native read_sounding formals then the three accepted case-owned radiation, extended-atmosphere and IOP contexts; read_profile retains 3 Native formals.",
+  "checks": [
+    "7 definitions and private prototypes preserve Native names/source order; all original argument names/order/intents and public sclr_max=1000 retained",
+    "read_sounding file checks/IOP branch/scalar files/debug/error/surface/extended/cleanup order read against Native",
+    "10 cubic,17 linear and1 binary-search callsites reread with every field-specific input and index conversion; no expression reordering or speculative FMA",
+    "cubic stencil top/lower branches and DYCOMS2_RF02 exact physics/scalar IDs retained, including Native passive IDs used in eddy outputs",
+    "all model interpolation writes remain inside every Native bracket-advance loop; baseline first-value and first-scalar-level writes retained",
+    "Native first-column storage-level endpoint checks retained; existing binary_search result converted once to Native local index",
+    "all9 input profiles and both scalar debug groups retained in source order; host streams intentionally replace Native list-directed/format rendering",
+    "local integer fatal marker selects first error in Native column-outer/level-inner order; host diagnostics occur only on failure",
+    "all7 body branches, helper metadata/header choices, scalar no-blankfill behavior and cleanup sites reviewed; no omitted supported body",
+    "all kernel captures are scalar or component View handles; case state/gr/sclr_idx owning objects stay on host",
+    "extended atmosphere uses sibling authoritative case-owned schema; pressure/exner/T/humidity/ozone formulas and source call order preserved",
+    "read_profile keeps only raw fixed-size namelist parse Native; all checks and interpolation C++, no persistent state or whole science bridge",
+    "thin host/strided adapters use existing array owner; no separate schema/cache/conversion owner"
+  ],
+  "source_definedness_preserved": [
+    "read_profile leaves x unwritten where its Native bracket loop is false, including exact lowest point",
+    "read_x_profile undefined output tails remain undefined; main standard sounding uses only nlevels prefix",
+    "Native scalar/eddy buffer shapes and exact ID guards are preserved; source-invalid IDs/dimensions are not repaired",
+    "IOP implementation is separately assigned and required for linkage; these source audits do not establish IOP runtime behavior"
+  ],
+  "adaptations": [
+    "Only actual Native module state becomes appended accepted case contexts; ordinary helper arguments remain unchanged.",
+    "Kokkos independent cells retain per-cell ascending bracket recurrence; first fatal recorded by integer atomic_min.",
+    "Fortran sequence/index conventions map explicitly to LayoutLeft Views and zero-based storage.",
+    "Native pure namelist OPEN/READ/CLOSE is a call-local primitive service; all scientific/control code is C++.",
+    "Host stream stdout formatting preserves fields/order but does not claim byte-identical Native diagnostic whitespace."
+  ],
+  "BFB_specific_adaptations": [],
+  "sha256": {
+    "src/Input_fields/sounding.F90": "1cc6582274d8e8c152e1afab9591d64a55bd1ec5cec519f4a2fcea9f86c51268",
+    "clubb_kokkos/drafts/driver_input_fields/Input_fields/sounding.cpp": "d1d56eac17ff1233b956a978fa2fcda0c6c43e73acea3e27c3286272b516ed59",
+    "clubb_kokkos/drafts/driver_input_fields/Input_fields/sounding.hpp": "16896160e9337e0fdbba1db4bbc2343345bd2adc96d23db685df1e4a42f504d5",
+    "clubb_kokkos/drafts/driver_input_fields/f2k/sounding_io_bridge.hpp": "a2ca74a815a20e64c0416295553787cbb8393b7d6c2689b06fa7d717f846edb7",
+    "clubb_kokkos/drafts/driver_input_fields/f2k/sounding_io_bridge.F90": "4fbe7945bdedbf313b5ee8339ecac5df6073c849d1af4dbf6c11128b728d2423"
+  },
+  "status": "SOURCE-AUDITED DRAFT ONLY; no build, CPU/CUDA execution or numerical/BFB claim. Root integrates compatible group."
+}

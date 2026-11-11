@@ -61,25 +61,14 @@ def _hm(hm_metadata, name):
 
 
 def pdf2hydromet_idx(pdf_idx, hm_metadata):
-    """Returns the position of a specific precipitating hydrometeor corresponding
-    to the PDF index (pdf_idx) in the precipitating hydrometeor array
-    (hydromet_idx).
+    """Returns the hydromet-array index corresponding to ``pdf_idx``.
 
-    Returns:
-        hydromet_idx
+    Description:
+      Returns the position of a specific precipitating hydrometeor corresponding
+      to the PDF index (pdf_idx) in the precipitating hydrometeor array
+      (hydromet_idx).
 
-    Fortran declarations (pdf2hydromet_idx in src/CLUBB_core/index_mapping.F90):
-
-        !--------------------------- Input Variables ---------------------------
-        integer, intent(in) :: &
-          pdf_idx    ! Index of a hydrometeor in the PDF array.
-
-        type (hm_metadata_type), intent(in) :: &
-          hm_metadata
-
-        !--------------------------- Output Variables ---------------------------
-        integer :: &
-          hydromet_idx    ! Index of a hydrometeor in the hydromet array.
+    References:
     """
     # Initialize hydromet_idx
     pairs = (
@@ -109,25 +98,14 @@ def pdf2hydromet_idx(pdf_idx, hm_metadata):
 
 
 def hydromet2pdf_idx(hydromet_idx, hm_metadata):
-    """Returns the position of a specific precipitating hydrometeor corresponding
-    to the precipitating hydrometeor index (hydromet_idx) in the PDF array
-    (pdf_idx).
+    """Returns the PDF-array index corresponding to ``hydromet_idx``.
 
-    Returns:
-        pdf_idx
+    Description:
+      Returns the position of a specific precipitating hydrometeor corresponding
+      to the precipitating hydrometeor index (hydromet_idx) in the PDF array
+      (pdf_idx).
 
-    Fortran declarations (hydromet2pdf_idx in src/CLUBB_core/index_mapping.F90):
-
-        !--------------------------- Input Variables ---------------------------
-        integer, intent(in) :: &
-          hydromet_idx    ! Index of a hydrometeor in the hydromet array.
-
-        type (hm_metadata_type), intent(in) :: &
-          hm_metadata
-
-        !--------------------------- Output Variables ---------------------------
-        integer :: &
-          pdf_idx    ! Index of a hydrometeor in the PDF array.
+    References:
     """
     # Initialize pdf_idx.
     pairs = (
@@ -157,26 +135,15 @@ def hydromet2pdf_idx(hydromet_idx, hm_metadata):
 
 
 def rx2Nx_hm_idx(rx_idx, hm_metadata):
-    """Returns the position in the hydrometeor array of the specific
-    precipitating hydrometeor concentration (Nx_idx) corresponding to the
-    precipitating hydrometeor mixing ratio (rx_idx) of the same species of
-    precipitating hydrometeor (rain, ice, snow, or graupel).
+    """Returns the concentration hydromet index paired with ``rx_idx``.
 
-    Returns:
-        Nx_idx
+    Description:
+      Returns the position in the hydrometeor array of the specific
+      precipitating hydrometeor concentration (Nx_idx) corresponding to the
+      precipitating hydrometeor mixing ratio (rx_idx) of the same species of
+      precipitating hydrometeor (rain, ice, snow, or graupel).
 
-    Fortran declarations (rx2Nx_hm_idx in src/CLUBB_core/index_mapping.F90):
-
-        !--------------------------- Input Variables ---------------------------
-        integer, intent(in) :: &
-          rx_idx    ! Index of the mixing ratio in the hydrometeor array.
-
-        type (hm_metadata_type), intent(in) :: &
-          hm_metadata
-
-        !--------------------------- Output Variables ---------------------------
-        integer :: &
-          Nx_idx    ! Index of the concentration in the hydrometeor array.
+    References:
     """
     # Initialize Nx_idx.
     pairs = (
@@ -198,26 +165,15 @@ def rx2Nx_hm_idx(rx_idx, hm_metadata):
 
 
 def Nx2rx_hm_idx(Nx_idx, hm_metadata):
-    """Returns the position in the hydrometeor array of the specific
-    precipitating hydrometeor mixing ratio (rx_idx) corresponding to the
-    precipitating hydrometeor concentration (Nx_idx) of the same species of
-    precipitating hydrometeor (rain, ice, snow, or graupel).
+    """Returns the mixing-ratio hydromet index paired with ``Nx_idx``.
 
-    Returns:
-        rx_idx
+    Description:
+      Returns the position in the hydrometeor array of the specific
+      precipitating hydrometeor mixing ratio (rx_idx) corresponding to the
+      precipitating hydrometeor concentration (Nx_idx) of the same species of
+      precipitating hydrometeor (rain, ice, snow, or graupel).
 
-    Fortran declarations (Nx2rx_hm_idx in src/CLUBB_core/index_mapping.F90):
-
-        !--------------------------- Input Variables ---------------------------
-        integer, intent(in) :: &
-          Nx_idx    ! Index of the concentration in the hydrometeor array.
-
-        type (hm_metadata_type), intent(in) :: &
-          hm_metadata
-
-        !--------------------------- Output Variables ---------------------------
-        integer :: &
-          rx_idx    ! Index of the mixing ratio in the hydrometeor array.
+    References:
     """
     # Initialize rx_idx.
     pairs = (
@@ -239,23 +195,15 @@ def Nx2rx_hm_idx(Nx_idx, hm_metadata):
 
 
 def mvr_hm_max(hydromet_idx, hm_metadata):
-    """Returns the maximum allowable mean volume radius of a specific
-    precipitating hydrometeor type (rain, ice, snow, or graupel) corresponding
-    to the precipitating hydrometeor index, whether that index is for the
-    mixing ratio or concentration associated with that hydrometeor type.
+    """Return the maximum allowable mean volume radius for ``hydromet_idx``.
 
-    Fortran declarations (mvr_hm_max in src/CLUBB_core/index_mapping.F90):
+    Description:
+      Returns the maximum allowable mean volume radius of a specific
+      precipitating hydrometeor type (rain, ice, snow, or graupel) corresponding
+      to the precipitating hydrometeor index, whether that index is for the
+      mixing ratio or concentration associated with that hydrometeor type.
 
-        !--------------------------- Input Variables ---------------------------
-        integer, intent(in) :: &
-          hydromet_idx    ! Index of a hydrometeor in the hydromet array.
-
-        type (hm_metadata_type), intent(in) :: &
-          hm_metadata
-
-        !--------------------------- Output Variables ---------------------------
-        real( kind = core_rknd ) :: &
-          mvr_hydromet_max    ! Maximum allowable mean volume radius    [m]
+    References:
     """
     # Initialize mvr_hydromet_max.
     species = (

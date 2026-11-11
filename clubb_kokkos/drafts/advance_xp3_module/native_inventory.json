@@ -1,0 +1,878 @@
+[
+  {
+    "name": "advance_xp3",
+    "arguments": [
+      {
+        "name": "nzm",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "nzt",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "ngrdcol",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "sclr_dim",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "sclr_tol",
+        "kind": "real",
+        "dims": [
+          "sclr_dim"
+        ],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "gr",
+        "kind": "grid",
+        "dims": [],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "dt",
+        "kind": "real",
+        "dims": [],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "rtm",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "thlm",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "rtp2",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "thlp2",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "wprtp",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "wpthlp",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "wprtp2",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "wpthlp2",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "rho_ds_zm",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "invrs_rho_ds_zt",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "invrs_tau_zt",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "tau_max_zt",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "sclrm",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt",
+          "sclr_dim"
+        ],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "sclrp2",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm",
+          "sclr_dim"
+        ],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "wpsclrp",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm",
+          "sclr_dim"
+        ],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "wpsclrp2",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt",
+          "sclr_dim"
+        ],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "wp2",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "wp3",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "upwp",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "vpwp",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "up2",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "vp2",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "thvm",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "clubb_params",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nparams"
+        ],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "l_lmm_stepping",
+        "kind": "logical",
+        "dims": [],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "stats",
+        "kind": "stats_type",
+        "dims": [],
+        "intent": "inout",
+        "optional": false
+      },
+      {
+        "name": "rtp3",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "inout",
+        "optional": false
+      },
+      {
+        "name": "thlp3",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "inout",
+        "optional": false
+      },
+      {
+        "name": "sclrp3",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt",
+          "sclr_dim"
+        ],
+        "intent": "inout",
+        "optional": false
+      },
+      {
+        "name": "up3",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "inout",
+        "optional": false
+      },
+      {
+        "name": "vp3",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "inout",
+        "optional": false
+      }
+    ]
+  },
+  {
+    "name": "diagnose_xp3",
+    "arguments": [
+      {
+        "name": "nzm",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "nzt",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "ngrdcol",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "sclr_dim",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "sclr_tol",
+        "kind": "real",
+        "dims": [
+          "sclr_dim"
+        ],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "gr",
+        "kind": "grid",
+        "dims": [],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "iiPDF_type",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "clubb_params",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nparams"
+        ],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "wp2",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "wp3",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "thvm",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "wprtp",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "wpthlp",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "rtp2",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "thlp2",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "upwp",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "vpwp",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "up2",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "vp2",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "sigma_sqd_w",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "wpsclrp",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm",
+          "sclr_dim"
+        ],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "sclrp2",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm",
+          "sclr_dim"
+        ],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "stats",
+        "kind": "stats_type",
+        "dims": [],
+        "intent": "inout",
+        "optional": false
+      },
+      {
+        "name": "rtp3",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "inout",
+        "optional": false
+      },
+      {
+        "name": "thlp3",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "inout",
+        "optional": false
+      },
+      {
+        "name": "up3",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "inout",
+        "optional": false
+      },
+      {
+        "name": "vp3",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "inout",
+        "optional": false
+      },
+      {
+        "name": "sclrp3",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt",
+          "sclr_dim"
+        ],
+        "intent": "inout",
+        "optional": false
+      }
+    ]
+  },
+  {
+    "name": "advance_xp3_simplified",
+    "arguments": [
+      {
+        "name": "nzm",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "nzt",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "ngrdcol",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "gr",
+        "kind": "grid",
+        "dims": [],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "solve_type",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "dt",
+        "kind": "real",
+        "dims": [],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "xm",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "xp2",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "wpxp",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "wpxp2",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "rho_ds_zm",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "invrs_rho_ds_zt",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "invrs_tau_zt",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "tau_max_zt",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "x_tol",
+        "kind": "real",
+        "dims": [],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "l_lmm_stepping",
+        "kind": "logical",
+        "dims": [],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "stats",
+        "kind": "stats_type",
+        "dims": [],
+        "intent": "inout",
+        "optional": false
+      },
+      {
+        "name": "xp3",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "inout",
+        "optional": false
+      }
+    ]
+  },
+  {
+    "name": "term_tp_rhs",
+    "arguments": [
+      {
+        "name": "xp2_zt",
+        "kind": "real",
+        "dims": [],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "wpxpp1",
+        "kind": "real",
+        "dims": [],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "wpxp",
+        "kind": "real",
+        "dims": [],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "rho_ds_zmp1",
+        "kind": "real",
+        "dims": [],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "rho_ds_zm",
+        "kind": "real",
+        "dims": [],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "invrs_rho_ds_zt",
+        "kind": "real",
+        "dims": [],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "invrs_dzt",
+        "kind": "real",
+        "dims": [],
+        "intent": "in",
+        "optional": false
+      }
+    ]
+  },
+  {
+    "name": "term_ac_rhs",
+    "arguments": [
+      {
+        "name": "xm_zmp1",
+        "kind": "real",
+        "dims": [],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "xm_zm",
+        "kind": "real",
+        "dims": [],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "wpxp2",
+        "kind": "real",
+        "dims": [],
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "invrs_dzt",
+        "kind": "real",
+        "dims": [],
+        "intent": "in",
+        "optional": false
+      }
+    ]
+  }
+]

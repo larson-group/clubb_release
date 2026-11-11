@@ -1,0 +1,1069 @@
+{
+  "source": "src/CLUBB_core/mono_flux_limiter.F90",
+  "source_sha256": "0b592a5b8feab48def3b465a246b7bd8b790265d95d2a2d0e78780fdeee5568a",
+  "complete_native_lines": 2157,
+  "complete_native_read": true,
+  "actual_jax_scope_read": true,
+  "routines": [
+    {
+      "name": "monotonic_turbulent_flux_limit",
+      "line": 33,
+      "public": true,
+      "arguments": [
+        {
+          "name": "nzm",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "gr",
+          "kind": "grid",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "solve_type",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "dt",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "xm_old",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "xp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wm_zt",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "xm_forcing",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rho_ds_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rho_ds_zt",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "invrs_rho_ds_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "invrs_rho_ds_zt",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "xp2_threshold",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "xm_tol",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_implemented",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "low_lev_effect",
+          "kind": "integer",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "high_lev_effect",
+          "kind": "integer",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "tridiag_solve_method",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_upwind_xm_ma",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_mono_flux_lim_spikefix",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "stats",
+          "kind": "stats_type",
+          "dims": [],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "xm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wpxp",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "err_info",
+          "kind": "err_info_type",
+          "dims": [],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "calls": [
+        "call stats_begin_budget( name_wpxp_mfl, wpxp / dt, stats )",
+        "call stats_begin_budget( name_xm_mfl, xm / dt, stats )",
+        "call stats_update( name_xm_enter_mfl, xm, stats )",
+        "call stats_update( name_xm_old, xm_old, stats )",
+        "call stats_update( name_wpxp_enter_mfl, wpxp, stats )",
+        "call mfl_xm_lhs( nzm, nzt, ngrdcol, dt, gr%weights_zt2zm, gr%invrs_dzt, gr%invrs_dzm, wm_zt, l_implemented, l_upwind_xm_ma, gr%grid_dir, lhs_mfl_xm )",
+        "call mfl_xm_rhs( nzm, nzt, ngrdcol, dt, xm_old, wpxp, xm_forcing, gr%invrs_dzt, rho_ds_zm, invrs_rho_ds_zt, rhs_mfl_xm )",
+        "call mfl_xm_solve( nzt, ngrdcol, gr, solve_type, tridiag_solve_method, l_implemented, lhs_mfl_xm, rhs_mfl_xm, err_info, xm_mfl )",
+        "call stats_update( name_xm_without_ta, xm_without_ta, stats )",
+        "call stats_update( name_xm_mfl_min, min_x_allowable, stats )",
+        "call stats_update( name_xm_mfl_max, max_x_allowable, stats )",
+        "call stats_update( name_wpxp_mfl_min, wpxp_mfl_min, stats )",
+        "call stats_update( name_wpxp_mfl_max, wpxp_mfl_max, stats )",
+        "call stats_finalize_budget( name_wpxp_mfl, wpxp / dt, stats )",
+        "call stats_finalize_budget( name_xm_mfl, xm / dt, stats )",
+        "call stats_update( name_xm_exit_mfl, xm, stats )",
+        "call stats_update( name_wpxp_exit_mfl, wpxp, stats )"
+      ]
+    },
+    {
+      "name": "mfl_xm_lhs",
+      "line": 1036,
+      "public": false,
+      "arguments": [
+        {
+          "name": "nzm",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "dt",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "weights_zt2zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm",
+            "t_above:t_below"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "invrs_dzt",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "invrs_dzm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wm_zt",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_implemented",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_upwind_xm_ma",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "grid_dir",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs",
+          "kind": "real",
+          "dims": [
+            "ndiags3",
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "calls": [
+        "call term_ma_zt_lhs( nzm, nzt, ngrdcol, wm_zt, weights_zt2zm, invrs_dzt, invrs_dzm, l_upwind_xm_ma, grid_dir, lhs )"
+      ]
+    },
+    {
+      "name": "mfl_xm_rhs",
+      "line": 1147,
+      "public": false,
+      "arguments": [
+        {
+          "name": "nzm",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "dt",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "xm_old",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wpxp",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "xm_forcing",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "invrs_dzt",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rho_ds_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "invrs_rho_ds_zt",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rhs",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "calls": []
+    },
+    {
+      "name": "mfl_xm_solve",
+      "line": 1233,
+      "public": false,
+      "arguments": [
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "gr",
+          "kind": "grid",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "solve_type",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "tridiag_solve_method",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_implemented",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs",
+          "kind": "real",
+          "dims": [
+            "ndiags3",
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rhs",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "err_info",
+          "kind": "err_info_type",
+          "dims": [],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "xm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "calls": [
+        "call tridiag_solve( solve_type_str, tridiag_solve_method, ngrdcol, nzt, l_implemented, lhs, rhs, err_info, xm )"
+      ]
+    },
+    {
+      "name": "calc_turb_adv_range",
+      "line": 1359,
+      "public": true,
+      "arguments": [
+        {
+          "name": "nzm",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "gr",
+          "kind": "grid",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "dt",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "w_1_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "w_2_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "varnce_w_1_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "varnce_w_2_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mixt_frac_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "stats",
+          "kind": "stats_type",
+          "dims": [],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "low_lev_effect",
+          "kind": "integer",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "high_lev_effect",
+          "kind": "integer",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "calls": [
+        "call mean_vert_vel_up_down( nzm, ngrdcol, w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, mixt_frac_zm, 0.0_core_rknd, w_min, stats, vert_vel_down_zm, vert_vel_up_zm )"
+      ]
+    },
+    {
+      "name": "mean_vert_vel_up_down",
+      "line": 1740,
+      "public": false,
+      "arguments": [
+        {
+          "name": "nzm",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "w_1_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "w_2_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "varnce_w_1_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "varnce_w_2_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mixt_frac_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "w_ref",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "w_min",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "stats",
+          "kind": "stats_type",
+          "dims": [],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mean_w_down",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mean_w_up",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "calls": [
+        "call calc_mean_w_up_down_component( nzm, ngrdcol, w_1_zm, varnce_w_1_zm, w_ref, w_min, mean_w_down_1st, mean_w_up_1st )",
+        "call calc_mean_w_up_down_component( nzm, ngrdcol, w_2_zm, varnce_w_2_zm, w_ref, w_min, mean_w_down_2nd, mean_w_up_2nd )",
+        "call stats_update( \"mean_w_up\", mean_w_up, stats )",
+        "call stats_update( \"mean_w_down\", mean_w_down, stats )"
+      ]
+    },
+    {
+      "name": "calc_mean_w_up_down_component",
+      "line": 2025,
+      "public": false,
+      "arguments": [
+        {
+          "name": "nzm",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "w_i_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "varnce_w_i_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "w_ref",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "w_min",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mean_w_down_i",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mean_w_up_i",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "calls": []
+    }
+  ],
+  "scope": "All7Native procedures and all active options. Retain Native disabled explicit-adjustment and constant-thickness source branches. JAX is scope evidence only: it omits constant-thickness body, fuses screening into scan, reorders fatal/flip and guards square roots/denominators; none are copied.",
+  "execution": "Column-first independent cells; min/max windows, vertical clipping, propagation-time searches and spike-integral sums ordered in each column. Native bands-first scratch until actual matrix solver API, restore before fatal return. Host diagnostics staged.",
+  "pending_lower": "Stable mean_adv::term_ma_zt_lhs, live grid interpolation, actual live tridiag_solve and native stats APIs; missing generated l_force_descending_solves flag."
+}

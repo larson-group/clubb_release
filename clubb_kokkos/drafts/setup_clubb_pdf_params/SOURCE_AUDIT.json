@@ -1,0 +1,317 @@
+{
+  "canonical_source": "src/CLUBB_core/setup_clubb_pdf_params.F90",
+  "canonical_sha256": "cf410f3e43960b13b7c7dfc5e2c98c60712c40028421edadb3d7673400186fd5",
+  "hashes": {
+    "setup_clubb_pdf_params.cpp": "419e0744cfbb6b7e3b9597559488404cdb845e06db7e1147e585bed30c8a0f34",
+    "setup_clubb_pdf_params.hpp": "7835977a44ba35d00aee9237e4b37587952cc336c6abfc25858289608e5aaad9",
+    "f2k_dependencies.hpp": "b47f5763848876f423bf0b7fd71a0e905739b360c3d912fde7551c9b936eb384"
+  },
+  "routines": [
+    {
+      "name": "setup_pdf_parameters_api",
+      "arguments": 36,
+      "assignment_trees_matched": 29,
+      "assignment_trees_unmatched": []
+    },
+    {
+      "name": "compute_mean_stdev",
+      "arguments": 36,
+      "assignment_trees_matched": 27,
+      "assignment_trees_unmatched": []
+    },
+    {
+      "name": "calc_corr_norm_and_cholesky_factor",
+      "arguments": 13,
+      "assignment_trees_matched": 24,
+      "assignment_trees_unmatched": []
+    },
+    {
+      "name": "comp_corr_norm",
+      "arguments": 27,
+      "assignment_trees_matched": 22,
+      "assignment_trees_unmatched": []
+    },
+    {
+      "name": "calc_comp_mu_sigma_hm",
+      "arguments": 23,
+      "assignment_trees_matched": 55,
+      "assignment_trees_unmatched": []
+    },
+    {
+      "name": "component_corr_w_x",
+      "arguments": 9,
+      "assignment_trees_matched": 6,
+      "assignment_trees_unmatched": []
+    },
+    {
+      "name": "component_corr_chi_eta",
+      "arguments": 9,
+      "assignment_trees_matched": 6,
+      "assignment_trees_unmatched": []
+    },
+    {
+      "name": "component_corr_w_hm_n_ip",
+      "arguments": 11,
+      "assignment_trees_matched": 6,
+      "assignment_trees_unmatched": []
+    },
+    {
+      "name": "component_corr_x_hm_n_ip",
+      "arguments": 8,
+      "assignment_trees_matched": 4,
+      "assignment_trees_unmatched": []
+    },
+    {
+      "name": "component_corr_hmx_hmy_n_ip",
+      "arguments": 8,
+      "assignment_trees_matched": 4,
+      "assignment_trees_unmatched": []
+    },
+    {
+      "name": "component_corr_eta_hm_n_ip",
+      "arguments": 8,
+      "assignment_trees_matched": 2,
+      "assignment_trees_unmatched": []
+    },
+    {
+      "name": "norm_transform_mean_stdev",
+      "arguments": 19,
+      "assignment_trees_matched": 31,
+      "assignment_trees_unmatched": []
+    },
+    {
+      "name": "denorm_transform_corr",
+      "arguments": 12,
+      "assignment_trees_matched": 12,
+      "assignment_trees_unmatched": []
+    },
+    {
+      "name": "calc_corr_w_hm_n",
+      "arguments": 18,
+      "assignment_trees_matched": 15,
+      "assignment_trees_unmatched": []
+    },
+    {
+      "name": "pdf_param_hm_stats",
+      "arguments": 14,
+      "assignment_trees_matched": 12,
+      "assignment_trees_unmatched": []
+    },
+    {
+      "name": "pdf_param_ln_hm_stats",
+      "arguments": 11,
+      "assignment_trees_matched": 20,
+      "assignment_trees_unmatched": []
+    },
+    {
+      "name": "pack_hydromet_pdf_params",
+      "arguments": 14,
+      "assignment_trees_matched": 27,
+      "assignment_trees_unmatched": []
+    },
+    {
+      "name": "compute_rtp2_from_chi",
+      "arguments": 11,
+      "assignment_trees_matched": 6,
+      "assignment_trees_unmatched": []
+    }
+  ],
+  "ordered_calls": [
+    {
+      "name": "setup_pdf_parameters_api",
+      "ordered_calls": 28,
+      "actual_arguments": 252
+    },
+    {
+      "name": "compute_mean_stdev",
+      "ordered_calls": 1,
+      "actual_arguments": 23
+    },
+    {
+      "name": "calc_corr_norm_and_cholesky_factor",
+      "ordered_calls": 2,
+      "actual_arguments": 10
+    },
+    {
+      "name": "comp_corr_norm",
+      "ordered_calls": 15,
+      "actual_arguments": 137
+    },
+    {
+      "name": "calc_comp_mu_sigma_hm",
+      "ordered_calls": 0,
+      "actual_arguments": 0
+    },
+    {
+      "name": "component_corr_w_x",
+      "ordered_calls": 0,
+      "actual_arguments": 0
+    },
+    {
+      "name": "component_corr_chi_eta",
+      "ordered_calls": 0,
+      "actual_arguments": 0
+    },
+    {
+      "name": "component_corr_w_hm_n_ip",
+      "ordered_calls": 0,
+      "actual_arguments": 0
+    },
+    {
+      "name": "component_corr_x_hm_n_ip",
+      "ordered_calls": 0,
+      "actual_arguments": 0
+    },
+    {
+      "name": "component_corr_hmx_hmy_n_ip",
+      "ordered_calls": 0,
+      "actual_arguments": 0
+    },
+    {
+      "name": "component_corr_eta_hm_n_ip",
+      "ordered_calls": 0,
+      "actual_arguments": 0
+    },
+    {
+      "name": "norm_transform_mean_stdev",
+      "ordered_calls": 0,
+      "actual_arguments": 0
+    },
+    {
+      "name": "denorm_transform_corr",
+      "ordered_calls": 12,
+      "actual_arguments": 80
+    },
+    {
+      "name": "calc_corr_w_hm_n",
+      "ordered_calls": 0,
+      "actual_arguments": 0
+    },
+    {
+      "name": "pdf_param_hm_stats",
+      "ordered_calls": 32,
+      "actual_arguments": 96
+    },
+    {
+      "name": "pdf_param_ln_hm_stats",
+      "ordered_calls": 24,
+      "actual_arguments": 72
+    },
+    {
+      "name": "pack_hydromet_pdf_params",
+      "ordered_calls": 0,
+      "actual_arguments": 0
+    },
+    {
+      "name": "compute_rtp2_from_chi",
+      "ordered_calls": 0,
+      "actual_arguments": 0
+    }
+  ],
+  "ordered_predicates": [
+    {
+      "name": "setup_pdf_parameters_api",
+      "ordered_scientific_predicates": 11
+    },
+    {
+      "name": "compute_mean_stdev",
+      "ordered_scientific_predicates": 1
+    },
+    {
+      "name": "calc_corr_norm_and_cholesky_factor",
+      "ordered_scientific_predicates": 3
+    },
+    {
+      "name": "comp_corr_norm",
+      "ordered_scientific_predicates": 4
+    },
+    {
+      "name": "calc_comp_mu_sigma_hm",
+      "ordered_scientific_predicates": 14
+    },
+    {
+      "name": "component_corr_w_x",
+      "ordered_scientific_predicates": 3
+    },
+    {
+      "name": "component_corr_chi_eta",
+      "ordered_scientific_predicates": 3
+    },
+    {
+      "name": "component_corr_w_hm_n_ip",
+      "ordered_scientific_predicates": 3
+    },
+    {
+      "name": "component_corr_x_hm_n_ip",
+      "ordered_scientific_predicates": 2
+    },
+    {
+      "name": "component_corr_hmx_hmy_n_ip",
+      "ordered_scientific_predicates": 2
+    },
+    {
+      "name": "component_corr_eta_hm_n_ip",
+      "ordered_scientific_predicates": 0
+    },
+    {
+      "name": "norm_transform_mean_stdev",
+      "ordered_scientific_predicates": 5
+    },
+    {
+      "name": "denorm_transform_corr",
+      "ordered_scientific_predicates": 0
+    },
+    {
+      "name": "calc_corr_w_hm_n",
+      "ordered_scientific_predicates": 9
+    },
+    {
+      "name": "pdf_param_hm_stats",
+      "ordered_scientific_predicates": 0
+    },
+    {
+      "name": "pdf_param_ln_hm_stats",
+      "ordered_scientific_predicates": 4
+    },
+    {
+      "name": "pack_hydromet_pdf_params",
+      "ordered_scientific_predicates": 0
+    },
+    {
+      "name": "compute_rtp2_from_chi",
+      "ordered_scientific_predicates": 0
+    }
+  ],
+  "kernels_reviewed": 152,
+  "manual_boundaries": [
+    {
+      "routine": "setup_pdf_parameters_api",
+      "assignment": "err_info%err_code(i) = clubb_fatal_error",
+      "reason": "first-fatal device boundary manually reviewed"
+    },
+    {
+      "routine": "setup_pdf_parameters_api",
+      "assignment": "rtp2_zt_from_chi(i,:) = compute_rtp2_from_chi( pdf_params%stdev_chi_1(i,:), pdf_params%stdev_chi_2(i,:), pdf_params%stdev_eta_1(i,:), pdf_params%stdev_eta_2(i,:), pdf_params%rt_1(i,:), pdf_params%rt_2(j,:), pdf_params%crt_1(i,:), pdf_params%crt_2(i,:), pdf_params%mixt_frac(i,:), corr_array_1_n(i,:,hm_metadata%iiPDF_chi, hm_metadata%iiPDF_eta), corr_array_2_n(i,:,hm_metadata%iiPDF_chi, hm_metadata%iiPDF_eta) )",
+      "reason": "post-DO j scalarization manually reviewed"
+    }
+  ],
+  "review_kind": "Owner source audit plus separate cleanup; no independent full-file reviewer yet.",
+  "manual_review": [
+    "Full4,385line Native and2,303line actualJAX file read before recorded18routine outline. Native is authority at every noted difference.",
+    "Parent negative-check reduction is integer-only; host prints first j/k/i violation and marks only that column before immediate return. Precipitation debug0 return, debug2 symmetric assertions and final fatal context retain Native order.",
+    "All field-specific stats calls preserve names, argument order, guards and dynamic first-two-character TRIM naming. Normal mean stats use negative default-real HUGE widened to real_t; actual normal means retain negative real_t HUGE.",
+    "Optional hydro collection uses existing owner; no duplicate UDT/global mutable storage. Native pack updates active fields only. Lower/diagonal-only true correlation writes and undefined Native upper/optional-output conjunctions are documented rather than silently corrected.",
+    "Source scientific scalar/index expression trees preserve grouping and Native literal kinds; powers squared use direct multiplication, no FMA workaround or JAX safe denominators/gradient floors.",
+    "All six public and twelve private definitions remain in source order; array-section overloads are thin shared-owner adapters. Scalar elemental helpers are device callable. Lower matrix diagnostics remain host APIs, not callbacks inside kernels.",
+    "Tunable indices use existing zero-based parameter owner; all grid/hydrometeor/PDF metadata keep Native1based values. Column-first fields and strided matrix section pack/restore preserve existing layouts.",
+    "Post-DO j diagnostic rt_2 actual and duplicated sigma_w_1 source call explicitly retained; exact diagnostics-only Native/JAX differences recorded. No Native scientific fix."
+  ],
+  "pending_integrations": [
+    "shared Real4D and rank4 array_types owner extension",
+    "two declared transient Native array bridges (precip_fraction22args; Nc_in_cloud_to_Ncnm10inputs plus2shape args)",
+    "stable matrix/diagnose/corrmetadata/indexmapping/clip owners as detailed in INTEGRATION"
+  ],
+  "runtime_status": "No builds/tests/CPU/GPU comparisons run. No BFB claim; all compiled/numerical behavior and option/error/stats paths remain pending reached-model integration.",
+  "case_sensitive_stats_registration_guards": "All source guards, names and order checked.",
+  "adapter_source_contracts": "All16 shared-owner section adapters keep original arguments, restore every Out/InOut array and avoid reading caller Out values during staging."
+}

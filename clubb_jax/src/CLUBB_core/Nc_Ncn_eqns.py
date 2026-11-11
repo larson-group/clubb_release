@@ -73,7 +73,10 @@ def Ncnm_to_Nc_in_cloud(
     cloud_frac_1,
     cloud_frac_2,
 ):
-    """The in-cloud mean of cloud droplet concentration is calculated from the
+    """Calculate Nc_in_cloud from Ncn PDF parameters.
+
+    Description:
+    The in-cloud mean of cloud droplet concentration is calculated from the
     PDF parameters involving simplified cloud nuclei concentration, Ncn, and
     cloud fraction.  At any point, cloud droplet concentration, Nc, is given
     by:
@@ -89,32 +92,7 @@ def Ncnm_to_Nc_in_cloud(
     the PDF parameters involving Ncn.  The in-cloud mean of cloud droplet
     concentration is calculated from <Nc> and cloud fraction.
 
-    Returns:
-        Nc_in_cloud
-
-    Fortran declarations (Ncnm_to_Nc_in_cloud in src/CLUBB_core/Nc_Ncn_eqns.F90):
-
-        !--------------------------- Input Variables ---------------------------
-        real( kind = core_rknd ), intent(in) :: &
-          mu_chi_1,         & ! Mean of chi (old s) (1st PDF component)      [kg/kg]
-          mu_chi_2,         & ! Mean of chi (old s) (2nd PDF component)      [kg/kg]
-          mu_Ncn_1,         & ! Mean of Ncn (1st PDF component)             [num/kg]
-          mu_Ncn_2,         & ! Mean of Ncn (2nd PDF component)             [num/kg]
-          sigma_chi_1,      & ! Standard deviation of chi (1st PDF comp.)    [kg/kg]
-          sigma_chi_2,      & ! Standard deviation of chi (2nd PDF comp.)    [kg/kg]
-          sigma_Ncn_1,      & ! Standard deviation of Ncn (1st PDF comp.)   [num/kg]
-          sigma_Ncn_2,      & ! Standard deviation of Ncn (2nd PDF comp.)   [num/kg]
-          sigma_Ncn_1_n,    & ! Standard deviation of ln Ncn (1st PDF component) [-]
-          sigma_Ncn_2_n,    & ! Standard deviation of ln Ncn (2nd PDF component) [-]
-          corr_chi_Ncn_1_n, & ! Correlation of chi and ln Ncn (1st PDF comp.)    [-]
-          corr_chi_Ncn_2_n, & ! Correlation of chi and ln Ncn (2nd PDF comp.)    [-]
-          mixt_frac,        & ! Mixture fraction                                 [-]
-          cloud_frac_1,     & ! Cloud fraction (1st PDF component)               [-]
-          cloud_frac_2        ! Cloud fraction (2nd PDF component)               [-]
-
-        !--------------------------- Output Variables ---------------------------
-        real( kind = core_rknd ) :: &
-          Nc_in_cloud    ! Mean cloud droplet concentration (in-cloud)      [num/kg]
+    References:
     """
     # Calculate overall cloud fraction as calculated by the PDF.
     # The variable cloud_frac is not used here because it is altered by factors
@@ -161,7 +139,10 @@ def Nc_in_cloud_to_Ncnm(
     const_Ncnp2_on_Ncnm2,
     const_corr_chi_Ncn,
 ):
-    """The overall mean of simplified cloud nuclei concentration, <Ncn>, is
+    """Calculate Ncnm from Nc_in_cloud and PDF parameters.
+
+    Description:
+    The overall mean of simplified cloud nuclei concentration, <Ncn>, is
     calculated from the in-cloud mean of cloud droplet concentration, <Nc>,
     cloud fraction, and some of the PDF parameters.
 
@@ -178,29 +159,7 @@ def Nc_in_cloud_to_Ncnm(
     Nc_in_cloud and cloud fraction.  The value of <Ncn> is calculated from
     <Nc> and PDF parameters.
 
-    Returns:
-        Ncnm
-
-    Fortran declarations (Nc_in_cloud_to_Ncnm in src/CLUBB_core/Nc_Ncn_eqns.F90):
-
-        !--------------------------- Input Variables ---------------------------
-        real( kind = core_rknd ), intent(in) :: &
-          mu_chi_1,    & ! Mean of chi (old s) (1st PDF component)           [kg/kg]
-          mu_chi_2,    & ! Mean of chi (old s) (2nd PDF component)           [kg/kg]
-          sigma_chi_1, & ! Standard deviation of chi (1st PDF component)     [kg/kg]
-          sigma_chi_2, & ! Standard deviation of chi (2nd PDF component)     [kg/kg]
-          mixt_frac      ! Mixture fraction                                      [-]
-
-        real( kind = core_rknd ), intent(in) :: &
-          Nc_in_cloud,          & ! Mean cloud droplet conc. (in-cloud)     [num/kg]
-          cloud_frac_1,         & ! Cloud fraction (1st PDF component)           [-]
-          cloud_frac_2,         & ! Cloud fraction (2nd PDF component)           [-]
-          const_Ncnp2_on_Ncnm2, & ! Prescribed ratio of <Ncn'^2> to <Ncn>^2      [-]
-          const_corr_chi_Ncn      ! Prescribed correlation of chi and Ncn        [-]
-
-        !--------------------------- Output Variables ---------------------------
-        real( kind = core_rknd ) :: &
-          Ncnm    ! Mean simplified cloud nuclei concentration (overall)    [num/kg]
+    References:
     """
     # Calculate overall cloud fraction as calculated by the PDF.
     # The variable cloud_frac is not used here because it is altered by factors
@@ -253,7 +212,10 @@ def Ncnm_to_Ncm(
     corr_chi_Ncn_2_n,
     mixt_frac,
 ):
-    """The overall mean of cloud droplet concentration, <Nc>, is calculated from
+    """Calculate Ncm from Ncn PDF parameters.
+
+    Description:
+    The overall mean of cloud droplet concentration, <Nc>, is calculated from
     the PDF parameters involving the simplified cloud nuclei concentration,
     Ncn.  At any point, cloud droplet concentration, Nc, is given by:
 
@@ -283,73 +245,7 @@ def Ncnm_to_Ncm(
     <Nc> = SUM(i=1,n) mixt_frac_i
            * INT(0:inf) INT(0:inf) Ncn * P_i(chi,Ncn) dNcn dchi.
 
-    When both chi and Ncn vary in the ith PDF component, the integral is
-    evaluated and the result is:
-
-    INT(0:inf) INT(0:inf) Ncn * P_i(chi,Ncn) dNcn dchi
-    = (1/2) * exp{ mu_Ncn_i_n + (1/2) * sigma_Ncn_i_n^2 }
-      * erfc( - ( 1 / sqrt(2) ) * ( ( mu_chi_i / sigma_chi_i )
-                                    + rho_chi_Ncn_i_n * sigma_Ncn_i_n ) );
-
-    which can be reduced to:
-
-    INT(0:inf) INT(0:inf) Ncn * P_i(chi,Ncn) dNcn dchi
-    = (1/2) * mu_Ncn_i
-      * erfc( - ( 1 / sqrt(2) ) * ( ( mu_chi_i / sigma_chi_i )
-                                    + rho_chi_Ncn_i_n * sigma_Ncn_i_n ) ).
-
-    When chi is constant, but Ncn varies, in the ith PDF component, the
-    integral is evaluated and results in:
-
-    INT(0:inf) INT(0:inf) Ncn * P_i(chi,Ncn) dNcn dchi = mu_Ncn_i;
-
-    when mu_chi_i > 0; and
-
-    INT(0:inf) INT(0:inf) Ncn * P_i(chi,Ncn) dNcn dchi = 0;
-
-    when mu_chi_i <= 0.
-
-    When chi varies, but Ncn is constant, in the ith PDF component, the
-    integral is evaluated and results in:
-
-    INT(0:inf) INT(0:inf) Ncn * P_i(chi,Ncn) dNcn dchi
-    = mu_Ncn_i * (1/2) * erfc( - ( mu_chi_i / ( sqrt(2) * sigma_chi_i ) ) ).
-
-    When both chi and Ncn are constant in the ith PDF component, the integral
-    is evaluated and results in:
-
-    INT(0:inf) INT(0:inf) Ncn * P_i(chi,Ncn) dNcn dchi = mu_Ncn_i;
-
-    when mu_chi_i > 0; and
-
-    INT(0:inf) INT(0:inf) Ncn * P_i(chi,Ncn) dNcn dchi = 0;
-
-    when mu_chi_i <= 0.
-
-    Returns:
-        Ncm
-
-    Fortran declarations (Ncnm_to_Ncm in src/CLUBB_core/Nc_Ncn_eqns.F90):
-
-        !--------------------------- Input Variables ---------------------------
-        real( kind = core_rknd ), intent(in) :: &
-          mu_chi_1,         & ! Mean of chi (old s) (1st PDF component)      [kg/kg]
-          mu_chi_2,         & ! Mean of chi (old s) (2nd PDF component)      [kg/kg]
-          mu_Ncn_1,         & ! Mean of Ncn (1st PDF component)             [num/kg]
-          mu_Ncn_2,         & ! Mean of Ncn (2nd PDF component)             [num/kg]
-          sigma_chi_1,      & ! Standard deviation of chi (1st PDF comp.)    [kg/kg]
-          sigma_chi_2,      & ! Standard deviation of chi (2nd PDF comp.)    [kg/kg]
-          sigma_Ncn_1,      & ! Standard deviation of Ncn (1st PDF comp.)   [num/kg]
-          sigma_Ncn_2,      & ! Standard deviation of Ncn (2nd PDF comp.)   [num/kg]
-          sigma_Ncn_1_n,    & ! Standard deviation of ln Ncn (1st PDF component) [-]
-          sigma_Ncn_2_n,    & ! Standard deviation of ln Ncn (2nd PDF component) [-]
-          corr_chi_Ncn_1_n, & ! Correlation of chi and ln Ncn (1st PDF comp.)    [-]
-          corr_chi_Ncn_2_n, & ! Correlation of chi and ln Ncn (2nd PDF comp.)    [-]
-          mixt_frac           ! Mixture fraction                                 [-]
-
-        !--------------------------- Output Variables ---------------------------
-        real( kind = core_rknd ) :: &
-          Ncm    ! Mean cloud droplet concentration (overall)    [num/kg]
+    References:
     """
     # Calculate mean cloud droplet concentration (overall), <Nc>.
     Ncm = (
@@ -387,7 +283,10 @@ def Ncm_to_Ncnm(
     const_corr_chi_Ncn,
     Ncnm_val_denom_0,
 ):
-    """The overall mean of simplified cloud nuclei concentration, <Ncn>, is
+    """Calculate Ncnm from Ncm and PDF parameters.
+
+    Description:
+    The overall mean of simplified cloud nuclei concentration, <Ncn>, is
     calculated from the overall mean of cloud droplet concentration, <Nc>, and
     some of the PDF parameters.
 
@@ -400,127 +299,8 @@ def Ncm_to_Ncnm(
     cloud water is found, and Nc = Ncn.  Otherwise, only clear air is found,
     and Nc = 0.
 
-    The overall mean of cloud droplet concentration, <Nc>, is found by
-    integrating over the PDF of chi and Ncn, such that:
-
-    <Nc> = INT(-inf:inf) INT(0:inf) Ncn * H(chi) * P(chi,Ncn) dNcn dchi;
-
-    which can also be written as:
-
-    <Nc> = SUM(i=1,n) mixt_frac_i
-           * INT(-inf:inf) INT(0:inf) Ncn * H(chi) * P_i(chi,Ncn) dNcn dchi;
-
-    where n is the number of multivariate joint PDF components, mixt_frac_i is
-    the weight of the ith PDF component, and P_i is the functional form of the
-    multivariate joint PDF in the ith PDF component.
-
-    This equation is rewritten as:
-
-    <Nc> = SUM(i=1,n) mixt_frac_i
-           * INT(0:inf) INT(0:inf) Ncn * P_i(chi,Ncn) dNcn dchi.
-
-    When both chi and Ncn vary in the ith PDF component, the integral is
-    evaluated and the result is:
-
-    INT(0:inf) INT(0:inf) Ncn * P_i(chi,Ncn) dNcn dchi
-    = (1/2) * exp{ mu_Ncn_i_n + (1/2) * sigma_Ncn_i_n^2 }
-      * erfc( - ( 1 / sqrt(2) ) * ( ( mu_chi_i / sigma_chi_i )
-                                    + rho_chi_Ncn_i_n * sigma_Ncn_i_n ) );
-
-    which can be reduced to:
-
-    INT(0:inf) INT(0:inf) Ncn * P_i(chi,Ncn) dNcn dchi
-    = (1/2) * mu_Ncn_i
-      * erfc( - ( 1 / sqrt(2) ) * ( ( mu_chi_i / sigma_chi_i )
-                                    + rho_chi_Ncn_i_n * sigma_Ncn_i_n ) ).
-
-    When chi is constant, but Ncn varies, in the ith PDF component, the
-    integral is evaluated and results in:
-
-    INT(0:inf) INT(0:inf) Ncn * P_i(chi,Ncn) dNcn dchi = mu_Ncn_i;
-
-    when mu_chi_i > 0; and
-
-    INT(0:inf) INT(0:inf) Ncn * P_i(chi,Ncn) dNcn dchi = 0;
-
-    when mu_chi_i <= 0.
-
-    When chi varies, but Ncn is constant, in the ith PDF component, the
-    integral is evaluated and results in:
-
-    INT(0:inf) INT(0:inf) Ncn * P_i(chi,Ncn) dNcn dchi
-    = mu_Ncn_i * (1/2) * erfc( - ( mu_chi_i / ( sqrt(2) * sigma_chi_i ) ) ).
-
-    When both chi and Ncn are constant in the ith PDF component, the integral
-    is evaluated and results in:
-
-    INT(0:inf) INT(0:inf) Ncn * P_i(chi,Ncn) dNcn dchi = mu_Ncn_i;
-
-    when mu_chi_i > 0; and
-
-    INT(0:inf) INT(0:inf) Ncn * P_i(chi,Ncn) dNcn dchi = 0;
-
-    when mu_chi_i <= 0.
-
     Solving for <Ncn>
     =================
-
-    The individual marginal for simplified cloud nuclei concentration, Ncn, is
-    a single lognormal distribution over the entire horizontal domain.  In
-    order to accomplish this in a two-component PDF structure, the PDF
-    parameters involving Ncn are set equal between the two components.  This
-    results in:
-
-    mu_Ncn_1 = mu_Ncn_2 = mu_Ncn_i = <Ncn>;
-    mu_Ncn_1_n = mu_Ncn_2_n = mu_Ncn_i_n;
-    sigma_Ncn_1 = sigma_Ncn_2 = sigma_Ncn_i = sqrt( <Ncn'^2> );
-    sigma_Ncn_1_n = sigma_Ncn_2_n = sigma_Ncn_i_n;
-    rho_chi_Ncn_1 = rho_chi_Ncn_2 = rho_chi_Ncn_i = rho_chi_Ncn; and
-    rho_chi_Ncn_1_n = rho_chi_Ncn_2_n = rho_chi_Ncn_i_n.
-
-    Additionally, the equation for sigma_Ncn_i_n is:
-
-    sigma_Ncn_i_n = sqrt( ln( 1 + ( sigma_Ncn_i^2 / mu_Ncn_i^2 ) ) );
-
-    and the equation for rho_chi_Ncn_i_n is:
-
-    rho_chi_Ncn_i_n
-    = rho_chi_Ncn_i * sqrt( exp{ sigma_Ncn_i_n^2 } - 1 ) / sigma_Ncn_i_n.
-
-    The product of rho_chi_Ncn_i_n and sigma_Ncn_i_n is:
-
-    rho_chi_Ncn_i_n * sigma_Ncn_i_n
-    = rho_chi_Ncn_i * sqrt( exp{ sigma_Ncn_i_n^2 } - 1 ).
-
-    After substituting for sigma_Ncn_i_n^2, the equation for the product of
-    rho_chi_Ncn_i_n and sigma_Ncn_i_n is:
-
-    rho_chi_Ncn_i_n * sigma_Ncn_i_n
-    = rho_chi_Ncn_i * sqrt( sigma_Ncn_i^2 / mu_Ncn_i^2 );
-
-    which can be rewritten as:
-
-    rho_chi_Ncn_i_n * sigma_Ncn_i_n
-    = rho_chi_Ncn * sqrt( <Ncn'^2> / <Ncn>^2 ).
-
-    Substituting all of this into the equation for <Nc>, the equation for <Nc>
-    becomes:
-
-    <Nc> = <Ncn>
-           * SUM(i=1,n) mixt_frac_i
-             ---
-             | (1/2) * erfc( - ( 1 / sqrt(2) )
-             |                 * ( ( mu_chi_i / sigma_chi_i )
-             |                     + rho_chi_Ncn * sqrt(<Ncn'^2>/<Ncn>^2) ) );
-             | where sigma_chi_i > 0 and <Ncn'^2> > 0;
-             |
-           * | (1/2) * erfc( - ( mu_chi_i / ( sqrt(2) * sigma_chi_i ) ) );
-             | where sigma_chi_i > 0 and <Ncn'^2> = 0;
-             |
-             | 1; where sigma_chi_i = 0 and mu_chi_i > 0;
-             |
-             | 0; where sigma_chi_i = 0 and mu_chi_i <= 0.
-             ---
 
     In order to isolate <Ncn>, the value of <Ncn'^2>/<Ncn>^2 is set to a
     constant value, const_Ncn.  The value of this constant does not depend on
@@ -547,28 +327,7 @@ def Ncm_to_Ncnm(
     numerator (<Nc>) and the denominator have a value of 0, and <Ncn> is set
     to an appropriate value.
 
-    Returns:
-        Ncnm
-
-    Fortran declarations (Ncm_to_Ncnm in src/CLUBB_core/Nc_Ncn_eqns.F90):
-
-        !--------------------------- Input Variables ---------------------------
-        real( kind = core_rknd ), intent(in) :: &
-          mu_chi_1,    & ! Mean of chi (old s) (1st PDF component)           [kg/kg]
-          mu_chi_2,    & ! Mean of chi (old s) (2nd PDF component)           [kg/kg]
-          sigma_chi_1, & ! Standard deviation of chi (1st PDF component)     [kg/kg]
-          sigma_chi_2, & ! Standard deviation of chi (2nd PDF component)     [kg/kg]
-          mixt_frac      ! Mixture fraction                                      [-]
-
-        real( kind = core_rknd ), intent(in) :: &
-          Ncm,                  & ! Mean cloud droplet conc. (overall)      [num/kg]
-          const_Ncnp2_on_Ncnm2, & ! Prescribed ratio of <Ncn'^2> to <Ncn>^2      [-]
-          const_corr_chi_Ncn,   & ! Prescribed correlation of chi and Ncn        [-]
-          Ncnm_val_denom_0        ! Ncnm value -- denominator in eqn. is 0  [num/kg]
-
-        !--------------------------- Output Variables ---------------------------
-        real( kind = core_rknd ) :: &
-          Ncnm    ! Mean simplified cloud nuclei concentration (overall)    [num/kg]
+    References:
     """
     # Denominator in the equation for <Ncn>
     denominator = (
@@ -605,7 +364,10 @@ def bivar_NL_chi_Ncn_mean(
     sigma_Ncn_i_n,
     corr_chi_Ncn_i_n,
 ):
-    """The double integral over Ncn * H(chi) multiplied by the
+    """Evaluate the per-component normal-lognormal Nc integral.
+
+    Description:
+    The double integral over Ncn * H(chi) multiplied by the
     bivariate normal-lognormal joint PDF of chi and Ncn is evaluated.  The
     integral is given by:
 
@@ -619,66 +381,7 @@ def bivar_NL_chi_Ncn_mean(
     component and the individual marginal distribution of Ncn is lognormal in
     the ith PDF component.
 
-    When both chi and Ncn vary in the ith PDF component, the integral is
-    evaluated and the result is:
-
-    INT(0:inf) INT(0:inf) Ncn * P_i(chi,Ncn) dNcn dchi
-    = (1/2) * exp{ mu_Ncn_i_n + (1/2) * sigma_Ncn_i_n^2 }
-      * erfc( - ( 1 / sqrt(2) ) * ( ( mu_chi_i / sigma_chi_i )
-                                    + rho_chi_Ncn_i_n * sigma_Ncn_i_n ) );
-
-    which can be reduced to:
-
-    INT(0:inf) INT(0:inf) Ncn * P_i(chi,Ncn) dNcn dchi
-    = (1/2) * mu_Ncn_i
-      * erfc( - ( 1 / sqrt(2) ) * ( ( mu_chi_i / sigma_chi_i )
-                                    + rho_chi_Ncn_i_n * sigma_Ncn_i_n ) ).
-
-    When chi is constant, but Ncn varies, in the ith PDF component, the
-    integral is evaluated and results in:
-
-    INT(0:inf) INT(0:inf) Ncn * P_i(chi,Ncn) dNcn dchi = mu_Ncn_i;
-
-    when mu_chi_i > 0; and
-
-    INT(0:inf) INT(0:inf) Ncn * P_i(chi,Ncn) dNcn dchi = 0;
-
-    when mu_chi_i <= 0.
-
-    When chi varies, but Ncn is constant, in the ith PDF component, the
-    integral is evaluated and results in:
-
-    INT(0:inf) INT(0:inf) Ncn * P_i(chi,Ncn) dNcn dchi
-    = mu_Ncn_i * (1/2) * erfc( - ( mu_chi_i / ( sqrt(2) * sigma_chi_i ) ) ).
-
-    When both chi and Ncn are constant in the ith PDF component, the integral
-    is evaluated and results in:
-
-    INT(0:inf) INT(0:inf) Ncn * P_i(chi,Ncn) dNcn dchi = mu_Ncn_i;
-
-    when mu_chi_i > 0; and
-
-    INT(0:inf) INT(0:inf) Ncn * P_i(chi,Ncn) dNcn dchi = 0;
-
-    when mu_chi_i <= 0.
-
-    Returns:
-        bivar_NL_chi_Ncn_mean
-
-    Fortran declarations (bivar_NL_chi_Ncn_mean in src/CLUBB_core/Nc_Ncn_eqns.F90):
-
-        !--------------------------- Input Variables ---------------------------
-        real( kind = core_rknd ), intent(in) :: &
-          mu_chi_i,         & ! Mean of chi (old s) (ith PDF component)      [kg/kg]
-          mu_Ncn_i,         & ! Mean of Ncn (ith PDF component)             [num/kg]
-          sigma_chi_i,      & ! Standard deviation of chi (ith PDF comp.)    [kg/kg]
-          sigma_Ncn_i,      & ! Standard deviation of Ncn (ith PDF comp.)   [num/kg]
-          sigma_Ncn_i_n,    & ! Standard deviation of ln Ncn (ith PDF component) [-]
-          corr_chi_Ncn_i_n    ! Correlation of chi and ln Ncn (ith PDF comp.)    [-]
-
-        !--------------------------- Output Variables ---------------------------
-        real( kind = core_rknd ) :: &
-          bivar_NL_chi_Ncn_mean
+    References:
     """
     chi_and_Ncn_constant = (sigma_chi_i <= chi_tol) & (sigma_Ncn_i <= Ncn_tol)
     chi_constant = sigma_chi_i <= chi_tol
@@ -725,7 +428,10 @@ def bivar_Ncnm_eqn_comp(
     const_Ncnp2_on_Ncnm2,
     const_corr_chi_Ncn,
 ):
-    """When <Ncn> is found based on the value of <Nc>, the following equation is
+    """Calculate one PDF component's denominator term in the Ncnm equation.
+
+    Description:
+    When <Ncn> is found based on the value of <Nc>, the following equation is
     used:
 
     <Ncn>
@@ -755,23 +461,7 @@ def bivar_Ncnm_eqn_comp(
     The contribution of the ith PDF component to the denominator term in the
     equation is calculated here.
 
-    Returns:
-        bivar_Ncnm_eqn_comp
-
-    Fortran declarations (bivar_Ncnm_eqn_comp in src/CLUBB_core/Nc_Ncn_eqns.F90):
-
-        !--------------------------- Input Variables ---------------------------
-        real( kind = core_rknd ), intent(in) :: &
-          mu_chi_i,    & ! Mean of chi (old s) (ith PDF component)           [kg/kg]
-          sigma_chi_i    ! Standard deviation of chi (ith PDF component)     [kg/kg]
-
-        real( kind = core_rknd ), intent(in) :: &
-          const_Ncnp2_on_Ncnm2, & ! Prescribed ratio of <Ncn'^2> to <Ncn>^2      [-]
-          const_corr_chi_Ncn      ! Prescribed correlation of chi and Ncn        [-]
-
-        !--------------------------- Output Variables ---------------------------
-        real( kind = core_rknd ) :: &
-          bivar_Ncnm_eqn_comp
+    References:
     """
     # The ith PDF component variances of chi is 0.  The value of the ith PDF
     # component variance of Ncn does not matter in this scenario.

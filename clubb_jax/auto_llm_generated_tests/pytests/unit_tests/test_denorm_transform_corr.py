@@ -11,8 +11,6 @@ corr_NN2NL, lognormal-lognormal pairs use corr_NN2LL. Oracle:
   4. A finite jax.grad.
 """
 
-from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
-
 
 import numpy as np
 import jax
@@ -45,7 +43,7 @@ def _inputs(seed):
 
 
 def _call(s1n, s2n, r1, r2, Cn1, Cn2):
-    return call_jax(denorm_transform_corr, s1n, s2n, r1, r2, Cn1, Cn2, CHI, ETA, W, NCN)
+    return denorm_transform_corr(s1n, s2n, r1, r2, Cn1, Cn2, CHI, ETA, W, NCN)
 
 
 def test_structure_and_normal_pairs():

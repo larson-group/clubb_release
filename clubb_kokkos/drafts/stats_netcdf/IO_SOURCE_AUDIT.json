@@ -1,0 +1,205 @@
+{
+  "status": "source review complete; whole-model numeric acceptance belongs to root integration",
+  "Native_path": "src/CLUBB_core/stats_netcdf.F90",
+  "Native_sha256": "348fe3d29d1b4bbcd8d7317904c0b6a4368ecf8f896793449cec2884db4f8621",
+  "Cpp_path": "clubb_kokkos/drafts/stats_netcdf/stats_netcdf_io.cpp.inc",
+  "Cpp_sha256": "74ab73479757c4eee9ea64c12ed14609c0e88e4868972aafd4481fe60101f3d5",
+  "header_sha256": "f84addefda5ee9413df8baf6939b36fe3eaa9587f8a59a9ea8a1c924568678eb",
+  "routine_count": 14,
+  "routines": [
+    {
+      "name": "stats_open_netcdf",
+      "Native_lines": [
+        1085,
+        1344
+      ],
+      "definition_present": true,
+      "description_first_in_body": true,
+      "review": "Complete Native routine read alongside target; signatures, early gates, branch/call order, calculations, arrays, optionals, diagnostic/error paths reviewed."
+    },
+    {
+      "name": "stats_avg_and_write",
+      "Native_lines": [
+        2294,
+        2444
+      ],
+      "definition_present": true,
+      "description_first_in_body": true,
+      "review": "Complete Native routine read alongside target; signatures, early gates, branch/call order, calculations, arrays, optionals, diagnostic/error paths reviewed."
+    },
+    {
+      "name": "stats_grid_init",
+      "Native_lines": [
+        2450,
+        2515
+      ],
+      "definition_present": true,
+      "description_first_in_body": true,
+      "review": "Complete Native routine read alongside target; signatures, early gates, branch/call order, calculations, arrays, optionals, diagnostic/error paths reviewed."
+    },
+    {
+      "name": "stats_update_grid",
+      "Native_lines": [
+        2517,
+        2591
+      ],
+      "definition_present": true,
+      "description_first_in_body": true,
+      "review": "Complete Native routine read alongside target; signatures, early gates, branch/call order, calculations, arrays, optionals, diagnostic/error paths reviewed."
+    },
+    {
+      "name": "stats_lh_samples_init",
+      "Native_lines": [
+        2597,
+        2717
+      ],
+      "definition_present": true,
+      "description_first_in_body": true,
+      "review": "Complete Native routine read alongside target; signatures, early gates, branch/call order, calculations, arrays, optionals, diagnostic/error paths reviewed."
+    },
+    {
+      "name": "stats_lh_samples_write_lognormal",
+      "Native_lines": [
+        2719,
+        2773
+      ],
+      "definition_present": true,
+      "description_first_in_body": true,
+      "review": "Complete Native routine read alongside target; signatures, early gates, branch/call order, calculations, arrays, optionals, diagnostic/error paths reviewed."
+    },
+    {
+      "name": "stats_lh_samples_write_uniform",
+      "Native_lines": [
+        2775,
+        2878
+      ],
+      "definition_present": true,
+      "description_first_in_body": true,
+      "review": "Complete Native routine read alongside target; signatures, early gates, branch/call order, calculations, arrays, optionals, diagnostic/error paths reviewed."
+    },
+    {
+      "name": "format_date",
+      "Native_lines": [
+        3091,
+        3153
+      ],
+      "definition_present": true,
+      "description_first_in_body": true,
+      "review": "Complete Native routine read alongside target; signatures, early gates, branch/call order, calculations, arrays, optionals, diagnostic/error paths reviewed."
+    },
+    {
+      "name": "stats_read_registry_namelist",
+      "Native_lines": [
+        3159,
+        3238
+      ],
+      "definition_present": true,
+      "description_first_in_body": true,
+      "review": "Complete Native routine read alongside target; signatures, early gates, branch/call order, calculations, arrays, optionals, diagnostic/error paths reviewed."
+    },
+    {
+      "name": "stats_expand_registry",
+      "Native_lines": [
+        3240,
+        3544
+      ],
+      "definition_present": true,
+      "description_first_in_body": true,
+      "review": "Complete Native routine read alongside target; signatures, early gates, branch/call order, calculations, arrays, optionals, diagnostic/error paths reviewed."
+    },
+    {
+      "name": "add_expanded_def",
+      "Native_lines": [
+        3546,
+        3594
+      ],
+      "definition_present": true,
+      "description_first_in_body": true,
+      "review": "Complete Native routine read alongside target; signatures, early gates, branch/call order, calculations, arrays, optionals, diagnostic/error paths reviewed."
+    },
+    {
+      "name": "parse_registry_line",
+      "Native_lines": [
+        3596,
+        3668
+      ],
+      "definition_present": true,
+      "description_first_in_body": true,
+      "review": "Complete Native routine read alongside target; signatures, early gates, branch/call order, calculations, arrays, optionals, diagnostic/error paths reviewed."
+    },
+    {
+      "name": "split_registry_fields",
+      "Native_lines": [
+        3670,
+        3726
+      ],
+      "definition_present": true,
+      "description_first_in_body": true,
+      "review": "Complete Native routine read alongside target; signatures, early gates, branch/call order, calculations, arrays, optionals, diagnostic/error paths reviewed."
+    },
+    {
+      "name": "is_line_comment",
+      "Native_lines": [
+        3728,
+        3749
+      ],
+      "definition_present": true,
+      "description_first_in_body": true,
+      "review": "Complete Native routine read alongside target; signatures, early gates, branch/call order, calculations, arrays, optionals, diagnostic/error paths reviewed."
+    }
+  ],
+  "mechanical_call_order_file": "IO_CALL_ORDER_AUDIT.json",
+  "mechanical_call_order_all_match": true,
+  "registry_arms_and_literal_calls_match": true,
+  "supported_branches": [
+    "Classic NetCDF coordinate/registered-variable definition and exact attribute/fill/write order",
+    "Radiation grids present together or absent; parameter metadata present together or absent",
+    "ZT/ZM/radiation/surface/LH grid IDs and unexpected-grid error return",
+    "Pointwise no-sample skip and count averaging; optional output remapping through existing public lower kernel",
+    "Dynamic source grid/density/surface pressure allocation refresh with Native shape gates",
+    "SILHS empty/nonempty lists, coordinate reuse, existing-definition mismatch, sample shape/last-sample gates and fatal-write behavior",
+    "Registry open/read/empty/parse failures, legacy3 and current4 fields, alias/default grid tokens",
+    "All hydrometeor pairs, scalar/ED scalar, fixed8-category expansions, dedup/truncation/capacity order",
+    "Gregorian-date formatting preserving Native NINT/MOD/INT/decimal operation order"
+  ],
+  "retained_adaptations": [
+    {
+      "boundary": "stats_expand_registry/add_expanded_def",
+      "reason": "Case-owned warning metadata replaces Native SAVE flag; warns once/context not once/process; no truncation/dedup/data change."
+    },
+    {
+      "boundary": "stats_expand_registry scalar template loops",
+      "reason": "optional::value rejects missing forwarded scalar dimensions only when used; Native required dummy is absent at that same reached boundary."
+    },
+    {
+      "boundary": "stats_expand_registry after input loop",
+      "reason": "Explicit fatal for Native unallocated defs unconditional deallocation on empty/comment-only registry."
+    },
+    {
+      "boundary": "stats_open_netcdf parameter names",
+      "reason": "C++ vector strings use common maximum width, matching existing bridge pack_strings contract and resulting Native fixed CHARACTER array."
+    },
+    {
+      "boundary": "all NetCDF writes",
+      "reason": "Existing to_host_space packs Kokkos possibly strided/device values before typed C pointer API; explicit Native source start/count supplied."
+    },
+    {
+      "boundary": "stats_grid_init/update_grid and avg output",
+      "reason": "Existing grid class retains execution-space heights; explicit transfer at host statistics/remapping boundaries. Existing remap API handles lower execution staging."
+    },
+    {
+      "boundary": "stats_lh_samples_init / host writer",
+      "reason": "Native OMP critical is represented by current supported sequential host-call stream; no concurrent host I/O or global lock added."
+    },
+    {
+      "boundary": "read_registry allocation/I/O status",
+      "reason": "Vendor-specific Fortran allocation/IOSTAT codes replaced by nonzero portable parser/allocation statuses; fatal/nonfatal control flow retained."
+    },
+    {
+      "boundary": "character helpers and format_date integer lambda",
+      "reason": "Call-local C++ replacements for Fortran TRIM/ADJUSTL/fixed-width assignment/internal integer WRITE, no retained state."
+    }
+  ],
+  "omitted_features": [],
+  "numeric_verification": "Pending root whole-model CPU/Native zero-tolerance bytewise comparisons; object compilation is not BFB evidence."
+}

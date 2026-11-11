@@ -105,7 +105,7 @@ def test_tsdadg_pdf_driver_column_consistency():
 
     got = clubb_api.tsdadg_pdf_driver(
         nz=nz, wm=wm, rtm=rtm, thlm=thlm, wp2=wp2, rtp2=rtp2, thlp2=thlp2, skw=skw,
-        skrt=skrt, skthl=skthl, wprtp=wprtp, wpthlp=wpthlp, ngrdcol=(wm).shape[0])
+        skrt=skrt, skthl=skthl, wprtp=wprtp, wpthlp=wpthlp)
 
     ncols = wm.shape[0]
     for i in range(ncols):
@@ -113,7 +113,6 @@ def test_tsdadg_pdf_driver_column_consistency():
             nz=nz, wm=wm[i:i+1, :], rtm=rtm[i:i+1, :], thlm=thlm[i:i+1, :],
             wp2=wp2[i:i+1, :], rtp2=rtp2[i:i+1, :], thlp2=thlp2[i:i+1, :], skw=skw[i:i+1, :],
             skrt=skrt[i:i+1, :], skthl=skthl[i:i+1, :], wprtp=wprtp[i:i+1, :], wpthlp=wpthlp[i:i+1, :],
-            ngrdcol=(wm[i:i+1, :]).shape[0],
         )
         for arr_multi, arr_single in zip(got, got_i):
             np.testing.assert_allclose(arr_multi[i:i+1, :], arr_single)

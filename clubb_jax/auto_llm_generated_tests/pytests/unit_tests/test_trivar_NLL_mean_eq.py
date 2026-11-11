@@ -11,8 +11,6 @@ EXACTLY the corresponding primitive with the documented (possibly swapped) args 
 dispatch test; a mis-wired branch or wrong-swap bug is caught directly. Oracle-independent; never SKIPs. (iter 550)
 """
 
-from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
-
 
 from clubb_jax.src.Microphys.KK_microphys.KK_upscaled_means import trivar_NLL_mean_eq, CHI_TOL
 from clubb_jax.src.Microphys.KK_microphys.PDF_integrals_means import (
@@ -26,7 +24,7 @@ _S_RR_N, _S_NR_N, _R12, _R13, _R23 = 0.5, 0.6, 0.2, 0.15, 0.1
 
 
 def _eq(s_chi, s_rr, s_nr, mu_chi=_MU_CHI):
-    return float(call_jax(trivar_NLL_mean_eq, mu_chi, _MU_RR, _MU_NR, _MU_RR_N, _MU_NR_N,
+    return float(trivar_NLL_mean_eq(mu_chi, _MU_RR, _MU_NR, _MU_RR_N, _MU_NR_N,
                                     s_chi, s_rr, s_nr, _S_RR_N, _S_NR_N,
                                     _R12, _R13, _R23, _A, _B, _G))
 
@@ -37,7 +35,7 @@ def _close(got, ref, name):
 
 def test_all_vary():
     _close(_eq(0.3, 2e-4, 2e5),
-           float(call_jax(trivar_NLL_mean, _MU_CHI, _MU_RR_N, _MU_NR_N, max(0.3, CHI_TOL), _S_RR_N, _S_NR_N,
+           float(trivar_NLL_mean(_MU_CHI, _MU_RR_N, _MU_NR_N, max(0.3, CHI_TOL), _S_RR_N, _S_NR_N,
                                  _R12, _R13, _R23, _A, _B, _G)), "all-vary->trivar_NLL_mean")
     print("  all vary -> trivar_NLL_mean (general)  PASS")
 
@@ -64,7 +62,7 @@ def test_x1x3_const_uses_swapped_x1x2():
 
 def test_x2x3_const():
     _close(_eq(0.3, 0.0, 0.0),
-           float(call_jax(trivar_NLL_mean_const_x2x3, _MU_CHI, _MU_RR, _MU_NR, max(0.3, CHI_TOL), _A, _B, _G)), "x2x3->const_x2x3")
+           float(trivar_NLL_mean_const_x2x3(_MU_CHI, _MU_RR, _MU_NR, max(0.3, CHI_TOL), _A, _B, _G)), "x2x3->const_x2x3")
     print("  rr&Nr const -> const_x2x3  PASS")
 
 
@@ -77,7 +75,7 @@ def test_x1_const():
 
 def test_x2_const():
     _close(_eq(0.3, 0.0, 2e5),
-           float(call_jax(trivar_NLL_mean_const_x2, _MU_CHI, _MU_RR, _MU_NR_N, max(0.3, CHI_TOL), _S_NR_N, _R13, _A, _B, _G)),
+           float(trivar_NLL_mean_const_x2(_MU_CHI, _MU_RR, _MU_NR_N, max(0.3, CHI_TOL), _S_NR_N, _R13, _A, _B, _G)),
            "x2->const_x2")
     print("  rr const -> const_x2(mu_rr, mu_Nr_n, rho13)  PASS")
 
@@ -85,6 +83,6 @@ def test_x2_const():
 def test_x3_const_uses_swapped_x2():
     # Nr const → reuse const_x2 with (x2,x3)=(Nr,rr) swapped, (beta,gamma) swapped, rho12.
     _close(_eq(0.3, 2e-4, 0.0),
-           float(call_jax(trivar_NLL_mean_const_x2, _MU_CHI, _MU_NR, _MU_RR_N, max(0.3, CHI_TOL), _S_RR_N, _R12, _A, _G, _B)),
+           float(trivar_NLL_mean_const_x2(_MU_CHI, _MU_NR, _MU_RR_N, max(0.3, CHI_TOL), _S_RR_N, _R12, _A, _G, _B)),
            "x3->const_x2 swapped")
     print("  Nr const -> const_x2 with (x2,x3)/(beta,gamma) SWAPPED, rho12  PASS")

@@ -1,0 +1,20 @@
+{
+  "date_UTC": "2026-11-06T06:53:45.193189+00:00",
+  "attribution": "Owner completeNative/source read and separatetargetreread; no independent reviewer claim.",
+  "routines": [
+    "lin_ext_zm_bottom",
+    "lin_ext_zt_bottom"
+  ],
+  "checks": [
+    "both5argNativecontracts and sourceorder",
+    "complete sourcepurpose/units and exact arithmeticparenthesization",
+    "deviceinlinescalarfunctions; no state/bridge/extra option",
+    "no speculativefma; runtimeunverified"
+  ],
+  "sha256": {
+    "src/Input_fields/extrapolation.F90": "45f238376e8525dd6a0ffff361559346a20ef33204c4f3f903f34d132049baa9",
+    "clubb_kokkos/drafts/driver_input_fields/Input_fields/extrapolation.hpp": "1ec2bcbcc70e13f0dbc8fc709bc3f433df9a3cdcb916f9b88df7748444726597"
+  },
+  "BFB_specific_adaptations": [],
+  "runtime_status": "UNCOMPILED/UNTESTED; no CPU/CUDA/runtime/BFB claim. Root integrates/testscompatiblebatch."
+}

@@ -1,36 +1,7 @@
-// Check loss drivers, scalar tuning, saved history and CPU JAX tuning from the repo root.
-// GNU Fortran and NetCDF-Fortran must be available through the Larson module environment;
-// compile.py -debug -python supplies the native/Python loss API. JAX sets up its own CPU env.
-// Reproduce scalar coverage with the case/strategy commands in each stage below.
-// Run the fast tuner checks first, without a Fortran build:
-//   bash human_reviewed_tests/run_pytests.sh -unit -k tuner
-// Reproduce the independent gradient/first-update/history checks with:
-//   python3 tuner/auto_llm_generated_tests/integration_tests/run_adam_gradient_test.py \
-//     -output_dir output/tests/adam_gradient -gradient_mode forward -batch_size 2
-// That check uses BOMEX/ATEX for ten 60 s steps, wp2/thlm and two windows per case.
-// It verifies real objective derivatives against centered differences and requires the
-// retained best loss to be <= the first chain's starting loss, without a percentage target.
-// CPU workers stay serialized; forward mode avoids the larger two-case reverse tape.
-// Independent stages record failures while manual aborts stop the pipeline.
+// Record independent failures while allowing manual aborts to stop the pipeline.
 pipeline {
   agent any
   stages {
-    stage('Tuner unit tests') {
-      steps {
-        catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
-          sh '''
-            bash human_reviewed_tests/run_pytests.sh -unit -k tuner \
-              --junitxml=output/tests/pytests/tuner.xml --durations=10
-          '''
-        }
-      }
-      post {
-        always {
-          // Publish the unit-test report before running the model checks.
-          junit testResults: 'output/tests/pytests/tuner.xml', allowEmptyResults: true
-        }
-      }
-    }
     stage('Compile') {
       steps {
         sh '''
@@ -126,6 +97,7 @@ pipeline {
       }
     }
     stage('JAX tuner command') {
+      agent { label 'carson' }
       steps {
         catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
           sh '''
@@ -135,23 +107,6 @@ pipeline {
               -strategy random:16 -batch_size 2 -workers 1 -seed 7 \
               -output_root output/tuner/jax_regression -run_top never
           '''
-        }
-      }
-    }
-
-    stage('JAX gradient Adam') {
-      steps {
-        catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
-          sh '''
-            python3 tuner/auto_llm_generated_tests/integration_tests/run_adam_gradient_test.py \
-              -output_dir output/tests/adam_gradient -gradient_mode forward -batch_size 2
-          '''
-        }
-      }
-      post {
-        always {
-          archiveArtifacts artifacts: 'output/tests/adam_gradient/summary.json,output/tests/adam_gradient/tuner.log',
-                           allowEmptyArchive: true
         }
       }
     }

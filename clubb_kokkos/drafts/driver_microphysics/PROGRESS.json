@@ -1,0 +1,42 @@
+{
+  "date": "2026-11-06",
+  "objective": "Complete supported top-level microphysics and reachable KK/Morrison numerical engines in C++; GPU performance deferred",
+  "base_revision": "ac37a3898",
+  "scope": "Native/JAX supported none/KK/Morrison; COAMPS/simplified_ice/GFDL and explicit JAX-excluded Morrison flags remain gated",
+  "state_contract": [
+    "parameters_microphys",
+    "parameters_KK",
+    "morrison_microphysics_state",
+    "parameters_silhs_state"
+  ],
+  "current_drafts": [
+    "advance_microphys13",
+    "mixed_moment8",
+    "cloud_sed1",
+    "ice_dfsn2(excluded scheme but actual source port)",
+    "category_variance2",
+    "init_cleanup2",
+    "KK_module8+internal stat helper",
+    "Morrison wrapper+3internal helpers",
+    "estimate_scm2",
+    "lh_driver1",
+    "microphys_scheme_tendencies1",
+    "active KK engine73 scalar bodies + Native Algorithm850 five-routine positive-a closure + exact Codygamma/factorial/Dv",
+    "Morrison9 reachable actual C++ numerical and initialization bodies",
+    "existing PDF wrapper adapted to explicit C++ configuration/permutation/RNG and C++ science calls"
+  ],
+  "implementation_pending": [
+    "Root full live integration and maintained CPU whole-model BFB gate",
+    "post-gate correction/cleanup if needed"
+  ],
+  "verification": [
+    "Actual full scheme dispatcher,KK and Morrison engine bodies compile Serial and CUDA",
+    "HostSpace init template and cloudsed object compile Serial",
+    "Call-local namelist reader compiles nvfortran -O0 -g -Mbounds after formatting",
+    "Adapted PDF wrapper API compilation awaits owner sampler headers",
+    "Context-adapted PDF prep wrapper compiles with actual C++ sampler/clip/RNG/permutation/optional stats contracts",
+    "Added PDF prep wrapper instantiation passed CUDA; source frozen in SHA256_MANIFEST.json while final storage-contract cleanup compilation runs"
+  ],
+  "no_runs": "No model/harness/oracle suite run by child; Root owns maintained whole-model CPU gates",
+  "notes": "Preparation scripts are local drafting helpers and still reference /tmp grammar/patch resources; consolidate before final packaging. Public Native-named headers contain actual C++ science in microphys_host namespace and thin host-staging API. *_host.hpp files are intermediate draft duplicates, not final promotion targets."
+}

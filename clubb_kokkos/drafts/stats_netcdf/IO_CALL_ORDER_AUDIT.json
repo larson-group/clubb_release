@@ -1,0 +1,270 @@
+[
+  {
+    "routine": "stats_open_netcdf",
+    "netcdf_call_order_match": true,
+    "Native_netcdf_calls": [
+      "nf90_create",
+      "nf90_strerror",
+      "nf90_def_dim",
+      "nf90_def_dim",
+      "nf90_def_var",
+      "nf90_put_att",
+      "nf90_put_att",
+      "nf90_def_var",
+      "nf90_put_att",
+      "nf90_put_att",
+      "nf90_put_att",
+      "nf90_put_att",
+      "nf90_put_att",
+      "nf90_put_att",
+      "nf90_put_att",
+      "nf90_put_att",
+      "nf90_put_att",
+      "nf90_def_dim",
+      "nf90_def_var",
+      "nf90_put_att",
+      "nf90_def_dim",
+      "nf90_def_dim",
+      "nf90_def_var",
+      "nf90_put_att",
+      "nf90_def_dim",
+      "nf90_def_var",
+      "nf90_put_att",
+      "nf90_def_dim",
+      "nf90_def_var",
+      "nf90_put_att",
+      "nf90_def_dim",
+      "nf90_def_var",
+      "nf90_put_att",
+      "nf90_def_dim",
+      "nf90_def_var",
+      "nf90_put_att",
+      "nf90_def_dim",
+      "nf90_def_dim",
+      "nf90_def_var",
+      "nf90_put_att",
+      "nf90_def_var",
+      "nf90_def_var",
+      "nf90_put_att",
+      "nf90_def_var",
+      "nf90_def_var",
+      "nf90_def_var",
+      "nf90_def_var",
+      "nf90_def_var",
+      "nf90_def_var",
+      "nf90_def_var_fill",
+      "nf90_put_att",
+      "nf90_put_att",
+      "nf90_enddef",
+      "nf90_put_var",
+      "nf90_put_var",
+      "nf90_put_var",
+      "nf90_put_var",
+      "nf90_put_var",
+      "nf90_put_var",
+      "nf90_put_var",
+      "nf90_put_var",
+      "nf90_put_var",
+      "nf90_put_var"
+    ],
+    "Cpp_netcdf_calls": [
+      "nf90_create",
+      "nf90_strerror",
+      "nf90_def_dim",
+      "nf90_def_dim",
+      "nf90_def_var",
+      "nf90_put_att",
+      "nf90_put_att",
+      "nf90_def_var",
+      "nf90_put_att",
+      "nf90_put_att",
+      "nf90_put_att",
+      "nf90_put_att",
+      "nf90_put_att",
+      "nf90_put_att",
+      "nf90_put_att",
+      "nf90_put_att",
+      "nf90_put_att",
+      "nf90_def_dim",
+      "nf90_def_var",
+      "nf90_put_att",
+      "nf90_def_dim",
+      "nf90_def_dim",
+      "nf90_def_var",
+      "nf90_put_att",
+      "nf90_def_dim",
+      "nf90_def_var",
+      "nf90_put_att",
+      "nf90_def_dim",
+      "nf90_def_var",
+      "nf90_put_att",
+      "nf90_def_dim",
+      "nf90_def_var",
+      "nf90_put_att",
+      "nf90_def_dim",
+      "nf90_def_var",
+      "nf90_put_att",
+      "nf90_def_dim",
+      "nf90_def_dim",
+      "nf90_def_var",
+      "nf90_put_att",
+      "nf90_def_var",
+      "nf90_def_var",
+      "nf90_put_att",
+      "nf90_def_var",
+      "nf90_def_var",
+      "nf90_def_var",
+      "nf90_def_var",
+      "nf90_def_var",
+      "nf90_def_var",
+      "nf90_def_var_fill",
+      "nf90_put_att",
+      "nf90_put_att",
+      "nf90_enddef",
+      "nf90_put_var",
+      "nf90_put_var",
+      "nf90_put_var",
+      "nf90_put_var",
+      "nf90_put_var",
+      "nf90_put_var",
+      "nf90_put_var",
+      "nf90_put_var",
+      "nf90_put_var",
+      "nf90_put_var"
+    ]
+  },
+  {
+    "routine": "stats_avg_and_write",
+    "netcdf_call_order_match": true,
+    "Native_netcdf_calls": [
+      "nf90_put_var",
+      "nf90_put_var",
+      "nf90_put_var",
+      "nf90_put_var",
+      "nf90_put_var",
+      "nf90_strerror"
+    ],
+    "Cpp_netcdf_calls": [
+      "nf90_put_var",
+      "nf90_put_var",
+      "nf90_put_var",
+      "nf90_put_var",
+      "nf90_put_var",
+      "nf90_strerror"
+    ]
+  },
+  {
+    "routine": "stats_grid_init",
+    "netcdf_call_order_match": true,
+    "Native_netcdf_calls": [],
+    "Cpp_netcdf_calls": []
+  },
+  {
+    "routine": "stats_update_grid",
+    "netcdf_call_order_match": true,
+    "Native_netcdf_calls": [],
+    "Cpp_netcdf_calls": []
+  },
+  {
+    "routine": "stats_lh_samples_init",
+    "netcdf_call_order_match": true,
+    "Native_netcdf_calls": [
+      "nf90_redef",
+      "nf90_def_dim",
+      "nf90_def_dim",
+      "nf90_def_var",
+      "nf90_put_att",
+      "nf90_def_var",
+      "nf90_def_var_fill",
+      "nf90_def_var",
+      "nf90_def_var_fill",
+      "nf90_enddef",
+      "nf90_put_var"
+    ],
+    "Cpp_netcdf_calls": [
+      "nf90_redef",
+      "nf90_def_dim",
+      "nf90_def_dim",
+      "nf90_def_var",
+      "nf90_put_att",
+      "nf90_def_var",
+      "nf90_def_var_fill",
+      "nf90_def_var",
+      "nf90_def_var_fill",
+      "nf90_enddef",
+      "nf90_put_var"
+    ]
+  },
+  {
+    "routine": "stats_lh_samples_write_lognormal",
+    "netcdf_call_order_match": true,
+    "Native_netcdf_calls": [
+      "nf90_put_var"
+    ],
+    "Cpp_netcdf_calls": [
+      "nf90_put_var"
+    ]
+  },
+  {
+    "routine": "stats_lh_samples_write_uniform",
+    "netcdf_call_order_match": true,
+    "Native_netcdf_calls": [
+      "nf90_put_var",
+      "nf90_put_var",
+      "nf90_put_var"
+    ],
+    "Cpp_netcdf_calls": [
+      "nf90_put_var",
+      "nf90_put_var",
+      "nf90_put_var"
+    ]
+  },
+  {
+    "routine": "format_date",
+    "netcdf_call_order_match": true,
+    "Native_netcdf_calls": [],
+    "Cpp_netcdf_calls": []
+  },
+  {
+    "routine": "stats_read_registry_namelist",
+    "netcdf_call_order_match": true,
+    "Native_netcdf_calls": [],
+    "Cpp_netcdf_calls": []
+  },
+  {
+    "routine": "stats_expand_registry",
+    "netcdf_call_order_match": true,
+    "Native_netcdf_calls": [],
+    "Cpp_netcdf_calls": [],
+    "registry_arm_order_match": true,
+    "expanded_call_count": [
+      76,
+      76
+    ],
+    "expanded_literal_sequence_match": true
+  },
+  {
+    "routine": "add_expanded_def",
+    "netcdf_call_order_match": true,
+    "Native_netcdf_calls": [],
+    "Cpp_netcdf_calls": []
+  },
+  {
+    "routine": "parse_registry_line",
+    "netcdf_call_order_match": true,
+    "Native_netcdf_calls": [],
+    "Cpp_netcdf_calls": []
+  },
+  {
+    "routine": "split_registry_fields",
+    "netcdf_call_order_match": true,
+    "Native_netcdf_calls": [],
+    "Cpp_netcdf_calls": []
+  },
+  {
+    "routine": "is_line_comment",
+    "netcdf_call_order_match": true,
+    "Native_netcdf_calls": [],
+    "Cpp_netcdf_calls": []
+  }
+]

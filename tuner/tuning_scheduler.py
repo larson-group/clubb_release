@@ -1,31 +1,4 @@
-"""Evaluate proposed parameter sets across cases and return one score to the optimizer.
-
-For example, a candidate C8/C11 row must run in both BOMEX and ATEX before the
-optimizer can use its combined loss or gradient. TuningScheduler owns that
-coordination: it starts reusable case workers, packs candidates into model
-column batches, waits for all selected cases, combines their prepared losses
-and optional derivatives, then sends completed feedback to the algorithm.
-The algorithm selects new points; the case loss driver computes each case's
-objective. This scheduler does neither numerical search nor profile-error math.
-
-Usage
------
-run_scheduler(request, job_dir=..., control_path=..., status_path=...,
-results_path=...) runs one validated experiment and returns an exit code.
-TuningScheduler provides the same lifecycle through construction followed by
-run(). WorkerHandle records a worker process, case ownership and outstanding
-work. Worker setup, baseline scoring, result ranking, full sample history and
-public progress files are managed during that lifecycle.
-
-The request fixes cases, per-case windows, fields, physical parameter ranges,
-algorithm options and backend. Every case receives the same candidate rows;
-workers remain warm across batches. A graceful stop drains active evaluations
-and saves pending proposals, algorithm moments/random state and scheduling
-progress in resume_checkpoint.pkl. A checkpoint is a saved Python state file
-used to continue the stopped search without discarding its progress. It is
-separate from JAX timestep checkpoints, which manage differentiation memory.
-Current-format state loads through pickle; obsolete formats are unsupported.
-"""
+"""Master-side scheduler for multi-case CLUBB tuning."""
 
 from __future__ import annotations
 
@@ -124,9 +97,26 @@ class TuningScheduler:
         self.selected_fields = list(request["selected_fields"])
         self.batch_size = int(request["batch_size"])
         self.max_workers = int(request["max_workers"])
-        from tuner.algorithm_registry import prepare_strategy
-        prepare_strategy(request)
-        self.strategy_name = request["strategy"]["name"]
+        raw_strategy = request.get("strategy") or {}
+        self.strategy_name = (
+            str(raw_strategy.get("name", "")).strip().lower()
+            if isinstance(raw_strategy, dict)
+            else str(raw_strategy).strip().lower()
+        )
+        if self.strategy_name == "simann":
+            if not isinstance(raw_strategy, dict):
+                raw_strategy = {"name": "simann", "options": {}}
+                self.request["strategy"] = raw_strategy
+            options = raw_strategy.setdefault("options", {})
+            if options.get("chain_count") is None:
+                options["chain_count"] = max(1, self.max_workers * self.batch_size)
+            try:
+                simann_chain_count = int(options["chain_count"])
+            except (TypeError, ValueError) as exc:
+                raise RuntimeError("simann chain_count must be an integer") from exc
+            if simann_chain_count < 1:
+                raise RuntimeError("simann chain_count must be >= 1")
+            options["chain_count"] = simann_chain_count
         from utilities.clubb_loss_runner import validate_gradient_backend
         self.grad = request.get("grad", False)
         validate_gradient_backend(request.get("backend", "fortran"), self.grad)
@@ -185,6 +175,8 @@ class TuningScheduler:
             for case_name in self.cases
         ]
         self.request["case_window_counts"] = dict(self.case_num_time_windows)
+        self.request.pop("time_window_mode", None)
+        self.request.pop("num_time_windows", None)
         self.request["aggregation_weights"] = list(self.aggregation_weights)
         self.request["loss_policy_version"] = self.loss_policy_version
         self.request["loss_policy_constants"] = dict(self.loss_policy_constants)
@@ -300,8 +292,6 @@ class TuningScheduler:
                 self._poll_workers()
                 self._start_pending_replacements()
                 self._drain_completed_samples()
-                if self.sample_history_writer is not None:
-                    self.sample_history_writer.flush_if_due()
                 if self.error_message:
                     raise RuntimeError(self.error_message)
 
@@ -818,12 +808,6 @@ class TuningScheduler:
                 entry.update(self._improvement_scores(total_loss))
             if self.grad and not batch.get('baseline_name'):
                 entry['gradient_parameters'] = self.gradient_parameters
-                from tuner.gradients import combine_case_gradients
-                entry['total_gradient'] = combine_case_gradients(
-                    total_loss_diagnostics['loss_coefficients'],
-                    [np.asarray(batch['case_gradients'][case]['loss'])[col_idx]
-                     for case in self.cases],
-                ).tolist()
                 entry['gradient_target'] = 'loss'
                 entry['gradient'] = {
                     case: {'loss': np.asarray(batch['case_gradients'][case]['loss'])[col_idx].tolist()}
@@ -1274,11 +1258,12 @@ class TuningScheduler:
         )
 
     def _write_resume_checkpoint(self) -> None:
-        """Save the stopped search so Continue can resume its proposals and optimizer state.
+        """Persist enough scheduler state to continue a gracefully stopped run.
 
-        Write algorithm moments/RNG, pending candidates, partial case batches, ranking
-        and elapsed progress to a temporary pickle file, then atomically replace
-        resume_checkpoint.pkl. This preserves the search trajectory, not just results.
+        The checkpoint is local to a user-created execution directory.  It
+        preserves the strategy's random/adaptive state, not just the count of
+        completed samples, so random, grid, and simulated-annealing modes all
+        continue from their prior proposal state.
         """
         if self.strategy is None:
             return
@@ -1310,12 +1295,7 @@ class TuningScheduler:
                 pass
 
     def _restore_resume_checkpoint(self) -> None:
-        """Load saved current-format search state when continuing a stopped execution.
-
-        Restore the algorithm and pending work, then rebuild case jobs only for case
-        results still missing from partial batches. With no saved file there is
-        nothing to restore; an unreadable/unsupported file raises a clear error.
-        """
+        """Restore a prior graceful-stop checkpoint when this execution resumes."""
         if not self.checkpoint_path.is_file():
             return
         try:
@@ -1472,11 +1452,7 @@ def run_scheduler(
     status_path: Path,
     results_path: Path,
 ) -> int:
-    """Run one validated experiment and return its scheduler exit code.
-
-    The job directory and control/status/results paths belong to the caller.
-    TuningScheduler owns workers, feedback, stop/continuation and file updates.
-    """
+    """Run one master scheduler instance."""
     return TuningScheduler(
         request=request,
         job_dir=job_dir,

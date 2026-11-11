@@ -71,6 +71,7 @@ module tridiag_lu_solvers
   private :: tridiag_lu_solve_single_rhs_multiple_lhs, tridiag_lu_solve_multiple_rhs_lhs
 
   interface tridiag_lu_solve
+    module procedure tridiag_lu_solve_single_rhs_lhs
     module procedure tridiag_lu_solve_single_rhs_multiple_lhs
     module procedure tridiag_lu_solve_multiple_rhs_lhs
   end interface
@@ -79,6 +80,69 @@ module tridiag_lu_solvers
 
   contains
 
+  !=============================================================================
+  subroutine tridiag_lu_solve_single_rhs_lhs( ndim, lhs, rhs, &
+                                              soln )
+    ! Description:
+    !   Written for single RHS and single LHS.
+    !------------------------------------------------------------------------
+
+    implicit none
+ 
+    ! ----------------------- Input Variables -----------------------
+    integer, intent(in) :: &
+      ndim  ! Matrix size 
+
+    real( kind = core_rknd ), intent(in), dimension(ndim) ::  &
+      rhs       ! 
+
+    ! ----------------------- Input/Output Variables -----------------------
+    real( kind = core_rknd ), intent(inout), dimension(-1:1,ndim) :: &
+      lhs   ! Matrices to solve, stored using band diagonal vectors
+            ! -2 is the uppermost band, 2 is the lower most band, 0 is diagonal
+
+    ! ----------------------- Output Variables -----------------------
+    real( kind = core_rknd ), intent(out), dimension(ndim) ::  &
+      soln     ! Solution vector
+
+    ! ----------------------- Local Variables -----------------------
+    real( kind = core_rknd ), dimension(ndim) ::  &
+      upper,         & ! First U band 
+      lower_diag_invrs ! Inverse of the diagonal of L
+
+    integer :: k    ! Loop variables
+
+    ! ----------------------- Begin Code -----------------------
+       
+    !$acc data create( upper, lower_diag_invrs )
+    
+    !$acc kernels
+    
+    lower_diag_invrs(1) = 1.0_core_rknd / lhs(0,1)
+    upper(1)            = lower_diag_invrs(1) * lhs(-1,1) 
+
+    do k = 2, ndim-1
+      lower_diag_invrs(k) = 1.0_core_rknd / ( lhs(0,k) - lhs(1,k) * upper(k-1)  )
+      upper(k)            = lower_diag_invrs(k) * lhs(-1,k) 
+    end do
+
+    lower_diag_invrs(ndim) = 1.0_core_rknd / ( lhs(0,ndim) - lhs(1,ndim) * upper(ndim-1)  )
+
+    soln(1)   = lower_diag_invrs(1) * rhs(1) 
+
+    do k = 2, ndim
+      soln(k) = lower_diag_invrs(k) * ( rhs(k) - lhs(1,k) * soln(k-1) )
+    end do
+
+    do k = ndim-1, 1, -1
+      soln(k) = soln(k) - upper(k) * soln(k+1)
+    end do
+
+    !$acc end kernels
+
+    !$acc end data
+
+  end subroutine tridiag_lu_solve_single_rhs_lhs
 
   !=============================================================================
   subroutine tridiag_lu_solve_single_rhs_multiple_lhs( ndim, ngrdcol, lhs, rhs, &

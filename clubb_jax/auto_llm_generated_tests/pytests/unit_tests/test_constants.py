@@ -112,9 +112,9 @@ def test_constants_match_fortran_source():
 
 def test_case_initialization_uses_shared_constants():
     """Case setup reuses the constants module, so fcor_y uses Fortran's radians_per_deg."""
-    from clubb_jax.src import clubb_case_initialization
+    from clubb_jax.src import clubb_case_initalization
     from clubb_jax.src.CLUBB_core import constants_clubb
 
     for name in ("Cp", "Lv", "Rd", "ep1", "ep2", "kappa", "grav", "p0", "omega_planet",
                  "radians_per_deg", "rt_tol", "thl_tol", "w_tol", "em_min", "cloud_frac_min"):
-        assert getattr(clubb_case_initialization, name) == getattr(constants_clubb, name), name
+        assert getattr(clubb_case_initalization, name) == getattr(constants_clubb, name), name

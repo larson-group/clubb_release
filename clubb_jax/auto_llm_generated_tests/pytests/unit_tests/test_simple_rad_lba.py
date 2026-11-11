@@ -6,11 +6,10 @@ import os
 _ROOT = str(_REPO_ROOT)
 
 import numpy as np
-from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
 
 from clubb_jax.src.Radiation.simple_rad_module import (
     simple_rad_lba_init, lba_radhtz, simple_rad_lba, lba_ntimes, lba_nzrad)
-from clubb_jax.src.CLUBB_core.interpolation import zlinterp
+from clubb_jax.src.CLUBB_core.interpolation import zlinterp_fnc
 from clubb_jax.src.Radiation.parameters_radiation import initialize_radiation_parameters
 from clubb_jax.src.CLUBB_core.grid_class import setup_grid
 
@@ -62,7 +61,7 @@ def test_full_radht_vs_literal():
     worst = 0.0
     for time in (300.0, 1500.0, 12345.0, 25000.0):
         got = np.asarray(simple_rad_lba(gr, 1, time, 0.0, radiation_parameters))[0]
-        ref = np.asarray(call_jax(zlinterp, 1, zt.size, zrad.size, zt[None, :], zrad[None, :], _ref_radhtz(time, krad)[None, :]))[0]
+        ref = np.asarray(zlinterp_fnc(zt, zrad, _ref_radhtz(time, krad)))
         worst = max(worst, np.max(np.abs(got - ref)))
     # zero-extrapolation above the table top
     rad = np.asarray(simple_rad_lba(gr, 1, 1500.0, 0.0, radiation_parameters))[0]

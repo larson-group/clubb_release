@@ -1,0 +1,18 @@
+{
+  "target_hashes": {
+    "stats_netcdf.hpp": "f84addefda5ee9413df8baf6939b36fe3eaa9587f8a59a9ea8a1c924568678eb",
+    "stats_netcdf_state.cpp": "df7e1558975a78a2154738dac32d5c3d3ba289faa5988342ca3c879c9997e836"
+  },
+  "checks": {
+    "routine_inventory": "26/26 reviewed; generic templates require header placement; compiled groups retain Native order",
+    "signatures": "Names, argument order/grouping and optional semantics match Native apart from documented C++ indices/option bundle/generic overloads",
+    "comments": "Meaningful Native stages/dividers retained or equivalent; procedure descriptions cover purpose/input/update; stale nonexistent process-lock claim corrected",
+    "state": "All mutable arrays/context flags/caches case-owned; no added global/static/thread-local model state",
+    "helpers": "stats_value_copy and copy/ownership special members are unavoidable Native allocatable-value vs View/file-ownership adapters; generic dispatch/staging templates preserve memory-space contracts",
+    "arithmetic": "No FMA, rounding workaround, reused global scratch, or speculative numerical optimization added",
+    "errors": "Native fatal err_info branches and printed consistency warnings preserved; snapshot mutation/self-copy/active-owner overwrite explicitly reject invalid C++ ownership operations",
+    "whitespace": "No trailing whitespace; own newlines present",
+    "scope": "Draft-only; no live sources, CMake, caller, generator, Native source or shared model build mutation"
+  },
+  "verification": "See build/validation/stats_cpp/state_probe_serial/RESULT.json and state_probe_cuda/RESULT.json for compile-only evidence; root owns numerical integration."
+}

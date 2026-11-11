@@ -1,0 +1,82 @@
+{
+  "review": "Separate owner cleanup after full Native/JAX reads, outline, implementation and source contract/field/order review. Independent review, compilation and runtime evidence remain pending.",
+  "formatting_pass": {
+    "err_info_type_module.cpp": {
+      "before_sha256": "84e56cc7c3143387db082869db8b5a95b2160fb017a7d2555d50858ac6278ba4",
+      "after_format_sha256": "b2ffac6657cdf318a5912261d6e90b0db20ac482c7e73382b73487837daf7e28",
+      "signature_groups_restored": 6,
+      "ordinary_calls_formatted": 4,
+      "argument_comments_corrected": 17,
+      "executable_tokens_unchanged": true,
+      "token_count": 705
+    },
+    "procedure_declarations.hpp.inc": {
+      "before_sha256": "208dfdfb4448c88466d94b31fcbbb9b490e8bf1f8ecd2445d69c28482d06473b",
+      "after_format_sha256": "5d0c8b0d05d7a54767d9fe8d3ca0d0d7a5cd86c9f376c04f806291fb3a0177cf",
+      "signature_groups_restored": 7,
+      "ordinary_calls_formatted": 3,
+      "argument_comments_corrected": 0,
+      "executable_tokens_unchanged": true,
+      "token_count": 414
+    }
+  },
+  "final_files": {
+    "err_info_type_module.cpp": {
+      "sha256": "3c45b8ce349623fc6ca5974060b897b1dff97b79c14de8e1ca6c53a0201e905a",
+      "lines": 225,
+      "max_columns": 93
+    },
+    "procedure_declarations.hpp.inc": {
+      "sha256": "434638fe6afcf6e9843fec58f4665577a5609a4ba776bc0ddd233cfb2caab707",
+      "lines": 72,
+      "max_columns": 95
+    },
+    "procedure_includes.hpp.inc": {
+      "sha256": "abf7176198fc96357c6140aa84dba335abe81b2cf426c6b830a57627a7b296bd",
+      "lines": 4,
+      "max_columns": 72
+    },
+    "procedure_manifest.py.inc": {
+      "sha256": "ed1d26aefdd87dc08f05684494b66a9c82896ae599672fdee2b4bfcda050fd51",
+      "lines": 10,
+      "max_columns": 83
+    }
+  },
+  "subsequent_executable_cleanup": [
+    {
+      "kind": "Remove unused standard-library includes only",
+      "removed": [
+        "#include <iomanip>",
+        "#include <limits>",
+        "#include <sstream>"
+      ]
+    },
+    {
+      "kind": "Integration contract adaptation in private formatter call site",
+      "before": "f2k::format_err_info_headers(ngrdcol, formatted)",
+      "after": "f2k::set_err_info_values_api(ngrdcol, formatted)",
+      "reason": "Reuse existing PUBLIC_NAMES presence-overload mechanism and actual Native public name; no new Native-name alias owner."
+    }
+  ],
+  "reviewed": [
+    "Native source inventory, signatures, ordered component operations and optional branches",
+    "Native continuation groups and precise In/Out/InOut/Optional In comments in core interfaces and calls",
+    "Factual argument notes/units, purpose-first file headers, Native formatting/allocation restrictions",
+    "Per-case ownership; individual View captures; no owning UDT/device bridge/global mutable state",
+    "100 columns, two-space indentation, no tabs/trailing whitespace; no deliberate FMA/association adaptation"
+  ],
+  "numerical_status": "No builds/tests. All initialization/reset/packing/printer/error branches await group integration and CPU zero-tolerance comparison. No BFB claim.",
+  "final_token_proof": {
+    "err_info_type_module.cpp": {
+      "tokens": 690,
+      "final_sha256": "3c45b8ce349623fc6ca5974060b897b1dff97b79c14de8e1ca6c53a0201e905a",
+      "equality_after_listed_unused_include_removal_and_public_callee_selection": true
+    },
+    "procedure_declarations.hpp.inc": {
+      "tokens": 414,
+      "final_sha256": "434638fe6afcf6e9843fec58f4665577a5609a4ba776bc0ddd233cfb2caab707",
+      "equality_after_listed_unused_include_removal": true
+    }
+  },
+  "integration_contract_correction": "First isolated compile proved a distinct C-symbol key must map through existing PUBLIC_NAMES to actual Native public setter. Parent selected existing stats-style presence-overload design. No private Native API or separate alias mechanism."
+}

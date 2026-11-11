@@ -1,0 +1,12 @@
+{
+  "remapping_module.cpp": {
+    "before_sha256": "e45bce5112fd0748a1d7e63db602d5045e44a8d29b7250b1d25a22ea50197e91",
+    "before_token_sha256": "fe470421c5390760697bad777482b0500eceef3d724b649f0506fb4e7e99204e",
+    "token_count": 10991
+  },
+  "remapping_module.hpp": {
+    "before_sha256": "e112a2b6789bc54b16e39720b5cd7c52d5923b56fcba812daa95de553ea76588",
+    "before_token_sha256": "a3378f849e58244365c14ae291fde2a22a82854126b2c6df7032685ec026c644",
+    "token_count": 258
+  }
+}

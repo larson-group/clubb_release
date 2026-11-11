@@ -1,67 +1,55 @@
-// Compare timestep sweeps for CPU JAX/native cases and check native convergence.
-// From the repository root, load gcc/netcdf-fortran and run ./compile.py for native checks;
-// a JAX example is python3 human_reviewed_tests/run_timestep_sweep.py -jax=cpu -workers 4 -cases bomex.
 // Record independent failures while allowing manual aborts to stop the pipeline.
 pipeline {
-  agent any
+  agent none
   options { disableConcurrentBuilds() }
 
   stages {
-    // Parallel checks use separate workspaces and checkouts on the selected worker.
+    // Each branch owns its executor, checkout, build, and output files.
     stage('Independent workflows') {
       parallel {
         stage('JAX timestep sweep') {
+          agent { label 'carson' }
           steps {
-            ws("${env.WORKSPACE}@jax_timestep_sweep") {
-              checkout scm
-
-              catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
-                sh '''
-                  # Native cases shared with the JAX/Fortran comparison list.
-                  # Keep the sweep's default timesteps and full case durations.
-                  python3 human_reviewed_tests/run_timestep_sweep.py -jax=cpu -workers 4 \
-                    -cases "arm,atex,bomex,clex9_oct14,
-                      dycoms2_rf01,dycoms2_rf01_fixed_sst,
-                      dycoms2_rf02_do,dycoms2_rf02_ds,dycoms2_rf02_nd,
-                      fire,gabls2,gabls3_night,jun25_altocu,lba,
-                      nov11_altocu,rico,rico_silhs,wangara" \
-                    -output_root output/jax_timestep_sweep
-                '''
-              }
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+              sh '''
+                # Native cases shared with the JAX/Fortran comparison list.
+                # Keep the sweep's default timesteps and full case durations.
+                python3 human_reviewed_tests/run_timestep_sweep.py -jax=cpu -workers 4 \
+                  -cases "arm,atex,bomex,clex9_oct14,
+                    dycoms2_rf01,dycoms2_rf01_fixed_sst,
+                    dycoms2_rf02_do,dycoms2_rf02_ds,dycoms2_rf02_nd,
+                    fire,gabls2,gabls3_night,jun25_altocu,lba,
+                    nov11_altocu,rico,rico_silhs,wangara" \
+                  -output_root output/jax_timestep_sweep
+              '''
             }
           }
         }
         stage('Fortran timestep sweep') {
+          agent any
           steps {
-            ws("${env.WORKSPACE}@fortran_timestep_sweep") {
-              checkout scm
+            sh '''
+              source /etc/profile.d/larson-group.sh
+              module load gcc netcdf-fortran
+              ./compile.py
+            '''
 
-              sh '''
-                source /etc/profile.d/larson-group.sh
-                module load gcc netcdf-fortran
-                ./compile.py
-              '''
-
-              catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
-                sh '''human_reviewed_tests/run_timestep_sweep.py'''
-              }
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+              sh '''human_reviewed_tests/run_timestep_sweep.py'''
             }
           }
         }
         stage('Fortran timestep convergence') {
+          agent any
           steps {
-            ws("${env.WORKSPACE}@fortran_timestep_convergence") {
-              checkout scm
+            sh '''
+              source /etc/profile.d/larson-group.sh
+              module load gcc netcdf-fortran
+              ./compile.py
+            '''
 
-              sh '''
-                source /etc/profile.d/larson-group.sh
-                module load gcc netcdf-fortran
-                ./compile.py
-              '''
-
-              catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
-                sh '''python human_reviewed_tests/run_clubb_conv_test.py'''
-              }
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+              sh '''python human_reviewed_tests/run_clubb_conv_test.py'''
             }
           }
         }

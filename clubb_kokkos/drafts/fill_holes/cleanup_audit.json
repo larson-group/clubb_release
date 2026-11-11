@@ -1,0 +1,13 @@
+{
+  "separate_source_cleanup": true,
+  "findings_corrected": [
+    "Prototype semicolon originally followed intent // and was swallowed; now standalone syntax.",
+    "Quoted diagnostic commas used declaration splitter; fixed quote-aware rendering preserving exact labels.",
+    "Explicit device-template selection prevents host wrapper recursion on compatible rank1 Serial Views.",
+    "Public vertical/TKE generic adapters now use actual existing array owner for strided caller sections.",
+    "Native setup_stats_names species-case rationale retained; supplied missing argument/unit descriptions."
+  ],
+  "cpp_max_line_width": 108,
+  "hpp_max_line_width": 100,
+  "source_or_runtime_tests": "Source inspection only; no build, model run, unit test, numerical or performance result."
+}

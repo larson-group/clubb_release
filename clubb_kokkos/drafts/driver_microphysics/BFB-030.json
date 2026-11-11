@@ -1,0 +1,138 @@
+{
+  "id": "BFB-030",
+  "status": "six-site candidate;49-step accepted;full360 pending",
+  "routine": "morrison_engine::M2005MICRO_GRAUPEL",
+  "problem": "Kokkos::pow(float,int4) returns double, promoting surrounding rain-clamp arithmetic before the N0RR float assignment; Native REAL**INTEGER retains default REAL.",
+  "earliest_observation": {
+    "case": "lba",
+    "scheme": "morrison",
+    "LH": "disabled",
+    "stats": "standard",
+    "step": 49,
+    "time_s": 44340,
+    "fields": [
+      "Nrm_mc",
+      "Nrm_cl",
+      "Nrm_ta"
+    ],
+    "dt_s": 60
+  },
+  "equal_input_boundary_evidence": {
+    "all196_engine_inputs_and110state_scalars_plus16dnu_values_exact": true,
+    "first_output_differences_by_field": {
+      "NR3D": {
+        "call": 193,
+        "step": 49,
+        "column": 1,
+        "level": 1,
+        "cpp": 0.0011184585746377707,
+        "native": 0.0011184586910530925,
+        "cpp_hex": "0x3a92993e",
+        "native_hex": "0x3a92993f",
+        "raw_bit_distance": 1
+      }
+    }
+  },
+  "observability_control": {
+    "artifact": "TRACE_OBSERVABILITY_CONTROL.json",
+    "all641saved_variable_arrays_first49_match_original_failed_full_for_both_models": true
+  },
+  "actual_replay": {
+    "input_binary_sha256": "30bba3cdbf73cd09997dbbc6d9bb83d996e235cf6f8cdcc8fd004ea1f4bb3d15",
+    "inputs": {
+      "LAMR": 50000.0,
+      "QR3D": 2.8025601248884112e-14,
+      "PI": 3.1415927410125732,
+      "RHOW": 997.0
+    },
+    "cpp_stdout": [
+      "mixed_power_returns_double=1",
+      "cpp_N0RR=425fb114",
+      "cpp_NR3D=3a92993e",
+      "float_N0RR=425fb115",
+      "float_NR3D=3a92993f"
+    ],
+    "Native_stdout": [
+      "native_N0RR=425FB115",
+      "native_NR3D=3A92993F"
+    ],
+    "source_cpp_sha256": "b4bdc61a4366c28007b3d86d5b456bf693ee5e905a2b1f321d92d85104ed2d5a",
+    "source_Native_sha256": "7f86928c3399983cd4544b361176a86fddef0a2984890c3861b2a3f31ea518ab",
+    "minimal_change": "const float LAMR_sqd=LAMR*LAMR; substitute LAMR_sqd*LAMR_sqd for pow(LAMR,4), keeping subsequent products/division intact."
+  },
+  "scope": {
+    "scope": "Six Native LAMR**4 rain-slope clamp assignments in M2005MICRO_GRAUPEL; remaining engine untouched.",
+    "before_sha256": "d84f3a27ca058c153fd59e0d6b1d1e70e1670997193f2cd03a990e5440c5f5a7",
+    "after_sha256": "8bc321bd3de6b7bf7a3e3e373f294c00762b6f01afacaa95affb412af996520e",
+    "Native_sha256": "79b03fa1a4a40926a1e628ab34f2d5d04f1ac5932a219a4ab0de6364d464d190",
+    "cpp_original_sites": [
+      985,
+      993,
+      1785,
+      1793,
+      4846,
+      4854
+    ],
+    "Native_sites": [
+      1884,
+      1890,
+      2847,
+      2853,
+      5185,
+      5191
+    ],
+    "formula": "N0RR = LAMR**4*QR3D/(PI*RHOW); NR3D=N0RR/LAMR",
+    "Native_kind": "Default REAL (float in actual nvfortran build), integer4 power.",
+    "candidate_kind": "Branch-local const float square followed by second float square. Surrounding multiplication/division unchanged.",
+    "inverse_six_substitutions_byte_identical_to_original": true,
+    "changes_outside_six_sites": false,
+    "extra_guards_FMA_defaults_globals_or_order_changes": false,
+    "cleanup": "All6 branch-local names/indents/comment purpose checked; source grouping/other comments retained. Engine formatting waiver respected; no whole-file reformat.",
+    "pending_runtime": "Full360 Native duration standard gate running. No GPU execution for this candidate."
+  },
+  "clean_acceptance": {
+    "49": {
+      "command": [
+        "/home/guntherhuebler/Code/clubb/.venv-python/bin/python",
+        "/home/guntherhuebler/Code/clubb/build/parallel_cpu_lanes/remaining_driver_morrison_full_valid/diagnosis/runrepo/clubb_kokkos/auto_llm_generated_tests/integration_tests/run_kokkos_vs_fortran_cases.py",
+        "-build_dir",
+        "/home/guntherhuebler/Code/clubb/build/parallel_cpu_lanes/remaining_driver_morrison_full_valid/diagnosis/runrepo/checkpoint",
+        "-cases",
+        "lba",
+        "-stats",
+        "standard",
+        "-override",
+        "debug_level=2",
+        "-override",
+        "microphysics_setting.microphys_scheme=\"morrison\",microphysics_setting.lh_microphys_type=\"disabled\",microphysics_setting.l_arctic_nucl=.false.,debug_level=2",
+        "-workers",
+        "1",
+        "-max_iters",
+        "49"
+      ],
+      "returncode": 0,
+      "elapsed_seconds": 52.85654522199184,
+      "binary_sha256": {
+        "runrepo/checkpoint/clubb_standalone": "b3b4f491f031ef23a8c0d54f5b8ab23ad48c206c10831ed2fb8c59073aae727c",
+        "runrepo/checkpoint/fortran/clubb_standalone": "d6be11ae22ad99fbbaff77a7d865c5a5ce588e6f87a521e878554e793f6948bc"
+      },
+      "unchanged_binaries": true,
+      "trace_sentinels_absent": true,
+      "Native_physics_unchanged": true,
+      "acceptance_scope": "49steps limited diagnostic gate"
+    },
+    "49_saved_file": {
+      "Cpp_sha256": "0769ac64b00e6e63d63cde8bae71df180074f3287975ab0edd0df88a292d38be",
+      "Native_sha256": "0769ac64b00e6e63d63cde8bae71df180074f3287975ab0edd0df88a292d38be",
+      "prior_traced_Native_sha256": "0769ac64b00e6e63d63cde8bae71df180074f3287975ab0edd0df88a292d38be",
+      "cpp_native_files_identical": true,
+      "Native_unchanged_from_trace49_file": true
+    }
+  },
+  "compatible_control": "Current accepted logical-stride fill_holes source/object included, exact hashes in BFB-030_CANDIDATE.json. Earliest engine first-cause proof uses prior original failing run and identical engine inputs; independent of that control.",
+  "remaining_excluded_sites": "4 IRAIN=1 Seifert\u2013Beheng float/int4 sites unchanged and outside explicit C++/JAX init gate; see INTEGER_POWER_INVENTORY.json.",
+  "Native_source_changed": false,
+  "live_source_edited_by_this_lane": false,
+  "GPU_scope": "None; no GPU numerical investigation or performance claim.",
+  "live_integration": "Exact candidate promoted; combined CPU/CUDA rebuilds running. Final live full-case verification pending."
+}

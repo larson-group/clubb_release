@@ -1,0 +1,318 @@
+{
+  "scope": "Assigned I/O/registry/remap/SILHS/date portions only; other owner ports all types, lifecycle, update, budget and lookup.",
+  "Native": "src/CLUBB_core/stats_netcdf.F90",
+  "Native_sha256": "348fe3d29d1b4bbcd8d7317904c0b6a4368ecf8f896793449cec2884db4f8621",
+  "Native_total_lines": 3751,
+  "ranges_inclusive": [
+    [
+      1085,
+      1349
+    ],
+    [
+      2294,
+      2883
+    ],
+    [
+      3091,
+      3751
+    ]
+  ],
+  "routine_order": [
+    {
+      "name": "stats_open_netcdf",
+      "Native_start": 1085,
+      "Native_end": 1344,
+      "ordered_netcdf_calls": [
+        "nf90_create",
+        "nf90_strerror",
+        "nf90_def_dim",
+        "nf90_def_dim",
+        "nf90_def_var",
+        "nf90_put_att",
+        "nf90_put_att",
+        "nf90_def_var",
+        "nf90_put_att",
+        "nf90_put_att",
+        "nf90_put_att",
+        "nf90_put_att",
+        "nf90_put_att",
+        "nf90_put_att",
+        "nf90_put_att",
+        "nf90_put_att",
+        "nf90_put_att",
+        "nf90_def_dim",
+        "nf90_def_var",
+        "nf90_put_att",
+        "nf90_def_dim",
+        "nf90_def_dim",
+        "nf90_def_var",
+        "nf90_put_att",
+        "nf90_def_dim",
+        "nf90_def_var",
+        "nf90_put_att",
+        "nf90_def_dim",
+        "nf90_def_var",
+        "nf90_put_att",
+        "nf90_def_dim",
+        "nf90_def_var",
+        "nf90_put_att",
+        "nf90_def_dim",
+        "nf90_def_var",
+        "nf90_put_att",
+        "nf90_def_dim",
+        "nf90_def_dim",
+        "nf90_def_var",
+        "nf90_put_att",
+        "nf90_def_var",
+        "nf90_def_var",
+        "nf90_put_att",
+        "nf90_def_var",
+        "nf90_def_var",
+        "nf90_def_var",
+        "nf90_def_var",
+        "nf90_def_var",
+        "nf90_def_var",
+        "nf90_def_var_fill",
+        "nf90_put_att",
+        "nf90_put_att",
+        "nf90_enddef",
+        "nf90_put_var",
+        "nf90_put_var",
+        "nf90_put_var",
+        "nf90_put_var",
+        "nf90_put_var",
+        "nf90_put_var",
+        "nf90_put_var",
+        "nf90_put_var",
+        "nf90_put_var",
+        "nf90_put_var"
+      ],
+      "direct_Native_helpers": []
+    },
+    {
+      "name": "stats_avg_and_write",
+      "Native_start": 2294,
+      "Native_end": 2444,
+      "ordered_netcdf_calls": [
+        "nf90_put_var",
+        "nf90_put_var",
+        "nf90_put_var",
+        "nf90_put_var",
+        "nf90_put_var",
+        "nf90_strerror"
+      ],
+      "direct_Native_helpers": []
+    },
+    {
+      "name": "stats_grid_init",
+      "Native_start": 2450,
+      "Native_end": 2515,
+      "ordered_netcdf_calls": [],
+      "direct_Native_helpers": []
+    },
+    {
+      "name": "stats_update_grid",
+      "Native_start": 2517,
+      "Native_end": 2591,
+      "ordered_netcdf_calls": [],
+      "direct_Native_helpers": []
+    },
+    {
+      "name": "stats_lh_samples_init",
+      "Native_start": 2597,
+      "Native_end": 2717,
+      "ordered_netcdf_calls": [
+        "nf90_redef",
+        "nf90_def_dim",
+        "nf90_def_dim",
+        "nf90_def_var",
+        "nf90_put_att",
+        "nf90_def_var",
+        "nf90_def_var_fill",
+        "nf90_def_var",
+        "nf90_def_var_fill",
+        "nf90_enddef",
+        "nf90_put_var"
+      ],
+      "direct_Native_helpers": []
+    },
+    {
+      "name": "stats_lh_samples_write_lognormal",
+      "Native_start": 2719,
+      "Native_end": 2773,
+      "ordered_netcdf_calls": [
+        "nf90_put_var"
+      ],
+      "direct_Native_helpers": []
+    },
+    {
+      "name": "stats_lh_samples_write_uniform",
+      "Native_start": 2775,
+      "Native_end": 2878,
+      "ordered_netcdf_calls": [
+        "nf90_put_var",
+        "nf90_put_var",
+        "nf90_put_var"
+      ],
+      "direct_Native_helpers": []
+    },
+    {
+      "name": "format_date",
+      "Native_start": 3091,
+      "Native_end": 3153,
+      "ordered_netcdf_calls": [],
+      "direct_Native_helpers": [
+        "compute_current_date_api"
+      ]
+    },
+    {
+      "name": "stats_read_registry_namelist",
+      "Native_start": 3159,
+      "Native_end": 3238,
+      "ordered_netcdf_calls": [],
+      "direct_Native_helpers": [
+        "parse_registry_line"
+      ]
+    },
+    {
+      "name": "stats_expand_registry",
+      "Native_start": 3240,
+      "Native_end": 3544,
+      "ordered_netcdf_calls": [],
+      "direct_Native_helpers": [
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def",
+        "add_expanded_def"
+      ]
+    },
+    {
+      "name": "add_expanded_def",
+      "Native_start": 3546,
+      "Native_end": 3594,
+      "ordered_netcdf_calls": [],
+      "direct_Native_helpers": []
+    },
+    {
+      "name": "parse_registry_line",
+      "Native_start": 3596,
+      "Native_end": 3668,
+      "ordered_netcdf_calls": [],
+      "direct_Native_helpers": [
+        "split_registry_fields"
+      ]
+    },
+    {
+      "name": "split_registry_fields",
+      "Native_start": 3670,
+      "Native_end": 3726,
+      "ordered_netcdf_calls": [],
+      "direct_Native_helpers": []
+    },
+    {
+      "name": "is_line_comment",
+      "Native_start": 3728,
+      "Native_end": 3749,
+      "ordered_netcdf_calls": [],
+      "direct_Native_helpers": []
+    }
+  ],
+  "shared_owner": "/root/driver_microphysics owns drafts/stats_netcdf/stats_netcdf.hpp and non-I/O bodies.",
+  "implementation": "HostSpace column-first LayoutLeft state; double stat_rknd buffers and core real_t coordinates/metadata. No Fortran forwarding or algorithm optimization.",
+  "permanent_lower_APIs": [
+    "clubb_kokkos::netcdf write wrappers added by Root, Native1-based dimension/variable IDs and starts; ncid rawC",
+    "clubb_kokkos::namelist::Group for fixed512x12000 entry array",
+    "clubb_kokkos::compute_current_date_api",
+    "clubb_kokkos::remap_vals_to_target through actual host/device adapter",
+    "shared to_host_space/from_execution_space for canonical device grid fields"
+  ],
+  "required_order_and_branches": [
+    "NetCDF classic creation; dimensions, variables, attributes, fill settings, enddef and coordinates in exact source order",
+    "Source-size explicit counts for all slabs/parameter data; no default C full-variable shape guessing",
+    "Time/time_bnds before registry variables; source sample counts/averaging, grid-specific writes and last status semantics retained",
+    "Grid type/size early returns and Native allocation/update order retained; no invented stats_grid_init validation",
+    "SILHS init including zero-name lists, coordinate reuse/redefine and individual output failure checks",
+    "All registry template arms, hydrometeor pair loops, scalar/category counts, deduplication/truncation and fixed names",
+    "Legacy3/4pipe fields, grid aliases and unknown-grid defaultZT; comment predicate examines firstcharacter only",
+    "Date fixed fields/Native NINT, MOD/int divisions, calendar and trailingblank behavior"
+  ],
+  "approved_adaptations": [
+    "Native SAVE l_warned_overflow becomes caller-owned stats_type bool retained for context lifetime; passed explicitly through expand/add. Warning-only multiplicity change, no math/order/truncation change.",
+    "Absent optional scalar dimensions stay absent through private call; an active scalar-template requiring an absent dimension is rejected rather than invoking Native absent-required-dummy undefined behavior.",
+    "Empty/comment-only registry Native unallocated defs reaches unconditional DEALLOCATE; keep explicit fatal boundary rather than silently creating enabled empty stats.",
+    "Vectors represent fixed registry slots, strings retain Native truncation and rightblank rules; NetCDF parameter name width preserves old pack_strings=max(1,allstringlengths) contract."
+  ],
+  "validation": "Draft-only source audit/cleanup required. No builds/models/harness by owner; Root owns whole-model raw NetCDF file-BFB integration."
+}

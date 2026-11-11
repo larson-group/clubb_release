@@ -83,7 +83,7 @@ contains
 
     implicit none
 
-    !--------------------------- Input/Output Variables ---------------------------
+    ! Output Variable
     type(hydromet_pdf_parameter), intent(inout) :: &
       hydromet_pdf_params    ! Hydrometeor PDF parameters      [units vary]
 

@@ -37,7 +37,6 @@ def test_calc_params_ly93_matches_formula():
 
     mu_x_1, mu_x_2, sigma_x_1_sqd, sigma_x_2_sqd = clubb_api.calc_params_ly93(
         nz=nz, xm=xm, xp2=xp2, skx=skx, mixt_frac=mixt_frac,
-        ngrdcol=(xm).shape[0],
     )
 
     expected_mu_x_1, expected_mu_x_2, expected_sigma_x_1_sqd, expected_sigma_x_2_sqd = (
@@ -69,7 +68,7 @@ def test_ly93_driver_matches_formula_for_low_skewness():
         sigma_thl_1_sqd, sigma_thl_2_sqd, mixt_frac,
     ) = clubb_api.ly93_driver(
         nz=nz, wm=wm, rtm=rtm, thlm=thlm, wp2=wp2, rtp2=rtp2, thlp2=thlp2, skw=skw,
-        skrt=skrt, skthl=skthl, ngrdcol=(wm).shape[0])
+        skrt=skrt, skthl=skthl)
 
     expected_mixt_frac = np.full_like(wm, 0.75)
     np.testing.assert_allclose(mixt_frac, expected_mixt_frac)

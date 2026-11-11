@@ -1,0 +1,218 @@
+{
+  "reviewer": "/root/pdf_parent_outline",
+  "status": "Independent source review complete for exact stable Native/draft hashes. No unresolved source defect found in reviewed supported scope. Compilation, integration and numerical verification pending.",
+  "scope": {
+    "native_lines": 5682,
+    "native_routines": 23,
+    "public_routines": [
+      "advance_wp2_wp3"
+    ],
+    "private_routines": 22,
+    "public_required_arguments": 68,
+    "full_native_read": true,
+    "full_draft_computation_read": true,
+    "diagnostic_field_payloads_read": true,
+    "builds_run": false,
+    "tests_run": false,
+    "production_or_owner_source_edits": false,
+    "numerical_or_BFB_claim": false,
+    "draft_cpp_lines": 6511,
+    "draft_hpp_lines": 57
+  },
+  "reviewed_hashes": {
+    "src/CLUBB_core/advance_wp2_wp3_module.F90": "f58b3d0bc610faa8b9612d2a84f8afcd54c28a89e0911312fb8a75d3deb50c23",
+    "clubb_jax/src/CLUBB_core/advance_wp2_wp3_module.py": "4ebf15d3088b2036598f61d35e9eade23c6f816410bc6334a28305b556a18f58",
+    "clubb_kokkos/drafts/advance_wp2_wp3_module/advance_wp2_wp3_module.cpp": "159bb61dadfd6d087cd5a2c73b1b326136705f4ccedefe1011ffb1079653b371",
+    "clubb_kokkos/drafts/advance_wp2_wp3_module/advance_wp2_wp3_module.hpp": "cbb8bc4fd31538e21387a9b9ac5a2dfec091911fe7b4e39a52fbabb3930cf84a",
+    "clubb_kokkos/drafts/advance_wp2_wp3_module/SOURCE_OUTLINE.json": "297b9f75653747140939cbd3b56d88bfa2b2318b9e7d6b209fdae0e9b81e1eb3",
+    "clubb_kokkos/src/f2k/stats_bridge.hpp": "4907f753a96d5a7eb1eb942abbede02da5800c4baa07c721ccd24c0ea3d27261",
+    "clubb_kokkos/src/CLUBB_core/matrix_solver_wrapper.hpp": "447c8c81e415dc0a6aac6abb7fcce19a863f5bf53865a8262681c192de25b8eb",
+    "clubb_kokkos/drafts/advance_helper_module/advance_helper_module.hpp": "5a1d0c8832519dc65c5868aaab5c4d75017ec0e40be110bb1fb05435826fbf0e",
+    "clubb_kokkos/drafts/advance_wp2_wp3_module/INTEGRATION.md": "a5d03de4cd0f8928e55eb9ec42347158b2d5d46a04c47016207eff3b917dcc92",
+    "clubb_kokkos/drafts/advance_wp2_wp3_module/DEPENDENCIES.json": "df816ecb561c4e6f8a24680e5e92fd73ad949e90ea386df24b4890409f1735b5"
+  },
+  "independent_check_implementation": "/tmp/clubb_wp23_review.py (independent logical-statement/call parser and kernel-local first-use sweep; does not invoke owner audit scripts)",
+  "independent_checks": {
+    "routine_order": [
+      "advance_wp2_wp3",
+      "wp23_solve",
+      "wp23_lhs",
+      "wp23_rhs",
+      "wp2_term_ta_lhs",
+      "wp2_terms_ac_pr2_lhs",
+      "wp2_term_dp1_lhs",
+      "wp2_term_pr1_lhs",
+      "wp2_terms_bp_pr2_rhs",
+      "wp2_term_dp1_rhs",
+      "wp2_term_pr3_rhs",
+      "wp2_term_pr1_rhs",
+      "wp2_term_pr_dfsn_rhs",
+      "wp3_term_ta_new_pdf_lhs",
+      "wp3_term_ta_ADG1_lhs",
+      "wp3_term_tp_lhs",
+      "wp3_terms_ac_pr2_lhs",
+      "wp3_term_pr1_lhs",
+      "wp3_term_ta_explicit_rhs",
+      "wp3_terms_bp1_pr2_rhs",
+      "wp3_term_pr_turb_rhs",
+      "wp3_term_pr_dfsn_rhs",
+      "wp3_term_pr1_rhs"
+    ],
+    "all23_signature_name_order_match": true,
+    "ordered_non_solver_explicit_calls": 100,
+    "ordered_non_solver_call_arguments": 634,
+    "manually_reviewed_band_solve_calls": 2,
+    "statistics_expression_materialization_calls_reviewed": 7,
+    "kernel_bodies": 171,
+    "kernel_first_use_before_write_remaining": [],
+    "owning_UDT_capture_candidates": [],
+    "exact_cpp_internal_call_case_mismatches_remaining": [],
+    "public_header_definition_all68_argument_names_match": true,
+    "max_cpp_hpp_line_width": 100,
+    "trailing_whitespace_remaining": false,
+    "standalone_intent_remnants_remaining": false
+  },
+  "manual_review": [
+    {
+      "area": "parent control flow/field mapping",
+      "native_lines": "65-1256",
+      "evidence": "Interpolation then two Skx calls and calc_wp3_on_wp2; a3; C11 Richardson/exp branch; C1 branch and em scaling; C16 assertion; diffusivity; newPDF/ADG1 coefficient setup; pressure/turbulence/diffusion; split production; explicit/implicit TA; RHS then MA then LHS; LMM snapshot/solve/average; fatal dump and final interpolated stats retain Native order."
+    },
+    {
+      "area": "matrix storage and mutation",
+      "native_lines": "1474-1572",
+      "evidence": "Local lhs(band,column,row) preserved. Force-descending reverses both bands and rows through owned scratch, reverses rhs and optional old_solut, packs lhs into existing column/band/row solver storage, restores mutated lhs, reverses only solut after solve. rhs_save remains original. rcond requested only under sampled registered condition-number branch. Native fatal return precedes solut unpack."
+    },
+    {
+      "area": "solver errors/diagnostics",
+      "native_lines": "1574-1630",
+      "evidence": "Mutated lhs dump in Native zm/zt order through contiguous five-band subviews; original rhs_save; global header; precise real formatting. Parent still applies Native LMM average after private solve returns, then emits own fatal dump."
+    },
+    {
+      "area": "implicit budgets before limiting",
+      "native_lines": "1656-1897",
+      "evidence": "Field-specific dp1/dp2,TA,MA,AC,PR1,PR2 and wp3 TP/pr_tp/pr3 coefficients checked; each stats_tmp zero fill, Native interior ranges/directional band indices, explicit+implicit finalize/update choice retained. up2_pd/vp2_pd finalize keeps false sample-count argument as pending lower API contract."
+    },
+    {
+      "area": "hole filling and legacy scalar average",
+      "native_lines": "1899-1945",
+      "evidence": "Before/after stats and debug3 average bracket fill_holes_vertical_api; optional horizontal-TKE fill follows conservation warning. Draft explicitly packs first nzm elements in Fortran column-fastest storage order before scalar vertical_avg, preserving Native rank2-to-rank1 sequence association rather than JAX column average rewrite."
+    },
+    {
+      "area": "variance floor/limit and clipping",
+      "native_lines": "1950-2043",
+      "evidence": "Five floor candidates and order retained; pre-one-ceiling warnings contain correct velocity/variance fields, then limit floor; clip_variance uses maximum optional wp2_max; wp2_zt interpolation before skew clip, final wp3_zm interpolation retained."
+    },
+    {
+      "area": "matrix assembly",
+      "native_lines": "2054-2371",
+      "evidence": "All five bands zeroed; four boundary rows set to unit main diagonal; wp2/wp3 interleaving and source accumulation order retained; implicit pressure/splat appended after initial construction; gamma-weighted TA appended only when implicit."
+    },
+    {
+      "area": "RHS and nondefault branches",
+      "native_lines": "2374-3259",
+      "evidence": "CN, TKE diffusion, nontraditional Coriolis, explicit TA, ADG1 standard/descending association, new/new-hybrid branches and directional boundary mapping read. Native wp3 TKE RHS repeats (2+grid_dir_indx) at last neighbor whereas corresponding stats use (2-grid_dir_indx); draft faithfully preserves this Native asymmetry. No corrective JAX rewrite introduced."
+    },
+    {
+      "area": "nineteen remaining private term bodies",
+      "native_lines": "3262-5678",
+      "evidence": "Every boundary/interior loop and formula inspected, including wp2 pressure3 nonnegative floor, wp2 pressure diffusion lower-neighbor copy, all three ADG1 TA discretizations, squared/fourth skew damping, and turbulence pressure TKE versus shear/buoyancy branch. No remaining field/index/sign mismatch found."
+    },
+    {
+      "area": "device captures and scalar ownership",
+      "evidence": "171 kernel bodies independently scanned after manual read. Owning grid/err_info/stats/PDF/nu UDTs stay host; component Views and metadata captured. Mutable local first-use sweep now clean following fixed boundary-index shadowing. No scientific floating reduction introduced; debug checks use integer counts."
+    },
+    {
+      "area": "final source cleanup",
+      "evidence": "Native continuation groups and input/output intent boundaries inspected at public declaration/definition and major callsites. Module constants rationale restored; clear copied comment typos are explicitly cataloged by owner. Exact ADG1 callee spelling corrected and rechecked after cleanup. Source diagnostics remain field-specific."
+    }
+  ],
+  "resolved_findings": [
+    {
+      "id": "WP23-001",
+      "severity": "high",
+      "routine": "wp23_rhs",
+      "native_lines": "2871-2895",
+      "initial_cpp_lines": "3590-3593 before owner cleanup",
+      "problem": "Four int rhs_* boundary index locals were value-initialized inside cells_16, shadowing outer assigned Native indices and making all four boundary accesses use index -1.",
+      "before": "int rhs_lb_idx_zm{}; int rhs_lb_idx_zt{}; int rhs_ub_idx_zt{}; int rhs_ub_idx_zm{}; inside KOKKOS_LAMBDA",
+      "after": "Removed four local declarations; kernel captures assigned host boundary indices.",
+      "fix_owned_by": "/root/grid_source_audit",
+      "reviewed_fixed": true,
+      "confirmation": "Independent first-use-before-write sweep across all171 lambdas clean. Native/cpp directional branches reread.",
+      "final_cpp_kernel_line": 3788
+    },
+    {
+      "id": "WP23-002",
+      "severity": "high",
+      "routine": "wp23_solve",
+      "native_line": 1536,
+      "owner_api": "clubb_kokkos/src/f2k/stats_bridge.hpp:86,97",
+      "problem": "Mutable clubb_kokkos::Real1D condition-number scratch selects generic exact-match stats_update, whose static_assert requires rank2, rather than converting to rank1 const-element overload.",
+      "before": "f2k::stats_update(\"wp23_matrix_condt_num\", rcond_stats_0, stats);",
+      "after": "f2k::stats_update(\"wp23_matrix_condt_num\", f2k::Real1D(rcond_stats_0), stats);",
+      "fix_owned_by": "/root/grid_source_audit",
+      "reviewed_fixed": true,
+      "confirmation": "Actual rank1 stats overload and generic template read; explicit const-element View selects correct existing owner. No compilation performed.",
+      "final_cpp_call_line": 2091
+    },
+    {
+      "id": "WP23-003",
+      "scope": "module constants",
+      "requested": "Retain Native clip_wp2 must match clip_explicit comment and fully implicit diffusion rationale (Native45-56).",
+      "severity": "source_mirror_cleanup",
+      "reviewed_fixed": true,
+      "fix_owned_by": "/root/grid_source_audit",
+      "after": "Native module rationale restored; 23 declaration/definition continuation groups and 37 continued callsites preserve source grouping and accurate intent comments. Paragraph breaks/dividers retained, max100cols, no standalone intent remnants."
+    },
+    {
+      "id": "WP23-004",
+      "scope": "public signature and major parent/solver/RHS calls",
+      "requested": "Preserve Native continuation/intent groups where practical and remove stranded //intent(out) comments from completed calls. Owner notified; pending cleanup check.",
+      "severity": "source_mirror_cleanup",
+      "reviewed_fixed": true,
+      "fix_owned_by": "/root/grid_source_audit",
+      "after": "Native module rationale restored; 23 declaration/definition continuation groups and 37 continued callsites preserve source grouping and accurate intent comments. Paragraph breaks/dividers retained, max100cols, no standalone intent remnants."
+    },
+    {
+      "id": "WP23-005",
+      "severity": "high",
+      "routine": "advance_wp2_wp3",
+      "initial_stable_cpp_sha256": "c809c07383ea9205db0e6d23bfcbf4757f9cb8f635c6daa2e0f2186c1d0cdac4",
+      "initial_cpp_line": 972,
+      "problem": "Continuation regrouping lowercased the ADG1 private helper call while declaration/definition retained uppercase ADG1; C++ identifier lookup is case-sensitive.",
+      "before": "wp3_term_ta_adg1_lhs(...)",
+      "after": "wp3_term_ta_ADG1_lhs(...)",
+      "reviewed_fixed": true,
+      "fix_owned_by": "/root/grid_source_audit",
+      "confirmation": "Final source reread and independent exact-C++internal-call-vs-definition case check clean; added check avoids Fortran-case-insensitive parser blind spot."
+    }
+  ],
+  "intentional_scope_and_adaptations": [
+    {
+      "kind": "existing supported-scope exclusion",
+      "evidence": "JAX module doc19-20 and actual C++driver713-720 reject sponge-enabled cases. Native wp2/wp3 post-solve sponge blocks and four sdmp budget calls omitted only at marked local TODO."
+    },
+    {
+      "kind": "existing lower solver exclusion",
+      "evidence": "JAX matrix_solver_wrapper.py241-262 and existing C++matrix_solver_wrapper.hpp12-16 reject LAPACK/BiCGStab paths; draft retains Native parent setup/dispatch and relies on lower policy."
+    },
+    {
+      "kind": "language/API boundary",
+      "evidence": "Explicit matrix transposition at existing solver boundary; stats expression scratch; positional false optional count; execution/host staging for diagnostics; all recorded, no Native science equation changes."
+    },
+    {
+      "kind": "BFB adaptations",
+      "evidence": "No newly introduced FMA, forced contraction, special math workaround or speculative arithmetic change identified. Reversal follows Native source. Runtime evidence pending."
+    }
+  ],
+  "integration_limits": [
+    "Draft not built, linked, model-tested or numerically verified; root owns maintained CPU/CPU zero-tolerance gate and occasional GPU checkpoints.",
+    "Complete advance_helper draft calc_wp3_on_wp2 and vertical_avg required; current production header contains only smooth_max.",
+    "Eight public lower diffusion, mean-advection, fill-holes and clip interfaces; missing stats_update_budget generic plus stats_finalize_budget optional l_count_sample; two model_flags constants; and complete advance_helper APIs require promotion through existing owners. DEPENDENCIES.json records 11 Native contracts; current declarations are not assumed available."
+  ],
+  "date": "2026-11-05",
+  "reference_git_head": "646a7421d11432e71e7509083ea27b59426cfce3",
+  "owner_stable_hashes_confirmed": true,
+  "raw_independent_parser_evidence": "/tmp/clubb_wp23_independent_contract_checks.json"
+}

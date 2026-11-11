@@ -1,0 +1,27 @@
+{
+  "review": "Separate owner cleanup after full Native/JAX/caller read and source/field/control audit. No independent reviewer claimed.",
+  "files": {
+    "model_flags.cpp": {
+      "sha256": "0c2823280bbe11fd4443b51c5cfb3e04ef42b21ffe26d8d73a707f3ace360e24",
+      "lines": 666,
+      "tokens": 2626,
+      "exact_cleanup_executable_token_equality": true
+    },
+    "procedure_declarations.hpp.inc": {
+      "sha256": "7478bd821ae70a62141a174ffe6b85d965df82afd4d1593b8b3cdf0bc541123f",
+      "lines": 142,
+      "tokens": 502,
+      "exact_cleanup_executable_token_equality": true
+    }
+  },
+  "checked": [
+    "All Native argument names/order/physical continuation groups and In/Out tags",
+    "Full multi-line Native declaration descriptions retained with their actual argument",
+    "66 default values and 66 field assignments in source order",
+    "Two Native selector guards/error literals before any field write",
+    "All64 Native print row/value mappings, including omissions and swapped wind fields",
+    "Existing case ownership/type schema; no mutable module state or new file-unit registry",
+    "100 columns,2spaces,no trailing whitespace/tabs; no arithmetic adaptation"
+  ],
+  "runtime_status": "Uncompiled/untested. No CPU/GPU/BFB claim."
+}

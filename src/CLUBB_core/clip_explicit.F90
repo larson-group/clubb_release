@@ -953,7 +953,7 @@ module clip_explicit
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
+    ! Input variables
     integer, intent(in) :: &
       nzt, &
       ngrdcol
@@ -963,11 +963,9 @@ module clip_explicit
 
     character(len= * ), intent(in) :: message
 
-    !--------------------------- Input/Output Variables ---------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(inout) :: &
       rcm           ! Cloud water mixing ratio  [kg/kg]
 
-    !--------------------------- Local Variables ---------------------------
     integer :: i, k
 
     ! ------------ Begin code ---------------

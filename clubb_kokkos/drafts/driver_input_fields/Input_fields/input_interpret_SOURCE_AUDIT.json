@@ -1,0 +1,30 @@
+{
+  "date_UTC": "2026-11-06T06:53:45.193189+00:00",
+  "attribution": "Owner completeNative/source read and separatetargetreread; no independent reviewer claim.",
+  "routines": [
+    "read_z_profile",
+    "read_theta_profile",
+    "read_subs_profile"
+  ],
+  "checks": [
+    "allNativeformals/nameorder and publicstate-free signatures",
+    "metadata ANY tests mappedtoexistingNative1basedlookup; explicitcount/precedence retained",
+    "height pressurebranches and Nativefillvalue -999.9_core_rknd",
+    "pressuretemperature/T/theta/thetal branches exactsaturation/rcm/theta_l formulas",
+    "Native reference-theta_v derivation retained and arrayexpressionmaterializedonce",
+    "calculate_thvm uses permanentowner, rank2(column1,level) data withleadingvalidprefix",
+    "inversehydrostatic receives onlydefinednlevelsprefix at sequence-association boundary",
+    "ambiguousheader Native no-write/undefined outputs preserved explicitly, not repaired",
+    "per-level thermodynamic statements co-located without cross-leveldependence/reduction; sourcecontrolorder retained",
+    "allmissing-header and invalidtemperature errors retained",
+    "templatearrayadapters useexistingowner; no UDTcapture or f2k science",
+    "runtime allpressure/temperaturebranches unverified"
+  ],
+  "sha256": {
+    "src/Input_fields/input_interpret.F90": "4ae21ccc9380e6eafed2d89dbda9a154d82a6a040cf6d9862b426e0c5db8d866",
+    "clubb_kokkos/drafts/driver_input_fields/Input_fields/input_interpret.cpp": "7bafdf326a94fa411b668a252b7f6d943322af679c13097eb59bf79744e587b2",
+    "clubb_kokkos/drafts/driver_input_fields/Input_fields/input_interpret.hpp": "883bb507b3f499a81fa6c90d72bcb8fe2cda3e4e5f5147cfefac4d79a831f4c2"
+  },
+  "BFB_specific_adaptations": [],
+  "runtime_status": "UNCOMPILED/UNTESTED; no CPU/CUDA/runtime/BFB claim. Root integrates/testscompatiblebatch."
+}

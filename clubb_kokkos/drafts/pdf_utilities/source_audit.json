@@ -1,0 +1,178 @@
+{
+  "status": "source-audited draft; no compilation, execution, integration or BFB validation",
+  "source": "src/CLUBB_core/pdf_utilities.F90",
+  "source_sha256": "c8def57a51ec4b0b57986e5321c95386ca6635010454edcf6c7bec8b102ae084",
+  "target_sha256": "db109ef2d3ba1352b95489e953091fc8fc417dc9b0e61bfa9a5239b0437e1205",
+  "native_routines": 19,
+  "native_order_preserved": true,
+  "routine_reviews": [
+    {
+      "name": "mean_L2N",
+      "arguments": 2,
+      "assignments": 1,
+      "branch_predicates": 0,
+      "signature_assignment_branch_trees_match": true
+    },
+    {
+      "name": "mean_L2N_dp",
+      "arguments": 2,
+      "assignments": 1,
+      "branch_predicates": 0,
+      "signature_assignment_branch_trees_match": true
+    },
+    {
+      "name": "stdev_L2N",
+      "arguments": 1,
+      "assignments": 1,
+      "branch_predicates": 0,
+      "signature_assignment_branch_trees_match": true
+    },
+    {
+      "name": "stdev_L2N_dp",
+      "arguments": 1,
+      "assignments": 1,
+      "branch_predicates": 0,
+      "signature_assignment_branch_trees_match": true
+    },
+    {
+      "name": "corr_NL2NN",
+      "arguments": 3,
+      "assignments": 4,
+      "branch_predicates": 3,
+      "signature_assignment_branch_trees_match": true
+    },
+    {
+      "name": "corr_NL2NN_dp",
+      "arguments": 3,
+      "assignments": 4,
+      "branch_predicates": 3,
+      "signature_assignment_branch_trees_match": true
+    },
+    {
+      "name": "corr_NN2NL",
+      "arguments": 6,
+      "assignments": 4,
+      "branch_predicates": 3,
+      "signature_assignment_branch_trees_match": true
+    },
+    {
+      "name": "corr_LL2NN",
+      "arguments": 5,
+      "assignments": 5,
+      "branch_predicates": 3,
+      "signature_assignment_branch_trees_match": true
+    },
+    {
+      "name": "corr_LL2NN_dp",
+      "arguments": 5,
+      "assignments": 4,
+      "branch_predicates": 3,
+      "signature_assignment_branch_trees_match": true
+    },
+    {
+      "name": "corr_NN2LL",
+      "arguments": 8,
+      "assignments": 4,
+      "branch_predicates": 3,
+      "signature_assignment_branch_trees_match": true
+    },
+    {
+      "name": "compute_mean_binormal",
+      "arguments": 3,
+      "assignments": 1,
+      "branch_predicates": 0,
+      "signature_assignment_branch_trees_match": true
+    },
+    {
+      "name": "compute_variance_binormal",
+      "arguments": 6,
+      "assignments": 1,
+      "branch_predicates": 0,
+      "signature_assignment_branch_trees_match": true
+    },
+    {
+      "name": "calc_comp_corrs_binormal",
+      "arguments": 16,
+      "assignments": 3,
+      "branch_predicates": 0,
+      "signature_assignment_branch_trees_match": true
+    },
+    {
+      "name": "calc_corr_chi_x",
+      "arguments": 7,
+      "assignments": 4,
+      "branch_predicates": 3,
+      "signature_assignment_branch_trees_match": true
+    },
+    {
+      "name": "calc_corr_eta_x",
+      "arguments": 7,
+      "assignments": 4,
+      "branch_predicates": 3,
+      "signature_assignment_branch_trees_match": true
+    },
+    {
+      "name": "calc_corr_rt_x",
+      "arguments": 6,
+      "assignments": 4,
+      "branch_predicates": 3,
+      "signature_assignment_branch_trees_match": true
+    },
+    {
+      "name": "calc_corr_thl_x",
+      "arguments": 6,
+      "assignments": 4,
+      "branch_predicates": 3,
+      "signature_assignment_branch_trees_match": true
+    },
+    {
+      "name": "calc_xp2",
+      "arguments": 12,
+      "assignments": 5,
+      "branch_predicates": 4,
+      "signature_assignment_branch_trees_match": true
+    },
+    {
+      "name": "smooth_corr_quotient",
+      "arguments": 6,
+      "assignments": 3,
+      "branch_predicates": 0,
+      "signature_assignment_branch_trees_match": true
+    }
+  ],
+  "device_scalar_definitions": 15,
+  "array_definitions": 4,
+  "needed_rank2_elemental_adaptations": [
+    "compute_variance_binormal",
+    "calc_corr_chi_x",
+    "calc_corr_eta_x"
+  ],
+  "partial_helper": {
+    "source": "src/CLUBB_core/advance_helper_module.F90:1723\u20131761",
+    "name": "smooth_max_scalars",
+    "argument_and_expression_trees_match": true,
+    "generic_dispatch": "smooth_max scalar overload only"
+  },
+  "manual_review": [
+    "Read all 1423 Native lines; JAX used for scope context only",
+    "All 19 signatures, required arguments, return precision and Native relative order",
+    "All assigned scientific expressions, branch predicates and complete grouping, including every integer square",
+    "Tiny guard retained only where Native has it; no JAX sqrt clipping, log1p/expm1 rewrites or new denominator floors",
+    "Ordered upper/lower correlation checks and negative hydrometeor variance check preserved",
+    "Native comments/equations/references and argument meanings retained; stage spacing formatted separately",
+    "Three conformable rank2 execution-space overloads return call-owned Real2D, permit strided Views and call scalar formulas",
+    "No stats, UDT mutation, saved Native state, new runtime framework or scalar Fortran crossings",
+    "Two sequential smooth_max calls and final quotient preserved in per-cell order",
+    "No new explicit FMA or compiler-specific arithmetic fix; BFB evidence pending root integration"
+  ],
+  "material_exclusions": [
+    "No shared production/CMake/generator edits",
+    "No tests or builds",
+    "Only scalar smooth_max subset of advance_helper_module included; root owns dependency dedup/promotion"
+  ],
+  "outstanding": [
+    "Root integration",
+    "Compile and maintained short model comparisons",
+    "Diagnose/record any demonstrated compiler-specific arithmetic differences"
+  ]
+}

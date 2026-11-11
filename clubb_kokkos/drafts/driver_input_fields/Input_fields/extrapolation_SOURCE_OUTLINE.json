@@ -1,0 +1,10 @@
+{
+  "Native_full_read": 92,
+  "actual_JAX_scope": "No separateextrapolationmodule; equivalent arithmetic occursinputfieldinterpolation. Nativebodies fully included ratherthan omitted byfilename.",
+  "routines": [
+    "lin_ext_zm_bottom(var_zmp2,var_zmp1,zmp2,zmp1,stats_zm)",
+    "lin_ext_zt_bottom(var_ztp2,var_ztp1,ztp2,ztp1,stats_zt)"
+  ],
+  "formula": "((var2-var1)/(z2-z1))*(statsz-z1)+var1",
+  "runtime": "pending"
+}

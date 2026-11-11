@@ -1,0 +1,15 @@
+{
+  "scope": "Separate final source/format/ownership cleanup, not numerical validation",
+  "cpp_sha256": "130cf3eeac29686e8422b45e7f263a312039f7bdf20ef8b0e626d341d2f92195",
+  "hpp_sha256": "18a12a73ccc4dc14354dbc9af71f29420f159e2b20433f173f6958cd787e45df",
+  "checks": [
+    "All4 definitions and Native public inventory/signature grouping in order; all4 generic adapter calls retain argument order and existing owner.",
+    "Full Native scientific descriptions and executable comments retained; only documented stale/incorrect comments repaired.",
+    "Native band-first matrix, weight-category axis, physical/storage distinctions and Godunov RHS thermodynamic sign shape documented.",
+    "All14 kernel bodies capture component Views/scalars, with no owning grid, host IO, f2k, nested launches or uninitialized scratch.",
+    "No new global state, lower dependency, scientific helper, option or BFB-specific arithmetic choice.",
+    "Declarations terminate before intent comments; no detached intent fragments,100-column maximum, no tabs or trailing whitespace."
+  ],
+  "runtime_status": "Uncompiled and untested.",
+  "comment_review_correction": "Independent review corrected copied Godunov LHS output/rank and endpoint description; executable tokens unchanged."
+}

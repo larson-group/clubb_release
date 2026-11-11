@@ -1,0 +1,61 @@
+{
+  "status": "stable source-only handoff; Serial11TUcompilepassed,CPUwholemodelgatepending",
+  "copy_files": {
+    "clubb_kokkos/drafts/driver_radiation_silhs/SILHS/est_kessler_microphys_module.cpp": "344263e65d268f886e8378a7809f01239d7aa0d8b75d0185d42db674f5a6e116",
+    "clubb_kokkos/drafts/driver_radiation_silhs/SILHS/est_kessler_microphys_module.hpp": "187354b3cf0a2631a7ecaf31910a1deed57b9135ca8b5b00dceb8573f137616d",
+    "clubb_kokkos/drafts/driver_radiation_silhs/SILHS/generate_uniform_sample_module.cpp": "e291cf9babfcbb8af4b2581cf19b7c89b1e8b14a1e01149b4577d2c69776c93d",
+    "clubb_kokkos/drafts/driver_radiation_silhs/SILHS/generate_uniform_sample_module.hpp": "579e8334b3dc23ef9f869ffe2661b37b2f2ed774c195d7102da6fe069a0607bc",
+    "clubb_kokkos/drafts/driver_radiation_silhs/SILHS/latin_hypercube_arrays.cpp": "6605388792b4a17795870be2c0c3a88947c553b45858c0c9cc922cb1c8b0d8a8",
+    "clubb_kokkos/drafts/driver_radiation_silhs/SILHS/latin_hypercube_arrays.hpp": "53156f5b13f64a045fa7e620b8c760fb28f244986c09f443107791f7eb6c9de4",
+    "clubb_kokkos/drafts/driver_radiation_silhs/SILHS/latin_hypercube_driver_module.cpp": "541ccc827236c99856ff5fd699c50d0a37dd814a59cbd62e3511a8801616a995",
+    "clubb_kokkos/drafts/driver_radiation_silhs/SILHS/latin_hypercube_driver_module.hpp": "dedd5d7e3c6e1bffd4d58690ef8b7d8bff5e1ee44621d7697e88b94c4859890d",
+    "clubb_kokkos/drafts/driver_radiation_silhs/SILHS/lh_microphys_var_covar_module.cpp": "f1ce2f9fd32f4fb26efc84d1e576872c5aa380d4a4ce2595906f5ef76d489d3c",
+    "clubb_kokkos/drafts/driver_radiation_silhs/SILHS/lh_microphys_var_covar_module.hpp": "95987ae7cf9a0b3e38410bafbdbb52bcbddbe3b407ab6d69bb6469985139c3a8",
+    "clubb_kokkos/drafts/driver_radiation_silhs/SILHS/math_utilities.cpp": "fe30498188d7422a8ff9e3b39dfc8d4f5db3497b65bd1c91fb10a574a23d7c51",
+    "clubb_kokkos/drafts/driver_radiation_silhs/SILHS/math_utilities.hpp": "460f90c12228d1308913be8eea5f2fc438c2dad3b3a72acdcfb482b2895b72de",
+    "clubb_kokkos/drafts/driver_radiation_silhs/SILHS/mt95.cpp": "4c7ed19ba7e05606ad80e2e68a696cdd9fdf8b9f3dde1467cb8697af17914c44",
+    "clubb_kokkos/drafts/driver_radiation_silhs/SILHS/mt95.hpp": "eaed48bbec0dea571483eb3f1c41ef5733d532ebf8638c512d2be7768ddf5774",
+    "clubb_kokkos/drafts/driver_radiation_silhs/SILHS/parameters_silhs.cpp": "30a1d0e6230534db0d48c141744b906f13d8d363de9d60bd72713fa58d97e119",
+    "clubb_kokkos/drafts/driver_radiation_silhs/SILHS/parameters_silhs.hpp": "80f7e025643b541b8e2d2e3a95283868a6055ce44824e392cb1d2dd419ec90ba",
+    "clubb_kokkos/drafts/driver_radiation_silhs/SILHS/silhs_api_module.cpp": "db7546129742e857b4732ded8b9093f5dc340e75c824fef68a37e1f464ab4b83",
+    "clubb_kokkos/drafts/driver_radiation_silhs/SILHS/silhs_api_module.hpp": "cc99e7a43e5c0e71ec0915913f5523efd10491f9a9a62ebd2569e281ea5684a8",
+    "clubb_kokkos/drafts/driver_radiation_silhs/SILHS/silhs_importance_sample_module.cpp": "436a1f68c277dcd4fbb86b13a3e71d18aa34b4c027469f37581e670c24f30de3",
+    "clubb_kokkos/drafts/driver_radiation_silhs/SILHS/silhs_importance_sample_module.hpp": "1a0ab456d3421939bedfbf40d4eeaf4208c674b05534c83d20f5cfca334aedc7",
+    "clubb_kokkos/drafts/driver_radiation_silhs/SILHS/transform_to_pdf_module.cpp": "10cf74b0b46101a07ad734288a9472133f4954dee8415f1e4ca4b413290ec22e",
+    "clubb_kokkos/drafts/driver_radiation_silhs/SILHS/transform_to_pdf_module.hpp": "232c094457f19c12297768c1f9b81ca3e74203fedf781f03f0a5542e315b4d77"
+  },
+  "CMake_sources": [
+    "src/SILHS/est_kessler_microphys_module.cpp",
+    "src/SILHS/generate_uniform_sample_module.cpp",
+    "src/SILHS/latin_hypercube_arrays.cpp",
+    "src/SILHS/latin_hypercube_driver_module.cpp",
+    "src/SILHS/lh_microphys_var_covar_module.cpp",
+    "src/SILHS/math_utilities.cpp",
+    "src/SILHS/mt95.cpp",
+    "src/SILHS/parameters_silhs.cpp",
+    "src/SILHS/silhs_api_module.cpp",
+    "src/SILHS/silhs_importance_sample_module.cpp",
+    "src/SILHS/transform_to_pdf_module.cpp"
+  ],
+  "state_contract": "Native sampler27args incloptional f2k::stats_type* then sampling_state&,mt95&,const parameters_silhs_state&; clipping15args noextra state; stats16args optionalpointer",
+  "remove_transient_keys_when_callers_replaced": [
+    "generate_silhs_sample_api",
+    "clip_transform_silhs_output_api",
+    "stats_accumulate_lh_api",
+    "latin_hypercube_2d_output_api",
+    "cleanup_latin_hypercube_arrays"
+  ],
+  "retain_transient_IO": [
+    "print_silhs_config_flags_api",
+    "actual stats_netcdf recording/sample I/O in stats_bridge",
+    "clubb_at_least_debug_level_api environmentquery"
+  ],
+  "review_artifacts": {
+    "SOURCE_OUTLINE.json": "3d0611128f4d66b9ff45cc1d67ba2721174c1b56d382c1a95d1793bfe96d3480",
+    "SOURCE_AUDIT.json": "d17daf08444a1b77243f3fcbfcdd277f9b9a421bef2e828071e4d8f515ea678c",
+    "SOURCE_REVIEW.json": "4ede97278e2c3f5701e2830bcf2fea79c88bdeeddabe9f26ac8e828e12faf078",
+    "INTEGRATION.md": "20c9cb8a69bd3be71d06b1f41e329ef17b1b4baab9cc725a23bbc6038c429cba",
+    "BFB_NOTES.md": "9c0fc8a4866de2861259a1f166e0c8a48aab48f8f1a0705a2a8db6b3608d9f41"
+  },
+  "compile_evidence": "build/validation/remaining_driver_cpu/silhs_draft_compile/COMPILE_EVIDENCE.json"
+}

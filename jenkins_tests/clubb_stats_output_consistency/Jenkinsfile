@@ -1,96 +1,78 @@
-// Compare statistics and loss outputs across native/JAX execution settings.
-// From the repository root, use gcc/netcdf-fortran for native builds; for example run
-// python3 human_reviewed_tests/run_stats_output_consistency.py bomex -jax=cpu -jax_tolerance 3e-9.
 // Record independent failures while allowing manual aborts to stop the pipeline.
 pipeline {
-  agent any
+  agent none
   options { disableConcurrentBuilds() }
   stages {
-    // Parallel checks use separate workspaces and checkouts on the selected worker.
+    // Each branch owns its executor, checkout, build, and output files.
     stage('Independent workflows') {
       parallel {
         stage('JAX statistics consistency') {
+          agent { label 'carson' }
           steps {
-            ws("${env.WORKSPACE}@jax_statistics_consistency") {
-              checkout scm
-
-              catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
-                sh '''
-                  # Different batch sizes may make JIT optimize differently, causing tiny rounding differences.
-                  python3 human_reviewed_tests/run_stats_output_consistency.py bomex -jax=cpu -jax_tolerance 3e-9
-                '''
-              }
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+              sh '''
+                # Different batch sizes may make JIT optimize differently, causing tiny rounding differences.
+                python3 human_reviewed_tests/run_stats_output_consistency.py bomex -jax=cpu -jax_tolerance 3e-9
+              '''
             }
           }
         }
         stage('JAX loss output consistency') {
+          agent { label 'carson' }
           steps {
-            ws("${env.WORKSPACE}@jax_loss_output_consistency") {
-              checkout scm
-
-              catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
-                sh '''
-                  python3 human_reviewed_tests/run_loss_output_consistency.py bomex -jax -fields thlm wp2 \
-                    -output_root output/jax_loss_consistency
-                '''
-              }
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+              sh '''
+                python3 human_reviewed_tests/run_loss_output_consistency.py bomex -jax -fields thlm wp2 \
+                  -output_root output/jax_loss_consistency
+              '''
             }
           }
         }
         stage('Stats and loss: bomex') {
+          agent any
           steps {
-            ws("${env.WORKSPACE}@stats_and_loss_bomex") {
-              checkout scm
-
-              sh '''
-                source /etc/profile.d/larson-group.sh
-                module load gcc netcdf-fortran
-                ./compile.py -debug
-              '''
-              catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
-                sh 'python human_reviewed_tests/run_stats_output_consistency.py bomex'
-              }
-              catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
-                sh 'python human_reviewed_tests/run_loss_output_consistency.py bomex'
-              }
+            sh '''
+              source /etc/profile.d/larson-group.sh
+              module load gcc netcdf-fortran
+              ./compile.py -debug
+            '''
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+              sh 'python human_reviewed_tests/run_stats_output_consistency.py bomex'
+            }
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+              sh 'python human_reviewed_tests/run_loss_output_consistency.py bomex'
             }
           }
         }
         stage('Stats and loss: atex') {
+          agent any
           steps {
-            ws("${env.WORKSPACE}@stats_and_loss_atex") {
-              checkout scm
-
-              sh '''
-                source /etc/profile.d/larson-group.sh
-                module load gcc netcdf-fortran
-                ./compile.py -debug
-              '''
-              catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
-                sh 'python human_reviewed_tests/run_stats_output_consistency.py atex'
-              }
-              catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
-                sh 'python human_reviewed_tests/run_loss_output_consistency.py atex'
-              }
+            sh '''
+              source /etc/profile.d/larson-group.sh
+              module load gcc netcdf-fortran
+              ./compile.py -debug
+            '''
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+              sh 'python human_reviewed_tests/run_stats_output_consistency.py atex'
+            }
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+              sh 'python human_reviewed_tests/run_loss_output_consistency.py atex'
             }
           }
         }
         stage('Stats and loss: wangara') {
+          agent any
           steps {
-            ws("${env.WORKSPACE}@stats_and_loss_wangara") {
-              checkout scm
-
-              sh '''
-                source /etc/profile.d/larson-group.sh
-                module load gcc netcdf-fortran
-                ./compile.py -debug
-              '''
-              catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
-                sh 'python human_reviewed_tests/run_stats_output_consistency.py wangara'
-              }
-              catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
-                sh 'python human_reviewed_tests/run_loss_output_consistency.py wangara'
-              }
+            sh '''
+              source /etc/profile.d/larson-group.sh
+              module load gcc netcdf-fortran
+              ./compile.py -debug
+            '''
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+              sh 'python human_reviewed_tests/run_stats_output_consistency.py wangara'
+            }
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+              sh 'python human_reviewed_tests/run_loss_output_consistency.py wangara'
             }
           }
         }

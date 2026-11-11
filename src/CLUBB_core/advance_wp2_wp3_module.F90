@@ -532,9 +532,8 @@ module advance_wp2_wp3_module
 
     if ( l_use_C11_Richardson ) then
 
-      C11_Skw_fnc = zm2zt_api( nzm, nzt, ngrdcol, gr, & ! In
-                               Cx_fnc_Richardson, & ! In
-                               zero_threshold ) ! Optional In
+      C11_Skw_fnc = zm2zt_api( nzm, nzt, ngrdcol, gr, Cx_fnc_Richardson, &
+                               zero_threshold )
 
     else
 
@@ -688,8 +687,7 @@ module advance_wp2_wp3_module
         ! discretization diagram is found in the description section of
         ! function wp3_term_ta_new_pdf_lhs below.  These values are always
         ! positive.
-        coef_wp4_implicit(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, & ! In
-                                            coef_wp4_implicit_zt(:,:), & ! In
+        coef_wp4_implicit(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, coef_wp4_implicit_zt(:,:), &
                                             zero_threshold )
 
         ! Set the value of coef_wp4_implicit to 0 at the lower boundary and at
@@ -717,10 +715,8 @@ module advance_wp2_wp3_module
 
         ! Interpolate a_1 from momentum levels to thermodynamic levels.  This
         ! will be used for the w'^3 turbulent advection (ta) term.
-        ! Positive def. quantity
-        a1_coef_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, & ! In
-                                     a1_coef(:,:), & ! In
-                                     zero_threshold )
+        a1_coef_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, &
+                                     a1_coef(:,:), zero_threshold ) ! Positive def. quantity
 
       endif ! iiPDF_type
 
@@ -1118,8 +1114,10 @@ module advance_wp2_wp3_module
           call stats_begin_budget( "wp2_sdmp", wp2 / dt, stats )
       end if
 
-      wp2 = sponge_damp_xp2( ngrdcol, nzm, gr, dt, gr%zm, wp2, w_tol_sqd, & ! In
-                             wp2_sponge_damp_profile ) ! In
+      do i = 1, ngrdcol
+        wp2(i,:) = sponge_damp_xp2( gr, nzm, dt, gr%zm(i,:), wp2(i,:), w_tol_sqd, &
+                                    wp2_sponge_damp_profile )
+      end do
 
       if ( stats%l_sample ) then
           call stats_finalize_budget( "wp2_sdmp", wp2 / dt, stats )
@@ -1137,8 +1135,10 @@ module advance_wp2_wp3_module
           call stats_begin_budget( "wp3_sdmp", wp3 / dt, stats )
       end if
 
-      wp3 = sponge_damp_xp3( ngrdcol, nzm, nzt, gr, dt, gr%zt, gr%zm, wp3, & ! In
-                             wp3_sponge_damp_profile ) ! In
+      do i = 1, ngrdcol
+        wp3(i,:) = sponge_damp_xp3( gr, nzm, nzt, dt, gr%zt(i,:), gr%zm(i,:), wp3(i,:), &
+                                    wp3_sponge_damp_profile )
+      end do
 
       if ( stats%l_sample ) then
           call stats_finalize_budget( "wp3_sdmp", wp3 / dt, stats )
@@ -1466,9 +1466,9 @@ module advance_wp2_wp3_module
 
     ! Temporary storage variables for vertical average of wp2
     ! for debugging purposes of hole-filling
-    real( kind = core_rknd ), dimension(ngrdcol) :: &
-      wp2_avg_before, & ! Density-weighted wp2 before hole filling [m^2/s^2]
-      wp2_avg_after    ! Density-weighted wp2 after hole filling [m^2/s^2]
+    real( kind = core_rknd ) :: &
+      wp2_avg_before, &
+      wp2_avg_after
 
     ! Array indices
     integer :: k, km1, kp1, k_wp2, k_wp3, i
@@ -1905,7 +1905,7 @@ module advance_wp2_wp3_module
       ! Compute vertical_avg before and after hole-filling
       ! Output warning in case the average changed from hole-filling
       if ( clubb_at_least_debug_level_api(3) ) then
-        wp2_avg_before = vertical_avg( ngrdcol, nzm, rho_ds_zm, wp2, gr%dzm )
+        wp2_avg_before = vertical_avg(nzm, rho_ds_zm, wp2, gr%dzm)
       endif
 
       ! Use a simple hole filling algorithm
@@ -1923,13 +1923,11 @@ module advance_wp2_wp3_module
       end if
 
       if ( clubb_at_least_debug_level_api(3) ) then
-        wp2_avg_after = vertical_avg( ngrdcol, nzm, rho_ds_zm, wp2, gr%dzm )
-        do i = 1, ngrdcol
-          if ( abs(wp2_avg_before(i) - wp2_avg_after(i)) > epsilon(wp2_avg_after(i))*1000 ) then
-            write(fstderr, *) "Warning! Hole-filling on wp2 is not conservative! ", &
-                              "The difference is ", wp2_avg_after(i) - wp2_avg_before(i)
-          endif
-        end do
+        wp2_avg_after = vertical_avg(nzm, rho_ds_zm, wp2, gr%dzm)
+        if ( abs(wp2_avg_before - wp2_avg_after) > epsilon(wp2_avg_after)*1000 ) then
+          write(fstderr, *) "Warning! Hole-filling on wp2 is not conservative! ", &
+                            "The difference is ", wp2_avg_after - wp2_avg_before
+        endif
       endif
 
       if (l_wp2_fill_holes_tke) then
@@ -4257,7 +4255,7 @@ module advance_wp2_wp3_module
     ! - (1/rho_ds) * d( rho_ds * coef_wp4_implicit * <w'^2>^2 )/dz.
     !
     ! The <w'^2>^2 term is timestep split so that it can be expressed linearly
-    ! in terms of <w'^2> at the (t+1) timestep, such that:
+    ! intent(in) terms of <w'^2> at the (t+1) timestep, such that:
     !
     ! <w'^2>^2 = <w'^2>(t) * <w'^2>(t+1);
     !
@@ -5147,7 +5145,7 @@ module advance_wp2_wp3_module
     ! - (1/rho_ds) * d( rho_ds * <w'^4> )/dz.
     !
     ! The value of <w'^4> is found by integrating over the PDF of w, as detailed
-    ! in function calc_wp4_pdf, which is found in module pdf_closure_module in
+    ! intent(in) function calc_wp4_pdf, which is found in module pdf_closure_module in
     ! pdf_closure_module.F90.
     !
     ! The explicit discretization of this term is as follows:

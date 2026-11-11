@@ -1,0 +1,30 @@
+{
+  "reviewer": "Independent stats_util_review agent; state/header authored and separately audited by stats_state_review owner.",
+  "scope": "Native stats_netcdf.F90 lines1350\u20132293 and corresponding scalar bodies in stats_netcdf_state.cpp plus rank1/rank2 templates in stats_netcdf.hpp. All16 routines in the sampling/cadence/sub-timestep/budget group reviewed. No production edits, compilation or runtime checks by this reviewer.",
+  "sha256": {
+    "src/CLUBB_core/stats_netcdf.F90": "348fe3d29d1b4bbcd8d7317904c0b6a4368ecf8f896793449cec2884db4f8621",
+    "clubb_kokkos/drafts/stats_netcdf/stats_netcdf_state.cpp": "df7e1558975a78a2154738dac32d5c3d3ba289faa5988342ca3c879c9997e836",
+    "clubb_kokkos/drafts/stats_netcdf/stats_netcdf.hpp": "f84addefda5ee9413df8baf6939b36fe3eaa9587f8a59a9ea8a1c924568678eb"
+  },
+  "status": "source_review_passed",
+  "verified_defects": [],
+  "reviewed_contracts": [
+    "begin timestep: disabled flags; time_initial+itime*dt_main; (tstart,tend] gate; Native NINT/core conversion; expected-time epsilon check; beginning-window reset; sample/write modulo; active markers and cache cursor reset order.",
+    "end timestep: disabled return; sub-timestep flush before write-boundary gate; unfinished-budget warning/reset; averaged write; fatal error field assignment; final flag reset.",
+    "prepare/flush: lazy HostSpace statdouble sum/int count allocation; only active variables, only points with positive substepcounts; sum/count then one outer sample; arrays/active flag cleared; oversample warning.",
+    "regular/scalar/rank1/rank2 updates: enabled then name lookup then sample gate; l_budget rejection; Native shape check only rank2; stage at original update-host boundary; mixed regular/substep rejection; optional point/profile/surface selection; double buffer plus core-real payload and pointwise counters.",
+    "begin budgets: Native lookup-before-sampling order; duplicate-begin rejection; subtract current scalar/vector/field; persistent l_budget and current l_in_budget markers.",
+    "intermediate budgets: sample-before-lookup order; active-budget requirement; same optional point/profile/surface selections; add-only no counters. Rank2 uniquely stages before active-budget rejection, matching Native source.",
+    "final budgets: sample-before-lookup order; l_count_sample defaults true; inactive-budget rejection; closing-state addition; optional counters and oversampling warning; l_budget true/l_in_budget false.",
+    "Explicit column/level API indices are zero-based and consumed without further subtraction; Native cache IDs stay one-based and select vars[id-1]. Optional profile level continues requiring column, with std::optional::value rejecting invalid missing-column usage instead of dereferencing absent Native optional."
+  ],
+  "ownership_and_precision": "All mutation goes through snapshot require_mutable guard. Every sample-count field uses int; all accumulated/substep arithmetic is stat_t(double); arbitrary View values are explicitly converted to core real_t before statdouble addition, matching Native formal kind. Memory staging preserves caller allocation and only copies inputs.",
+  "formatting_and_structure": "Original routine group order and dividers preserved. C++ generics dispatch to Native-named rank bodies. Generic header definitions are the language-required placement adaptation; scalar bodies remain in CPP in Native order.",
+  "remaining_validation": "Integrated whole-model CPU BFB and byte-identical NetCDF output are pending Root. This review neither establishes numerical equality nor covers lifecycle/init, registry/output/remapping/SILHS or lookup implementations outside the stated range.",
+  "initial_review_sha256": {
+    "src/CLUBB_core/stats_netcdf.F90": "348fe3d29d1b4bbcd8d7317904c0b6a4368ecf8f896793449cec2884db4f8621",
+    "clubb_kokkos/drafts/stats_netcdf/stats_netcdf_state.cpp": "df7e1558975a78a2154738dac32d5c3d3ba289faa5988342ca3c879c9997e836",
+    "clubb_kokkos/drafts/stats_netcdf/stats_netcdf.hpp": "95ccc3fe840103367db2e0e102c88d2ffbd606e726493bd77a1fb6044bf3237d"
+  },
+  "final_source_compatibility": "State owner confirms only comments changed since the independent read: copied-type description, sequential-host I/O limitation, context-owned warning comment and Native Sampling/Writing helpers divider. Final state/header hashes above match owner handoff; all executable conclusions remain applicable."
+}

@@ -1,0 +1,102 @@
+{
+  "date": "2026-11-06",
+  "status": "Independent structural review passes; no required finding remains. Numerical validation is root-owned and not claimed here.",
+  "baseline_cpp": "build/validation/driver_data_lifetime/baseline/src_clubb_driver.cpp",
+  "native_authority": "src/clubb_driver.F90",
+  "reviewed_hashes": {
+    "src/clubb_driver.F90": "1987ac30149dd41d5eaff41d77a1674e65588d3149316748a81692c3fc724bc1",
+    "clubb_kokkos/src/clubb_driver.cpp": "46369ea978bacaae43467d136ebb41cce3584ac3e5ac868020216cd5c15e2fbe",
+    "clubb_kokkos/src/clubb_driver.hpp": "ae63ff97a0789b010f0c4f3c312a512415598bdfe68b2a6f6d0ff605fb10a211",
+    "clubb_kokkos/src/driver_data.hpp": "318c723e2923563106db8404451e515ec4bc3f6630854b65be950de1b46c5415"
+  },
+  "exact_field_checks": {
+    "referenced_host_fields": 158,
+    "execution_members": 158,
+    "matching_visits": 158,
+    "matching_aliases": 158,
+    "names_and_ranks": "All sets equal with one matching host owner per execution member; no missing/extra field or mismatched name/rank."
+  },
+  "canonical_calls": "All 51 selected helper/timer/stat calls have identical normalized expressions and order against frozen pre-lifetime baseline.",
+  "reset_init_cleanup": "After removing only added lifecycle mechanics, init/reset/cleanup executable tokens match baseline. All three getters match baseline.",
+  "loops": [
+    {
+      "name": "thermodynamic_forcing",
+      "coverage": "ngrdcol*nzt, i=index%ngrdcol,k=index/ngrdcol",
+      "assignments": "rfrzm=zero; rtm_forcing=((rtm_forcing+rcm_mc)+rvm_mc); thlm_forcing=((thlm_forcing+thlm_mc)+radht)",
+      "assessment": "Cellwise expressions match Native and prior C++; no shared accumulation."
+    },
+    {
+      "name": "momentum_forcing",
+      "coverage": "ngrdcol*nzm, same map",
+      "assignments": "Five independent forcing+=microphysical tendency expressions in Native order",
+      "assessment": "No algebra change."
+    },
+    {
+      "name": "ice_water",
+      "coverage": "ngrdcol*nzt when hydromet_dim>0",
+      "assignments": "Add iiri then iirs then iirg, each independently gated index>0",
+      "assessment": "Scalar indices copied outside kernel; no this/member capture; no reduction or regrouping."
+    },
+    {
+      "name": "cloud_number (two sites)",
+      "coverage": "Ncm.size(), same column/level map",
+      "assignments": "Ncm=Nc_in_cloud*cloud_frac",
+      "assessment": "Same arithmetic and gates."
+    },
+    {
+      "name": "stats_rtm_mc",
+      "coverage": "rvm_mc.size(), same column/level map",
+      "assignments": "rvm_mc+rcm_mc into call-owned execution-space scratch",
+      "assessment": "Same stats order and gating; scalar expression unchanged."
+    }
+  ],
+  "ownership_and_control": [
+    "Advance uses persistent counterparts in every reachable primary array call; derived structs already hold execution-space Views.",
+    "Only active scheme-tendency wrapper stages model fields to host; existing stats/debug/matrix/ordered-SILHS internals keep their own explicit snapshots.",
+    "Reset first syncs execution-current fields before partial host writes, preserving retained entries; full bind/upload at reset end supports parameter override and later batches without reallocation.",
+    "Fixed active parameter matrix is overwritten by copy, not rebound to a batch subview. Shapes and batch/parameter checks unchanged.",
+    "No primary-model getter requires return-time whole-field sync. Stats snapshots remain independent read-only copies.",
+    "Both cleanup and reinitialization fence before releasing persistent data or error storage.",
+    "Existing supported/excluded options, every timer, l_stats/l_sample split, radiation cadence, fatal gotos and successful time update ordering remain unchanged.",
+    "Advance entry marks counterpart fields execution-current. Reset sync_host skips unnecessary transfers before first advance; CPU compatible Views alias."
+  ],
+  "out_buffer_review": {
+    "core_outputs": [
+      "Kh_zm",
+      "Kh_zt",
+      "thlprcp",
+      "wprcp",
+      "w_up_in_cloud",
+      "w_down_in_cloud",
+      "cloudy_updraft_frac",
+      "cloudy_downdraft_frac",
+      "rcm_in_layer",
+      "cloud_cover",
+      "invrs_tau_zm",
+      "Lscale"
+    ],
+    "success_path": [
+      "Kh_zt/Kh_zm fully written by advance_clubb_core kernels.",
+      "thlprcp/wprcp fully written by first/second closure interpolation and explicit momentum boundary assignments.",
+      "All four cloudy velocity/fraction arrays fully written by calc_w_up_in_cloud or explicit full zero kernel.",
+      "compute_cloud_cover writes every layer plus top boundary, independent of l_use_cloud_cover.",
+      "calc_Lscale direct branch assigns invrs_tau_zm over ngrdcol*nzm (cells_2); diagnosed branch assigns all cells (cells_13). Direct/coherent mixing lengths write active levels plus top lid; diagnosed Lscale writes ngrdcol*nzt (cells_35). No prior output content is needed on successful supported paths."
+    ],
+    "pdf_and_silhs": [
+      "Cholesky_factor copies complete input/scaled matrix into local factor and complete factor to destination; approximate factor initializes full matrix before rearrangement.",
+      "SILHS mixture membership loops all columns/samples/levels; multiply_Cholesky writes every output variate; weights fill all levels in both constant/all-level and MC/importance branches.",
+      "Clip transform defines all five clipped arrays over all cells.",
+      "Conditional skipped preparation outputs retain case state/sentinels, matching Native persistent ownership; no unconditional per-step clearing added."
+    ],
+    "limits": "This is source-definedness review of reachable normal paths, not poison-buffer runtime validation or proof of every unsupported scientific configuration."
+  },
+  "findings": [],
+  "validation": "No model executions/builds performed by this agent. Static set/type/token/call assertions executed successfully; source/numerical/performance claims kept separate.",
+  "canonical_call_count": 51,
+  "resolved_findings": [
+    {
+      "description": "Reinitialize fence now precedes err_info reset, so outstanding work completes before prior error storage is released.",
+      "verified": true
+    }
+  ]
+}

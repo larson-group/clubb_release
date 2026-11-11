@@ -1,0 +1,1344 @@
+{
+  "revision": "ac37a3898",
+  "native_authority": true,
+  "files": [
+    {
+      "source": "src/Benchmark_cases/arm.F90",
+      "sha256": "7c87612ad591823924c3d5addcced24058cd9073aa1a73f5427b1c44a74ebae4",
+      "lines": 123,
+      "routines": [
+        {
+          "name": "arm_sfclyr",
+          "arguments": [
+            "ngrdcol",
+            "time",
+            "z",
+            "thlm_sfc",
+            "ubar",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar"
+          ]
+        }
+      ],
+      "complete_native_read": true,
+      "numerical_status": "not integrated or tested"
+    },
+    {
+      "source": "src/Benchmark_cases/arm_0003.F90",
+      "sha256": "77be5e75442ce5ec931447857d61633150f1c0072dd4d95d5bfaad1ac5b61007",
+      "lines": 113,
+      "routines": [
+        {
+          "name": "arm_0003_sfclyr",
+          "arguments": [
+            "ngrdcol",
+            "time",
+            "z",
+            "rho_sfc",
+            "thlm_sfc",
+            "ubar",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar"
+          ]
+        }
+      ],
+      "complete_native_read": true,
+      "numerical_status": "not integrated or tested"
+    },
+    {
+      "source": "src/Benchmark_cases/arm_3year.F90",
+      "sha256": "1700e1b97a375d8c891f022782ff11fe8a5ddd871ea96d66ca53dda4f108ecc2",
+      "lines": 100,
+      "routines": [
+        {
+          "name": "arm_3year_sfclyr",
+          "arguments": [
+            "ngrdcol",
+            "time",
+            "z",
+            "rho_sfc",
+            "thlm_sfc",
+            "ubar",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar"
+          ]
+        }
+      ],
+      "complete_native_read": true,
+      "numerical_status": "not integrated or tested"
+    },
+    {
+      "source": "src/Benchmark_cases/arm_97.F90",
+      "sha256": "bb661cc7fb37e4b002fa20c46d4b355cc99746020dd758478f4cd9f2f4b78c66",
+      "lines": 118,
+      "routines": [
+        {
+          "name": "arm_97_sfclyr",
+          "arguments": [
+            "ngrdcol",
+            "time",
+            "z",
+            "rho_sfc",
+            "thlm_sfc",
+            "ubar",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar"
+          ]
+        }
+      ],
+      "complete_native_read": true,
+      "numerical_status": "not integrated or tested"
+    },
+    {
+      "source": "src/Benchmark_cases/astex_a209.F90",
+      "sha256": "3edf4df0aa074ff00f9e40e223d91e93c887af3f84238a725a24b964a0684cbf",
+      "lines": 244,
+      "routines": [
+        {
+          "name": "astex_a209_tndcy",
+          "arguments": [
+            "sclr_dim",
+            "edsclr_dim",
+            "sclr_idx",
+            "gr",
+            "wm_zt",
+            "wm_zm",
+            "thlm_forcing",
+            "rtm_forcing",
+            "sclrm_forcing",
+            "edsclrm_forcing"
+          ]
+        },
+        {
+          "name": "astex_a209_sfclyr",
+          "arguments": [
+            "ngrdcol",
+            "time",
+            "ubar",
+            "rtm",
+            "thlm",
+            "lowestlevel",
+            "exner_sfc",
+            "p_sfc",
+            "saturation_formula",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar",
+            "T_sfc"
+          ]
+        }
+      ],
+      "complete_native_read": true,
+      "numerical_status": "not integrated or tested"
+    },
+    {
+      "source": "src/Benchmark_cases/atex.F90",
+      "sha256": "3a1cc74fd547a4a581d8bd3faf676687d4eaf3933fa30fb340e96de425d58ade",
+      "lines": 504,
+      "routines": [
+        {
+          "name": "calc_forcings",
+          "arguments": [
+            "ngrdcol",
+            "gr",
+            "z_inversion",
+            "thlm_forcing",
+            "rtm_forcing"
+          ]
+        },
+        {
+          "name": "atex_tndcy",
+          "arguments": [
+            "ngrdcol",
+            "sclr_dim",
+            "edsclr_dim",
+            "sclr_idx",
+            "gr",
+            "time",
+            "time_initial",
+            "rtm",
+            "l_add_dycore_grid",
+            "grid_remap_method",
+            "gr_dycore",
+            "total_idx_rho_lin_spline",
+            "rho_lin_spline_vals",
+            "rho_lin_spline_levels",
+            "p_sfc",
+            "err_info",
+            "wm_zt",
+            "wm_zm",
+            "thlm_forcing",
+            "rtm_forcing",
+            "sclrm_forcing",
+            "edsclrm_forcing"
+          ]
+        },
+        {
+          "name": "atex_sfclyr",
+          "arguments": [
+            "ngrdcol",
+            "time",
+            "ubar",
+            "thlm_sfc",
+            "rtm_sfc",
+            "exner_sfc",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar",
+            "T_sfc"
+          ]
+        }
+      ],
+      "complete_native_read": true,
+      "numerical_status": "not integrated or tested"
+    },
+    {
+      "source": "src/Benchmark_cases/atex_long.F90",
+      "sha256": "1f8517c4ff378904343ea53ba37f917faaf61a8e63cff06baa58ce68959d2912",
+      "lines": 320,
+      "routines": [
+        {
+          "name": "calc_forcings",
+          "arguments": [
+            "ngrdcol",
+            "gr",
+            "thlm_forcing",
+            "rtm_forcing"
+          ]
+        },
+        {
+          "name": "atex_long_tndcy",
+          "arguments": [
+            "ngrdcol",
+            "sclr_dim",
+            "edsclr_dim",
+            "sclr_idx",
+            "gr",
+            "time",
+            "wm_zt",
+            "wm_zm",
+            "thlm_forcing",
+            "rtm_forcing",
+            "sclrm_forcing",
+            "edsclrm_forcing"
+          ]
+        },
+        {
+          "name": "atex_long_sfclyr",
+          "arguments": [
+            "ngrdcol",
+            "time",
+            "ubar",
+            "thlm_sfc",
+            "rtm_sfc",
+            "exner_sfc",
+            "rho_sfc",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar",
+            "T_sfc"
+          ]
+        }
+      ],
+      "complete_native_read": true,
+      "numerical_status": "not integrated or tested"
+    },
+    {
+      "source": "src/Benchmark_cases/bomex.F90",
+      "sha256": "f132c74c9d0486e41b4cc79facb25eeeb72f1be5703b208123d4051a49e98e92",
+      "lines": 241,
+      "routines": [
+        {
+          "name": "bomex_tndcy",
+          "arguments": [
+            "ngrdcol",
+            "sclr_dim",
+            "edsclr_dim",
+            "sclr_idx",
+            "gr",
+            "rtm",
+            "l_readiopdata",
+            "thlm_forcing",
+            "rtm_forcing",
+            "sclrm_forcing",
+            "edsclrm_forcing"
+          ]
+        },
+        {
+          "name": "bomex_sfclyr",
+          "arguments": [
+            "ngrdcol",
+            "time",
+            "rtm_sfc",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar"
+          ]
+        }
+      ],
+      "complete_native_read": true,
+      "numerical_status": "not integrated or tested"
+    },
+    {
+      "source": "src/Benchmark_cases/clex9_nov02.F90",
+      "sha256": "23a56e0d32ce71e7289579b42c9edd54404e19dff929ab6a080b892b50f13d71",
+      "lines": 82,
+      "routines": [
+        {
+          "name": "clex9_nov02_read_t_dependent",
+          "arguments": [
+            "time",
+            "sens_ht",
+            "latent_ht"
+          ]
+        }
+      ],
+      "complete_native_read": true,
+      "numerical_status": "not integrated or tested"
+    },
+    {
+      "source": "src/Benchmark_cases/clex9_oct14.F90",
+      "sha256": "66e20abef38d19321b292e11b549da16e57cfdeca935ddef8a8554798bf760c4",
+      "lines": 82,
+      "routines": [
+        {
+          "name": "clex9_oct14_read_t_dependent",
+          "arguments": [
+            "time",
+            "sens_ht",
+            "latent_ht"
+          ]
+        }
+      ],
+      "complete_native_read": true,
+      "numerical_status": "not integrated or tested"
+    },
+    {
+      "source": "src/Benchmark_cases/cloud_feedback.F90",
+      "sha256": "4e8ecaa451e2659834dc317009aeeeb9bdc54bdf7da1b30cdfefdee9323491c6",
+      "lines": 170,
+      "routines": [
+        {
+          "name": "cloud_feedback_sfclyr",
+          "arguments": [
+            "ngrdcol",
+            "time",
+            "sfctype",
+            "thlm_sfc",
+            "rtm_sfc",
+            "lowest_level",
+            "ubar",
+            "p_sfc",
+            "T_sfc",
+            "saturation_formula",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar"
+          ]
+        }
+      ],
+      "complete_native_read": true,
+      "numerical_status": "not integrated or tested"
+    },
+    {
+      "source": "src/Benchmark_cases/cobra.F90",
+      "sha256": "4d7788efff0890ae4c01cde149ea5d34d03e4bfca3ae4d20277e8a0506b674c2",
+      "lines": 217,
+      "routines": [
+        {
+          "name": "cobra_sfclyr",
+          "arguments": [
+            "ngrdcol",
+            "sclr_dim",
+            "edsclr_dim",
+            "sclr_idx",
+            "l_do_expldiff_rtm_thlm",
+            "time",
+            "z",
+            "rho_sfc",
+            "thlm_sfc",
+            "ubar",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar",
+            "wpsclrp_sfc",
+            "wpedsclrp_sfc",
+            "T_sfc"
+          ]
+        }
+      ],
+      "complete_native_read": true,
+      "numerical_status": "not integrated or tested"
+    },
+    {
+      "source": "src/Benchmark_cases/diag_ustar_module.F90",
+      "sha256": "7fbb636183f47ad8826f2997201e9bad26543ec28c1919656858cd899daffbde",
+      "lines": 92,
+      "routines": [
+        {
+          "name": "diag_ustar",
+          "arguments": [
+            "z",
+            "bflx",
+            "wnd",
+            "z0"
+          ]
+        }
+      ],
+      "complete_native_read": true,
+      "numerical_status": "not integrated or tested"
+    },
+    {
+      "source": "src/Benchmark_cases/dycoms2_rf01.F90",
+      "sha256": "355ecdfddf3d54e1278ffde7aa4075d647d624eb896aae1986617d2746957bd1",
+      "lines": 232,
+      "routines": [
+        {
+          "name": "dycoms2_rf01_tndcy",
+          "arguments": [
+            "ngrdcol",
+            "gr",
+            "sclr_dim",
+            "edsclr_dim",
+            "sclr_idx",
+            "thlm_forcing",
+            "rtm_forcing",
+            "sclrm_forcing",
+            "edsclrm_forcing"
+          ]
+        },
+        {
+          "name": "dycoms2_rf01_sfclyr",
+          "arguments": [
+            "ngrdcol",
+            "time",
+            "sfctype",
+            "p_sfc",
+            "exner_sfc",
+            "ubar",
+            "thlm_sfc",
+            "rtm_sfc",
+            "rho_sfc",
+            "saturation_formula",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar",
+            "T_sfc"
+          ]
+        }
+      ],
+      "complete_native_read": true,
+      "numerical_status": "not integrated or tested"
+    },
+    {
+      "source": "src/Benchmark_cases/dycoms2_rf02.F90",
+      "sha256": "16042c14cc267e73e2f92f79dff1a0b664f67ae9d392cb187a6f1f5cb9e329dc",
+      "lines": 208,
+      "routines": [
+        {
+          "name": "dycoms2_rf02_tndcy",
+          "arguments": [
+            "ngrdcol",
+            "sclr_dim",
+            "edsclr_dim",
+            "sclr_idx",
+            "gr",
+            "wm_zt",
+            "wm_zm",
+            "thlm_forcing",
+            "rtm_forcing",
+            "sclrm_forcing",
+            "edsclrm_forcing"
+          ]
+        },
+        {
+          "name": "dycoms2_rf02_sfclyr",
+          "arguments": [
+            "ngrdcol",
+            "time",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar"
+          ]
+        }
+      ],
+      "complete_native_read": true,
+      "numerical_status": "not integrated or tested"
+    },
+    {
+      "source": "src/Benchmark_cases/ekman.F90",
+      "sha256": "71fa00ebd044dd0f92d3f21f483512a23fbedc53df45a875ff01d95c430c1c48",
+      "lines": 79,
+      "routines": [
+        {
+          "name": "ekman_sfclyr",
+          "arguments": [
+            "ngrdcol",
+            "um_sfc",
+            "vm_sfc",
+            "ubar",
+            "upwp_sfc",
+            "vpwp_sfc",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar"
+          ]
+        }
+      ],
+      "complete_native_read": true,
+      "numerical_status": "not integrated or tested"
+    },
+    {
+      "source": "src/Benchmark_cases/fire.F90",
+      "sha256": "8ed48208198a6f05c6390e760e5e49415707675775e8e72f1ac331397f76c069",
+      "lines": 125,
+      "routines": [
+        {
+          "name": "fire_sfclyr",
+          "arguments": [
+            "ngrdcol",
+            "time",
+            "ubar",
+            "p_sfc",
+            "thlm_sfc",
+            "rtm_sfc",
+            "exner_sfc",
+            "saturation_formula",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar",
+            "T_sfc"
+          ]
+        }
+      ],
+      "complete_native_read": true,
+      "numerical_status": "not integrated or tested"
+    },
+    {
+      "source": "src/Benchmark_cases/gabls2.F90",
+      "sha256": "299fd8e39828dadc8b032456e55c3c19438fbf310356177eee0df98d902ecb36",
+      "lines": 313,
+      "routines": [
+        {
+          "name": "gabls2_tndcy",
+          "arguments": [
+            "ngrdcol",
+            "sclr_dim",
+            "edsclr_dim",
+            "sclr_idx",
+            "gr",
+            "time",
+            "time_initial",
+            "wm_zt",
+            "wm_zm",
+            "thlm_forcing",
+            "rtm_forcing",
+            "sclrm_forcing",
+            "edsclrm_forcing"
+          ]
+        },
+        {
+          "name": "gabls2_sfclyr",
+          "arguments": [
+            "ngrdcol",
+            "time",
+            "time_initial",
+            "lowest_level",
+            "p_sfc",
+            "ubar",
+            "thlm",
+            "rtm",
+            "exner_sfc",
+            "saturation_formula",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar",
+            "T_sfc"
+          ]
+        }
+      ],
+      "complete_native_read": true,
+      "numerical_status": "not integrated or tested"
+    },
+    {
+      "source": "src/Benchmark_cases/gabls3.F90",
+      "sha256": "ad5f90275599cb9984d8789bbc91ee6cbe2511ee85c3f6312bd10f4b99d60412",
+      "lines": 128,
+      "routines": [
+        {
+          "name": "gabls3_sfclyr",
+          "arguments": [
+            "ngrdcol",
+            "ubar",
+            "veg_t_in_K",
+            "thlm_sfc",
+            "rtm_sfc",
+            "lowest_level",
+            "exner_sfc",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar"
+          ]
+        }
+      ],
+      "complete_native_read": true,
+      "numerical_status": "not integrated or tested"
+    },
+    {
+      "source": "src/Benchmark_cases/gabls3_night.F90",
+      "sha256": "b9eb8d57bb8286bb07efa72ba68355237945b382edb2140029758f203a1e7cf1",
+      "lines": 345,
+      "routines": [
+        {
+          "name": "gabls3_night_sfclyr",
+          "arguments": [
+            "ngrdcol",
+            "time",
+            "um_sfc",
+            "vm_sfc",
+            "thlm_sfc",
+            "rtm_sfc",
+            "lowest_level",
+            "upwp_sfc",
+            "vpwp_sfc",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar"
+          ]
+        },
+        {
+          "name": "psi_h",
+          "arguments": [
+            "x",
+            "xlmo"
+          ]
+        },
+        {
+          "name": "gm1",
+          "arguments": [
+            "x"
+          ]
+        },
+        {
+          "name": "gh1",
+          "arguments": [
+            "x"
+          ]
+        },
+        {
+          "name": "fm1",
+          "arguments": [
+            "x"
+          ]
+        },
+        {
+          "name": "fh1",
+          "arguments": [
+            "x"
+          ]
+        },
+        {
+          "name": "landflx",
+          "arguments": [
+            "th",
+            "ts",
+            "qh",
+            "qs",
+            "uh",
+            "vh",
+            "h",
+            "z0",
+            "shf",
+            "lhf",
+            "vel",
+            "ustar"
+          ]
+        }
+      ],
+      "complete_native_read": true,
+      "numerical_status": "not integrated or tested"
+    },
+    {
+      "source": "src/Benchmark_cases/jun25.F90",
+      "sha256": "df58fa9e9abe06bfb59198ef4324ffe20f4c7bbaac4a9fee1d2000ad7d1f9777",
+      "lines": 82,
+      "routines": [
+        {
+          "name": "jun25_altocu_read_t_dependent",
+          "arguments": [
+            "time",
+            "sens_ht",
+            "latent_ht"
+          ]
+        }
+      ],
+      "complete_native_read": true,
+      "numerical_status": "not integrated or tested"
+    },
+    {
+      "source": "src/Benchmark_cases/lba.F90",
+      "sha256": "b4dd24e001356f4d3b6bc0a6b028afaa7ebbe36c4d7d8da8335840bb378c81b4",
+      "lines": 195,
+      "routines": [
+        {
+          "name": "lba_tndcy",
+          "arguments": [
+            "ngrdcol",
+            "sclr_dim",
+            "edsclr_dim",
+            "sclr_idx",
+            "gr",
+            "thlm_forcing",
+            "rtm_forcing",
+            "sclrm_forcing",
+            "edsclrm_forcing"
+          ]
+        },
+        {
+          "name": "lba_sfclyr",
+          "arguments": [
+            "ngrdcol",
+            "time_current",
+            "time_initial",
+            "z",
+            "rho_sfc",
+            "thlm_sfc",
+            "ubar",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar"
+          ]
+        }
+      ],
+      "complete_native_read": true,
+      "numerical_status": "not integrated or tested"
+    },
+    {
+      "source": "src/Benchmark_cases/mpace_a.F90",
+      "sha256": "45a8f6e0a38a67cfd027fb66195520a3a7bf27ca850e7616b41fef8941ee46b5",
+      "lines": 440,
+      "routines": [
+        {
+          "name": "mpace_a_tndcy",
+          "arguments": [
+            "ngrdcol",
+            "sclr_dim",
+            "edsclr_dim",
+            "sclr_idx",
+            "gr",
+            "time",
+            "p_in_Pa",
+            "wm_zt",
+            "wm_zm",
+            "thlm_forcing",
+            "rtm_forcing",
+            "um_hoc_grid",
+            "vm_hoc_grid",
+            "sclrm_forcing",
+            "edsclrm_forcing"
+          ]
+        },
+        {
+          "name": "mpace_a_sfclyr",
+          "arguments": [
+            "ngrdcol",
+            "time",
+            "rho_sfc",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar"
+          ]
+        },
+        {
+          "name": "mpace_a_init",
+          "arguments": [
+            "iunit",
+            "file_path"
+          ]
+        }
+      ],
+      "complete_native_read": true,
+      "numerical_status": "not integrated or tested"
+    },
+    {
+      "source": "src/Benchmark_cases/mpace_b.F90",
+      "sha256": "3f8aefcf6485aa9520174f39a5a90d06eb600b0dd55303ff8d5d8909a1fc6500",
+      "lines": 247,
+      "routines": [
+        {
+          "name": "mpace_b_tndcy",
+          "arguments": [
+            "ngrdcol",
+            "sclr_dim",
+            "edsclr_dim",
+            "sclr_idx",
+            "gr",
+            "p_in_Pa",
+            "thvm",
+            "wm_zt",
+            "wm_zm",
+            "thlm_forcing",
+            "rtm_forcing",
+            "sclrm_forcing",
+            "edsclrm_forcing"
+          ]
+        },
+        {
+          "name": "mpace_b_sfclyr",
+          "arguments": [
+            "ngrdcol",
+            "time",
+            "rho_sfc",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar"
+          ]
+        }
+      ],
+      "complete_native_read": true,
+      "numerical_status": "not integrated or tested"
+    },
+    {
+      "source": "src/Benchmark_cases/neutral_case.F90",
+      "sha256": "b70b548e972420fbd0a26e4c681ac6c991ff7adeba41efd8531977522bb12a82",
+      "lines": 102,
+      "routines": [
+        {
+          "name": "neutral_case_sfclyr",
+          "arguments": [
+            "ngrdcol",
+            "time",
+            "! z",
+            "thlm_sfc",
+            "um_sfc",
+            "vm_sfc",
+            "ubar",
+            "upwp_sfc",
+            "vpwp_sfc",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar"
+          ]
+        }
+      ],
+      "complete_native_read": true,
+      "numerical_status": "not integrated or tested"
+    },
+    {
+      "source": "src/Benchmark_cases/nov11.F90",
+      "sha256": "78eb22f552e2e3d7f73a53cf631bde4c72c0eb6d494af9e758f129caf9cd225b",
+      "lines": 427,
+      "routines": [
+        {
+          "name": "nov11_altocu_rtm_adjust",
+          "arguments": [
+            "ngrdcol",
+            "gr",
+            "time",
+            "time_initial",
+            "dt",
+            "rtm"
+          ]
+        },
+        {
+          "name": "nov11_altocu_read_t_dependent",
+          "arguments": [
+            "time",
+            "sens_ht",
+            "latent_ht"
+          ]
+        }
+      ],
+      "complete_native_read": true,
+      "numerical_status": "not integrated or tested"
+    },
+    {
+      "source": "src/Benchmark_cases/prescribe_forcings.F90",
+      "sha256": "55e26ce8ed366811f70fab34b86ac44271d56a2ff02a164785faabf2d095858f",
+      "lines": 1169,
+      "routines": [
+        {
+          "name": "prescribe_forcings",
+          "arguments": [
+            "gr",
+            "nzm",
+            "nzt",
+            "ngrdcol",
+            "sclr_dim",
+            "edsclr_dim",
+            "sclr_idx",
+            "l_do_expldiff_rtm_thlm",
+            "runtype",
+            "sfctype",
+            "time_current",
+            "time_initial",
+            "dt",
+            "l_readiopdata",
+            "um",
+            "vm",
+            "thlm",
+            "p_in_Pa",
+            "exner",
+            "rho",
+            "rho_zm",
+            "thvm",
+            "veg_T_in_K",
+            "l_modify_bc_for_cnvg_test",
+            "saturation_formula",
+            "stats",
+            "l_add_dycore_grid",
+            "grid_remap_method",
+            "total_idx_rho_lin_spline",
+            "rho_lin_spline_vals",
+            "rho_lin_spline_levels",
+            "gr_dycore",
+            "rtm",
+            "wm_zm",
+            "wm_zt",
+            "ug",
+            "vg",
+            "um_ref",
+            "vm_ref",
+            "thlm_forcing",
+            "rtm_forcing",
+            "um_forcing",
+            "vm_forcing",
+            "wprtp_forcing",
+            "wpthlp_forcing",
+            "rtp2_forcing",
+            "thlp2_forcing",
+            "rtpthlp_forcing",
+            "wpsclrp",
+            "sclrm_forcing",
+            "edsclrm_forcing",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "upwp_sfc",
+            "vpwp_sfc",
+            "T_sfc",
+            "p_sfc",
+            "sens_ht",
+            "latent_ht",
+            "wpsclrp_sfc",
+            "wpedsclrp_sfc",
+            "err_info"
+          ]
+        },
+        {
+          "name": "read_surface_var_for_bc",
+          "arguments": [
+            "gr",
+            "ngrdcol",
+            "& ! Intent(in"
+          ]
+        }
+      ],
+      "complete_native_read": true,
+      "numerical_status": "not integrated or tested"
+    },
+    {
+      "source": "src/Benchmark_cases/rico.F90",
+      "sha256": "41592fed31e6a073b4146d4151c4cb047d0f6b82fcb08ce197489306ace70ada",
+      "lines": 362,
+      "routines": [
+        {
+          "name": "rico_tndcy",
+          "arguments": [
+            "ngrdcol",
+            "sclr_dim",
+            "edsclr_dim",
+            "sclr_idx",
+            "gr",
+            "rtm",
+            "exner",
+            "thlm_forcing",
+            "rtm_forcing",
+            "sclrm_forcing",
+            "edsclrm_forcing"
+          ]
+        },
+        {
+          "name": "rico_sfclyr",
+          "arguments": [
+            "ngrdcol",
+            "time",
+            "um_sfc",
+            "vm_sfc",
+            "thlm",
+            "rtm",
+            "z_bot",
+            "p_sfc",
+            "exner_sfc",
+            "saturation_formula",
+            "upwp_sfc",
+            "vpwp_sfc",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar",
+            "T_sfc"
+          ]
+        }
+      ],
+      "complete_native_read": true,
+      "numerical_status": "not integrated or tested"
+    },
+    {
+      "source": "src/Benchmark_cases/sfc_flux.F90",
+      "sha256": "614c3e5b14acbaae367222a9cba949149231f23f14ef53f1d0a05fa6bcf4d789",
+      "lines": 404,
+      "routines": [
+        {
+          "name": "compute_momentum_flux",
+          "arguments": [
+            "ngrdcol",
+            "um_sfc",
+            "vm_sfc",
+            "ubar",
+            "ustar",
+            "upwp_sfc",
+            "vpwp_sfc"
+          ]
+        },
+        {
+          "name": "compute_ubar",
+          "arguments": [
+            "ngrdcol",
+            "um_sfc",
+            "vm_sfc",
+            "ubar"
+          ]
+        },
+        {
+          "name": "compute_ht_mostr_flux",
+          "arguments": [
+            "time_in",
+            "ntimes",
+            "latent_ht_given",
+            "sens_ht_given",
+            "time_sfc_given",
+            "heat_flx",
+            "moisture_flx"
+          ]
+        },
+        {
+          "name": "compute_wpthlp_sfc",
+          "arguments": [
+            "ngrdcol",
+            "Cd",
+            "ubar",
+            "thlm_sfc",
+            "T_sfc",
+            "exner_sfc",
+            "wpthlp_sfc"
+          ]
+        },
+        {
+          "name": "compute_wprtp_sfc",
+          "arguments": [
+            "ngrdcol",
+            "Cd",
+            "ubar",
+            "rtm_sfc",
+            "adjustment",
+            "wprtp_sfc"
+          ]
+        },
+        {
+          "name": "set_sclr_sfc_rtm_thlm",
+          "arguments": [
+            "ngrdcol",
+            "sclr_dim",
+            "edsclr_dim",
+            "sclr_idx",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "wpsclrp_sfc",
+            "wpedsclrp_sfc"
+          ]
+        },
+        {
+          "name": "convert_sens_ht_to_km_s",
+          "arguments": [
+            "sens_ht",
+            "rho_sfc"
+          ]
+        },
+        {
+          "name": "convert_latent_ht_to_m_s",
+          "arguments": [
+            "latent_ht",
+            "rho_sfc"
+          ]
+        }
+      ],
+      "complete_native_read": true,
+      "numerical_status": "not integrated or tested"
+    },
+    {
+      "source": "src/Benchmark_cases/spec_hum_to_mixing_ratio.F90",
+      "sha256": "491fb11c5837773265882c908880bb6e282f87b1accdc3dfdfb280e2715fb1ab",
+      "lines": 118,
+      "routines": [
+        {
+          "name": "flux_spec_hum_to_mixing_ratio",
+          "arguments": [
+            "ngrdcol",
+            "rtm_zm",
+            "wpqtp",
+            "wprtp"
+          ]
+        },
+        {
+          "name": "force_spec_hum_to_mixing_ratio",
+          "arguments": [
+            "ngrdcol",
+            "nzt",
+            "rtm",
+            "qtm_forcing",
+            "rtm_forcing"
+          ]
+        }
+      ],
+      "complete_native_read": true,
+      "numerical_status": "not integrated or tested"
+    },
+    {
+      "source": "src/Benchmark_cases/time_dependent_input.F90",
+      "sha256": "58baf00fe8f16516452851e9169334bc8858546b35bd687e47d90507dd55c2c3",
+      "lines": 1309,
+      "routines": [
+        {
+          "name": "initialize_t_dependent_input",
+          "arguments": [
+            "iunit",
+            "runtype",
+            "l_readiopdata",
+            "rho",
+            "nz",
+            "grid",
+            "p_in_Pa",
+            "l_add_dycore_grid",
+            "grid_adapt_in_time_method"
+          ]
+        },
+        {
+          "name": "finalize_t_dependent_input",
+          "arguments": []
+        },
+        {
+          "name": "initialize_t_dependent_sfc",
+          "arguments": [
+            "iunit",
+            "l_readiopdata",
+            "rho",
+            "input_file"
+          ]
+        },
+        {
+          "name": "initialize_t_dependent_forcings",
+          "arguments": [
+            "iunit",
+            "input_file",
+            "nz",
+            "grid",
+            "p_in_Pa",
+            "l_add_dycore_grid",
+            "grid_adapt_in_time_method"
+          ]
+        },
+        {
+          "name": "finalize_t_dependent_forcings",
+          "arguments": []
+        },
+        {
+          "name": "finalize_t_dependent_sfc",
+          "arguments": []
+        },
+        {
+          "name": "read_to_grid",
+          "arguments": [
+            "ntwo_dim_vars",
+            "dim_size",
+            "other_dim_size",
+            "nz",
+            "grid",
+            "two_dim_vars",
+            "target_name"
+          ]
+        },
+        {
+          "name": "apply_time_dependent_forcings_from_array",
+          "arguments": [
+            "ngrdcol",
+            "nzm",
+            "nzt",
+            "sclr_dim",
+            "edsclr_dim",
+            "sclr_idx",
+            "l_do_expldiff_rtm_thlm",
+            "gr",
+            "rtm",
+            "rho",
+            "exner",
+            "forcings_array",
+            "thlm_f",
+            "rtm_f",
+            "um_ref",
+            "vm_ref",
+            "um_f",
+            "vm_f",
+            "wm_zt",
+            "wm_zm",
+            "ug",
+            "vg",
+            "sclrm_forcing",
+            "edsclrm_forcing"
+          ]
+        },
+        {
+          "name": "apply_time_dependent_forcings",
+          "arguments": [
+            "ngrdcol",
+            "nzm",
+            "nzt",
+            "sclr_dim",
+            "edsclr_dim",
+            "sclr_idx",
+            "l_do_expldiff_rtm_thlm",
+            "gr",
+            "time",
+            "rtm",
+            "rho",
+            "exner",
+            "thlm_f",
+            "rtm_f",
+            "um_ref",
+            "vm_ref",
+            "um_f",
+            "vm_f",
+            "wm_zt",
+            "wm_zm",
+            "ug",
+            "vg",
+            "sclrm_forcing",
+            "edsclrm_forcing"
+          ]
+        },
+        {
+          "name": "apply_time_dependent_forcings_from_dycore",
+          "arguments": [
+            "ngrdcol",
+            "nzm",
+            "nzt",
+            "sclr_dim",
+            "edsclr_dim",
+            "sclr_idx",
+            "l_do_expldiff_rtm_thlm",
+            "gr",
+            "gr_dycore",
+            "time",
+            "rtm",
+            "rho",
+            "exner",
+            "grid_remap_method",
+            "total_idx_rho_lin_spline",
+            "rho_lin_spline_vals",
+            "rho_lin_spline_levels",
+            "p_sfc",
+            "thlm_f",
+            "rtm_f",
+            "um_ref",
+            "vm_ref",
+            "um_f",
+            "vm_f",
+            "wm_zt",
+            "wm_zm",
+            "ug",
+            "vg",
+            "sclrm_forcing",
+            "edsclrm_forcing"
+          ]
+        },
+        {
+          "name": "time_select",
+          "arguments": [
+            "time",
+            "nvar",
+            "time_array",
+            "before_time",
+            "after_time",
+            "time_frac"
+          ]
+        }
+      ],
+      "complete_native_read": true,
+      "numerical_status": "not integrated or tested"
+    },
+    {
+      "source": "src/Benchmark_cases/twp_ice.F90",
+      "sha256": "5fcc240d59b2f4d1713295bc7c5d8daea0f1224596e1726ada46ac62cc51a718",
+      "lines": 143,
+      "routines": [
+        {
+          "name": "twp_ice_sfclyr",
+          "arguments": [
+            "ngrdcol",
+            "time",
+            "z",
+            "exner_sfc",
+            "thlm_sfc",
+            "ubar",
+            "rtm",
+            "p_sfc",
+            "saturation_formula",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar",
+            "T_sfc"
+          ]
+        }
+      ],
+      "complete_native_read": true,
+      "numerical_status": "not integrated or tested"
+    },
+    {
+      "source": "src/Benchmark_cases/wangara.F90",
+      "sha256": "c9c9e0ae3653aa6a3aab16d857be6eb4df216c846c39faafa9253296e19a43fb",
+      "lines": 192,
+      "routines": [
+        {
+          "name": "wangara_tndcy",
+          "arguments": [
+            "ngrdcol",
+            "gr",
+            "sclr_dim",
+            "edsclr_dim",
+            "sclr_idx",
+            "wm_zt",
+            "wm_zm",
+            "thlm_forcing",
+            "rtm_forcing",
+            "sclrm_forcing",
+            "edsclrm_forcing"
+          ]
+        },
+        {
+          "name": "wangara_sfclyr",
+          "arguments": [
+            "ngrdcol",
+            "time",
+            "wpthlp_sfc",
+            "wprtp_sfc",
+            "ustar"
+          ]
+        }
+      ],
+      "complete_native_read": true,
+      "numerical_status": "not integrated or tested"
+    }
+  ]
+}

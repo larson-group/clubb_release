@@ -1,0 +1,21 @@
+--- a/clubb_kokkos/CMakeLists.txt
++++ b/clubb_kokkos/CMakeLists.txt
+@@ -52,6 +52,7 @@
+
+ add_library(clubb_kokkos_core_lib STATIC
+     src/CLUBB_core/advance_clubb_core_module.cpp
++    src/CLUBB_core/remapping_module.cpp
+     src/CLUBB_core/corr_varnce_module.cpp
+     src/CLUBB_core/precipitation_fraction.cpp
+     src/CLUBB_core/setup_clubb_pdf_params.cpp
+--- a/clubb_kokkos/src/f2k/generate_derived_types.py
++++ b/clubb_kokkos/src/f2k/generate_derived_types.py
+@@ -251,6 +251,8 @@
+                 "l_gamma_Skw",
+                 "l_cubic_interp",
+                 "l_quintic_poly_interp",
++                "cons_ullrich_remap",
++                "ppm_remap",
+                 "Lscale_direct",
+                 "Lscale_tau",
+                 "Lscale_coherence",

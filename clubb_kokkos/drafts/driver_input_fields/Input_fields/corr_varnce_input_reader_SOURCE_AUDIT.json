@@ -1,0 +1,27 @@
+{
+  "date_UTC": "2026-11-06T06:53:45.193189+00:00",
+  "attribution": "Owner completeNative/source read and separatetargetreread; no independent reviewer claim.",
+  "routines": [
+    "read_correlation_matrix",
+    "actualcanonicalset_lower_triangular_matrix requiredlowerfragment"
+  ],
+  "checks": [
+    "Native5argreader order, stateless genericcallerMatrix space",
+    "countcolumns/allocate/zero/diagonal/read/error check order",
+    "prescribeduppertrianglevalue(j,i) maps tolower maxindex/minindex helper",
+    "metadata orderandcase sensitivity and Native1based/-1 outcomes retained",
+    "reader checks>-1; setter separately ignores0ornegative indices asNative",
+    "each inputprofile stagedonce forscalarhostmetadata loops; MatrixwritesuseKokkos initsownspace",
+    "allpureI/Othroughalreadyreviewedreaderprimitive service",
+    "actualpublicmatrixsetterNative392\u2013433 included as canonicalmergefragment, no localscientificalias",
+    "rows/cols mismatchtext and cleanup order retained",
+    "runtime prescribed-correlation paths unverified"
+  ],
+  "sha256": {
+    "src/Input_fields/corr_varnce_input_reader.F90": "928175bbfe977a9893de16693e5464991ee9e6edbac1a8753a71b7216ca9f33c",
+    "clubb_kokkos/drafts/driver_input_fields/Input_fields/corr_varnce_input_reader.hpp": "d97a02312b6874080449c686e0b37b345a18d9dae5af8521bedd89d9ded767fd",
+    "clubb_kokkos/drafts/driver_input_fields/CLUBB_core/matrix_operations_set_lower_triangular_matrix.fragment.hpp": "099a208db706063e70360d026e5aa16e709813a7049f65008b7bb74fc2289948"
+  },
+  "BFB_specific_adaptations": [],
+  "runtime_status": "UNCOMPILED/UNTESTED; no CPU/CUDA/runtime/BFB claim. Root integrates/testscompatiblebatch."
+}

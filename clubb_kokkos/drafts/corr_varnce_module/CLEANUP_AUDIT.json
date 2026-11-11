@@ -1,0 +1,29 @@
+{
+  "scope": "Separate final source/format/ownership cleanup after scientific/contract audit",
+  "hashes": {
+    "corr_varnce_module.cpp": "1131ceffa948a3e415717428cb8bb875470fa52a0deed77d185c4a80129e3f8b",
+    "parameter_types.hpp.inc": "f4545a60f2c20c7eabafa09bf81ba695e12834b94a94d53d06c83e0c05937475",
+    "default_tables.hpp.inc": "90ebc373b703b2635c30d4fea782c899ee9fec74e945a9071613f48833e6bc5e",
+    "procedure_declarations.hpp.inc": "46741ab0637120cc8c77442e4c40df7128c6baacff8002d610422950ee84a98b",
+    "f2k_dependencies.hpp": "4188638f0656c78ae098966c1f0393d5ff22b74861cd1ad6533ad4b69363080d"
+  },
+  "existing_generated_metadata_owner": "clubb_kokkos/src/CLUBB_core/corr_varnce_module.hpp",
+  "existing_owner_sha256": "7432f997fbae722955b3d01af78c1eea55c822fe7ba34e6c59ace14199abb6d2",
+  "checks": [
+    "All7 Native definitions in order, two private helpers and five public APIs;36actual Native arguments across all definitions; no JAX-only routine/type/helper.",
+    "114 scientific/initialization assignment trees,47NativeIFpredicates,12exactcase strings and3ordered lower calls reviewed; error/display payloads checked separately.",
+    "All288 default-table values retain exact Fortran-flat order and core_rknd suffix semantics. Three true Native scalar parameter types preserve24ordered names/core-kind defaults.",
+    "Only existing26-field hm_metadata_type owns metadata; generated header/converter unchanged. Native INTENT OUT reset, five allocated View components, exact ten-character names/flags/tolerances and eight ordered PDF counter branches reviewed.",
+    "Default storage follows root-approved immutable constexpr tables; no mutable/thread_local/global Kokkos state. Call-local const unmanaged host aliases only.",
+    "Metadata staging is local and host-side; no device f2k/capture/launch. Only one exact missing public lower matrix contract plus existing debug query remain.",
+    "Both-present optional defaults, mirror call order, warning text, first-error precedence, all-column fatal status, header-array/global distinction and full matrix payload preserved.",
+    "Native matrix display orientation/F5.2/LEN10/stride6/LEN72 control retained; exact compiler-dependent decimal/nonfinite text is unverified.",
+    "Native scientific descriptions/equation/species comments/citations retained; copied argument names/type/STOP description corrected; units and caller ownership documented.",
+    "Native continuation/intent groups, required/optional status, exact case-sensitive member/callee names,100columns and no trailing whitespace/tabs reviewed."
+  ],
+  "remaining_integration": [
+    "Root must merge declaration fragments around a preserved generator-owned region in the existing corr_varnce header.",
+    "Generate or port public mirror_lower_triangular_matrix(nvars,matrix INOUT); remove draft-only dependency declaration include once actual owner exists."
+  ],
+  "runtime_status": "Uncompiled/untested: no build, physics/model tests, CPU/GPU equality or BFB claim."
+}

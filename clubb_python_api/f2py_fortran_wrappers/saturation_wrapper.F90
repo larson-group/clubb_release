@@ -1,7 +1,7 @@
 ! saturation_wrapper.F90 — wrappers organized by source module
 
-subroutine f2py_sat_mixrat_liq( nz, ngrdcol, p_in_Pa, T_in_K, saturation_formula, & ! In
-                                rsat ) ! Out
+subroutine f2py_sat_mixrat_liq_2d(nz, ngrdcol, p_in_Pa, T_in_K, &
+    saturation_formula, rsat)
 
   use clubb_precision, only: core_rknd
   use derived_type_storage, only: stored_grid
@@ -16,7 +16,7 @@ subroutine f2py_sat_mixrat_liq( nz, ngrdcol, p_in_Pa, T_in_K, saturation_formula
   rsat = sat_mixrat_liq_api(nz, ngrdcol, stored_grid, p_in_Pa, T_in_K, &
     saturation_formula)
 
-end subroutine f2py_sat_mixrat_liq
+end subroutine f2py_sat_mixrat_liq_2d
 
 subroutine f2py_rcm_sat_adj(thlm, rtm, p_in_Pa, exner, &
     saturation_formula, rcm_out)
@@ -34,8 +34,8 @@ subroutine f2py_rcm_sat_adj(thlm, rtm, p_in_Pa, exner, &
 
 end subroutine f2py_rcm_sat_adj
 
-subroutine f2py_sat_mixrat_ice( nz, ngrdcol, p_in_Pa, T_in_K, saturation_formula, & ! In
-                                rsat ) ! Out
+subroutine f2py_sat_mixrat_ice_2d(nz, ngrdcol, p_in_Pa, T_in_K, &
+    saturation_formula, rsat)
 
   use clubb_precision, only: core_rknd
   use saturation, only: sat_mixrat_ice
@@ -48,4 +48,4 @@ subroutine f2py_sat_mixrat_ice( nz, ngrdcol, p_in_Pa, T_in_K, saturation_formula
 
   rsat = sat_mixrat_ice(nz, ngrdcol, p_in_Pa, T_in_K, saturation_formula)
 
-end subroutine f2py_sat_mixrat_ice
+end subroutine f2py_sat_mixrat_ice_2d

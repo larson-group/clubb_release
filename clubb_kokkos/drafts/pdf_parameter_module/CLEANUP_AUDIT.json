@@ -1,0 +1,66 @@
+{
+  "review": "Separate owner cleanup after full Native/JAX reads, outline, implementation and source contract/field/order review. Independent review, compilation and runtime evidence remain pending.",
+  "formatting_pass": {
+    "pdf_parameter_module.cpp": {
+      "before_sha256": "80728a71237c98d7b5d540b920a90cc0767b2ff3bbaabe4591a33cf52eb1c3ff",
+      "after_format_sha256": "e6242834bbeb70c49b319faae36fa00785326662d5ac9cf1fb6acf4b64d8d367",
+      "signature_groups_restored": 7,
+      "ordinary_calls_formatted": 2,
+      "argument_comments_corrected": 21,
+      "executable_tokens_unchanged": true,
+      "token_count": 8132
+    },
+    "procedure_declarations.hpp.inc": {
+      "before_sha256": "75ca54b395964de1de6c28c8b1485d1eec839a5daa673de83e7d3c322a07b966",
+      "after_format_sha256": "bf15184fd5022c4839f80eb9e2ea070b016f5e2069414683445835e67d0c5de0",
+      "signature_groups_restored": 9,
+      "ordinary_calls_formatted": 2,
+      "argument_comments_corrected": 0,
+      "executable_tokens_unchanged": true,
+      "token_count": 303
+    }
+  },
+  "final_files": {
+    "pdf_parameter_module.cpp": {
+      "sha256": "c95c1fd6916ee1919891c56cd6e762f036d71227a5ab13fe04131948d8308247",
+      "lines": 984,
+      "max_columns": 100
+    },
+    "procedure_declarations.hpp.inc": {
+      "sha256": "bf15184fd5022c4839f80eb9e2ea070b016f5e2069414683445835e67d0c5de0",
+      "lines": 62,
+      "max_columns": 77
+    },
+    "procedure_includes.hpp.inc": {
+      "sha256": "abf7176198fc96357c6140aa84dba335abe81b2cf426c6b830a57627a7b296bd",
+      "lines": 4,
+      "max_columns": 72
+    },
+    "clubb_api_module.hpp.inc": {
+      "sha256": "435c3b61cd0f5616dcd1e47f17c1180d68e4e906ba9de87af1dc941a76cf84bb",
+      "lines": 11,
+      "max_columns": 84
+    }
+  },
+  "subsequent_executable_cleanup": [],
+  "reviewed": [
+    "Native source inventory, signatures, ordered component operations and optional branches",
+    "Native continuation groups and precise In/Out/InOut/Optional In comments in core interfaces and calls",
+    "Factual argument notes/units, purpose-first file headers, Native formatting/allocation restrictions",
+    "Per-case ownership; individual View captures; no owning UDT/device bridge/global mutable state",
+    "100 columns, two-space indentation, no tabs/trailing whitespace; no deliberate FMA/association adaptation"
+  ],
+  "numerical_status": "No builds/tests. All initialization/reset/packing/printer/error branches await group integration and CPU zero-tolerance comparison. No BFB claim.",
+  "final_token_proof": {
+    "pdf_parameter_module.cpp": {
+      "tokens": 8132,
+      "final_sha256": "c95c1fd6916ee1919891c56cd6e762f036d71227a5ab13fe04131948d8308247",
+      "equality_after_listed_unused_include_removal": true
+    },
+    "procedure_declarations.hpp.inc": {
+      "tokens": 303,
+      "final_sha256": "bf15184fd5022c4839f80eb9e2ea070b016f5e2069414683445835e67d0c5de0",
+      "equality_after_listed_unused_include_removal": true
+    }
+  }
+}

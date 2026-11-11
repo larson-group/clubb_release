@@ -1,0 +1,29 @@
+{
+  "Native_source": "src/Input_fields/stat_file_utils.F90",
+  "Native_full_read_lines": 675,
+  "actual_JAX_scope": "No distinct stat_file_utils module; actual input_fields.get_clubb_variable_interpolated duplicates selected samegrid/linear/ghost/infinite semantics. Native all7public bodies retained.",
+  "routines_in_source_order": [
+    "stat_file_average",
+    "stat_file_average_interval",
+    "stat_file_num_vertical_levels",
+    "stat_file_vertical_levels",
+    "l_netcdf_file",
+    "CLUBB_levels_within_LES_domain",
+    "LES_grid_to_CLUBB_grid"
+  ],
+  "branches": [
+    "average: zero/open/sizeandgridtest/domainmaps/orderedtime read/interp exactorlinear/lowerghostorPosInf/upperPosInf/poweraccumulate/close/divide",
+    "interval: tsizeguard/zerosentinel/firstpairweightedaverage/errorreturn/laterpairsweightedadd/divide; preserve Native lack of later error check",
+    "verticalcount/levels: open/errorstop/copy/explicitclose",
+    "suffix: Native last3chars exact .nc, errorstopotherwise",
+    "domain: descendinglowest andascendinghighest sequentialsearch/fataldisjoint domains",
+    "gridmap: initializeallindices0,ascendingia:iz,1e-6exactthreshold,exact/adjacentexit"
+  ],
+  "ownership": "Caller-owned descriptor; raw I/O only Native; per-call Views and no mutable globals. Original formals retained; constinputfields_state date context appended only where transitiveopen uses Native date globals.",
+  "source_definedness": [
+    "Native t interval odd/dangling pairs remain caller-invalid; no new validation/fallback",
+    "Native early error returns do notclose previously opened IDs; no new automatic cleanup",
+    "PosInf is actual IEEEfloat+infinity despite source NaN comments; retain numeric value, correct target wording"
+  ],
+  "runtime_status": "UNCOMPILED/UNTESTED."
+}

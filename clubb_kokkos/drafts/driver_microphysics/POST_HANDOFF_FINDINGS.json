@@ -1,0 +1,7 @@
+{
+  "date": "2026-11-06",
+  "finding": "Root model integration exposed missing returned namelist scalars in the draft-generated reader, despite successful object compilation. The local generator counted continuation lines as separate list items, but the shared emitter stores the entire native_call as one item; replacing start:start+len(args)+1 removed the first output serializations.",
+  "scope": "A concrete translation/generator defect, not a floating-point BFB accommodation.",
+  "root_fix": "Actual live clubb_kokkos/src/f2k/generate_microphys_io.py now uses end=start+1. Root owns regeneration/rebuild/model verification and refreshed live hashes. The frozen draft source manifest still identifies the superseded producer until synchronized by Root.",
+  "verification_limit": "Child compile evidence only checks C++/Fortran syntax/contracts. Whole-model initialization exposed this serialization defect; no numerical pass is asserted by this note."
+}

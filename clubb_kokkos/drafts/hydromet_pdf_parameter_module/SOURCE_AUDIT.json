@@ -1,0 +1,34 @@
+{
+  "canonical_source": "src/CLUBB_core/hydromet_pdf_parameter_module.F90",
+  "canonical_sha256": "2e1e3b570b37b8eef9e45ee69b770e423764cd0ce8d6aa8cf0898529840d34b7",
+  "hashes": {
+    "hydromet_pdf_parameter_module.cpp": "a13a7b739b1deb1fb00dcb4e20fba4962cf2951918f61df7a4ff58efb735e87d",
+    "procedure_declarations.hpp.inc": "6e6f53022400bae55504b5bdcceba337fac7337621c8492e4fc585a78040292b",
+    "procedure_includes.hpp.inc": "abf7176198fc96357c6140aa84dba335abe81b2cf426c6b830a57627a7b296bd"
+  },
+  "routines": [
+    {
+      "name": "init_hydromet_pdf_params",
+      "ordered_zero_fields": 18,
+      "fixed_view_contracts": 14
+    },
+    {
+      "name": "init_precip_fracs_api",
+      "ordered_allocation_fields": 3,
+      "metadata_and_reset": true
+    },
+    {
+      "name": "zero_precip_fracs_api",
+      "ordered_zero_fields": 3,
+      "allocation_preserved": true
+    }
+  ],
+  "kernels_reviewed": 1,
+  "manual_review": [
+    "Native fixed-size 14 array fields reuse existing mirror Views and collection max-8 constant; allocate missing fixed storage once, reject malformed fixed shapes, and reset18 fields in source order.",
+    "Precipitation IntentOut releases/recreates exactly three Views, sets original metadata, then calls its Native-named reset. Reset mutates existing allocations.",
+    "Whole-grid hydrometeor initialization is a thin overload of the existing generated collection::zero owner, justified by actual Native per-cell initialization and existing C++ collection.zero calls. No new schema/global cache."
+  ],
+  "review_kind": "Owner full Native/JAXread, source contract/field/order review; separate cleanup and independent reviewer tracked separately.",
+  "runtime_status": "Uncompiled and untested. No CPU/GPU/BFB claim. All lifecycle, optional bounds, errors, printer and formatting backend behavior remain pending integration."
+}

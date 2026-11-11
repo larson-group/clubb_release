@@ -1,0 +1,298 @@
+{
+  "source": "/home/guntherhuebler/Code/clubb/src/SILHS/parameters_silhs.F90",
+  "source_sha256": "fa97037af649f6bff213cf89c01fbe3121f9a29edb906b3c3b031619c768d914",
+  "Native_lines": 291,
+  "JAX": "/home/guntherhuebler/Code/clubb/clubb_jax/src/SILHS/parameters_silhs.py",
+  "JAX_sha256": "5a529875ffee5df62d48210520f82fd16ae6ec12edada8b14330b09b31954ed7",
+  "routines": [
+    {
+      "name": "set_default_silhs_config_flags_api",
+      "module": "parameters_silhs",
+      "source": "src/SILHS/parameters_silhs.F90",
+      "arguments": [
+        {
+          "name": "cluster_allocation_strategy",
+          "kind": "integer",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_lh_importance_sampling",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_Lscale_vert_avg",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_lh_straight_mc",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_lh_clustered_sampling",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_rcm_in_cloud_k_lh_start",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_random_k_lh_start",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_max_overlap_in_cloud",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_lh_instant_var_covar_src",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_lh_limit_weights",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_lh_var_frac",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_lh_normalize_weights",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_lh_deterministic_test",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null
+    },
+    {
+      "name": "initialize_silhs_config_flags_type_api",
+      "module": "parameters_silhs",
+      "source": "src/SILHS/parameters_silhs.F90",
+      "arguments": [
+        {
+          "name": "cluster_allocation_strategy",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_lh_importance_sampling",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_Lscale_vert_avg",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_lh_straight_mc",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_lh_clustered_sampling",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_rcm_in_cloud_k_lh_start",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_random_k_lh_start",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_max_overlap_in_cloud",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_lh_instant_var_covar_src",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_lh_limit_weights",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_lh_var_frac",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_lh_normalize_weights",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_lh_deterministic_test",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "silhs_config_flags",
+          "kind": "silhs_config_flags_type",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null
+    },
+    {
+      "name": "print_silhs_config_flags_api",
+      "module": "parameters_silhs",
+      "source": "src/SILHS/parameters_silhs.F90",
+      "arguments": [
+        {
+          "name": "iunit",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "silhs_config_flags",
+          "kind": "silhs_config_flags_type",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null
+    }
+  ],
+  "existing_CPP_flag_schema_preserved_byte_exact": true,
+  "state": "Native module data becomes parameters_silhs_state; no mutable globals.",
+  "status": "Contract header stable; implementation/source-cleanup audit pending after Radiation.",
+  "existing_CPP_flag_schema_tokens_preserved": true
+}

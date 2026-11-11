@@ -1,0 +1,548 @@
+{
+  "date_UTC": "2026-11-06T09:07:47.275299+00:00",
+  "attribution": "Owner complete Native1817lines + full final target reread; no independent reviewer claim.",
+  "scope": [
+    {
+      "Native_source": "src/readiopdata_module.F90",
+      "target_cpp": "clubb_kokkos/drafts/driver_input_fields/readiopdata_module.cpp",
+      "routines": [
+        [
+          "readiopdata_dims",
+          [
+            "lat_val",
+            "lon_val"
+          ]
+        ],
+        [
+          "readiopdata_snd",
+          [
+            "zm_init",
+            "saturation_formula",
+            "nlevels",
+            "u",
+            "v",
+            "thlm",
+            "rtm",
+            "p",
+            "psfc",
+            "z",
+            "ug",
+            "vg",
+            "subs",
+            "subs_type"
+          ]
+        ],
+        [
+          "readiopdata_sfc",
+          [
+            "tsfc",
+            "ubar",
+            "shsfc",
+            "lhsfc",
+            "timesfc"
+          ]
+        ],
+        [
+          "readiopdata_frc",
+          [
+            "rtm",
+            "gr",
+            "thlm_forcing",
+            "rtm_forcing"
+          ]
+        ],
+        [
+          "task_abort",
+          []
+        ]
+      ],
+      "original_formals_checked": 25,
+      "ordered_lower_calls": [
+        "readiopdata_core_dims",
+        "readiopdata_core_snd",
+        "calculate_thvm",
+        "inverse_hydrostatic",
+        "readiopdata_core_sfc",
+        "readiopdata_core_frc"
+      ],
+      "file_variable_reads": [],
+      "kernel_capture_lines": [
+        59,
+        74,
+        82,
+        85,
+        87,
+        90,
+        98,
+        106,
+        154,
+        160,
+        166,
+        172,
+        179,
+        213,
+        215
+      ]
+    },
+    {
+      "Native_source": "src/readiopdata_core/readiopdata_core_module.F90",
+      "target_cpp": "clubb_kokkos/drafts/driver_input_fields/readiopdata_core/readiopdata_core_module.cpp",
+      "routines": [
+        [
+          "readiopdata_core_dims",
+          [
+            "masterproc",
+            "iopfilepath",
+            "scamiop_from_global_cam",
+            "ntime",
+            "nlev",
+            "nlat",
+            "nlon",
+            "tsec",
+            "bdate",
+            "dplevs",
+            "lat_in",
+            "lon_in"
+          ]
+        ],
+        [
+          "readiopdata_core_snd",
+          [
+            "masterproc",
+            "iopfilepath",
+            "scamiop_from_global_cam",
+            "ntime",
+            "nlev",
+            "dplevs",
+            "rgas",
+            "cp",
+            "fac_cond",
+            "fac_sub",
+            "zsnd",
+            "usnd",
+            "vsnd",
+            "tsnd",
+            "qsnd",
+            "psnd",
+            "ugls",
+            "vgls",
+            "wgls",
+            "get_add_surface_data",
+            "have_omega",
+            "wgls_holds_omega",
+            "have_w",
+            "wgls_holds_w",
+            "subs_type"
+          ]
+        ],
+        [
+          "readiopdata_core_sfc",
+          [
+            "masterproc",
+            "iopfilepath",
+            "scamiop_from_global_cam",
+            "SFC_FLX_FXD",
+            "get_add_surface_data",
+            "ntime",
+            "sstsfc",
+            "shsfc",
+            "lhsfc",
+            "tausfc"
+          ]
+        ],
+        [
+          "readiopdata_core_frc",
+          [
+            "masterproc",
+            "iopfilepath",
+            "get_add_surface_data",
+            "have_omega",
+            "dplevs",
+            "nlev",
+            "ntime",
+            "dtls",
+            "dqls"
+          ]
+        ],
+        [
+          "get_netcdf_dimlength",
+          [
+            "NCID",
+            "dimName",
+            "dimlength",
+            "status",
+            "required"
+          ]
+        ],
+        [
+          "get_netcdf_var1d_real",
+          [
+            "NCID",
+            "varName",
+            "var",
+            "use_NF90_REAL",
+            "status",
+            "required"
+          ]
+        ],
+        [
+          "get_netcdf_var2d_real",
+          [
+            "NCID",
+            "varName",
+            "ntime",
+            "nlev",
+            "var",
+            "use_NF90_REAL",
+            "status",
+            "required"
+          ]
+        ],
+        [
+          "calcdate",
+          [
+            "inDate",
+            "inSecs",
+            "outDate",
+            "outSecs",
+            "outCalday"
+          ]
+        ],
+        [
+          "isLeapYear",
+          [
+            "iyear"
+          ]
+        ]
+      ],
+      "original_formals_checked": 81,
+      "ordered_lower_calls": [
+        "get_netcdf_dimlength",
+        "get_netcdf_dimlength",
+        "get_netcdf_dimlength",
+        "get_netcdf_var1d_real",
+        "get_netcdf_dimlength",
+        "get_netcdf_dimlength",
+        "get_netcdf_var1d_real",
+        "get_netcdf_var1d_real",
+        "get_netcdf_var1d_real",
+        "get_netcdf_var1d_real",
+        "get_netcdf_var1d_real",
+        "get_netcdf_var2d_real",
+        "get_netcdf_var2d_real",
+        "get_netcdf_var2d_real",
+        "get_netcdf_var2d_real",
+        "get_netcdf_var2d_real",
+        "get_netcdf_var2d_real",
+        "get_netcdf_var2d_real",
+        "get_netcdf_var2d_real",
+        "get_netcdf_var2d_real",
+        "get_netcdf_var2d_real",
+        "get_netcdf_var2d_real",
+        "get_netcdf_var1d_real",
+        "get_netcdf_var1d_real",
+        "get_netcdf_var1d_real",
+        "get_netcdf_var1d_real",
+        "get_netcdf_var1d_real",
+        "get_netcdf_var1d_real",
+        "get_netcdf_var1d_real",
+        "get_netcdf_var1d_real",
+        "get_netcdf_var1d_real",
+        "get_netcdf_var1d_real",
+        "get_netcdf_var1d_real",
+        "get_netcdf_var1d_real",
+        "get_netcdf_var1d_real",
+        "get_netcdf_var2d_real",
+        "get_netcdf_var2d_real",
+        "get_netcdf_var2d_real",
+        "get_netcdf_var2d_real",
+        "get_netcdf_var2d_real",
+        "get_netcdf_var2d_real",
+        "get_netcdf_var1d_real",
+        "get_netcdf_var1d_real",
+        "get_netcdf_var1d_real",
+        "get_netcdf_var1d_real",
+        "get_netcdf_var1d_real",
+        "get_netcdf_var1d_real"
+      ],
+      "file_variable_reads": [
+        [
+          "get_netcdf_var1d_real",
+          "lev"
+        ],
+        [
+          "get_netcdf_var1d_real",
+          "lat"
+        ],
+        [
+          "get_netcdf_var1d_real",
+          "lon"
+        ],
+        [
+          "get_netcdf_var1d_real",
+          "Tsair"
+        ],
+        [
+          "get_netcdf_var1d_real",
+          "Tg"
+        ],
+        [
+          "get_netcdf_var1d_real",
+          "Ps"
+        ],
+        [
+          "get_netcdf_var2d_real",
+          "t"
+        ],
+        [
+          "get_netcdf_var2d_real",
+          "T"
+        ],
+        [
+          "get_netcdf_var2d_real",
+          "q"
+        ],
+        [
+          "get_netcdf_var2d_real",
+          "CLDLIQ"
+        ],
+        [
+          "get_netcdf_var2d_real",
+          "CLDICE"
+        ],
+        [
+          "get_netcdf_var2d_real",
+          "omega"
+        ],
+        [
+          "get_netcdf_var2d_real",
+          "w"
+        ],
+        [
+          "get_netcdf_var2d_real",
+          "u"
+        ],
+        [
+          "get_netcdf_var2d_real",
+          "v"
+        ],
+        [
+          "get_netcdf_var2d_real",
+          "ug"
+        ],
+        [
+          "get_netcdf_var2d_real",
+          "vg"
+        ],
+        [
+          "get_netcdf_var1d_real",
+          "Ptend"
+        ],
+        [
+          "get_netcdf_var1d_real",
+          "usrf"
+        ],
+        [
+          "get_netcdf_var1d_real",
+          "vsrf"
+        ],
+        [
+          "get_netcdf_var1d_real",
+          "qsrf"
+        ],
+        [
+          "get_netcdf_var1d_real",
+          "ugsrf"
+        ],
+        [
+          "get_netcdf_var1d_real",
+          "vgsrf"
+        ],
+        [
+          "get_netcdf_var1d_real",
+          "shflx"
+        ],
+        [
+          "get_netcdf_var1d_real",
+          "sh"
+        ],
+        [
+          "get_netcdf_var1d_real",
+          "lhflx"
+        ],
+        [
+          "get_netcdf_var1d_real",
+          "lh"
+        ],
+        [
+          "get_netcdf_var1d_real",
+          "Tg"
+        ],
+        [
+          "get_netcdf_var1d_real",
+          "usrf"
+        ],
+        [
+          "get_netcdf_var1d_real",
+          "vsrf"
+        ],
+        [
+          "get_netcdf_var2d_real",
+          "divT"
+        ],
+        [
+          "get_netcdf_var2d_real",
+          "vertdivT"
+        ],
+        [
+          "get_netcdf_var2d_real",
+          "divT3d"
+        ],
+        [
+          "get_netcdf_var2d_real",
+          "divq"
+        ],
+        [
+          "get_netcdf_var2d_real",
+          "vertdivq"
+        ],
+        [
+          "get_netcdf_var2d_real",
+          "divq3d"
+        ],
+        [
+          "get_netcdf_var1d_real",
+          "divTsrf"
+        ],
+        [
+          "get_netcdf_var1d_real",
+          "vertdivTsrf"
+        ],
+        [
+          "get_netcdf_var1d_real",
+          "divT3dsrf"
+        ],
+        [
+          "get_netcdf_var1d_real",
+          "divqsrf"
+        ],
+        [
+          "get_netcdf_var1d_real",
+          "vertdivqsrf"
+        ],
+        [
+          "get_netcdf_var1d_real",
+          "divq3dsrf"
+        ]
+      ],
+      "kernel_capture_lines": [
+        91,
+        154,
+        168,
+        191,
+        193,
+        229,
+        240,
+        282,
+        288,
+        292,
+        298,
+        303,
+        308,
+        313,
+        318,
+        328,
+        358,
+        367,
+        376,
+        402,
+        415,
+        423,
+        430,
+        443,
+        451,
+        537,
+        545,
+        565,
+        595,
+        650,
+        655,
+        660,
+        665,
+        670,
+        675,
+        682,
+        712,
+        718,
+        726,
+        732,
+        738,
+        744,
+        750,
+        756,
+        934
+      ]
+    }
+  ],
+  "configuration": "Actual UWM_MISC enabled; non-UWM alternative signature/branches not selected. No actual JAX IOP bodies exist; existing Native standalone option retained.",
+  "checks": [
+    "All source procedures/order/original formal names/ranks and actual C++callee case checked; only genuine Native module context appended.",
+    "Native float/defaultreal literals retained asfloat; Core constants converted withfloat at exactly original real() calls. Core public outputs remain original level,time order; read inputs remain time,level.",
+    "All file field reads and lower calls matched source order; required/optional/type/dimension/status/close/abort branches reviewed.",
+    "Sounding cloudliquid+ice temperature corrections, Tsair/CAM flags, omega/w selection, surface overwrites and every extrapolation coefficient checked.",
+    "Shared levs surface slot uses two sequential-time kernels, preserving Native recurrence/store order with per-call scratch.",
+    "Sounding/output reversal, pressurefirstrow, g/kg conversion and geostrophicpairfallback checked; all five optional surface outputs map pointerpresence explicitly.",
+    "Coreforcing sixfield/sixsurfaceorder, missingvalues, horizontal-vs3D-vsverticalhorizontal precedence and nlev-onlyoutput preserved.",
+    "Native raw2Drank dispatch retained in Root primitive service; all row*col flatten/remainder/division remap science isCpp and runs before Native status check.",
+    "Unused use_NF90_REAL passed byconstreference so its undefined Native value is never read by value.",
+    "Wrapper one-time corestate, firsttimestep selection, pressureunits/exner/saturation/cloudwater/thetal/reference-thvm and inversehydrostatic boundary reread; Nativeflatsequenceassociation explicitlycolumnfirst(1,nlevels).",
+    "Calendar tables/validation/year-month sequentialloops/MOD/defaultrealoutCalday andprivateisLeapYear predicates checked.",
+    "Every kernel scanned for owning state/hostrawIO/pointer-output capture; none found. No globals/thread_local/registry, newphysicsaccessor, speculativeFMA or numeric fallback."
+  ],
+  "adaptations": [
+    "Kokkos allocation/deallocation ownership replaces Native ALLOCATE/DEALLOCATE STAT checks; allocation failure follows Kokkos fatal/exception behavior rather than reproducing all Native allocator diagnostic text.",
+    "Only independent cells/fields share kernels; source order remains within cells and all dependencies/ordered recurrences. No performance tuning claim.",
+    "MINVAL/MAXVAL use +/-finite_max_v<float> identities, including Native defined empty reductions.",
+    "Host debug streams preserve diagnostic fields/order; exact stdout whitespace and Native ERRORSTOP exitcode rendering are not claimed.",
+    "Native external task_abort raises permanentC++fatalexception999; no Native scientific call remains."
+  ],
+  "source_undefinedness": [
+    {
+      "source": "src/readiopdata_module.F90:258,273\u2013286",
+      "condition": "l_frc alreadytrue",
+      "finding": "nlevels local assigned only firstcall but reused later; retained, no invented savedcache."
+    },
+    {
+      "source": "src/readiopdata_module.F90:278\u2013286;src/readiopdata_core/readiopdata_core_module.F90:1056\u20131058",
+      "condition": "get_add_surface_data=true",
+      "finding": "Wrapper selectsnlev+1rows from core nlev-rowoutputs; retained, no fabricatedpadding."
+    },
+    {
+      "source": "src/readiopdata_core/readiopdata_core_module.F90:921,1035",
+      "condition": "get_add_surface_data=true and missing surfaceforcing values",
+      "finding": "levs(nlev+1) unassigned at coefficient; retained."
+    },
+    {
+      "source": "src/readiopdata_core/readiopdata_core_module.F90:465\u2013473,535\u2013543,649\u2013655",
+      "condition": "have_omega=true and surfacepathused",
+      "finding": "have_w is notassigned on successfulomega branch but read in surfacebranch; unselected outputflags also undefined, no fabricateddefaults."
+    },
+    {
+      "source": "src/readiopdata_core/readiopdata_core_module.F90:1310\u20131354",
+      "condition": "Rawfilecounts smaller than allocatedvarshape, including extra surfacecolumn",
+      "finding": "Native var_tmp tailsunwritten then fullmatrixpermuted; WithoutInitializing retained."
+    }
+  ],
+  "BFB_specific_adaptations": [],
+  "sha256": {
+    "src/readiopdata_module.F90": "5f98bea620b1bf415158400d1c768c853f805e8c75abc6409f9ed9ee277154f6",
+    "clubb_kokkos/drafts/driver_input_fields/readiopdata_module.cpp": "6e2fec5d9bbb8e1c30003a90b18a5b37594d9c4a6f1d6441413b3a6748547c50",
+    "clubb_kokkos/drafts/driver_input_fields/readiopdata_module.hpp": "22239490405f8a6d89689f378108498900e1c7319bfdbbbd34e7e92162a3f164",
+    "src/readiopdata_core/readiopdata_core_module.F90": "61302cec1ee1c89cdd9d0a51a3e8ca2892eea954531c82cf073e460c09964cc1",
+    "clubb_kokkos/drafts/driver_input_fields/readiopdata_core/readiopdata_core_module.cpp": "1b1bdca743b573f621bc8238332bfcb7d0ccf1ae15ce1392ad08f4e84a7548c8",
+    "clubb_kokkos/drafts/driver_input_fields/readiopdata_core/readiopdata_core_module.hpp": "db55c51c9f9a64454528956ad18fe7c47d2b9158f31c81486560e185a43c69db",
+    "clubb_kokkos/drafts/driver_input_fields/f2k/input_netcdf_io_bridge.hpp": "fa74c9402e2bb85f399dbfde1f151ac78e3df6346719233a624200c54f8956fe",
+    "clubb_kokkos/drafts/driver_input_fields/f2k/input_netcdf_io_bridge.F90": "ab1f2f6f141c5aece5a576ff99eca3b52e3288e3317802bb7055592de12e69ce"
+  },
+  "runtime_status": "DRAFT SOURCE/CLEANUP ONLY; no C++build, CPU/CUDAexecution or BFBclaim. Root owns integration and model validation; source-invalid branches remain outside defined numerical claims."
+}

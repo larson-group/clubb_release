@@ -1,0 +1,4436 @@
+{
+  "canonical_source": "src/CLUBB_core/advance_wp2_wp3_module.F90",
+  "canonical_sha256": "f58b3d0bc610faa8b9612d2a84f8afcd54c28a89e0911312fb8a75d3deb50c23",
+  "canonical_lines": 5682,
+  "read_full_before_implementation": true,
+  "native_inventory_and_order": [
+    "advance_wp2_wp3",
+    "wp23_solve",
+    "wp23_lhs",
+    "wp23_rhs",
+    "wp2_term_ta_lhs",
+    "wp2_terms_ac_pr2_lhs",
+    "wp2_term_dp1_lhs",
+    "wp2_term_pr1_lhs",
+    "wp2_terms_bp_pr2_rhs",
+    "wp2_term_dp1_rhs",
+    "wp2_term_pr3_rhs",
+    "wp2_term_pr1_rhs",
+    "wp2_term_pr_dfsn_rhs",
+    "wp3_term_ta_new_pdf_lhs",
+    "wp3_term_ta_ADG1_lhs",
+    "wp3_term_tp_lhs",
+    "wp3_terms_ac_pr2_lhs",
+    "wp3_term_pr1_lhs",
+    "wp3_term_ta_explicit_rhs",
+    "wp3_terms_bp1_pr2_rhs",
+    "wp3_term_pr_turb_rhs",
+    "wp3_term_pr_dfsn_rhs",
+    "wp3_term_pr1_rhs"
+  ],
+  "routines": [
+    {
+      "name": "advance_wp2_wp3",
+      "module": "advance_wp2_wp3_module",
+      "source": "src/CLUBB_core/advance_wp2_wp3_module.F90",
+      "arguments": [
+        {
+          "name": "nzm",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "gr",
+          "kind": "grid",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "dt",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sfc_elevation",
+          "kind": "real",
+          "dims": [
+            "ngrdcol"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "fcor_y",
+          "kind": "real",
+          "dims": [
+            "ngrdcol"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma_sqd_w",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wm_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wm_zt",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wpup2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wpvp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp2up2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp2vp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp4",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wpthvp",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp2thvp",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp2up",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "um",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "vm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "upwp",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "vpwp",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "em",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "Kh_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "Kh_zt",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "invrs_tau_C4_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "invrs_tau_wp3_zt",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "invrs_tau_C1_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rho_ds_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rho_ds_zt",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "invrs_rho_ds_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "invrs_rho_ds_zt",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "thv_ds_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "thv_ds_zt",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mixt_frac",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "Cx_fnc_Richardson",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs_splat_wp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs_splat_wp3",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "pdf_implicit_coefs_terms",
+          "kind": "implicit_coefs_terms",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wprtp",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wpthlp",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rtp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "thlp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "clubb_params",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nparams"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "nu_vert_res_dep",
+          "kind": "nu_vertical_res_dep",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "iiPDF_type",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "penta_solve_method",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "fill_holes_type",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_min_wp2_from_corr_wx",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_upwind_xm_ma",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_standard_term_ta",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_partial_upwind_wp3",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_damp_wp2_using_em",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_use_C11_Richardson",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_damp_wp3_Skw_squared",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_lmm_stepping",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_use_tke_in_wp3_pr_turb_term",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_use_tke_in_wp2_wp3_K_dfsn",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_use_wp3_lim_with_smth_Heaviside",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_wp2_fill_holes_tke",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_ho_nontrad_coriolis",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_implemented",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "stats",
+          "kind": "stats_type",
+          "dims": [],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "up2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "vp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp3",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "err_info",
+          "kind": "err_info_type",
+          "dims": [],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "line": 65,
+      "ordered_calls": [
+        "call Skx_func( nzt, ngrdcol, wp2_zt, wp3, w_tol, clubb_params, Skw_zt )",
+        "call Skx_func( nzm, ngrdcol, wp2, wp3_zm, w_tol, clubb_params, Skw_zm )",
+        "call calc_wp3_on_wp2( nzm, nzt, ngrdcol, gr, wp2, wp3, wp3_on_wp2, wp3_on_wp2_zt )",
+        "call stats_update( \"a3_coef_zt\", a3_coef_zt, stats )",
+        "call stats_update( \"a3_coef\", a3_coef, stats )",
+        "call stats_update( \"C11_Skw_fnc\", C11_Skw_fnc, stats )",
+        "call stats_update( \"C1_Skw_fnc\", C1_Skw_fnc, stats )",
+        "call stats_update( \"coef_wp4_implicit\", coef_wp4_implicit, stats )",
+        "call wp3_term_pr_turb_rhs( nzm, nzt, ngrdcol, gr, clubb_params(:,iC_wp3_pr_turb), Kh_zt, wpthvp, dum_dz, dvm_dz, upwp, vpwp, thv_ds_zt, rho_ds_zm, invrs_rho_ds_zt, em_smth, wp2_smth, rhs_pr_turb_wp3, l_use_tke_in_wp3_pr_turb_term )",
+        "call wp3_term_pr_dfsn_rhs( nzm, nzt, ngrdcol, gr, clubb_params(:,iC_wp3_pr_dfsn), rho_ds_zm, invrs_rho_ds_zt, wp2up2, wp2vp2, wp4, up2, vp2, wp2, rhs_pr_dfsn_wp3 )",
+        "call wp2_term_pr_dfsn_rhs( nzm, nzt, ngrdcol, gr, clubb_params(:,iC_wp2_pr_dfsn), rho_ds_zt, invrs_rho_ds_zm, wpup2, wpvp2, wp3, rhs_pr_dfsn_wp2 )",
+        "call diffusion_zm_lhs( nzm, nzt, ngrdcol, gr, Kw1, Kw1_zm, nu_vert_res_dep%nu1, invrs_rho_ds_zm, rho_ds_zt, lhs_diff_zm )",
+        "call diffusion_zt_lhs( nzm, nzt, ngrdcol, gr, Kw8, Kw8_zt, nu_vert_res_dep%nu8, invrs_rho_ds_zt, rho_ds_zm, lhs_diff_zt )",
+        "call wp2_term_pr1_rhs( nzm, ngrdcol, gr, clubb_params(:,iC4), up2, vp2, invrs_tau_C4_zm, rhs_pr1_wp2 )",
+        "call wp2_term_pr1_lhs( nzm, ngrdcol, gr, clubb_params(:,iC4), invrs_tau_C4_zm, lhs_pr1_wp2 )",
+        "call wp3_term_tp_lhs( nzm, nzt, ngrdcol, gr, C_wp3_pr_tp, wp2, rho_ds_zm, invrs_rho_ds_zt, lhs_adv_tp_wp3 )",
+        "call wp3_term_tp_lhs( nzm, nzt, ngrdcol, gr, C_wp3_pr_tp, wp2, rho_ds_zm, invrs_rho_ds_zt, lhs_pr_tp_wp3 )",
+        "call wp3_term_pr1_lhs( nzt, ngrdcol, gr, clubb_params(:,iC8), clubb_params(:,iC8b), invrs_tau_wp3_zt, Skw_zt, l_damp_wp3_Skw_squared, lhs_pr1_wp3 )",
+        "call wp2_term_dp1_lhs( nzm, ngrdcol, gr, C1_Skw_fnc, invrs_tau_C1_zm, lhs_dp1_wp2 )",
+        "call wp2_terms_bp_pr2_rhs( nzm, ngrdcol, gr, clubb_params(:,iC_uu_buoy), thv_ds_zm, wpthvp, rhs_bp_pr2_wp2 )",
+        "call wp2_term_pr3_rhs( nzm, nzt, ngrdcol, gr, clubb_params(:,iC_uu_shr), clubb_params(:,iC_uu_buoy), thv_ds_zm, wpthvp, upwp, um, vpwp, vm, rhs_pr3_wp2 )",
+        "call wp2_term_dp1_rhs( nzm, ngrdcol, gr, C1_Skw_fnc, invrs_tau_C1_zm, w_tol_sqd, up2, vp2, l_damp_wp2_using_em, rhs_dp1_wp2 )",
+        "call wp3_terms_bp1_pr2_rhs( nzt, ngrdcol, gr, C11_Skw_fnc, thv_ds_zt, wp2thvp, rhs_bp1_pr2_wp3 )",
+        "call wp3_term_pr1_rhs( nzt, ngrdcol, gr, clubb_params(:,iC8), clubb_params(:,iC8b), invrs_tau_wp3_zt, Skw_zt, wp3, l_damp_wp3_Skw_squared, rhs_pr1_wp3 )",
+        "call wp3_term_ta_explicit_rhs( nzm, nzt, ngrdcol, gr, wp4, rho_ds_zm, invrs_rho_ds_zt, rhs_ta_wp3 )",
+        "call wp3_term_ta_ADG1_lhs( nzm, nzt, ngrdcol, gr, wp2, a1_coef, a1_coef_zt, a3_coef, a3_coef_zt, wp3_on_wp2, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, l_standard_term_ta, l_partial_upwind_wp3, wp3_term_ta_lhs_result )",
+        "call wp3_term_ta_new_pdf_lhs( nzm, nzt, ngrdcol, gr, coef_wp4_implicit, wp2, rho_ds_zm, invrs_rho_ds_zt, lhs_ta_wp3 )",
+        "call wp23_rhs( nzm, nzt, ngrdcol, gr, dt, fcor_y, wp3_term_ta_lhs_result, lhs_diff_zm, lhs_diff_zt, lhs_diff_zm_crank, lhs_diff_zt_crank, lhs_tp_wp3, lhs_adv_tp_wp3, lhs_pr_tp_wp3, lhs_ta_wp3, lhs_dp1_wp2, rhs_dp1_wp2, lhs_pr1_wp2, rhs_pr1_wp2, lhs_pr1_wp3, rhs_pr1_wp3, rhs_bp_pr2_wp2, rhs_pr_dfsn_wp2, rhs_bp1_pr2_wp3, rhs_pr3_wp2, rhs_pr3_wp3, rhs_ta_wp3, rhs_pr_turb_wp3, rhs_pr_dfsn_wp3, wp2, wp3, wpup2, wpvp2, wpthvp, wp2thvp, wp2up, up2, vp2, upwp, C11_Skw_fnc, thv_ds_zm, thv_ds_zt, lhs_splat_wp2, lhs_splat_wp3, clubb_params, iiPDF_type, l_use_tke_in_wp2_wp3_K_dfsn, l_ho_nontrad_coriolis, stats, rhs )",
+        "call term_ma_zm_lhs( nzm, nzt, ngrdcol, wm_zm, gr%invrs_dzm, gr%weights_zm2zt, lhs_ma_zm )",
+        "call term_ma_zt_lhs( nzm, nzt, ngrdcol, wm_zt, gr%weights_zt2zm, gr%invrs_dzt, gr%invrs_dzm, l_upwind_xm_ma, gr%grid_dir, lhs_ma_zt )",
+        "call wp2_term_ta_lhs( nzm, nzt, ngrdcol, gr, rho_ds_zt, invrs_rho_ds_zm, lhs_ta_wp2 )",
+        "call wp2_terms_ac_pr2_lhs( nzm, nzt, ngrdcol, gr, clubb_params(:,iC_uu_shr), wm_zt, lhs_ac_pr2_wp2 )",
+        "call wp3_terms_ac_pr2_lhs( nzm, nzt, ngrdcol, gr, C11_Skw_fnc, wm_zm, lhs_ac_pr2_wp3 )",
+        "call wp23_lhs( nzm, nzt, ngrdcol, dt, wp3_term_ta_lhs_result, lhs_diff_zm, lhs_diff_zt, lhs_ma_zm, lhs_ma_zt, lhs_ta_wp2, lhs_tp_wp3, lhs_ac_pr2_wp2, lhs_ac_pr2_wp3, lhs_dp1_wp2, lhs_pr1_wp3, lhs_pr1_wp2, lhs_splat_wp2, lhs_splat_wp3, lhs )",
+        "call wp23_solve( nzm, nzt, ngrdcol, gr, dt, lhs, rhs, lhs_ma_zm, lhs_dp1_wp2, lhs_diff_zm, lhs_ta_wp2, lhs_pr1_wp2, lhs_pr1_wp3, lhs_diff_zt, lhs_adv_tp_wp3, lhs_pr_tp_wp3, wp3_pr3_lhs, lhs_ma_zt, wp3_term_ta_lhs_result, wm_zm, wm_zt, sfc_elevation, C11_Skw_fnc, rho_ds_zm, upwp, vpwp, wprtp, wpthlp, rtp2, thlp2, clubb_params, penta_solve_method, fill_holes_type, l_min_wp2_from_corr_wx, l_use_tke_in_wp2_wp3_K_dfsn, l_use_wp3_lim_with_smth_Heaviside, l_wp2_fill_holes_tke, l_implemented, stats, up2, vp2, wp2, wp3, wp3_zm, wp2_zt, err_info )",
+        "call stats_begin_budget( \"wp2_sdmp\", wp2 / dt, stats )",
+        "call stats_finalize_budget( \"wp2_sdmp\", wp2 / dt, stats )",
+        "call stats_begin_budget( \"wp3_sdmp\", wp3 / dt, stats )",
+        "call stats_finalize_budget( \"wp3_sdmp\", wp3 / dt, stats )",
+        "call stats_update( \"wp2_zt\", wp2_zt, stats )",
+        "call stats_update( \"wp3_zm\", wp3_zm, stats )"
+      ]
+    },
+    {
+      "name": "wp23_solve",
+      "module": "advance_wp2_wp3_module",
+      "source": "src/CLUBB_core/advance_wp2_wp3_module.F90",
+      "arguments": [
+        {
+          "name": "nzm",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "gr",
+          "kind": "grid",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "dt",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs",
+          "kind": "real",
+          "dims": [
+            "ndiags5",
+            "ngrdcol",
+            "2*nzm-1"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rhs",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "2*nzm-1"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs_ma_zm",
+          "kind": "real",
+          "dims": [
+            "ndiags3",
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs_dp1_wp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs_diff_zm",
+          "kind": "real",
+          "dims": [
+            "ndiags3",
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs_ta_wp2",
+          "kind": "real",
+          "dims": [
+            "ndiags2",
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs_pr1_wp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs_pr1_wp3",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs_diff_zt",
+          "kind": "real",
+          "dims": [
+            "ndiags3",
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs_adv_tp_wp3",
+          "kind": "real",
+          "dims": [
+            "ndiags2",
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs_pr_tp_wp3",
+          "kind": "real",
+          "dims": [
+            "ndiags2",
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp3_pr3_lhs",
+          "kind": "real",
+          "dims": [
+            "ndiags5",
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs_ma_zt",
+          "kind": "real",
+          "dims": [
+            "ndiags3",
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp3_term_ta_lhs_result",
+          "kind": "real",
+          "dims": [
+            "ndiags5",
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wm_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wm_zt",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sfc_elevation",
+          "kind": "real",
+          "dims": [
+            "ngrdcol"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "C11_Skw_fnc",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rho_ds_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "upwp",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "vpwp",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wprtp",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wpthlp",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rtp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "thlp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "clubb_params",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nparams"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "penta_solve_method",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "fill_holes_type",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_min_wp2_from_corr_wx",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_use_tke_in_wp2_wp3_K_dfsn",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_use_wp3_lim_with_smth_Heaviside",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_wp2_fill_holes_tke",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_implemented",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "stats",
+          "kind": "stats_type",
+          "dims": [],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "up2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "vp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp3",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp3_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp2_zt",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "err_info",
+          "kind": "err_info_type",
+          "dims": [],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "line": 1259,
+      "ordered_calls": [
+        "call band_solve(  \"wp2_wp3\", penta_solve_method, ngrdcol, 2, 2, 2*nzm-1, l_implemented, lhs, rhs, err_info, solut, rcond = rcond )",
+        "call stats_update( \"wp23_matrix_condt_num\", one / rcond, stats )",
+        "call band_solve( \"wp2_wp3\", penta_solve_method, ngrdcol, 2, 2, 2*nzm-1, l_implemented, lhs, rhs, err_info, solut, old_soln = old_solut )",
+        "call wp2_terms_ac_pr2_lhs( nzm, nzt, ngrdcol, gr, C_uu_shr_zeros, wm_zt, lhs_wp2_ac_term  )",
+        "call wp2_terms_ac_pr2_lhs( nzm, nzt, ngrdcol, gr, C_uu_shr_plus_one, wm_zt, lhs_wp2_pr2_term )",
+        "call wp3_terms_ac_pr2_lhs( nzm, nzt, ngrdcol, gr, C11_Skw_fnc_zeros, wm_zm, lhs_wp3_ac_term )",
+        "call wp3_terms_ac_pr2_lhs( nzm, nzt, ngrdcol, gr, C11_Skw_fnc_plus_one, wm_zm, lhs_wp3_pr2_term )",
+        "call stats_finalize_budget( \"wp2_dp1\", stats_tmp_zm, stats )",
+        "call stats_finalize_budget( \"wp2_dp2\", stats_tmp_zm, stats )",
+        "call stats_update( \"wp2_dp2\", stats_tmp_zm, stats )",
+        "call stats_update( \"wp2_ta\", stats_tmp_zm, stats )",
+        "call stats_update( \"wp2_ma\", stats_tmp_zm, stats )",
+        "call stats_update( \"wp2_ac\", stats_tmp_zm, stats )",
+        "call stats_finalize_budget( \"wp2_pr1\", stats_tmp_zm, stats )",
+        "call stats_finalize_budget( \"wp2_pr2\", stats_tmp_zm, stats )",
+        "call stats_finalize_budget( \"wp3_pr1\", stats_tmp_zt, stats )",
+        "call stats_finalize_budget( \"wp3_dp1\", stats_tmp_zt, stats )",
+        "call stats_update( \"wp3_dp1\", stats_tmp_zt, stats )",
+        "call stats_finalize_budget( \"wp3_ta\", stats_tmp_zt, stats )",
+        "call stats_finalize_budget( \"wp3_tp\", stats_tmp_zt, stats )",
+        "call stats_finalize_budget( \"wp3_pr_tp\", stats_tmp_zt, stats )",
+        "call stats_finalize_budget( \"wp3_pr3\", stats_tmp_zt, stats )",
+        "call stats_update( \"wp3_ma\", stats_tmp_zt, stats )",
+        "call stats_update( \"wp3_ac\", stats_tmp_zt, stats )",
+        "call stats_finalize_budget( \"wp3_pr2\", stats_tmp_zt, stats )",
+        "call stats_begin_budget( \"wp2_pd\", wp2 / dt, stats )",
+        "call stats_begin_budget( \"up2_pd\", up2 / dt, stats )",
+        "call stats_begin_budget( \"vp2_pd\", vp2 / dt, stats )",
+        "call stats_update( \"wp2_before_hf\", wp2, stats )",
+        "call fill_holes_vertical_api( nzm, ngrdcol, w_tol_sqd, gr%k_lb_zm + gr%grid_dir_indx, gr%k_ub_zm - gr%grid_dir_indx, gr%dzm, rho_ds_zm, gr%grid_dir_indx, fill_holes_type, wp2 )",
+        "call stats_update( \"wp2_after_hf\", wp2, stats )",
+        "call fill_holes_wp2_from_horz_tke( nzm, ngrdcol, w_tol_sqd, 2, nzm-1, wp2, up2, vp2 )",
+        "call stats_finalize_budget( \"wp2_pd\", wp2 / dt, stats )",
+        "call stats_finalize_budget( \"up2_pd\", up2 / dt, stats, l_count_sample=.false. )",
+        "call stats_finalize_budget( \"vp2_pd\", vp2 / dt, stats, l_count_sample=.false. )",
+        "call clip_variance( nzm, ngrdcol, gr, clip_wp2, dt, wp2_min_array, stats, wp2, wp2_max )",
+        "call clip_skewness( nzt, ngrdcol, gr, dt, sfc_elevation, clubb_params(:,iSkw_max_mag), wp2_zt, l_use_wp3_lim_with_smth_Heaviside, stats, wp3 )"
+      ]
+    },
+    {
+      "name": "wp23_lhs",
+      "module": "advance_wp2_wp3_module",
+      "source": "src/CLUBB_core/advance_wp2_wp3_module.F90",
+      "arguments": [
+        {
+          "name": "nzm",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "dt",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp3_term_ta_lhs_result",
+          "kind": "real",
+          "dims": [
+            "ndiags5",
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs_diff_zm",
+          "kind": "real",
+          "dims": [
+            "ndiags3",
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs_diff_zt",
+          "kind": "real",
+          "dims": [
+            "ndiags3",
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs_ma_zm",
+          "kind": "real",
+          "dims": [
+            "ndiags3",
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs_ma_zt",
+          "kind": "real",
+          "dims": [
+            "ndiags3",
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs_ta_wp2",
+          "kind": "real",
+          "dims": [
+            "ndiags2",
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs_tp_wp3",
+          "kind": "real",
+          "dims": [
+            "ndiags2",
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs_ac_pr2_wp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs_ac_pr2_wp3",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs_dp1_wp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs_pr1_wp3",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs_pr1_wp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs_splat_wp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs_splat_wp3",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs",
+          "kind": "real",
+          "dims": [
+            "ndiags5",
+            "ngrdcol",
+            "2*nzm-1"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "line": 2054,
+      "ordered_calls": []
+    },
+    {
+      "name": "wp23_rhs",
+      "module": "advance_wp2_wp3_module",
+      "source": "src/CLUBB_core/advance_wp2_wp3_module.F90",
+      "arguments": [
+        {
+          "name": "nzm",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "gr",
+          "kind": "grid",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "dt",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "fcor_y",
+          "kind": "real",
+          "dims": [
+            "ngrdcol"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp3_term_ta_lhs_result",
+          "kind": "real",
+          "dims": [
+            "ndiags5",
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs_diff_zm",
+          "kind": "real",
+          "dims": [
+            "ndiags3",
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs_diff_zt",
+          "kind": "real",
+          "dims": [
+            "ndiags3",
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs_diff_zm_crank",
+          "kind": "real",
+          "dims": [
+            "ndiags3",
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs_diff_zt_crank",
+          "kind": "real",
+          "dims": [
+            "ndiags3",
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs_tp_wp3",
+          "kind": "real",
+          "dims": [
+            "ndiags2",
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs_adv_tp_wp3",
+          "kind": "real",
+          "dims": [
+            "ndiags2",
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs_pr_tp_wp3",
+          "kind": "real",
+          "dims": [
+            "ndiags2",
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs_ta_wp3",
+          "kind": "real",
+          "dims": [
+            "ndiags2",
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs_dp1_wp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rhs_dp1_wp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs_pr1_wp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rhs_pr1_wp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs_pr1_wp3",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rhs_pr1_wp3",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rhs_bp_pr2_wp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rhs_pr_dfsn_wp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rhs_bp1_pr2_wp3",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rhs_pr3_wp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rhs_pr3_wp3",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rhs_ta_wp3",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rhs_pr_turb_wp3",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rhs_pr_dfsn_wp3",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp3",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wpup2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wpvp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wpthvp",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp2thvp",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp2up",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "up2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "vp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "upwp",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "C11_Skw_fnc",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "thv_ds_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "thv_ds_zt",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs_splat_wp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs_splat_wp3",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "clubb_params",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nparams"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "iiPDF_type",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_use_tke_in_wp2_wp3_K_dfsn",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_ho_nontrad_coriolis",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "stats",
+          "kind": "stats_type",
+          "dims": [],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rhs",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "2*nzm-1"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "line": 2374,
+      "ordered_calls": [
+        "call wp2_terms_bp_pr2_rhs( nzm, ngrdcol, gr, C_uu_buoy_zeros, thv_ds_zm, wpthvp, rhs_bp_wp2 )",
+        "call wp2_terms_bp_pr2_rhs( nzm, ngrdcol, gr, C_uu_buoy_plus_one, thv_ds_zm, wpthvp, rhs_pr2_wp2 )",
+        "call wp3_terms_bp1_pr2_rhs( nzt, ngrdcol, gr, C11_Skw_fnc_zeros, thv_ds_zt, wp2thvp, rhs_bp1_wp3 )",
+        "call wp3_terms_bp1_pr2_rhs( nzt, ngrdcol, gr, C11_Skw_fnc_plus_one, thv_ds_zt, wp2thvp, rhs_pr2_wp3 )",
+        "call stats_update( \"wp2_bp\", stats_tmp_zm, stats )",
+        "call stats_update( \"wp2_nct\", stats_tmp_zm, stats )",
+        "call stats_update( \"wp2_pr_dfsn\", stats_tmp_zm, stats )",
+        "call stats_update( \"wp2_splat\", stats_tmp_zm, stats )",
+        "call stats_update( \"wp2_pr3\", stats_tmp_zm, stats )",
+        "call stats_begin_budget( \"wp2_pr2\", stats_tmp_zm, stats )",
+        "call stats_begin_budget( \"wp2_dp1\", stats_tmp_zm, stats )",
+        "call stats_update_budget( \"wp2_dp1\", stats_tmp_zm, stats )",
+        "call stats_begin_budget( \"wp2_dp2\", stats_tmp_zm, stats )",
+        "call stats_begin_budget( \"wp2_pr1\", stats_tmp_zm, stats )",
+        "call stats_update_budget( \"wp2_pr1\", stats_tmp_zm, stats )",
+        "call stats_update( \"wp3_bp1\", stats_tmp_zt, stats )",
+        "call stats_update( \"wp3_nct\", stats_tmp_zt, stats )",
+        "call stats_update( \"wp3_pr_turb\", stats_tmp_zt, stats )",
+        "call stats_update( \"wp3_pr_dfsn\", stats_tmp_zt, stats )",
+        "call stats_update( \"wp3_splat\", stats_tmp_zt, stats )",
+        "call stats_begin_budget( \"wp3_pr2\", stats_tmp_zt, stats )",
+        "call stats_begin_budget( \"wp3_pr1\", stats_tmp_zt, stats )",
+        "call stats_update_budget( \"wp3_pr1\", stats_tmp_zt, stats )",
+        "call stats_begin_budget( \"wp3_ta\", stats_tmp_zt, stats )",
+        "call stats_begin_budget( \"wp3_tp\", stats_tmp_zt, stats )",
+        "call stats_begin_budget( \"wp3_pr_tp\", stats_tmp_zt, stats )",
+        "call stats_begin_budget( \"wp3_pr3\", stats_tmp_zt, stats )",
+        "call stats_begin_budget( \"wp3_dp1\", stats_tmp_zt, stats )"
+      ]
+    },
+    {
+      "name": "wp2_term_ta_lhs",
+      "module": "advance_wp2_wp3_module",
+      "source": "src/CLUBB_core/advance_wp2_wp3_module.F90",
+      "arguments": [
+        {
+          "name": "nzm",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "gr",
+          "kind": "grid",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rho_ds_zt",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "invrs_rho_ds_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs_ta_wp2",
+          "kind": "real",
+          "dims": [
+            "ndiags2",
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "line": 3262,
+      "ordered_calls": []
+    },
+    {
+      "name": "wp2_terms_ac_pr2_lhs",
+      "module": "advance_wp2_wp3_module",
+      "source": "src/CLUBB_core/advance_wp2_wp3_module.F90",
+      "arguments": [
+        {
+          "name": "nzm",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "gr",
+          "kind": "grid",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "C_uu_shr",
+          "kind": "real",
+          "dims": [
+            "ngrdcol"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wm_zt",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs_ac_pr2_wp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "line": 3383,
+      "ordered_calls": []
+    },
+    {
+      "name": "wp2_term_dp1_lhs",
+      "module": "advance_wp2_wp3_module",
+      "source": "src/CLUBB_core/advance_wp2_wp3_module.F90",
+      "arguments": [
+        {
+          "name": "nzm",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "gr",
+          "kind": "grid",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "C1_Skw_fnc",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "invrs_tau1m",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs_dp1_wp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "line": 3502,
+      "ordered_calls": []
+    },
+    {
+      "name": "wp2_term_pr1_lhs",
+      "module": "advance_wp2_wp3_module",
+      "source": "src/CLUBB_core/advance_wp2_wp3_module.F90",
+      "arguments": [
+        {
+          "name": "nzm",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "gr",
+          "kind": "grid",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "C4",
+          "kind": "real",
+          "dims": [
+            "ngrdcol"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "invrs_tau_C4_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs_pr1_wp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "line": 3595,
+      "ordered_calls": []
+    },
+    {
+      "name": "wp2_terms_bp_pr2_rhs",
+      "module": "advance_wp2_wp3_module",
+      "source": "src/CLUBB_core/advance_wp2_wp3_module.F90",
+      "arguments": [
+        {
+          "name": "nzm",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "gr",
+          "kind": "grid",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "C_uu_buoy",
+          "kind": "real",
+          "dims": [
+            "ngrdcol"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "thv_ds_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wpthvp",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rhs_bp_pr2_wp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "line": 3694,
+      "ordered_calls": []
+    },
+    {
+      "name": "wp2_term_dp1_rhs",
+      "module": "advance_wp2_wp3_module",
+      "source": "src/CLUBB_core/advance_wp2_wp3_module.F90",
+      "arguments": [
+        {
+          "name": "nzm",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "gr",
+          "kind": "grid",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "C1_Skw_fnc",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "invrs_tau1m",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "threshold",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "up2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "vp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_damp_wp2_using_em",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rhs_dp1_wp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "line": 3785,
+      "ordered_calls": []
+    },
+    {
+      "name": "wp2_term_pr3_rhs",
+      "module": "advance_wp2_wp3_module",
+      "source": "src/CLUBB_core/advance_wp2_wp3_module.F90",
+      "arguments": [
+        {
+          "name": "nzm",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "gr",
+          "kind": "grid",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "C_uu_shr",
+          "kind": "real",
+          "dims": [
+            "ngrdcol"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "C_uu_buoy",
+          "kind": "real",
+          "dims": [
+            "ngrdcol"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "thv_ds_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wpthvp",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "upwp",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "um",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "vpwp",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "vm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rhs_pr3_wp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "line": 3895,
+      "ordered_calls": []
+    },
+    {
+      "name": "wp2_term_pr1_rhs",
+      "module": "advance_wp2_wp3_module",
+      "source": "src/CLUBB_core/advance_wp2_wp3_module.F90",
+      "arguments": [
+        {
+          "name": "nzm",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "gr",
+          "kind": "grid",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "C4",
+          "kind": "real",
+          "dims": [
+            "ngrdcol"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "up2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "vp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "invrs_tau_C4_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rhs_pr1_wp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "line": 4033,
+      "ordered_calls": []
+    },
+    {
+      "name": "wp2_term_pr_dfsn_rhs",
+      "module": "advance_wp2_wp3_module",
+      "source": "src/CLUBB_core/advance_wp2_wp3_module.F90",
+      "arguments": [
+        {
+          "name": "nzm",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "gr",
+          "kind": "grid",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "C_wp2_pr_dfsn",
+          "kind": "real",
+          "dims": [
+            "ngrdcol"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rho_ds_zt",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "invrs_rho_ds_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wpup2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wpvp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp3",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rhs_pr_dfsn_wp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "line": 4123,
+      "ordered_calls": []
+    },
+    {
+      "name": "wp3_term_ta_new_pdf_lhs",
+      "module": "advance_wp2_wp3_module",
+      "source": "src/CLUBB_core/advance_wp2_wp3_module.F90",
+      "arguments": [
+        {
+          "name": "nzm",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "gr",
+          "kind": "grid",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "coef_wp4_implicit",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rho_ds_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "invrs_rho_ds_zt",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs_ta_wp3",
+          "kind": "real",
+          "dims": [
+            "ndiags2",
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "line": 4232,
+      "ordered_calls": []
+    },
+    {
+      "name": "wp3_term_ta_ADG1_lhs",
+      "module": "advance_wp2_wp3_module",
+      "source": "src/CLUBB_core/advance_wp2_wp3_module.F90",
+      "arguments": [
+        {
+          "name": "nzm",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "gr",
+          "kind": "grid",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "a1_coef",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "a1_coef_zt",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "a3_coef",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "a3_coef_zt",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp3_on_wp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rho_ds_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rho_ds_zt",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "invrs_rho_ds_zt",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_standard_term_ta",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_partial_upwind_wp3",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs_ta_wp3",
+          "kind": "real",
+          "dims": [
+            "ndiags5",
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "line": 4388,
+      "ordered_calls": []
+    },
+    {
+      "name": "wp3_term_tp_lhs",
+      "module": "advance_wp2_wp3_module",
+      "source": "src/CLUBB_core/advance_wp2_wp3_module.F90",
+      "arguments": [
+        {
+          "name": "nzm",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "gr",
+          "kind": "grid",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "coef_wp3_tp",
+          "kind": "real",
+          "dims": [
+            "ngrdcol"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rho_ds_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "invrs_rho_ds_zt",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs_tp_wp3",
+          "kind": "real",
+          "dims": [
+            "ndiags2",
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "line": 4735,
+      "ordered_calls": []
+    },
+    {
+      "name": "wp3_terms_ac_pr2_lhs",
+      "module": "advance_wp2_wp3_module",
+      "source": "src/CLUBB_core/advance_wp2_wp3_module.F90",
+      "arguments": [
+        {
+          "name": "nzm",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "gr",
+          "kind": "grid",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "C11_Skw_fnc",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wm_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs_ac_pr2_wp3",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "line": 4885,
+      "ordered_calls": []
+    },
+    {
+      "name": "wp3_term_pr1_lhs",
+      "module": "advance_wp2_wp3_module",
+      "source": "src/CLUBB_core/advance_wp2_wp3_module.F90",
+      "arguments": [
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "gr",
+          "kind": "grid",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "C8",
+          "kind": "real",
+          "dims": [
+            "ngrdcol"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "C8b",
+          "kind": "real",
+          "dims": [
+            "ngrdcol"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "invrs_tau_wp3_zt",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "Skw_zt",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_damp_wp3_Skw_squared",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs_pr1_wp3",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "line": 5004,
+      "ordered_calls": []
+    },
+    {
+      "name": "wp3_term_ta_explicit_rhs",
+      "module": "advance_wp2_wp3_module",
+      "source": "src/CLUBB_core/advance_wp2_wp3_module.F90",
+      "arguments": [
+        {
+          "name": "nzm",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "gr",
+          "kind": "grid",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp4",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rho_ds_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "invrs_rho_ds_zt",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rhs_ta_wp3",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "line": 5134,
+      "ordered_calls": []
+    },
+    {
+      "name": "wp3_terms_bp1_pr2_rhs",
+      "module": "advance_wp2_wp3_module",
+      "source": "src/CLUBB_core/advance_wp2_wp3_module.F90",
+      "arguments": [
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "gr",
+          "kind": "grid",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "C11_Skw_fnc",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "thv_ds_zt",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp2thvp",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rhs_bp1_pr2_wp3",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "line": 5244,
+      "ordered_calls": []
+    },
+    {
+      "name": "wp3_term_pr_turb_rhs",
+      "module": "advance_wp2_wp3_module",
+      "source": "src/CLUBB_core/advance_wp2_wp3_module.F90",
+      "arguments": [
+        {
+          "name": "nzm",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "gr",
+          "kind": "grid",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "C_wp3_pr_turb",
+          "kind": "real",
+          "dims": [
+            "ngrdcol"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "Kh_zt",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wpthvp",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "dum_dz",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "dvm_dz",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "upwp",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "vpwp",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "thv_ds_zt",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rho_ds_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "invrs_rho_ds_zt",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "em",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rhs_pr_turb_wp3",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_use_tke_in_wp3_pr_turb_term",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "line": 5330,
+      "ordered_calls": []
+    },
+    {
+      "name": "wp3_term_pr_dfsn_rhs",
+      "module": "advance_wp2_wp3_module",
+      "source": "src/CLUBB_core/advance_wp2_wp3_module.F90",
+      "arguments": [
+        {
+          "name": "nzm",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "gr",
+          "kind": "grid",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "C_wp3_pr_dfsn",
+          "kind": "real",
+          "dims": [
+            "ngrdcol"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rho_ds_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "invrs_rho_ds_zt",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp2up2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp2vp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp4",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "up2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "vp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rhs_pr_dfsn_wp3",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "line": 5446,
+      "ordered_calls": []
+    },
+    {
+      "name": "wp3_term_pr1_rhs",
+      "module": "advance_wp2_wp3_module",
+      "source": "src/CLUBB_core/advance_wp2_wp3_module.F90",
+      "arguments": [
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "gr",
+          "kind": "grid",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "C8",
+          "kind": "real",
+          "dims": [
+            "ngrdcol"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "C8b",
+          "kind": "real",
+          "dims": [
+            "ngrdcol"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "invrs_tau_wp3_zt",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "Skw_zt",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp3",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_damp_wp3_Skw_squared",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rhs_pr1_wp3",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "line": 5559,
+      "ordered_calls": []
+    }
+  ],
+  "public_inventory": [
+    "advance_wp2_wp3"
+  ],
+  "jax_scope": "All23 Native routines. Sponge blocks excluded in JAX and already rejected by C++driver.cpp:713\u2013720; retain exact driver-level exclusion with local TODO at source sponge boundary, no new globals. Solver method exclusions remain existing band_solve policy. Native formulas/errors/diagnostic output remain authoritative.",
+  "module_constants": {
+    "clip_wp2": 12,
+    "l_crank_nich_diff": false,
+    "ndiags2": 2,
+    "ndiags3": 3,
+    "ndiags5": 5
+  },
+  "legacy_native_contracts": [
+    {
+      "procedure": "wp23_solve",
+      "argument": "wp3_pr3_lhs",
+      "native_intent": "omitted",
+      "cpp_contract": "in",
+      "evidence": "Full Native body only reads this rank3 array in sampled pressure3 budget terms; no assignment/Out call writes it. Local source parser override only; no Native/parser production edit."
+    }
+  ],
+  "parent_stage_order": [
+    "Interpolate wp2/wp3, diagnose Skx and ratio, a3 clipping/interpolation/stats",
+    "Reject CN+tke diffusion combination; C11/C1/C16 branch formulas and complete per-cell assertion diagnostics/Native fatal return",
+    "Diffusivity coefficients; new/hybrid wp4 implicit orADG1 a1 setup; initialize implicit terms",
+    "Experimental pressure-turbulence and pressure-diffusion terms; Native diffusion and all private production/pressure/dissipation contributions in source order",
+    "Explicit orADG1/new/hybrid implicit wp3 TA; rhs thenmeanadvection thenlhs; preserve allordered term accumulation",
+    "Optional old-state snapshots; coupled wp23_solve; optional LMM halfstep; exact existing sponge exclusion; complete error dump; final wp2_zt/wp3_zm stats"
+  ],
+  "solve_order": [
+    "Save RHS; optionalBicg oldsolution; optionalforcedDescending reversebands+rows+rhs+old; conditional rcond Native call mode",
+    "Pack Native band-first lhs into existing(column,band,row) C++solver boundary; restore mutated lhs; retainrhs/err mutation andoptional old_soln/rcond contract; reverse onlysolution if forced",
+    "Native fatal dump and immediate return before assigningwp2/wp3",
+    "Unpacksolution; reconstructsampled implicitAC/PR2terms, allstatsprefixupdates; bracketPD/holefill, preservecount_samplefalseforup2/vp2",
+    "OptionalNativeholefillandTKEborrow; Native debug3 rank-sequence vertical_avg semantics; correlationfloors/clipVariance/clipSkewness; interpolatefinalwp3"
+  ],
+  "layout_and_ownership": [
+    "OrdinaryphysicalViews(column,level),LayoutLeft; localcoefficient/matrixscratchretainsNative(band,column,level) whilelowerf2kexpectsNativeshapes",
+    "Onlyexistingband_solveAPIboundarypacks/restorescolumn-firstmatrixlayout; no physics/transfers hidden elsewhere",
+    "Nativeone-basedgrid/band/columnindicesinternal; Viewaccessessubtractone; zero-basedparameterconstantsunchanged",
+    "Independentcellsandbandcoordinatesparallel; noowningUDT/stats/f2kdevicecapture; diagnosticflagreductionsintegeronly; Hostprintingonlywithneededfields",
+    "Whole-arrayexpressionsandreverseassignmentsmustuseownedtemporaryViewstoavoidaliasoverwrites; statsarrayexpressionsvisibleatcallsite"
+  ],
+  "private_helper_branches": [
+    "Allwp2 andwp3 termroutinesretainNativeboundaryvalues, signedgridhandling,operation/groupingorder andscientificexplanations",
+    "ADG1standardcentered/partialupwind/alternateTA branches allpresent; newPDFimplicitandgeneralexplicitTA unchanged",
+    "Dampwp2viaTKEorvariancefloor; dampwp3viaSkw2orSkw4; experimentalturbulenceTKEorwind/buoyancyformulas; pressure-diffusionmomentexpansions"
+  ],
+  "dependencies": [
+    "ProductionSkx,griddifferentials/interpolation,band_solve,UDT/constant/indexowners",
+    "Completeadvance-helperdraft calc_wp3_on_wp2,vertical_avg",
+    "Lowerpublicdiffusion_zm_lhs,diffusion_zt_lhs,term_ma_zm_lhs,term_ma_zt_lhs,fill_holes_vertical_api,fill_holes_wp2_from_horz_tke,clip_variance,clip_skewnessmaystayexplicitf2kcalls",
+    "Nativebackendstats_update/begin/update/finalize_budget,var_on_stats_list anddebugmetadata; extendexistingfinalizeoptionalcountsurfaceforfalsecalls beforeintegration",
+    "SelectmissingmodelconstantsinexistinggeneratorownerratherthanduplicateCppflags"
+  ],
+  "status": "Outline before code; no builds/tests/compilation/numerical evidence. Root runs maintained CPUvsCPUzero-tolerance acceptance; GPUmilestonecomparisonsoccasional."
+}

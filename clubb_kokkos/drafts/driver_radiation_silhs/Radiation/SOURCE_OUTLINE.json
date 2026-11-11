@@ -1,0 +1,2435 @@
+{
+  "scope": "Complete eight non-BUGS top-level Radiation sources read (3397 Native lines), plus the common initializer in bugsrad_driver. Actual JAX implementations were read as secondary scope evidence; Fortran remains authoritative.",
+  "files": [
+    {
+      "source": "src/Radiation/cos_solar_zen_module.F90",
+      "sha256": "fd83bbd63c9047efbb210f728f6f5acce0c135d698140cb8c16c052200b41dd6",
+      "lines": 159,
+      "routines": [
+        {
+          "name": "cos_solar_zen",
+          "module": "cos_solar_zen_module",
+          "source": "src/Radiation/cos_solar_zen_module.F90",
+          "arguments": [
+            {
+              "name": "day",
+              "kind": "integer",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "month",
+              "kind": "integer",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "year",
+              "kind": "integer",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "current_time",
+              "kind": "double",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "lat_in_degrees",
+              "kind": "real",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "lon_in_degrees",
+              "kind": "real",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            }
+          ],
+          "result": {
+            "name": "cos_solar_zen",
+            "kind": "double",
+            "dims": [],
+            "intent": "out",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          "source_line": 17,
+          "native_argument_count": 6
+        }
+      ],
+      "actual_JAX": "clubb_jax/src/Radiation/cos_solar_zen_module.py",
+      "JAX_sha256": "ed215154b438ffd870a0aae19e5b267370730534bb3b2a0f27c718863353738a"
+    },
+    {
+      "source": "src/Radiation/extended_atmosphere_module.F90",
+      "sha256": "485bdb8956e2ce3da2d4c2bd5b691beead265a566ae203a48dc3f871bdd6dff6",
+      "lines": 348,
+      "routines": [
+        {
+          "name": "determine_extended_atmos_bounds",
+          "module": "extended_atmosphere_module",
+          "source": "src/Radiation/extended_atmosphere_module.F90",
+          "arguments": [
+            {
+              "name": "grid_size",
+              "kind": "integer",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "zt_grid",
+              "kind": "real",
+              "dims": [
+                "grid_size-1"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "zm_grid",
+              "kind": "real",
+              "dims": [
+                "grid_size"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "zm_grid_spacing",
+              "kind": "real",
+              "dims": [
+                "grid_size-1"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "p_in_Pa_zm",
+              "kind": "real",
+              "dims": [
+                "grid_size"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "extended_atmos_bottom_level",
+              "kind": "integer",
+              "dims": [],
+              "intent": "out",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "extended_atmos_top_level",
+              "kind": "integer",
+              "dims": [],
+              "intent": "out",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "extended_atmos_range_size",
+              "kind": "integer",
+              "dims": [],
+              "intent": "out",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "lin_int_buffer_size",
+              "kind": "integer",
+              "dims": [],
+              "intent": "out",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            }
+          ],
+          "result": null,
+          "source_line": 96,
+          "native_argument_count": 9
+        },
+        {
+          "name": "finalize_extended_atm",
+          "module": "extended_atmosphere_module",
+          "source": "src/Radiation/extended_atmosphere_module.F90",
+          "arguments": [],
+          "result": null,
+          "source_line": 300,
+          "native_argument_count": 0
+        }
+      ],
+      "actual_JAX": "clubb_jax/src/Radiation/extended_atmosphere_module.py",
+      "JAX_sha256": "6264ba7082bd96284cca3a753f64bd9f5ac52068130e1ebd9c35ba982e6fc5c7"
+    },
+    {
+      "source": "src/Radiation/parameters_radiation.F90",
+      "sha256": "6692919a50b4528c07eee24811e011afbf31fd9be97aab7f84ce4701320d0a2a",
+      "lines": 79,
+      "routines": [],
+      "actual_JAX": "clubb_jax/src/Radiation/parameters_radiation.py",
+      "JAX_sha256": "3e563720f99cb9e9cf4e32acdd85a4926752138b51d0194bac84210f2b367908"
+    },
+    {
+      "source": "src/Radiation/rad_lwsw_module.F90",
+      "sha256": "9134bc3229029232a23afcd5fa6cb6785e3fa070dd00af764402c11ebf6734ca",
+      "lines": 747,
+      "routines": [
+        {
+          "name": "sunray_sw",
+          "module": "rad_lwsw_module",
+          "source": "src/Radiation/rad_lwsw_module.F90",
+          "arguments": [
+            {
+              "name": "ngrdcol",
+              "kind": "integer",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "nzt",
+              "kind": "integer",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "rcm",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "nzt"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "rho",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "nzt"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "xi_abs",
+              "kind": "real",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "dzt",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "nzt"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "zm",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "nzt+1"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "zt",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "nzt"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "radius",
+              "kind": "real",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "A",
+              "kind": "real",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "gc",
+              "kind": "real",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "Fs0",
+              "kind": "real",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "omega",
+              "kind": "real",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "l_center",
+              "kind": "logical",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "Frad_SW",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "nzt+1"
+              ],
+              "intent": "out",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            }
+          ],
+          "result": null,
+          "source_line": 343,
+          "native_argument_count": 15
+        }
+      ],
+      "actual_JAX": "clubb_jax/src/Radiation/rad_lwsw_module.py",
+      "JAX_sha256": "90b2037431e80f17245a0d3c534c518f3fb976cebd1e6f23bc3ddd0be002aecc"
+    },
+    {
+      "source": "src/Radiation/radiation_module.F90",
+      "sha256": "19a6a90e91ba17859dcdca7f9432ef7bd0084164bb6b7a057cbe243b980e28cd",
+      "lines": 876,
+      "routines": [
+        {
+          "name": "advance_clubb_radiation",
+          "module": "radiation_module",
+          "source": "src/Radiation/radiation_module.F90",
+          "arguments": [
+            {
+              "name": "gr",
+              "kind": "grid",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "ngrdcol",
+              "kind": "integer",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "hydromet_dim",
+              "kind": "integer",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "pdf_dim",
+              "kind": "integer",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "lh_num_samples",
+              "kind": "integer",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "l_rad_itime",
+              "kind": "logical",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "dt_main",
+              "kind": "real",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "day",
+              "kind": "integer",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "month",
+              "kind": "integer",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "year",
+              "kind": "integer",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "lat_vals",
+              "kind": "real",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "lon_vals",
+              "kind": "real",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "time_current",
+              "kind": "double",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "time_initial",
+              "kind": "double",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "rho",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "gr%nzt"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "rho_zm",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "gr%nzm"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "p_in_Pa",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "gr%nzt"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "exner",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "gr%nzt"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "wpthlp_sfc",
+              "kind": "real",
+              "dims": [
+                "ngrdcol"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "wprtp_sfc",
+              "kind": "real",
+              "dims": [
+                "ngrdcol"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "p_sfc",
+              "kind": "real",
+              "dims": [
+                "ngrdcol"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "cloud_frac",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "gr%nzt"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "ice_supersat_frac",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "gr%nzt"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "thlm",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "gr%nzt"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "rtm",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "gr%nzt"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "rcm",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "gr%nzt"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "X_nl_all_levs",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "lh_num_samples",
+                "gr%nzt",
+                "pdf_dim"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "lh_rt_clipped",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "lh_num_samples",
+                "gr%nzt"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "lh_thl_clipped",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "lh_num_samples",
+                "gr%nzt"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "lh_rc_clipped",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "lh_num_samples",
+                "gr%nzt"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "lh_sample_point_weights",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "lh_num_samples",
+                "gr%nzt"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "hydromet",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "gr%nzt",
+                "hydromet_dim"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "hm_metadata",
+              "kind": "hm_metadata_type",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "stats",
+              "kind": "stats_type",
+              "dims": [],
+              "intent": "inout",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "err_info",
+              "kind": "err_info_type",
+              "dims": [],
+              "intent": "inout",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "deep_soil_T_in_K",
+              "kind": "real",
+              "dims": [
+                "ngrdcol"
+              ],
+              "intent": "inout",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "sfc_soil_T_in_K",
+              "kind": "real",
+              "dims": [
+                "ngrdcol"
+              ],
+              "intent": "inout",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "veg_T_in_K",
+              "kind": "real",
+              "dims": [
+                "ngrdcol"
+              ],
+              "intent": "inout",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "radht",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "gr%nzt"
+              ],
+              "intent": "inout",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            }
+          ],
+          "result": null,
+          "source_line": 19,
+          "native_argument_count": 39
+        },
+        {
+          "name": "radiation_driver",
+          "module": "radiation_module",
+          "source": "src/Radiation/radiation_module.F90",
+          "arguments": [
+            {
+              "name": "gr",
+              "kind": "grid",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "time_current",
+              "kind": "double",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "time_initial",
+              "kind": "double",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "hydromet_dim",
+              "kind": "integer",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "ngrdcol",
+              "kind": "integer",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "day",
+              "kind": "integer",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "month",
+              "kind": "integer",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "year",
+              "kind": "integer",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "lat_vals",
+              "kind": "real",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "lon_vals",
+              "kind": "real",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "rho",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "gr%nzt"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "rho_zm",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "gr%nzm"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "p_in_Pa",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "gr%nzt"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "exner",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "gr%nzt"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "cloud_frac",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "gr%nzt"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "ice_supersat_frac",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "gr%nzt"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "thlm",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "gr%nzt"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "rtm",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "gr%nzt"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "rcm",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "gr%nzt"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "hydromet",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "gr%nzt",
+                "hydromet_dim"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "hm_metadata",
+              "kind": "hm_metadata_type",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "stats",
+              "kind": "stats_type",
+              "dims": [],
+              "intent": "inout",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "err_info",
+              "kind": "err_info_type",
+              "dims": [],
+              "intent": "inout",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "radht",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "gr%nzt"
+              ],
+              "intent": "out",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "Frad",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "gr%nzm"
+              ],
+              "intent": "out",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "Frad_SW_up",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "gr%nzm"
+              ],
+              "intent": "out",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "Frad_LW_up",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "gr%nzm"
+              ],
+              "intent": "out",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "Frad_SW_down",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "gr%nzm"
+              ],
+              "intent": "out",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "Frad_LW_down",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "gr%nzm"
+              ],
+              "intent": "out",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            }
+          ],
+          "result": null,
+          "source_line": 228,
+          "native_argument_count": 29
+        },
+        {
+          "name": "update_radiation_variables",
+          "module": "radiation_module",
+          "source": "src/Radiation/radiation_module.F90",
+          "arguments": [
+            {
+              "name": "ngrdcol",
+              "kind": "integer",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "nzm",
+              "kind": "integer",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "nzt",
+              "kind": "integer",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "radht",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "nzt"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "Frad",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "nzm"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "Frad_SW_up",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "nzm"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "Frad_LW_up",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "nzm"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "Frad_SW_down",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "nzm"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "Frad_LW_down",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "nzm"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "stats",
+              "kind": "stats_type",
+              "dims": [],
+              "intent": "inout",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            }
+          ],
+          "result": null,
+          "source_line": 587,
+          "native_argument_count": 10
+        },
+        {
+          "name": "silhs_radiation_driver",
+          "module": "radiation_module",
+          "source": "src/Radiation/radiation_module.F90",
+          "arguments": [
+            {
+              "name": "gr",
+              "kind": "grid",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "ngrdcol",
+              "kind": "integer",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "nzm",
+              "kind": "integer",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "nzt",
+              "kind": "integer",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "lh_num_samples",
+              "kind": "integer",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "pdf_dim",
+              "kind": "integer",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "hydromet_dim",
+              "kind": "integer",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "hm_metadata",
+              "kind": "hm_metadata_type",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "day",
+              "kind": "integer",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "month",
+              "kind": "integer",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "year",
+              "kind": "integer",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "lat_vals",
+              "kind": "real",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "lon_vals",
+              "kind": "real",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "time_current",
+              "kind": "double",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "time_initial",
+              "kind": "double",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "rho",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "nzt"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "rho_zm",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "nzm"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "p_in_Pa",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "nzt"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "exner",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "nzt"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "cloud_frac",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "nzt"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "ice_supersat_frac",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "nzt"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "X_nl_all_levs",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "lh_num_samples",
+                "nzt",
+                "pdf_dim"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "lh_rt_clipped",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "lh_num_samples",
+                "nzt"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "lh_thl_clipped",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "lh_num_samples",
+                "nzt"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "lh_rc_clipped",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "lh_num_samples",
+                "nzt"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "lh_sample_point_weights",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "lh_num_samples",
+                "nzt"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "hydromet",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "nzt",
+                "hydromet_dim"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "err_info",
+              "kind": "err_info_type",
+              "dims": [],
+              "intent": "inout",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "radht",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "nzt"
+              ],
+              "intent": "out",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "Frad",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "nzm"
+              ],
+              "intent": "out",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "Frad_SW_up",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "nzm"
+              ],
+              "intent": "out",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "Frad_LW_up",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "nzm"
+              ],
+              "intent": "out",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "Frad_SW_down",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "nzm"
+              ],
+              "intent": "out",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "Frad_LW_down",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "nzm"
+              ],
+              "intent": "out",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            }
+          ],
+          "result": null,
+          "source_line": 694,
+          "native_argument_count": 34
+        }
+      ],
+      "actual_JAX": "clubb_jax/src/Radiation/radiation_module.py",
+      "JAX_sha256": "b41193059adc0f6bc5eeb6876c95dbfead1ea53f37ae4c55fb3d07a09f3f1d23"
+    },
+    {
+      "source": "src/Radiation/radiation_variables_module.F90",
+      "sha256": "894f92ef126d098c03dd2215f136a1f5a9a2071f8b18da8b89ab19e612a03178",
+      "lines": 368,
+      "routines": [
+        {
+          "name": "setup_radiation_variables",
+          "module": "radiation_variables_module",
+          "source": "src/Radiation/radiation_variables_module.F90",
+          "arguments": [
+            {
+              "name": "ngrdcol",
+              "kind": "integer",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "nzm",
+              "kind": "integer",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "nzt",
+              "kind": "integer",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            }
+          ],
+          "result": null,
+          "source_line": 93,
+          "native_argument_count": 3
+        },
+        {
+          "name": "reset_radiation_variables",
+          "module": "radiation_variables_module",
+          "source": "src/Radiation/radiation_variables_module.F90",
+          "arguments": [],
+          "result": null,
+          "source_line": 145,
+          "native_argument_count": 0
+        },
+        {
+          "name": "setup_bugsrad_variables",
+          "module": "radiation_variables_module",
+          "source": "src/Radiation/radiation_variables_module.F90",
+          "arguments": [
+            {
+              "name": "ngrdcol",
+              "kind": "integer",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "nzmax",
+              "kind": "integer",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "zt_grid",
+              "kind": "real",
+              "dims": [
+                "nzmax-1"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "zm_grid",
+              "kind": "real",
+              "dims": [
+                "nzmax"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "zm_grid_spacing",
+              "kind": "real",
+              "dims": [
+                "nzmax-1"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "p_in_Pa_zm",
+              "kind": "real",
+              "dims": [
+                "nzmax"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            }
+          ],
+          "result": null,
+          "source_line": 178,
+          "native_argument_count": 6
+        },
+        {
+          "name": "reset_bugsrad_variables",
+          "module": "radiation_variables_module",
+          "source": "src/Radiation/radiation_variables_module.F90",
+          "arguments": [],
+          "result": null,
+          "source_line": 274,
+          "native_argument_count": 0
+        },
+        {
+          "name": "cleanup_radiation_variables",
+          "module": "radiation_variables_module",
+          "source": "src/Radiation/radiation_variables_module.F90",
+          "arguments": [],
+          "result": null,
+          "source_line": 315,
+          "native_argument_count": 0
+        },
+        {
+          "name": "cleanup_bugsrad_variables",
+          "module": "radiation_variables_module",
+          "source": "src/Radiation/radiation_variables_module.F90",
+          "arguments": [],
+          "result": null,
+          "source_line": 335,
+          "native_argument_count": 0
+        }
+      ],
+      "actual_JAX": null,
+      "JAX_sha256": null
+    },
+    {
+      "source": "src/Radiation/simple_rad_module.F90",
+      "sha256": "b35b69c8f6eb928b6c73c50decdbc2761e6b565099dca67e7ff89aeec2209192",
+      "lines": 570,
+      "routines": [
+        {
+          "name": "simple_rad",
+          "module": "simple_rad_module",
+          "source": "src/Radiation/simple_rad_module.F90",
+          "arguments": [
+            {
+              "name": "gr",
+              "kind": "grid",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "ngrdcol",
+              "kind": "integer",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "rho",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "gr%nzt"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "rho_zm",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "gr%nzm"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "rtm",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "gr%nzt"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "rcm",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "gr%nzt"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "exner",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "gr%nzt"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "stats",
+              "kind": "stats_type",
+              "dims": [],
+              "intent": "inout",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "Frad_LW",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "gr%nzm"
+              ],
+              "intent": "out",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "radht_LW",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "gr%nzt"
+              ],
+              "intent": "out",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            }
+          ],
+          "result": null,
+          "source_line": 173,
+          "native_argument_count": 10
+        },
+        {
+          "name": "simple_rad_bomex",
+          "module": "simple_rad_module",
+          "source": "src/Radiation/simple_rad_module.F90",
+          "arguments": [
+            {
+              "name": "gr",
+              "kind": "grid",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "ngrdcol",
+              "kind": "integer",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "radht",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "gr%nzt"
+              ],
+              "intent": "out",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            }
+          ],
+          "result": null,
+          "source_line": 360,
+          "native_argument_count": 3
+        },
+        {
+          "name": "simple_rad_lba",
+          "module": "simple_rad_module",
+          "source": "src/Radiation/simple_rad_module.F90",
+          "arguments": [
+            {
+              "name": "gr",
+              "kind": "grid",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "ngrdcol",
+              "kind": "integer",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "time_current",
+              "kind": "double",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "time_initial",
+              "kind": "double",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "radht",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "gr%nzt"
+              ],
+              "intent": "out",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            }
+          ],
+          "result": null,
+          "source_line": 412,
+          "native_argument_count": 5
+        },
+        {
+          "name": "simple_rad_lba_init",
+          "module": "simple_rad_module",
+          "source": "src/Radiation/simple_rad_module.F90",
+          "arguments": [
+            {
+              "name": "iunit",
+              "kind": "integer",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "file_path",
+              "kind": "character",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": "*"
+            }
+          ],
+          "result": null,
+          "source_line": 492,
+          "native_argument_count": 2
+        },
+        {
+          "name": "liq_water_path",
+          "module": "simple_rad_module",
+          "source": "src/Radiation/simple_rad_module.F90",
+          "arguments": [
+            {
+              "name": "ngrdcol",
+              "kind": "integer",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "nzm",
+              "kind": "integer",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "nzt",
+              "kind": "integer",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "rho",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "nzt"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "rcm",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "nzt"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "invrs_dzt",
+              "kind": "real",
+              "dims": [
+                "ngrdcol",
+                "nzt"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            }
+          ],
+          "result": {
+            "name": "liq_water_path",
+            "kind": "real",
+            "dims": [
+              "ngrdcol",
+              "nzm"
+            ],
+            "intent": "out",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          "source_line": 525,
+          "native_argument_count": 6
+        }
+      ],
+      "actual_JAX": "clubb_jax/src/Radiation/simple_rad_module.py",
+      "JAX_sha256": "fe00297e2e6b8976ba74a411d70a536890ea90fe5fdfd87708bab3f82c713ee1"
+    },
+    {
+      "source": "src/Radiation/soil_vegetation.F90",
+      "sha256": "823f9275eb082400f3367cec89db6a247d23e45b101a6d069289bfe89a63ac92",
+      "lines": 250,
+      "routines": [
+        {
+          "name": "advance_soil_veg",
+          "module": "soil_vegetation",
+          "source": "src/Radiation/soil_vegetation.F90",
+          "arguments": [
+            {
+              "name": "ngrdcol",
+              "kind": "integer",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "dt",
+              "kind": "real",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "rho_sfc",
+              "kind": "real",
+              "dims": [
+                "ngrdcol"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "Frad_SW_up_sfc",
+              "kind": "real",
+              "dims": [
+                "ngrdcol"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "Frad_SW_down_sfc",
+              "kind": "real",
+              "dims": [
+                "ngrdcol"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "Frad_LW_down_sfc",
+              "kind": "real",
+              "dims": [
+                "ngrdcol"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "wpthlp_sfc",
+              "kind": "real",
+              "dims": [
+                "ngrdcol"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "wprtp_sfc",
+              "kind": "real",
+              "dims": [
+                "ngrdcol"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "p_sfc",
+              "kind": "real",
+              "dims": [
+                "ngrdcol"
+              ],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "stats",
+              "kind": "stats_type",
+              "dims": [],
+              "intent": "inout",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "deep_soil_T_in_K",
+              "kind": "real",
+              "dims": [
+                "ngrdcol"
+              ],
+              "intent": "inout",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "sfc_soil_T_in_K",
+              "kind": "real",
+              "dims": [
+                "ngrdcol"
+              ],
+              "intent": "inout",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "veg_T_in_K",
+              "kind": "real",
+              "dims": [
+                "ngrdcol"
+              ],
+              "intent": "inout",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            }
+          ],
+          "result": null,
+          "source_line": 20,
+          "native_argument_count": 13
+        },
+        {
+          "name": "initialize_soil_veg",
+          "module": "soil_vegetation",
+          "source": "src/Radiation/soil_vegetation.F90",
+          "arguments": [
+            {
+              "name": "ngrdcol",
+              "kind": "integer",
+              "dims": [],
+              "intent": "in",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "deep_soil_T_in_K",
+              "kind": "real",
+              "dims": [
+                "ngrdcol"
+              ],
+              "intent": "out",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "sfc_soil_T_in_K",
+              "kind": "real",
+              "dims": [
+                "ngrdcol"
+              ],
+              "intent": "out",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            },
+            {
+              "name": "veg_T_in_K",
+              "kind": "real",
+              "dims": [
+                "ngrdcol"
+              ],
+              "intent": "out",
+              "optional": false,
+              "allocatable": false,
+              "character_length": ""
+            }
+          ],
+          "result": null,
+          "source_line": 217,
+          "native_argument_count": 4
+        }
+      ],
+      "actual_JAX": "clubb_jax/src/Radiation/soil_vegetation.py",
+      "JAX_sha256": "3f012e2b5ed588781ebb28720bd8aee5a927008c9b10d0d2e203a27c084526ff"
+    }
+  ],
+  "routines_total": 21,
+  "common_initializer_in_exempt_file": {
+    "name": "init_radiation",
+    "module": "bugsrad_driver",
+    "source": "src/Radiation/bugsrad_driver.F90",
+    "arguments": [
+      {
+        "name": "iunit",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "namelist_file",
+        "kind": "character",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": "*"
+      },
+      {
+        "name": "case_info_file",
+        "kind": "character",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": "*"
+      },
+      {
+        "name": "l_calc_thlp2_rad",
+        "kind": "logical",
+        "dims": [],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      }
+    ],
+    "result": null
+  },
+  "source_order_control": {
+    "advance_clubb_radiation": [
+      "Update soil/vegetation using retained surface fluxes",
+      "If l_rad_itime, run the selected radiation scheme",
+      "Check fatal status before sampled stats",
+      "Update diagnostics on every sampled timestep, including between radiation calls"
+    ],
+    "radiation_driver": [
+      "Initialize the six Native outputs",
+      "Use prescribed solar lookup or calendar/solar geometry when shortwave is enabled",
+      "Dispatch BUGS/simplified/BOMEX/LBA; BUGS is an explicit exception",
+      "For simplified radiation, reset components, optionally compute shortwave/ddzm, compute longwave, then add components",
+      "Perform the Native fatal check; none is normally skipped by the outer caller"
+    ],
+    "simple_rad": [
+      "Descending liquid-water-path recurrence",
+      "F1>eps cloud-base heating branch",
+      "Optional8g/kg crossing/interpolation, Heaviside and fractional powers with Native conditionals",
+      "Sample inversion height",
+      "Compute thermodynamic heating from the complete flux divergence"
+    ],
+    "sunray_sw": [
+      "Scalar Delta-Eddington coefficients",
+      "Ascending per-column optical-depth sum",
+      "Transform per-layer optical depth",
+      "Scalar transfer coefficients, then per-column c1/c2",
+      "Descending optical-path recurrence: top,interior,surface; preserve l_center branches"
+    ],
+    "soil_vegetation": [
+      "Soil constants",
+      "Pre-update temperature stats",
+      "Vegetation,surface-soil,deep-soil updates in that order",
+      "Post-update soil heat-flux scalar stats in column order"
+    ],
+    "extended_atmosphere": [
+      "Native ordered bounds/pressure/error checks",
+      "Derive the interpolation buffer and total dimension",
+      "Construct the complete momentum grid, preserving the source exit/post-loop behavior",
+      "Linearly extend the top, then construct thermodynamic midpoints",
+      "Release arrays without resetting Native dimension integers"
+    ]
+  },
+  "explicit_scope_evidence": {
+    "BUGS_engine": "User permits exception; bugsrad_driver compute_bugsrad_radiation and BUGSrad/ remain outside draft science scope. Common init_radiation is not a physics-engine exemption.",
+    "SILHS_radiation": "Actual JAX and current Kokkos reject l_silhs_rad at initialization; root explicitly retained this exclusion. The Native momentum-flux/thermodynamic-weight product is nonconforming (nzm versus nzt).",
+    "commented_rad_lwsw": "Lines15\u2013340 of Native rad_lwsw_module.F90 are fully commented; only sunray_sw beginning at343 is executable.",
+    "Native_undefined_preconditions": [
+      "simple_rad8g/kg isotherm mustlieinsidertmprofile; sourceguardiscommented. NoJAXindexclipping imported.",
+      "extendedatmospheric pressure searchhasnoextraendguard; preservevalid-inputprecondition, no silentclipping.",
+      "init_radiation nparamunassignedifallsentinel beforeNativefirstread; explicitdefinednessdecisionmustbeloggedifdefaultinitialized."
+    ]
+  },
+  "implementation_status": "Owner source/cleanup audit complete. Compilation, independent review and combined whole-model validation remain pending."
+}

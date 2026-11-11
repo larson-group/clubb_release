@@ -1,0 +1,30 @@
+{
+  "date_UTC": "2026-11-06T08:52:49.794732+00:00",
+  "attribution": "Separate owner cleanup after scientific/control/capture review.",
+  "checks": [
+    "Native parent/public/majorcall groups restored with exact executable-token proof.",
+    "Native main narrative comments and field-unit descriptions retained; helpers/init/resource descriptions checked.",
+    "Linewidth100/trailing whitespace checked; exactC++case/callee names checked against actual owners."
+  ],
+  "sha256": {
+    "src/Input_fields/input_fields.F90": "5a45102b7765fcbacb29c502df280ae07948d6fbe02baa9a9a22c35a49b8cfd9",
+    "clubb_kokkos/drafts/driver_input_fields/Input_fields/input_fields.cpp": "799f1b3075194b14b15ed074931e3bbad8c5d82532f50184d597fa6dadd77421",
+    "clubb_kokkos/drafts/driver_input_fields/Input_fields/input_fields.hpp": "c02ff65ed867aa4ceee39ae9dfaa1f0a629a00e3d31434e00b8679313b9c775d",
+    "clubb_kokkos/drafts/driver_input_fields/Input_fields/inputfields_state.hpp": "f40f74853977cfc35d6cce2f3533ffbb07e2514b0582cae89afe0de0b24dbfc9",
+    "clubb_kokkos/drafts/driver_input_fields/f2k/setfields_io_bridge.fragment.hpp": "758b98a98487b9195368255186df015c875b1825a3875a8bb4f3d1f768faebca",
+    "clubb_kokkos/drafts/driver_input_fields/f2k/setfields_io_bridge.fragment.F90": "f83b5f18cffce5066b3557ed8fcde396f409d29065ea1b5ea074438525d615d4",
+    "clubb_kokkos/drafts/driver_input_fields/f2k/generate_setfields_fragment.py": "05f0c82d2f81f4cfaa9dd5364a50a76a8f5d67355f6f8351a49face44bbba1eb"
+  },
+  "limits": [
+    "No compile/CPU/CUDA/model/BFBclaim; Root compatible-group integration pending.",
+    "Generalinputfields remains existingdrivergate; nonCLUBB source branches unexecuted.",
+    "Native unconditionalsoiloutputs/source-invalidIDs/dimensions are not repaired.",
+    "Root must merge staged read_setfields_nl into existing driver_io producer before this group compiles."
+  ],
+  "post_format_compile_cleanup": {
+    "owner": "Root",
+    "scope": "7 diagnostic literal+literal expressions corrected to adjacent C++ literals before std::string concatenation. No scientific expression/formal/control change.",
+    "new_cpp_sha256": "799f1b3075194b14b15ed074931e3bbad8c5d82532f50184d597fa6dadd77421",
+    "format_token_proof_scope": "Earlier source-group cleanup proof remains historical at ce29a3...; it does not claim token identity across this diagnostic compile correction."
+  }
+}

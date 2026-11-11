@@ -1,7 +1,5 @@
 """Check mixing_length.F90 ports against Fortran."""
 
-from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
-
 from input.scripts.create_case_namelist import create_case_namelist_file
 
 import os
@@ -15,7 +13,7 @@ from clubb_python.derived_types.err_info import ErrInfo as FortranErrInfo
 from utilities.output_paths import REPO_ROOT as _REPO_ROOT
 
 from clubb_jax.auto_llm_generated_tests.pytests.f2py_unit_test_helpers import max_abs_diff, max_rel_diff, no_stats, setup_matching_grids
-from clubb_jax.src.CLUBB_core.err_info_type_module import ErrInfo
+from clubb_jax.src.CLUBB_core.err_info import ErrInfo
 from clubb_jax.src.CLUBB_core.mixing_length import (
     set_Lscale_max,
     calc_Lscale_directly,
@@ -24,7 +22,7 @@ from clubb_jax.src.CLUBB_core.mixing_length import (
 from clubb_jax.src.CLUBB_core.model_flags import Lscale_direct
 from clubb_jax.src.CLUBB_core.parameter_indices import iLscale_mu_entrain
 from clubb_jax.src.CLUBB_core.parameters_tunable import init_clubb_params
-from clubb_jax.src.CLUBB_core.pdf_parameter_module import init_pdf_params
+from clubb_jax.src.CLUBB_core.pdf_params import init_pdf_params
 from clubb_jax.src.CLUBB_core.saturation import SATURATION_FLATAU
 
 _ROOT = str(_REPO_ROOT)
@@ -66,7 +64,7 @@ def test_calc_Lscale_directly_f2py():
         tail = (em, thv_ds, Lmax, lmin, cp, SATURATION_FLATAU, False, Lscale_direct)
         fr = fortran.calc_lscale_directly(ng, nzm, nzt, fgr, *common, fortran_init_pdf_params(nzt, ng), *tail,
                                           FortranErrInfo(ngrdcol=ng))
-        jr = call_jax(calc_Lscale_directly, ng, nzm, nzt, jgr, *common, init_pdf_params(nzt, ng), *tail,
+        jr = calc_Lscale_directly(ng, nzm, nzt, jgr, *common, init_pdf_params(nzt, ng), *tail,
                                   no_stats(ng), ErrInfo(ngrdcol=ng))
         assert not fr[0].is_fatal() and not jr[0].is_fatal()
         for name, a, b in zip(("Lscale", "Lscale_up", "Lscale_down"), jr[1:4], fr[1:4]):

@@ -23,18 +23,19 @@ module new_pdf_main
   contains
 
   !=============================================================================
-  subroutine new_pdf_driver( nz, ngrdcol, & ! In
-                             wm, rtm, thlm, wp2, rtp2, thlp2, & ! In
-                             Skw, wprtp, wpthlp, rtpthlp, & ! In
-                             clubb_params, & ! In
-                             Skrt, Skthl, pdf_implicit_coefs_terms, & ! InOut
-                             mu_w_1, mu_w_2, & ! Out
-                             mu_rt_1, mu_rt_2, & ! Out
-                             mu_thl_1, mu_thl_2, & ! Out
-                             sigma_w_1_sqd, sigma_w_2_sqd, & ! Out
-                             sigma_rt_1_sqd, sigma_rt_2_sqd, & ! Out
-                             sigma_thl_1_sqd, sigma_thl_2_sqd, & ! Out
-                             mixt_frac ) ! Out
+  subroutine new_pdf_driver( nz, ngrdcol, wm, rtm, thlm, wp2, rtp2, thlp2, & ! In
+                             Skw,                                       & ! In
+                             wprtp, wpthlp, rtpthlp,                    & ! In
+                             clubb_params,                              & ! In
+                             Skrt, Skthl,                               & ! I/O
+                             mu_w_1, mu_w_2,                            & ! Out
+                             mu_rt_1, mu_rt_2,                          & ! Out
+                             mu_thl_1, mu_thl_2,                        & ! Out
+                             sigma_w_1_sqd, sigma_w_2_sqd,              & ! Out
+                             sigma_rt_1_sqd, sigma_rt_2_sqd,            & ! Out
+                             sigma_thl_1_sqd, sigma_thl_2_sqd,          & ! Out
+                             mixt_frac,                                 & ! Out
+                             pdf_implicit_coefs_terms )                   ! Out
                              
 
     ! Description:
@@ -82,11 +83,11 @@ module new_pdf_main
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
-      nz, & ! Number of vertical levels
-      ngrdcol ! Number of grid columns
+      nz, &
+      ngrdcol
 
+    ! Input Variables
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       wm,      & ! Mean of w (overall)                 [m/s]
       rtm,     & ! Mean of rt (overall)                [kg/kg]
@@ -102,7 +103,7 @@ module new_pdf_main
     real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
-    !--------------------------- Input/Output Variables ---------------------------
+    ! Input/Output Variables
     ! These variables are input/output because their values may be clipped.
     ! Otherwise, as long as it is not necessary to clip them, their values
     ! will stay the same.
@@ -110,11 +111,7 @@ module new_pdf_main
       Skrt,  & ! Skewness of rt (overall)            [-]
       Skthl    ! Skewness of thl (overall)           [-]
 
-    !--------------------------- Input/Output Variables ---------------------------
-    type(implicit_coefs_terms), intent(inout) :: &
-      pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
-
-    !--------------------------- Output Variables ---------------------------
+    ! Output Variables
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
       mu_w_1,          & ! Mean of w (1st PDF component)        [m/s]
       mu_w_2,          & ! Mean of w (2nd PDF component)        [m/s]
@@ -130,8 +127,10 @@ module new_pdf_main
       sigma_thl_2_sqd, & ! Variance of thl (2nd PDF component)  [K^2]
       mixt_frac          ! Mixture fraction                     [-]
 
+    type(implicit_coefs_terms), intent(inout) :: &
+      pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
-    !--------------------------- Local Variables ---------------------------
+    ! Local Variables
 
     ! Output only for recording statistics.
     ! Output functionality deprecated, see https://github.com/larson-group/clubb/issues/1176
@@ -148,14 +147,14 @@ module new_pdf_main
       min_F_thl, & ! Minimum allowable value of parameter F_thl    [-]
       max_F_thl    ! Maximum allowable value of parameter F_thl    [-]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+    real( kind = core_rknd ), dimension(nz) :: &
       sigma_w_1,   & ! Standard deviation of w (1st PDF component)      [m/s]
       sigma_w_2,   & ! Standard deviation of w (2nd PDF component)      [m/s]
       sgn_wprtp,   & ! Sign of the covariance of w and rt (overall)     [-]
       sgn_wpthlp,  & ! Sign of the covariance of w and thl (overall)    [-]
       sgn_wp2        ! Sign of the variance of w (overall); always pos. [-]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+    real( kind = core_rknd ), dimension(nz) :: &
       coef_sigma_w_1_sqd,   & ! sigma_w_1^2 = coef_sigma_w_1_sqd * <w'^2>    [-]
       coef_sigma_w_2_sqd,   & ! sigma_w_2^2 = coef_sigma_w_2_sqd * <w'^2>    [-]
       coef_sigma_rt_1_sqd,  & ! sigma_rt_1^2 = coef_sigma_rt_1_sqd * <rt'^2> [-]
@@ -163,136 +162,147 @@ module new_pdf_main
       coef_sigma_thl_1_sqd, & ! sigma_thl_1^2=coef_sigma_thl_1_sqd*<thl'^2>  [-]
       coef_sigma_thl_2_sqd    ! sigma_thl_2^2=coef_sigma_thl_2_sqd*<thl'^2>  [-]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+    real( kind = core_rknd ), dimension(nz) :: &
       max_Skx2_pos_Skx_sgn_wpxp, & ! Maximum Skx^2 when Skx*sgn(<w'x'>) >= 0 [-]
       max_Skx2_neg_Skx_sgn_wpxp    ! Maximum Skx^2 when Skx*sgn(<w'x'>) < 0  [-]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+    real( kind = core_rknd ), dimension(nz) :: &
       zeta_w    ! Parameter for the PDF component variances of w           [-]
 
     real ( kind = core_rknd ) :: &
       lambda_w    ! Param. that increases or decreases Skw dependence  [-]
 
-    real ( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+    real ( kind = core_rknd ), dimension(nz) :: &
       exp_factor_rt,   & ! Factor of the form 1 - exp{} that reduces F_rt   [-]
       exp_factor_thl,  & ! Don't reduce F_thl by exp_factor_thl        [-]
       adj_corr_rt_thl    ! Adjusted (overall) correlation of rt and theta-l [-]
 
-    real ( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+    real ( kind = core_rknd ), dimension(nz) :: &
       coef_wp4_implicit,     & ! <w'^4> = coef_wp4_implicit * <w'^2>^2       [-]
       coef_wprtp2_implicit,  & ! <w'rt'^2> = coef_wprtp2_implicit*<rt'^2>  [m/s]
       coef_wpthlp2_implicit    ! <w'thl'^2>=coef_wpthlp2_implicit*<thl'^2> [m/s]
 
     ! <w'^2 rt'> = coef_wp2rtp_implicit * <w'rt'> + term_wp2rtp_explicit
-    real ( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+    real ( kind = core_rknd ), dimension(nz) :: &
       coef_wp2rtp_implicit, & ! Coefficient that is multiplied by <w'rt'>  [m/s]
       term_wp2rtp_explicit    ! Term that is on the RHS          [m^2/s^2 kg/kg]
 
     ! <w'^2 thl'> = coef_wp2thlp_implicit * <w'thl'> + term_wp2thlp_explicit
-    real ( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+    real ( kind = core_rknd ), dimension(nz) :: &
       coef_wp2thlp_implicit, & ! Coef. that is multiplied by <w'thl'>      [m/s]
       term_wp2thlp_explicit    ! Term that is on the RHS             [m^2/s^2 K]
 
     ! <w'rt'thl'> = coef_wprtpthlp_implicit*<rt'thl'> + term_wprtpthlp_explicit
-    real ( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+    real ( kind = core_rknd ), dimension(nz) :: &
       coef_wprtpthlp_implicit, & ! Coef. that is multiplied by <rt'thl'>   [m/s]
       term_wprtpthlp_explicit    ! Term that is on the RHS         [m/s(kg/kg)K]
       
+    integer :: &
+      i
       
     ! ------------------------- Begin Code -------------------------
       
-    ! Calculate sgn( <w'rt'> ).
-    where ( wprtp >= zero )
-       sgn_wprtp = one
-    elsewhere ! wprtp < 0
-       sgn_wprtp = -one
-    endwhere ! wprtp >= 0
+    do  i = 1, ngrdcol
 
-    ! Calculate sgn( <w'thl'> ).
-    where ( wpthlp >= zero )
-       sgn_wpthlp = one
-    elsewhere ! wpthlp < 0
-       sgn_wpthlp = -one
-    endwhere ! wpthlp >= 0
+      ! Calculate sgn( <w'rt'> ).
+      where ( wprtp(i,:) >= zero )
+         sgn_wprtp = one
+      elsewhere ! wprtp < 0
+         sgn_wprtp = -one
+      endwhere ! wprtp >= 0
 
-    ! Sign of the variance of w (overall), which is always positive.
-    sgn_wp2 = one
+      ! Calculate sgn( <w'thl'> ).
+      where ( wpthlp(i,:) >= zero )
+         sgn_wpthlp = one
+      elsewhere ! wpthlp < 0
+         sgn_wpthlp = -one
+      endwhere ! wpthlp >= 0
 
-    lambda_w = 0.5_core_rknd
+      ! Sign of the variance of w (overall), which is always positive.
+      sgn_wp2 = one
 
-    ! Calculate the adjusted (overall) correlation of rt and theta-l, and the
-    ! value of exp_factor_rt.
-    where ( rtp2 >= rt_tol**2 .and. thlp2 >= thl_tol**2 )
-       adj_corr_rt_thl = rtpthlp / sqrt( rtp2 * thlp2 ) * sgn_wprtp * sgn_wpthlp
-       adj_corr_rt_thl = min( max( adj_corr_rt_thl, -max_mag_correlation ), &
-                              max_mag_correlation )
-       exp_factor_rt = one &
-                       - exp( -0.2_core_rknd * ( adj_corr_rt_thl + one )**5 )
-    elsewhere ! <rt'^2> < rt_tol^2 or <thl'^2> < thl_tol^2
-       adj_corr_rt_thl = zero  ! adj_corr_rt_thl is undefined in this scenario.
-       exp_factor_rt = one     ! Set exp_factor_rt to 1.
-    endwhere ! <rt'^2> >= rt_tol^2 and <thl'^2> >= thl_tol^2
+      lambda_w = 0.5_core_rknd
 
-    ! The value of F_thl is not reduced by exp_factor_thl.
-    exp_factor_thl = one
+      ! Calculate the adjusted (overall) correlation of rt and theta-l, and the
+      ! value of exp_factor_rt.
+      where ( rtp2(i,:) >= rt_tol**2 .and. thlp2(i,:) >= thl_tol**2 )
+         adj_corr_rt_thl = rtpthlp(i,:) / sqrt( rtp2(i,:) * thlp2(i,:) ) * sgn_wprtp * sgn_wpthlp
+         adj_corr_rt_thl = min( max( adj_corr_rt_thl, -max_mag_correlation ), &
+                                max_mag_correlation )
+         exp_factor_rt = one &
+                         - exp( -0.2_core_rknd * ( adj_corr_rt_thl + one )**5 )
+      elsewhere ! <rt'^2> < rt_tol^2 or <thl'^2> < thl_tol^2
+         adj_corr_rt_thl = zero  ! adj_corr_rt_thl is undefined in this scenario.
+         exp_factor_rt = one     ! Set exp_factor_rt to 1.
+      endwhere ! <rt'^2> >= rt_tol^2 and <thl'^2> >= thl_tol^2
+
+      ! The value of F_thl is not reduced by exp_factor_thl.
+      exp_factor_thl = one
 
 
-    ! Vertical velocity, w, will always be the setter variable.
-    call calc_F_x_zeta_x_setter( nz, ngrdcol, Skw, & ! In
-                                 clubb_params(:,islope_coef_spread_DG_means_w), & ! In
-                                 clubb_params(:,ipdf_component_stdev_factor_w), lambda_w, & ! In
-                                 F_w, zeta_w, min_F_w, max_F_w ) ! Out
+      ! Vertical velocity, w, will always be the setter variable.
+      call calc_F_x_zeta_x_setter( nz, Skw(i,:),                      & ! In
+                                   clubb_params(i,islope_coef_spread_DG_means_w), & ! In
+                                   clubb_params(i,ipdf_component_stdev_factor_w), & ! In
+                                   lambda_w,                     & ! In
+                                   F_w(i,:), zeta_w,                  & ! Out
+                                   min_F_w(i,:), max_F_w(i,:)              ) ! Out
 
-    ! Calculate the PDF parameters, including mixture fraction, for the
-    ! setter variable, w.
-    call calc_setter_var_params( nz, ngrdcol, & ! In
-                                 wm, wp2, Skw, & ! In
-                                 sgn_wp2, F_w, zeta_w, & ! In
-                                 mu_w_1, mu_w_2, & ! Out
-                                 sigma_w_1, sigma_w_2, & ! Out
-                                 mixt_frac, & ! Out
-                                 coef_sigma_w_1_sqd, coef_sigma_w_2_sqd ) ! Out
+      ! Calculate the PDF parameters, including mixture fraction, for the
+      ! setter variable, w.
+      call calc_setter_var_params( nz, wm(i,:), wp2(i,:), Skw(i,:), sgn_wp2, & ! In
+                                   F_w(i,:), zeta_w,               & ! In
+                                   mu_w_1(i,:), mu_w_2(i,:), sigma_w_1, & ! Out
+                                   sigma_w_2, mixt_frac(i,:),      & ! Out
+                                   coef_sigma_w_1_sqd,        & ! Out
+                                   coef_sigma_w_2_sqd         ) ! Out
 
-    sigma_w_1_sqd = sigma_w_1**2
-    sigma_w_2_sqd = sigma_w_2**2
+      sigma_w_1_sqd(i,:) = sigma_w_1**2
+      sigma_w_2_sqd(i,:) = sigma_w_2**2
 
-    ! Calculate the upper limit on the magnitude of skewness for responding
-    ! variables.
-    max_Skx2_pos_Skx_sgn_wpxp = four * ( one - mixt_frac )**2 &
-                                / ( mixt_frac * ( two - mixt_frac ) )
+      ! Calculate the upper limit on the magnitude of skewness for responding
+      ! variables.
+      max_Skx2_pos_Skx_sgn_wpxp = four * ( one - mixt_frac(i,:) )**2 &
+                                  / ( mixt_frac(i,:) * ( two - mixt_frac(i,:) ) )
 
-    max_Skx2_neg_Skx_sgn_wpxp = four * mixt_frac**2 / ( one - mixt_frac**2 )
+      max_Skx2_neg_Skx_sgn_wpxp = four * mixt_frac(i,:)**2 / ( one - mixt_frac(i,:)**2 )
 
-    ! Calculate the PDF parameters for responder variable rt.
-    call calc_responder_var( nz, ngrdcol, rtm, rtp2, sgn_wprtp, mixt_frac, & ! In
-                             clubb_params(:,icoef_spread_DG_means_rt), exp_factor_rt, & ! In
-                             max_Skx2_pos_Skx_sgn_wpxp, max_Skx2_neg_Skx_sgn_wpxp, & ! In
-                             Skrt, & ! InOut
-                             mu_rt_1, mu_rt_2, & ! Out
-                             sigma_rt_1_sqd, sigma_rt_2_sqd, & ! Out
-                             coef_sigma_rt_1_sqd, coef_sigma_rt_2_sqd, & ! Out
-                             F_rt, min_F_rt, max_F_rt ) ! Out
+      ! Calculate the PDF parameters for responder variable rt.
+      call calc_responder_var( nz, rtm(i,:), rtp2(i,:), sgn_wprtp, mixt_frac(i,:), & ! In
+                               clubb_params(i,icoef_spread_DG_means_rt),         & ! In
+                               exp_factor_rt,                   & ! In
+                               max_Skx2_pos_Skx_sgn_wpxp,       & ! In
+                               max_Skx2_neg_Skx_sgn_wpxp,       & ! In
+                               Skrt(i,:),                            & ! In/Out
+                               mu_rt_1(i,:), mu_rt_2(i,:),                & ! Out
+                               sigma_rt_1_sqd(i,:), sigma_rt_2_sqd(i,:),  & ! Out
+                               coef_sigma_rt_1_sqd,             & ! Out
+                               coef_sigma_rt_2_sqd,             & ! Out
+                               F_rt(i,:), min_F_rt(i,:), max_F_rt(i,:)         ) ! Out
 
-    ! Calculate the PDF parameters for responder variable thl.
-    call calc_responder_var( nz, ngrdcol, thlm, thlp2, sgn_wpthlp, mixt_frac, & ! In
-                             clubb_params(:,icoef_spread_DG_means_thl), exp_factor_thl, & ! In
-                             max_Skx2_pos_Skx_sgn_wpxp, max_Skx2_neg_Skx_sgn_wpxp, & ! In
-                             Skthl, & ! InOut
-                             mu_thl_1, mu_thl_2, & ! Out
-                             sigma_thl_1_sqd, sigma_thl_2_sqd, & ! Out
-                             coef_sigma_thl_1_sqd, coef_sigma_thl_2_sqd, & ! Out
-                             F_thl, min_F_thl, max_F_thl ) ! Out
+      ! Calculate the PDF parameters for responder variable thl.
+      call calc_responder_var( nz, thlm(i,:), thlp2(i,:), sgn_wpthlp, mixt_frac(i,:), & ! In
+                               clubb_params(i,icoef_spread_DG_means_thl),           & ! In
+                               exp_factor_thl,                     & ! In
+                               max_Skx2_pos_Skx_sgn_wpxp,          & ! In
+                               max_Skx2_neg_Skx_sgn_wpxp,          & ! In
+                               Skthl(i,:),                              & ! In/Out
+                               mu_thl_1(i,:), mu_thl_2(i,:),                 & ! Out
+                               sigma_thl_1_sqd(i,:), sigma_thl_2_sqd(i,:),   & ! Out
+                               coef_sigma_thl_1_sqd,               & ! Out
+                               coef_sigma_thl_2_sqd,               & ! Out
+                               F_thl(i,:), min_F_thl(i,:), max_F_thl(i,:)         ) ! Out
 
 
       if ( .not. l_explicit_turbulent_adv_wp3 ) then
 
          ! Turbulent advection of <w'^3> is being handled implicitly.
 
-       ! <w'^4> = coef_wp4_implicit * <w'^2>^2.
-       coef_wp4_implicit &
-       = calc_coef_wp4_implicit( nz, ngrdcol, mixt_frac, F_w, &
-                                 coef_sigma_w_1_sqd, &
-                                 coef_sigma_w_2_sqd )
+         ! <w'^4> = coef_wp4_implicit * <w'^2>^2.
+         coef_wp4_implicit &
+         = calc_coef_wp4_implicit( nz, mixt_frac(i,:), F_w(i,:), &
+                                   coef_sigma_w_1_sqd, &
+                                   coef_sigma_w_2_sqd )
 
       else ! l_explicit_turbulent_adv_wp3
 
@@ -307,32 +317,37 @@ module new_pdf_main
          ! implicitly.  Turbulent advection of <rt'thl'> is being handled
          ! semi-implicitly.
 
-       ! <w'rt'^2> = coef_wprtp2_implicit * <rt'^2>
-       coef_wprtp2_implicit &
-       = calc_coef_wpxp2_implicit( nz, ngrdcol, wp2, rtp2, wprtp, sgn_wprtp, & ! In
-                                   mixt_frac, F_w, F_rt, & ! In
-                                   coef_sigma_w_1_sqd, coef_sigma_w_2_sqd, & ! In
-                                   coef_sigma_rt_1_sqd, & ! In
-                                   coef_sigma_rt_2_sqd ) ! In
+         ! <w'rt'^2> = coef_wprtp2_implicit * <rt'^2>
+         coef_wprtp2_implicit &
+         = calc_coef_wpxp2_implicit( nz, wp2(i,:), rtp2(i,:), wprtp(i,:), sgn_wprtp, &
+                                     mixt_frac(i,:), F_w(i,:), F_rt(i,:), &
+                                     coef_sigma_w_1_sqd, &
+                                     coef_sigma_w_2_sqd, &
+                                     coef_sigma_rt_1_sqd, &
+                                     coef_sigma_rt_2_sqd  )
 
-       ! <w'thl'^2> = coef_wpthlp2_implicit * <thl'^2>
-       coef_wpthlp2_implicit &
-       = calc_coef_wpxp2_implicit( nz, ngrdcol, wp2, thlp2, wpthlp, sgn_wpthlp, & ! In
-                                   mixt_frac, F_w, F_thl, & ! In
-                                   coef_sigma_w_1_sqd, coef_sigma_w_2_sqd, & ! In
-                                   coef_sigma_thl_1_sqd, & ! In
-                                   coef_sigma_thl_2_sqd ) ! In
+         ! <w'thl'^2> = coef_wpthlp2_implicit * <thl'^2>
+         coef_wpthlp2_implicit &
+         = calc_coef_wpxp2_implicit( nz, wp2(i,:), thlp2(i,:), wpthlp(i,:), sgn_wpthlp, &
+                                     mixt_frac(i,:), F_w(i,:), F_thl(i,:), &
+                                     coef_sigma_w_1_sqd, &
+                                     coef_sigma_w_2_sqd, &
+                                     coef_sigma_thl_1_sqd, &
+                                     coef_sigma_thl_2_sqd  )
 
-       ! <w'rt'thl'> = coef_wprtpthlp_implicit * <rt'thl'>
-       !               + term_wprtpthlp_explicit
-       call calc_coefs_wpxpyp_semiimpl( nz, ngrdcol, & ! In
-                                        wp2, rtp2, thlp2, wprtp, wpthlp, & ! In
-                                        sgn_wprtp, sgn_wpthlp, & ! In
-                                        mixt_frac, F_w, F_rt, F_thl, & ! In
-                                        coef_sigma_w_1_sqd, coef_sigma_w_2_sqd, & ! In
-                                        coef_sigma_rt_1_sqd, coef_sigma_rt_2_sqd, & ! In
-                                        coef_sigma_thl_1_sqd, coef_sigma_thl_2_sqd, & ! In
-                                        coef_wprtpthlp_implicit, term_wprtpthlp_explicit ) ! Out
+         ! <w'rt'thl'> = coef_wprtpthlp_implicit * <rt'thl'>
+         !               + term_wprtpthlp_explicit
+         call calc_coefs_wpxpyp_semiimpl( nz, wp2(i,:), rtp2(i,:), thlp2(i,:), wprtp(i,:), & ! In
+                                          wpthlp(i,:), sgn_wprtp, sgn_wpthlp,              & ! In
+                                          mixt_frac(i,:), F_w(i,:), F_rt(i,:), F_thl(i,:), & ! In
+                                          coef_sigma_w_1_sqd  ,                            & ! In
+                                          coef_sigma_w_2_sqd,                              & ! In
+                                          coef_sigma_rt_1_sqd,                             & ! In
+                                          coef_sigma_rt_2_sqd,                             & ! In
+                                          coef_sigma_thl_1_sqd,                            & ! In
+                                          coef_sigma_thl_2_sqd,                            & ! In
+                                          coef_wprtpthlp_implicit,                         & ! Out
+                                          term_wprtpthlp_explicit        )                   ! Out
 
       else ! l_explicit_turbulent_adv_xpyp
 
@@ -350,19 +365,25 @@ module new_pdf_main
          ! Turbulent advection of <w'rt'> and <w'thl'> is being handled
          ! semi-implicitly.
 
-       ! <w'^2 rt'> = coef_wp2rtp_implicit * <w'rt'> + term_wp2rtp_explicit
-       call calc_coefs_wp2xp_semiimpl( nz, ngrdcol, & ! In
-                                       wp2, rtp2, sgn_wprtp, mixt_frac, F_w, F_rt, & ! In
-                                       coef_sigma_w_1_sqd, coef_sigma_w_2_sqd, & ! In
-                                       coef_sigma_rt_1_sqd, coef_sigma_rt_2_sqd, & ! In
-                                       coef_wp2rtp_implicit, term_wp2rtp_explicit ) ! Out
+         ! <w'^2 rt'> = coef_wp2rtp_implicit * <w'rt'> + term_wp2rtp_explicit
+         call calc_coefs_wp2xp_semiimpl( nz, wp2(i,:), rtp2(i,:), sgn_wprtp, & ! In
+                                         mixt_frac(i,:), F_w(i,:), F_rt(i,:), & ! In
+                                         coef_sigma_w_1_sqd,   & ! In
+                                         coef_sigma_w_2_sqd,   & ! In
+                                         coef_sigma_rt_1_sqd,  & ! In
+                                         coef_sigma_rt_2_sqd,  & ! In
+                                         coef_wp2rtp_implicit, & ! Out
+                                         term_wp2rtp_explicit  ) ! Out
 
-       ! <w'^2 thl'> = coef_wp2thlp_implicit * <w'thl'> + term_wp2thlp_explicit
-       call calc_coefs_wp2xp_semiimpl( nz, ngrdcol, & ! In
-                                       wp2, thlp2, sgn_wpthlp, mixt_frac, F_w, F_thl, & ! In
-                                       coef_sigma_w_1_sqd, coef_sigma_w_2_sqd, & ! In
-                                       coef_sigma_thl_1_sqd, coef_sigma_thl_2_sqd, & ! In
-                                       coef_wp2thlp_implicit, term_wp2thlp_explicit ) ! Out
+         ! <w'^2 thl'> = coef_wp2thlp_implicit * <w'thl'> + term_wp2thlp_explicit
+         call calc_coefs_wp2xp_semiimpl( nz, wp2(i,:), thlp2(i,:), sgn_wpthlp, & ! In
+                                         mixt_frac(i,:), F_w(i,:), F_thl(i,:),  & ! In
+                                         coef_sigma_w_1_sqd,     & ! In
+                                         coef_sigma_w_2_sqd,     & ! In
+                                         coef_sigma_thl_1_sqd,   & ! In
+                                         coef_sigma_thl_2_sqd,   & ! In
+                                         coef_wp2thlp_implicit,  & ! Out
+                                         term_wp2thlp_explicit   ) ! Out
 
       else ! l_explicit_turbulent_adv_wpxp
 
@@ -375,32 +396,36 @@ module new_pdf_main
 
       endif ! .not. l_explicit_turbulent_adv_wpxp
 
-    ! Pack the implicit coefficients and explicit terms into a single type
-    ! variable for output.
-    pdf_implicit_coefs_terms%coef_wp4_implicit = coef_wp4_implicit
-    pdf_implicit_coefs_terms%coef_wprtp2_implicit = coef_wprtp2_implicit
-    pdf_implicit_coefs_terms%coef_wpthlp2_implicit = coef_wpthlp2_implicit
-    pdf_implicit_coefs_terms%coef_wp2rtp_implicit = coef_wp2rtp_implicit
-    pdf_implicit_coefs_terms%term_wp2rtp_explicit = term_wp2rtp_explicit
-    pdf_implicit_coefs_terms%coef_wp2thlp_implicit = coef_wp2thlp_implicit
-    pdf_implicit_coefs_terms%term_wp2thlp_explicit = term_wp2thlp_explicit
-    pdf_implicit_coefs_terms%coef_wprtpthlp_implicit = coef_wprtpthlp_implicit
-    pdf_implicit_coefs_terms%term_wprtpthlp_explicit = term_wprtpthlp_explicit
+      ! Pack the implicit coefficients and explicit terms into a single type
+      ! variable for output.
+      pdf_implicit_coefs_terms%coef_wp4_implicit(i,:) = coef_wp4_implicit
+      pdf_implicit_coefs_terms%coef_wprtp2_implicit(i,:) = coef_wprtp2_implicit
+      pdf_implicit_coefs_terms%coef_wpthlp2_implicit(i,:) = coef_wpthlp2_implicit
+      pdf_implicit_coefs_terms%coef_wp2rtp_implicit(i,:) = coef_wp2rtp_implicit
+      pdf_implicit_coefs_terms%term_wp2rtp_explicit(i,:) = term_wp2rtp_explicit
+      pdf_implicit_coefs_terms%coef_wp2thlp_implicit(i,:) = coef_wp2thlp_implicit
+      pdf_implicit_coefs_terms%term_wp2thlp_explicit(i,:) = term_wp2thlp_explicit
+      pdf_implicit_coefs_terms%coef_wprtpthlp_implicit(i,:) = coef_wprtpthlp_implicit
+      pdf_implicit_coefs_terms%term_wprtpthlp_explicit(i,:) = term_wprtpthlp_explicit
 
+    end do
 
     return
 
   end subroutine new_pdf_driver
 
   !=============================================================================
-  subroutine calc_responder_var( nz, ngrdcol, xm, xp2, sgn_wpxp, mixt_frac, & ! In
-                                 coef_spread_DG_means_x, exp_factor_x, & ! In
-                                 max_Skx2_pos_Skx_sgn_wpxp, max_Skx2_neg_Skx_sgn_wpxp, & ! In
-                                 Skx, & ! InOut
-                                 mu_x_1, mu_x_2, & ! Out
+  subroutine calc_responder_var( nz, xm, xp2, sgn_wpxp, mixt_frac, & ! In
+                                 coef_spread_DG_means_x,       & ! In
+                                 exp_factor_x,                 & ! In
+                                 max_Skx2_pos_Skx_sgn_wpxp,    & ! In
+                                 max_Skx2_neg_Skx_sgn_wpxp,    & ! In
+                                 Skx,                          & ! In/Out
+                                 mu_x_1, mu_x_2,               & ! Out
                                  sigma_x_1_sqd, sigma_x_2_sqd, & ! Out
-                                 coef_sigma_x_1_sqd, coef_sigma_x_2_sqd, & ! Out
-                                 F_x, min_F_x, max_F_x ) ! Out
+                                 coef_sigma_x_1_sqd,           & ! Out
+                                 coef_sigma_x_2_sqd,           & ! Out
+                                 F_x, min_F_x, max_F_x         ) ! Out
 
     ! Description:
     ! This is the sub-driver for a responder variable.  The upper limits of the
@@ -424,47 +449,44 @@ module new_pdf_main
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
-      nz, & ! Number of vertical levels
-      ngrdcol ! Number of grid columns
+      nz
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+    ! Input Variables
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
       xm,           & ! Mean of x (overall)                       [units vary]
       xp2,          & ! Variance of x (overall)               [(units vary)^2]
       sgn_wpxp,     & ! Sign of the covariance of w and x                  [-]
       mixt_frac,    & ! Mixture fraction                                   [-]
       exp_factor_x    ! Factor of the form 1 - exp{}; reduces F_x          [-]
 
-    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       coef_spread_DG_means_x    ! Coef.: spread betw. PDF comp. means of x   [-]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
       max_Skx2_pos_Skx_sgn_wpxp, & ! Maximum Skx^2 when Skx*sgn(<w'x'>) >= 0 [-]
       max_Skx2_neg_Skx_sgn_wpxp    ! Maximum Skx^2 when Skx*sgn(<w'x'>) < 0  [-]
 
-    !--------------------------- Input/Output Variables ---------------------------
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(inout) :: &
+    ! Input/Output Variable
+    real( kind = core_rknd ), dimension(nz), intent(inout) :: &
       Skx    ! Skewness of x (overall)              [-]
 
-    !--------------------------- Output Variables ---------------------------
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
+    ! Output Variables
+    real( kind = core_rknd ), dimension(nz), intent(out) :: &
       mu_x_1,        & ! Mean of x (1st PDF component)        [units vary]
       mu_x_2,        & ! Mean of x (2nd PDF component)        [units vary]
       sigma_x_1_sqd, & ! Variance of x (1st PDF component)    [(units vary)^2]
       sigma_x_2_sqd    ! Variance of x (2nd PDF component)    [(units vary)^2]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(nz), intent(out) :: &
       coef_sigma_x_1_sqd, & ! sigma_x_1^2 = coef_sigma_x_1_sqd * <x'^2>    [-]
       coef_sigma_x_2_sqd    ! sigma_x_2^2 = coef_sigma_x_2_sqd * <x'^2>    [-]
 
     ! Output only for recording statistics.
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(nz), intent(out) :: &
       F_x,     & ! Param. for the spread betw. the PDF component means of x  [-]
       min_F_x, & ! Minimum allowable value of parameter F_x                  [-]
       max_F_x    ! Maximum allowable value of parameter F_x                  [-]
-
-    !--------------------------- Begin Code ---------------------------
 
 
     ! Calculate the upper limit of the magnitude of Skx.
@@ -486,20 +508,21 @@ module new_pdf_main
        endwhere ! Skx^2 >= max_Skx2_neg_Skx_sgn_wpxp
     endwhere ! Skx * sgn( <w'x'> ) >= 0
 
-    call calc_limits_F_x_responder( nz, ngrdcol, mixt_frac, Skx, sgn_wpxp, & ! In
-                                    max_Skx2_pos_Skx_sgn_wpxp, max_Skx2_neg_Skx_sgn_wpxp, & ! In
-                                    min_F_x, max_F_x ) ! Out
+    call calc_limits_F_x_responder( nz, mixt_frac, Skx, sgn_wpxp,  & ! In
+                                    max_Skx2_pos_Skx_sgn_wpxp, & ! In
+                                    max_Skx2_neg_Skx_sgn_wpxp, & ! In
+                                    min_F_x, max_F_x )           ! Out
 
     ! F_x must have a value between min_F_x and max_F_x.
-    F_x = calc_F_x_responder( nz, ngrdcol, coef_spread_DG_means_x, exp_factor_x, min_F_x, & ! In
-                              max_F_x ) ! In
+    F_x = calc_F_x_responder( nz, coef_spread_DG_means_x, exp_factor_x, &
+                              min_F_x, max_F_x )
 
-    call calc_responder_params( nz, ngrdcol, & ! In
-                                xm, xp2, Skx, & ! In
-                                sgn_wpxp, F_x, mixt_frac, & ! In
-                                mu_x_1, mu_x_2, & ! Out
+    call calc_responder_params( nz, xm, xp2, Skx, sgn_wpxp,       & ! In
+                                F_x, mixt_frac,               & ! In
+                                mu_x_1, mu_x_2,               & ! Out
                                 sigma_x_1_sqd, sigma_x_2_sqd, & ! Out
-                                coef_sigma_x_1_sqd, coef_sigma_x_2_sqd ) ! Out
+                                coef_sigma_x_1_sqd,           & ! Out
+                                coef_sigma_x_2_sqd            ) ! Out
 
 
     return
@@ -507,10 +530,12 @@ module new_pdf_main
   end subroutine calc_responder_var
 
   !=============================================================================
-  subroutine calc_F_x_zeta_x_setter( nz, ngrdcol, Skx, & ! In
+  subroutine calc_F_x_zeta_x_setter( nz, Skx,                          & ! In
                                      slope_coef_spread_DG_means_x, & ! In
-                                     pdf_component_stdev_factor_x, lambda, & ! In
-                                     F_x, zeta_x, min_F_x, max_F_x ) ! Out
+                                     pdf_component_stdev_factor_x, & ! In
+                                     lambda,                       & ! In
+                                     F_x, zeta_x,                  & ! Out
+                                     min_F_x, max_F_x              ) ! Out
 
     ! Description:
     ! Calculates the values of F_x and zeta_x for the setter variable (which is
@@ -574,33 +599,28 @@ module new_pdf_main
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
-      nz, & ! Number of vertical levels
-      ngrdcol ! Number of grid columns
+      nz
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+    ! Input Variables
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
       Skx    ! Skewness of x (overall)              [-]
 
-    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
-      slope_coef_spread_DG_means_x, & ! Slope coef: spread PDF comp. means x [-]
-      pdf_component_stdev_factor_x    ! Param.: PDF comp. standard devs.; x  [-]
-
     real( kind = core_rknd ), intent(in) :: &
+      slope_coef_spread_DG_means_x, & ! Slope coef: spread PDF comp. means x [-]
+      pdf_component_stdev_factor_x, & ! Param.: PDF comp. standard devs.; x  [-]
       lambda                          ! Param. for Skx dependence            [-]
 
-    !--------------------------- Output Variables ---------------------------
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
+    ! Output Variables
+    real( kind = core_rknd ), dimension(nz), intent(out) :: &
       F_x,     & ! Parameter for the spread of the PDF component means of x  [-]
       zeta_x,  & ! Parameter for the PDF component variances of x            [-]
       min_F_x, & ! Minimum allowable value of parameter F_x                  [-]
       max_F_x    ! Maximum allowable value of parameter F_x                  [-]
 
-    !--------------------------- Local Variables ---------------------------
-    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+    ! Local Variable
+    real( kind = core_rknd ), dimension(nz) :: &
       exp_Skx_interp_factor    ! Function to interp. between min. and max.   [-]
-
-    !--------------------------- Begin Code ---------------------------
 
 
     ! Set min_F_x to 0 and max_F_x to 1 for the setter variable.
@@ -613,13 +633,13 @@ module new_pdf_main
 
     ! F_x must have a value between min_F_x and max_F_x.
     exp_Skx_interp_factor &
-    = exp( -abs(Skx)**lambda / spread( slope_coef_spread_DG_means_x, 2, nz ) )
+    = exp( -abs(Skx)**lambda / slope_coef_spread_DG_means_x )
 
     F_x = min_F_x * exp_Skx_interp_factor &
           + max_F_x * ( one - exp_Skx_interp_factor )
 
     ! The value of zeta_x must be greater than -1.
-    zeta_x = spread( pdf_component_stdev_factor_x, 2, nz ) - one
+    zeta_x = pdf_component_stdev_factor_x - one
 
 
     return
@@ -627,8 +647,9 @@ module new_pdf_main
   end subroutine calc_F_x_zeta_x_setter
 
   !=============================================================================
-  function calc_F_x_responder( nz, ngrdcol, coef_spread_DG_means_x, exp_factor_x, min_F_x, & ! In
-                               max_F_x ) result( F_x ) ! In
+  function calc_F_x_responder( nz, coef_spread_DG_means_x, exp_factor_x, &
+                               min_F_x, max_F_x ) &
+  result( F_x )
 
     ! Description:
     ! Calculates the value of F_x as a tunable function between min_F_x and
@@ -638,7 +659,7 @@ module new_pdf_main
     ! is:
     !
     ! F_x = min_F_x + ( max_F_x - min_F_x )
-    !                 * spread( coef_spread_DG_means_x, 2, nz ) * exp_factor_x;
+    !                 * coef_spread_DG_means_x * exp_factor_x;
     !
     ! where 0 <= coef_spread_DG_means_x <= 1.  As coef_spread_DG_means_x
     ! goes toward 0, the value of F_x goes toward min_F_x, and as
@@ -710,8 +731,8 @@ module new_pdf_main
     ! owing to numerical underflow or loss of precision, this equation can be
     ! rewritten as:
     !
-    ! F_x = min_F_x * ( 1 - spread( coef_spread_DG_means_x, 2, nz ) * exp_factor_x )
-    !       + max_F_x * spread( coef_spread_DG_means_x, 2, nz ) * exp_factor_x.
+    ! F_x = min_F_x * ( 1 - coef_spread_DG_means_x * exp_factor_x )
+    !       + max_F_x * coef_spread_DG_means_x * exp_factor_x.
 
     ! References:
     !-----------------------------------------------------------------------
@@ -724,29 +745,26 @@ module new_pdf_main
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
-      nz, & ! Number of vertical levels
-      ngrdcol ! Number of grid columns
+      nz
 
-    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
       coef_spread_DG_means_x    ! Coef.: spread betw. PDF comp. means of x   [-]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
       exp_factor_x, & ! Factor of the form 1 - exp{}; reduces F_x  [-]
       min_F_x,      & ! Minimum allowable value of parameter F_x   [-]
       max_F_x         ! Maximum allowable value of parameter F_x   [-]
 
-    !--------------------------- Output Variables ---------------------------
-    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+    ! Return Variable
+    real( kind = core_rknd ), dimension(nz) :: &
       F_x    ! Parameter for the spread between the PDF component means of x [-]
-
-    !--------------------------- Begin Code ---------------------------
 
 
     ! F_x must have a value between min_F_x and max_F_x.
-    F_x = min_F_x * ( one - spread( coef_spread_DG_means_x, 2, nz ) * exp_factor_x ) &
-          + max_F_x * spread( coef_spread_DG_means_x, 2, nz ) * exp_factor_x
+    F_x = min_F_x * ( one - coef_spread_DG_means_x * exp_factor_x ) &
+          + max_F_x * coef_spread_DG_means_x * exp_factor_x
 
 
     return

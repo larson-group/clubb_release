@@ -1,0 +1,1420 @@
+{
+  "native_inventory_and_order": [
+    "set_default_clubb_config_flags_api",
+    "initialize_clubb_config_flags_type_api",
+    "print_clubb_config_flags_api"
+  ],
+  "public_inventory": [
+    "set_default_clubb_config_flags_api",
+    "initialize_clubb_config_flags_type_api",
+    "print_clubb_config_flags_api"
+  ],
+  "routines": [
+    {
+      "name": "set_default_clubb_config_flags_api",
+      "source_lines": [
+        347,
+        637
+      ],
+      "arguments": [
+        {
+          "name": "iiPDF_type",
+          "kind": "integer",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ipdf_call_placement",
+          "kind": "integer",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "penta_solve_method",
+          "kind": "integer",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "tridiag_solve_method",
+          "kind": "integer",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "saturation_formula",
+          "kind": "integer",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "Lscale_method",
+          "kind": "integer",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "grid_remap_method",
+          "kind": "integer",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "grid_adapt_in_time_method",
+          "kind": "integer",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "fill_holes_type",
+          "kind": "integer",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_use_precip_frac",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_predict_upwp_vpwp",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_ho_nontrad_coriolis",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_ho_trad_coriolis",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_min_wp2_from_corr_wx",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_min_xp2_from_corr_wx",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_C2_cloud_frac",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_diffuse_rtm_and_thlm",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_stability_correct_Kh_N2_zm",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_calc_thlp2_rad",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_upwind_xpyp_ta",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_upwind_xm_ma",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_uv_nudge",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_rtm_nudge",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_vert_avg_closure",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_trapezoidal_rule_zt",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_trapezoidal_rule_zm",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_call_pdf_closure_twice",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_standard_term_ta",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_partial_upwind_wp3",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_godunov_upwind_wpxp_ta",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_godunov_upwind_xpyp_ta",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_use_cloud_cover",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_diagnose_correlations",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_calc_w_corr",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_const_Nc_in_cloud",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_fix_w_chi_eta_correlations",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_stability_correct_tau_zm",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_damp_wp2_using_em",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_do_expldiff_rtm_thlm",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_Lscale_plume_centered",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_use_C7_Richardson",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_use_C11_Richardson",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_use_shear_Richardson",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_brunt_vaisala_freq_moist",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_use_thvm_in_bv_freq",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_rcm_supersat_adj",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_damp_wp3_Skw_squared",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_prescribed_avg_deltaz",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_lmm_stepping",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_e3sm_config",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_vary_convect_depth",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_use_tke_in_wp3_pr_turb_term",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_use_tke_in_wp2_wp3_K_dfsn",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_use_wp3_lim_with_smth_Heaviside",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_smooth_Heaviside_tau_wpxp",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_modify_limiters_for_cnvg_test",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_enable_relaxed_clipping",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_linearize_pbl_winds",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_mono_flux_lim_thlm",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_mono_flux_lim_rtm",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_mono_flux_lim_um",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_mono_flux_lim_vm",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_mono_flux_lim_spikefix",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_host_applies_sfc_fluxes",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_wp2_fill_holes_tke",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_add_dycore_grid",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "ordered_assignments": [
+        "iiPDF_type = iiPDF_ADG1",
+        "ipdf_call_placement = ipdf_post_advance_fields",
+        "penta_solve_method = penta_lu",
+        "tridiag_solve_method = tridiag_lu",
+        "saturation_formula = saturation_flatau",
+        "Lscale_method = Lscale_coherence",
+        "grid_remap_method = ppm_remap",
+        "grid_adapt_in_time_method = no_grid_adaptation",
+        "fill_holes_type = sliding_window",
+        "l_use_precip_frac = .true.",
+        "l_predict_upwp_vpwp = .true.",
+        "l_ho_nontrad_coriolis = .false.",
+        "l_ho_trad_coriolis = .false.",
+        "l_min_wp2_from_corr_wx = .false.",
+        "l_min_xp2_from_corr_wx = .true.",
+        "l_C2_cloud_frac = .false.",
+        "l_diffuse_rtm_and_thlm = .false.",
+        "l_stability_correct_Kh_N2_zm = .false.",
+        "l_calc_thlp2_rad = .true.",
+        "l_upwind_xpyp_ta = .true.",
+        "l_upwind_xm_ma = .true.",
+        "l_uv_nudge = .false.",
+        "l_rtm_nudge = .false.",
+        "l_vert_avg_closure  = .false.",
+        "l_trapezoidal_rule_zt = .false.",
+        "l_trapezoidal_rule_zm = .false.",
+        "l_call_pdf_closure_twice = .false.",
+        "l_standard_term_ta = .false.",
+        "l_partial_upwind_wp3 = .false.",
+        "l_godunov_upwind_wpxp_ta = .false.",
+        "l_godunov_upwind_xpyp_ta = .false.",
+        "l_use_cloud_cover = .false.",
+        "l_diagnose_correlations = .false.",
+        "l_calc_w_corr = .false.",
+        "l_const_Nc_in_cloud = .false.",
+        "l_fix_w_chi_eta_correlations = .true.",
+        "l_stability_correct_tau_zm = .false.",
+        "l_damp_wp2_using_em = .true.",
+        "l_do_expldiff_rtm_thlm = .false.",
+        "l_Lscale_plume_centered = .false.",
+        "l_use_C7_Richardson = .true.",
+        "l_use_C11_Richardson = .false.",
+        "l_use_shear_Richardson = .false.",
+        "l_brunt_vaisala_freq_moist = .false.",
+        "l_use_thvm_in_bv_freq = .false.",
+        "l_rcm_supersat_adj = .true.",
+        "l_damp_wp3_Skw_squared = .true.",
+        "l_prescribed_avg_deltaz = .false.",
+        "l_lmm_stepping = .false.",
+        "l_e3sm_config = .false.",
+        "l_vary_convect_depth = .false.",
+        "l_use_tke_in_wp3_pr_turb_term = .true.",
+        "l_use_tke_in_wp2_wp3_K_dfsn = .false.",
+        "l_use_wp3_lim_with_smth_Heaviside = .false.",
+        "l_smooth_Heaviside_tau_wpxp = .false.",
+        "l_modify_limiters_for_cnvg_test = .false.",
+        "l_enable_relaxed_clipping = .false.",
+        "l_linearize_pbl_winds = .false.",
+        "l_mono_flux_lim_thlm = .true.",
+        "l_mono_flux_lim_rtm = .true.",
+        "l_mono_flux_lim_um = .true.",
+        "l_mono_flux_lim_vm = .true.",
+        "l_mono_flux_lim_spikefix = .true.",
+        "l_host_applies_sfc_fluxes = .false.",
+        "l_wp2_fill_holes_tke = .true.",
+        "l_add_dycore_grid = .false."
+      ],
+      "ordered_predicates_and_errors": []
+    },
+    {
+      "name": "initialize_clubb_config_flags_type_api",
+      "source_lines": [
+        640,
+        942
+      ],
+      "arguments": [
+        {
+          "name": "iiPDF_type",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ipdf_call_placement",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "penta_solve_method",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "tridiag_solve_method",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "saturation_formula",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "Lscale_method",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "grid_remap_method",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "grid_adapt_in_time_method",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "fill_holes_type",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_use_precip_frac",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_predict_upwp_vpwp",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_ho_nontrad_coriolis",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_ho_trad_coriolis",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_min_wp2_from_corr_wx",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_min_xp2_from_corr_wx",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_C2_cloud_frac",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_diffuse_rtm_and_thlm",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_stability_correct_Kh_N2_zm",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_calc_thlp2_rad",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_upwind_xpyp_ta",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_upwind_xm_ma",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_uv_nudge",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_rtm_nudge",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_vert_avg_closure",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_trapezoidal_rule_zt",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_trapezoidal_rule_zm",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_call_pdf_closure_twice",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_standard_term_ta",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_partial_upwind_wp3",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_godunov_upwind_wpxp_ta",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_godunov_upwind_xpyp_ta",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_use_cloud_cover",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_diagnose_correlations",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_calc_w_corr",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_const_Nc_in_cloud",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_fix_w_chi_eta_correlations",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_stability_correct_tau_zm",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_damp_wp2_using_em",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_do_expldiff_rtm_thlm",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_Lscale_plume_centered",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_use_C7_Richardson",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_use_C11_Richardson",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_use_shear_Richardson",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_brunt_vaisala_freq_moist",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_use_thvm_in_bv_freq",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_rcm_supersat_adj",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_damp_wp3_Skw_squared",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_prescribed_avg_deltaz",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_lmm_stepping",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_e3sm_config",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_vary_convect_depth",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_use_tke_in_wp3_pr_turb_term",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_use_tke_in_wp2_wp3_K_dfsn",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_use_wp3_lim_with_smth_Heaviside",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_smooth_Heaviside_tau_wpxp",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_modify_limiters_for_cnvg_test",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_enable_relaxed_clipping",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_linearize_pbl_winds",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_mono_flux_lim_thlm",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_mono_flux_lim_rtm",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_mono_flux_lim_um",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_mono_flux_lim_vm",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_mono_flux_lim_spikefix",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_host_applies_sfc_fluxes",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_wp2_fill_holes_tke",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_add_dycore_grid",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "clubb_config_flags",
+          "kind": "clubb_config_flags_type",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "ordered_assignments": [
+        "clubb_config_flags%iiPDF_type = iiPDF_type",
+        "clubb_config_flags%ipdf_call_placement = ipdf_call_placement",
+        "clubb_config_flags%penta_solve_method = penta_solve_method",
+        "clubb_config_flags%tridiag_solve_method = tridiag_solve_method",
+        "clubb_config_flags%saturation_formula = saturation_formula",
+        "clubb_config_flags%Lscale_method = Lscale_method",
+        "clubb_config_flags%grid_remap_method = grid_remap_method",
+        "clubb_config_flags%grid_adapt_in_time_method = grid_adapt_in_time_method",
+        "clubb_config_flags%fill_holes_type = fill_holes_type",
+        "clubb_config_flags%l_use_precip_frac = l_use_precip_frac",
+        "clubb_config_flags%l_predict_upwp_vpwp = l_predict_upwp_vpwp",
+        "clubb_config_flags%l_ho_nontrad_coriolis = l_ho_nontrad_coriolis",
+        "clubb_config_flags%l_ho_trad_coriolis = l_ho_trad_coriolis",
+        "clubb_config_flags%l_min_wp2_from_corr_wx = l_min_wp2_from_corr_wx",
+        "clubb_config_flags%l_min_xp2_from_corr_wx = l_min_xp2_from_corr_wx",
+        "clubb_config_flags%l_C2_cloud_frac = l_C2_cloud_frac",
+        "clubb_config_flags%l_diffuse_rtm_and_thlm = l_diffuse_rtm_and_thlm",
+        "clubb_config_flags%l_stability_correct_Kh_N2_zm = l_stability_correct_Kh_N2_zm",
+        "clubb_config_flags%l_calc_thlp2_rad = l_calc_thlp2_rad",
+        "clubb_config_flags%l_upwind_xpyp_ta = l_upwind_xpyp_ta",
+        "clubb_config_flags%l_upwind_xm_ma = l_upwind_xm_ma",
+        "clubb_config_flags%l_uv_nudge = l_uv_nudge",
+        "clubb_config_flags%l_rtm_nudge = l_rtm_nudge",
+        "clubb_config_flags%l_vert_avg_closure  = l_vert_avg_closure",
+        "clubb_config_flags%l_trapezoidal_rule_zt = l_trapezoidal_rule_zt",
+        "clubb_config_flags%l_trapezoidal_rule_zm = l_trapezoidal_rule_zm",
+        "clubb_config_flags%l_call_pdf_closure_twice = l_call_pdf_closure_twice",
+        "clubb_config_flags%l_standard_term_ta = l_standard_term_ta",
+        "clubb_config_flags%l_partial_upwind_wp3 = l_partial_upwind_wp3",
+        "clubb_config_flags%l_godunov_upwind_wpxp_ta = l_godunov_upwind_wpxp_ta",
+        "clubb_config_flags%l_godunov_upwind_xpyp_ta = l_godunov_upwind_xpyp_ta",
+        "clubb_config_flags%l_use_cloud_cover = l_use_cloud_cover",
+        "clubb_config_flags%l_diagnose_correlations = l_diagnose_correlations",
+        "clubb_config_flags%l_calc_w_corr = l_calc_w_corr",
+        "clubb_config_flags%l_const_Nc_in_cloud = l_const_Nc_in_cloud",
+        "clubb_config_flags%l_fix_w_chi_eta_correlations = l_fix_w_chi_eta_correlations",
+        "clubb_config_flags%l_stability_correct_tau_zm = l_stability_correct_tau_zm",
+        "clubb_config_flags%l_damp_wp2_using_em = l_damp_wp2_using_em",
+        "clubb_config_flags%l_do_expldiff_rtm_thlm = l_do_expldiff_rtm_thlm",
+        "clubb_config_flags%l_Lscale_plume_centered = l_Lscale_plume_centered",
+        "clubb_config_flags%l_use_C7_Richardson = l_use_C7_Richardson",
+        "clubb_config_flags%l_use_C11_Richardson = l_use_C11_Richardson",
+        "clubb_config_flags%l_use_shear_Richardson = l_use_shear_Richardson",
+        "clubb_config_flags%l_brunt_vaisala_freq_moist = l_brunt_vaisala_freq_moist",
+        "clubb_config_flags%l_use_thvm_in_bv_freq = l_use_thvm_in_bv_freq",
+        "clubb_config_flags%l_rcm_supersat_adj = l_rcm_supersat_adj",
+        "clubb_config_flags%l_damp_wp3_Skw_squared = l_damp_wp3_Skw_squared",
+        "clubb_config_flags%l_prescribed_avg_deltaz = l_prescribed_avg_deltaz",
+        "clubb_config_flags%l_lmm_stepping = l_lmm_stepping",
+        "clubb_config_flags%l_e3sm_config = l_e3sm_config",
+        "clubb_config_flags%l_vary_convect_depth = l_vary_convect_depth",
+        "clubb_config_flags%l_use_tke_in_wp3_pr_turb_term = l_use_tke_in_wp3_pr_turb_term",
+        "clubb_config_flags%l_use_tke_in_wp2_wp3_K_dfsn = l_use_tke_in_wp2_wp3_K_dfsn",
+        "clubb_config_flags%l_use_wp3_lim_with_smth_Heaviside = l_use_wp3_lim_with_smth_Heaviside",
+        "clubb_config_flags%l_smooth_Heaviside_tau_wpxp = l_smooth_Heaviside_tau_wpxp",
+        "clubb_config_flags%l_modify_limiters_for_cnvg_test = l_modify_limiters_for_cnvg_test",
+        "clubb_config_flags%l_enable_relaxed_clipping = l_enable_relaxed_clipping",
+        "clubb_config_flags%l_linearize_pbl_winds = l_linearize_pbl_winds",
+        "clubb_config_flags%l_mono_flux_lim_thlm = l_mono_flux_lim_thlm",
+        "clubb_config_flags%l_mono_flux_lim_rtm = l_mono_flux_lim_rtm",
+        "clubb_config_flags%l_mono_flux_lim_um = l_mono_flux_lim_um",
+        "clubb_config_flags%l_mono_flux_lim_vm = l_mono_flux_lim_vm",
+        "clubb_config_flags%l_mono_flux_lim_spikefix = l_mono_flux_lim_spikefix",
+        "clubb_config_flags%l_host_applies_sfc_fluxes = l_host_applies_sfc_fluxes",
+        "clubb_config_flags%l_wp2_fill_holes_tke = l_wp2_fill_holes_tke",
+        "clubb_config_flags%l_add_dycore_grid = l_add_dycore_grid"
+      ],
+      "ordered_predicates_and_errors": [
+        "if ( grid_remap_method <= 0 ) then",
+        "error stop 'Invalid value for the flag grid_remap_method. Should be greater or equal to 1.'",
+        "if ( Lscale_method < Lscale_direct .or. Lscale_method > Lscale_coherence ) then",
+        "error stop 'Invalid Lscale_method. Expected an integer from 1 through 3.'"
+      ]
+    },
+    {
+      "name": "print_clubb_config_flags_api",
+      "source_lines": [
+        945,
+        1038
+      ],
+      "arguments": [
+        {
+          "name": "iunit",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "clubb_config_flags",
+          "kind": "clubb_config_flags_type",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "ordered_assignments": [],
+      "ordered_predicates_and_errors": []
+    }
+  ],
+  "read_evidence": {
+    "Native_lines": 1040,
+    "JAX_actual_file": "clubb_jax/src/CLUBB_core/model_flags.py",
+    "JAX_lines": 322,
+    "full_source_JAX_and_actual_driver_callers_read_before_outline": true
+  },
+  "native_sha256": "bb122b091c1b82f2a27f52014f25b7ba20b07da0337ebc390a0e2aca00ade0d5",
+  "jax_sha256": "3637b0bed713f1685df1113c195f4598c094fd9043edd8e1e71826fd775b70e3",
+  "state_contract": "No Native mutable module instances: immutable PARAMETER constants and one type only. Existing ClubbDriver owns 66 scalar flags/configuration struct; Native free-routine contracts already express case-owned mutation. No extra class/global state.",
+  "schema_owner": "Existing generated model_flags.hpp::clubb_config_flags_type with 66 fields. Draft only procedure/include merge fragments; no duplicate UDT.",
+  "JAX_scope": "Default routine represented by get_default_config_flags, initializer by ConfigFlags construction, printer by stream writes. Retain Native initializer fatal checks and exact Native print row/value quirks.",
+  "print_adaptation": "Canonical int-iunit overload delegates public Native I/O only. Additional same-named ostream overload implements 64 Native row/value writes for actual existing C++ case-owned std::ofstream/stdout; no logical-unit registry.",
+  "source_print_contract": "Native omits saturation_formula/fill_holes_type, and the l_mono_flux_lim_um/vm labels use swapped source fields. Preserve these source statements; do not silently fix them.",
+  "required_missing_constants": [
+    "ppm_remap",
+    "no_grid_adaptation"
+  ],
+  "generator_preservation": "Extend shared preserved-region mechanism before all generated selected constants+type declarations, so generated constants do not become stale preserved prefix. APIs remain outside region.",
+  "status": "Draft outline only. No shared changes/builds/tests/runtime/BFB claim."
+}

@@ -101,6 +101,10 @@ module parameters_microphys
 
 !$omp threadprivate( l_hydromet_sed )
 
+  logical, public :: l_gfdl_activation    ! Flag for GFDL activation code
+
+!$omp threadprivate( l_gfdl_activation )
+
   real(kind=time_precision), public :: &
     microphys_start_time = 0._time_precision  ! When to start the microphysics      [s]
 

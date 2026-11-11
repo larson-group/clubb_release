@@ -233,8 +233,7 @@ module advance_xp3_module
     ! Positive def. quantity
     vp2_zt(:,:)  = zm2zt_api( nzm, nzt, ngrdcol, gr, vp2(:,:), w_tol_sqd )
 
-    thvm_zm(:,:)                   = zt2zm_api( nzm, nzt, ngrdcol, gr, & ! In
-                                                thvm(:,:), & ! In
+    thvm_zm(:,:)                   = zt2zm_api( nzm, nzt, ngrdcol, gr, thvm(:,:), &
                                                 zero_threshold )
     ddzm_thvm_zm(:,:)              = ddzm( nzm, nzt, ngrdcol, gr, thvm_zm(:,:) )
     brunt_vaisala_freq_sqd_zt(:,:) = max( ( grav / thvm(:,:) ) * ddzm_thvm_zm(:,:), zero )
@@ -443,9 +442,8 @@ module advance_xp3_module
 
       ! Use the Larson and Golaz (2005) ansatz for the ADG1 PDF to
       ! calculate <rt'^3>, <thl'^3>, <u'^3>, <v'^3>, and <sclr'^3>.
-      sigma_sqd_w_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, & ! In
-                                       sigma_sqd_w(:,:), & ! In
-                                       zero_threshold )
+      sigma_sqd_w_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, sigma_sqd_w(:,:), &
+                                        zero_threshold )
 
       call xp3_LG_2005_ansatz( nzt, ngrdcol, Skw_zt, wpthlp_zt, wp2_zt, &
                                 thlp2_zt, sigma_sqd_w_zt, &
@@ -469,12 +467,10 @@ module advance_xp3_module
 
       do sclr = 1, sclr_dim, 1
 
-        wpsclrp_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, & ! In
-                                     wpsclrp(:,:,sclr), & ! In
-                                     sclr_tol(sclr)**2 )
-        sclrp2_zt(:,:)  = zm2zt_api( nzm, nzt, ngrdcol, gr, & ! In
-                                     sclrp2(:,:,sclr), & ! In
-                                     sclr_tol(sclr)**2 )
+        wpsclrp_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, wpsclrp(:,:,sclr), &
+                                      sclr_tol(sclr)**2 )
+        sclrp2_zt(:,:)  = zm2zt_api( nzm, nzt, ngrdcol, gr, sclrp2(:,:,sclr), &
+                                      sclr_tol(sclr)**2 )
 
         call xp3_LG_2005_ansatz( nzt, ngrdcol, Skw_zt, wpsclrp_zt, wp2_zt, &
                                   sclrp2_zt, sigma_sqd_w_zt, &
@@ -487,8 +483,7 @@ module advance_xp3_module
 
       ! Use a modified form of the Larson and Golaz (2005) ansatz for the
       ! ADG1 PDF to calculate <u'^3> and <v'^3> for another type of PDF.
-      thvm_zm(:,:)                   = zt2zm_api( nzm, nzt, ngrdcol, gr, & ! In
-                                                  thvm(:,:), & ! In
+      thvm_zm(:,:)                   = zt2zm_api( nzm, nzt, ngrdcol, gr, thvm(:,:), &
                                                   zero_threshold )
       ddzm_thvm_zm(:,:)              = ddzm( nzm, nzt, ngrdcol, gr, thvm_zm(:,:) )
       brunt_vaisala_freq_sqd_zt(:,:) = max( ( grav / thvm(:,:) ) * ddzm_thvm_zm(:,:), zero )
@@ -541,9 +536,8 @@ module advance_xp3_module
       do sclr = 1, sclr_dim, 1
 
         wpsclrp_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, wpsclrp(:,:,sclr) )
-        sclrp2_zt(:,:)  = zm2zt_api( nzm, nzt, ngrdcol, gr, & ! In
-                                     sclrp2(:,:,sclr), & ! In
-                                     sclr_tol(sclr)**2 )
+        sclrp2_zt(:,:)  = zm2zt_api( nzm, nzt, ngrdcol, gr, sclrp2(:,:,sclr), &
+                                      sclr_tol(sclr)**2 )
 
         call xp3_LG_2005_ansatz( nzt, ngrdcol, Skw_zt(:,:), wpsclrp_zt(:,:), wp2_zt(:,:), &
                                   sclrp2_zt(:,:), xp3_coef_fnc(:,:), &
@@ -913,7 +907,7 @@ module advance_xp3_module
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
+    ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
       xp2_zt,          & ! <x'^2> interp. to thermo. level (k)     [(x units)^2]
       wpxpp1,          & ! <w'x'> at momentum level (k+1)         [m/s(x units)]
@@ -923,7 +917,7 @@ module advance_xp3_module
       invrs_rho_ds_zt, & ! Inv. dry, static density at thermo. lev. (k) [m^3/kg]
       invrs_dzt          ! Inverse of grid spacing (k)                     [1/m]
 
-    !--------------------------- Output Variables ---------------------------
+    ! Return Variable
     real( kind = core_rknd ) :: &
       term_tp    ! <x'^3> turbulent production term              [(x units)^3/s]
 
@@ -986,14 +980,14 @@ module advance_xp3_module
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
+    ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
       xm_zmp1,   & ! <x> interpolated to momentum level (k+1)  [(x units)]
       xm_zm,     & ! <x> interpolated to momentum level (k)    [(x units)]
       wpxp2,     & ! <w'x'^2> at thermodynamic level (k)       [m/s(x units)^2]
       invrs_dzt    ! Inverse of grid spacing (k)               [1/m]
 
-    !--------------------------- Output Variables ---------------------------
+    ! Return Variable
     real( kind = core_rknd ) :: &
       term_ac    ! <x'^3> accumulation term                    [(x units)^3/s]
 

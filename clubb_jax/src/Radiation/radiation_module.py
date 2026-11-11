@@ -288,25 +288,23 @@ def update_radiation_variables(
     # Input Variables
 
     # ---- Begin Code ----
-    def accumulate_stats(stats):
-        """Collect diagnostics only on sampled timesteps."""
-
-        stats = stats.update("Frad", Frad)
-        stats = stats.update("radht", radht)
-        stats = stats.update("Frad_SW_up", Frad_SW_up)
-        stats = stats.update("Frad_LW_up", Frad_LW_up)
-        stats = stats.update("Frad_SW_down", Frad_SW_down)
-        stats = stats.update("Frad_LW_down", Frad_LW_down)
-
-        if radiation_parameters.rad_scheme == "simplified":
-            stats = stats.update("radht_LW", radht_LW)
-            stats = stats.update("radht_SW", radht_SW)
-            stats = stats.update("Frad_SW", Frad_SW)
-            stats = stats.update("Frad_LW", Frad_LW)
-
-        # TODO(port-mirror): The source also updates BUGSrad diagnostics here.
-        # BUGSrad is rejected by the initialization boundary for this JAX driver.
-
+    if not stats.l_sample:
         return stats
 
-    return stats.sampled(accumulate_stats)
+    stats = stats.update("Frad", Frad)
+    stats = stats.update("radht", radht)
+    stats = stats.update("Frad_SW_up", Frad_SW_up)
+    stats = stats.update("Frad_LW_up", Frad_LW_up)
+    stats = stats.update("Frad_SW_down", Frad_SW_down)
+    stats = stats.update("Frad_LW_down", Frad_LW_down)
+
+    if radiation_parameters.rad_scheme == "simplified":
+        stats = stats.update("radht_LW", radht_LW)
+        stats = stats.update("radht_SW", radht_SW)
+        stats = stats.update("Frad_SW", Frad_SW)
+        stats = stats.update("Frad_LW", Frad_LW)
+
+    # TODO(port-mirror): The source also updates BUGSrad diagnostics here.
+    # BUGSrad is rejected by the initialization boundary for this JAX driver.
+
+    return stats

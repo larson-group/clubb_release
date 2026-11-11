@@ -59,58 +59,6 @@ def precip_fraction(
     """Determines (overall) precipitation fraction over the horizontal domain, as
     well as the precipitation fraction within each PDF component, at every
     vertical grid level.
-
-    Returns:
-        (err_info, precip_frac, precip_frac_1, precip_frac_2, precip_frac_tol,
-          stats)
-
-    Fortran declarations (precip_fraction in src/CLUBB_core/precipitation_fraction.F90):
-
-        !------------------------- Input Variables -------------------------
-        type(grid), intent(in) :: &
-          gr    ! Grid type variable
-
-        integer, intent(in) :: &
-          nzt,          & ! Number of model thermodynamic vertical grid levels
-          ngrdcol,      & ! Number of grid columns
-          hydromet_dim    ! Number of hydrometeor species
-
-        real( kind = core_rknd ), dimension(ngrdcol,nzt,hydromet_dim), intent(in) :: &
-          hydromet    ! Mean of hydrometeor, hm (overall)           [units vary]
-
-        logical, dimension(hydromet_dim), intent(in) :: &
-          l_frozen_hm, & ! if true, then the hydrometeor is frozen; otherwise liquid
-          l_mix_rat_hm   ! if true, then the quantity is a hydrometeor mixing ratio
-
-        real( kind = core_rknd ), dimension(hydromet_dim), intent(in) :: &
-          hydromet_tol    ! Tolerance values for all hydrometeors    [units vary]
-
-        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
-          cloud_frac,          & ! Cloud fraction (overall)                      [-]
-          cloud_frac_1,        & ! Cloud fraction (1st PDF component)            [-]
-          cloud_frac_2,        & ! Cloud fraction (2nd PDF component)            [-]
-          ice_supersat_frac,   & ! Ice supersaturation fraction (overall)        [-]
-          ice_supersat_frac_1, & ! Ice supersaturation fraction (1st PDF comp.)  [-]
-          ice_supersat_frac_2, & ! Ice supersaturation fraction (2nd PDF comp.)  [-]
-          mixt_frac              ! Mixture fraction                              [-]
-
-        real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
-          clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
-
-        !------------------------- Inout Variables -------------------------
-        type(stats_type), intent(inout) :: &
-          stats
-
-        type(err_info_type), intent(inout) :: &
-          err_info        ! err_info struct containing err_code and err_header
-        !------------------------- Output Variables -------------------------
-        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) :: &
-          precip_frac,   & ! Precipitation fraction (overall)               [-]
-          precip_frac_1, & ! Precipitation fraction (1st PDF component)     [-]
-          precip_frac_2    ! Precipitation fraction (2nd PDF component)     [-]
-
-        real( kind = core_rknd ), dimension(ngrdcol), intent(out) :: &
-          precip_frac_tol    ! Minimum precip. frac. when hydromet. are present  [-]
     """
     del nzt, ngrdcol
 
@@ -193,7 +141,10 @@ def precip_fraction(
         )
     elif precip_frac_calc_type == 2:
         # Specified method.
-        upsilon_precip_frac_rat = clubb_params[:, iupsilon_precip_frac_rat][:, None]
+        if clubb_params.ndim == 1:
+            upsilon_precip_frac_rat = clubb_params[iupsilon_precip_frac_rat]
+        else:
+            upsilon_precip_frac_rat = clubb_params[:, iupsilon_precip_frac_rat][:, None]
         precip_frac_1, precip_frac_2 = component_precip_frac_specify(
             hydromet_dim,
             hydromet_tol,
@@ -366,58 +317,30 @@ def component_precip_frac_weighted(
     ice_supersat_frac_2, mixt_frac,  # In
     precip_frac_tol,                 # In
 ):
-    """Set precipitation fraction in each component of the PDF.  The weighted 1st
-    PDF component precipitation fraction (weighted_pfrac_1) at a grid level is
-    calculated by the greatest value of mixt_frac * cloud_frac_1 at or above
-    the relevant grid level.  Likewise, the weighted 2nd PDF component
-    precipitation fraction (weighted_pfrac_2) at a grid level is calculated by
-    the greatest value of ( 1 - mixt_frac ) * cloud_frac_2 at or above the
-    relevant grid level.
+    """Set precipitation fraction in each component of the PDF.  The weighted 1st PDF component
+    precipitation fraction (weighted_pfrac_1) at a grid level is calculated by the greatest value of
+    mixt_frac * cloud_frac_1 at or above the relevant grid level.  Likewise, the weighted 2nd PDF
+    component precipitation fraction (weighted_pfrac_2) at a grid level is calculated by the
+    greatest value of ( 1 - mixt_frac ) * cloud_frac_2 at or above the relevant grid level.
 
-    The fraction weighted_pfrac_1 / ( weighted_pfrac_1 + weighted_pfrac_2 ) is
-    the weighted_pfrac_1 fraction.  Multiplying this fraction by overall
-    precipitation fraction and then dividing by mixt_frac produces the 1st PDF
-    component precipitation fraction (precip_frac_1).  Then, calculate the 2nd
-    PDF component precipitation fraction (precip_frac_2) accordingly.
+    The fraction weighted_pfrac_1 / ( weighted_pfrac_1 + weighted_pfrac_2 ) is the weighted_pfrac_1
+    fraction.  Multiplying this fraction by overall precipitation fraction and then dividing by
+    mixt_frac produces the 1st PDF component precipitation fraction (precip_frac_1).  Then,
+    calculate the 2nd PDF component precipitation fraction (precip_frac_2) accordingly.
 
-    Returns:
-        (precip_frac_1, precip_frac_2)
-
-    Fortran declarations (component_precip_frac_weighted in src/CLUBB_core/precipitation_fraction.F90):
-
-        !--------------------------- Input Variables ---------------------------
-        type(grid), intent(in) :: &
-          gr    ! Grid type variable
-
-        integer, intent(in) :: &
-          nzt,          & ! Number of model thermodynamic vertical grid levels
-          ngrdcol,      & ! Number of grid columns
-          hydromet_dim    ! Number of hydrometeor species
-
-        logical, dimension(hydromet_dim), intent(in) :: &
-          l_frozen_hm  ! if true, then the hydrometeor is frozen; otherwise liquid
-
-        real( kind = core_rknd ), dimension(hydromet_dim), intent(in) :: &
-          hydromet_tol    ! Tolerance values for all hydrometeors    [units vary]
-
-        real( kind = core_rknd ), dimension(ngrdcol,nzt,hydromet_dim), intent(in) :: &
-          hydromet    ! Mean of hydrometeor, hm (overall)           [units vary]
-
-        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
-          precip_frac,         & ! Precipitation fraction (overall)              [-]
-          cloud_frac_1,        & ! Cloud fraction (1st PDF component)            [-]
-          cloud_frac_2,        & ! Cloud fraction (2nd PDF component)            [-]
-          ice_supersat_frac_1, & ! Ice supersaturation fraction (1st PDF comp.)  [-]
-          ice_supersat_frac_2, & ! Ice supersaturation fraction (2nd PDF comp.)  [-]
-          mixt_frac              ! Mixture fraction                              [-]
-
-        real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
-          precip_frac_tol    ! Minimum precip. frac. when hydromet. are present  [-]
-
-        !--------------------------- Output Variables ---------------------------
-        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) :: &
-          precip_frac_1, & ! Precipitation fraction (1st PDF component)     [-]
-          precip_frac_2    ! Precipitation fraction (2nd PDF component)     [-]
+    Arguments:
+        gr: Grid coordinates, interpolation weights and vertical metrics.
+        hydromet_dim: Number of precipitating hydrometeor fields.
+        l_frozen_hm: if true, then the hydrometeor is frozen; otherwise liquid
+        hydromet_tol: Tolerance values for all hydrometeors [units vary]
+        hydromet: Mean of hydrometeor, hm (overall) [units vary]
+        precip_frac: Precipitation fraction (overall) [-]
+        cloud_frac_1: Cloud fraction (1st PDF component) [-]
+        cloud_frac_2: Cloud fraction (2nd PDF component) [-]
+        ice_supersat_frac_1: Ice supersaturation fraction (1st PDF comp.) [-]
+        ice_supersat_frac_2: Ice supersaturation fraction (2nd PDF comp.) [-]
+        mixt_frac: Mixture fraction [-]
+        precip_frac_tol: Minimum precip. frac. when hydromet. are present [-]
     """
     del hydromet_dim
 
@@ -651,67 +574,38 @@ def component_precip_frac_specify(
 
     f_p = mixt_frac * f_p(1) + ( 1 - mixt_frac ) * f_p(2);
 
-    where f_p is overall precipitation fraction, f_p(1) is precipitation
-    fraction in the 1st PDF component, f_p(2) is precipitation fraction in the
-    2nd PDF component, and mixt_frac is the mixture fraction.  Using this
-    method, a new specified parameter is introduced, upsilon, where:
+    where f_p is overall precipitation fraction, f_p(1) is precipitation fraction in the 1st PDF
+    component, f_p(2) is precipitation fraction in the 2nd PDF component, and mixt_frac is the
+    mixture fraction.  Using this method, a new specified parameter is introduced, upsilon, where:
 
     upsilon = mixt_frac * f_p(1) / f_p; and where 0 <= upsilon <= 1.
 
-    In other words, upsilon is the ratio of mixt_frac * f_p(1) to f_p.  Since
-    f_p and mixt_frac are calculated previously, and upsilon is specified,
-    f_p(1) can be calculated by:
+    In other words, upsilon is the ratio of mixt_frac * f_p(1) to f_p.  Since f_p and mixt_frac are
+    calculated previously, and upsilon is specified, f_p(1) can be calculated by:
 
     f_p(1) = upsilon * f_p / mixt_frac;
 
-    and has an upper limit of 1.  The value of f_p(2) can then be calculated
-    by:
+    and has an upper limit of 1.  The value of f_p(2) can then be calculated by:
 
     f_p(2) = ( f_p - mixt_frac * f_p(1) ) / ( 1 - mixt_frac );
 
-    and also has an upper limit of 1.  When upsilon = 1, almost all of the
-    precipitation is found in the 1st PDF component (as long as
-    f_p <= mixt_frac, otherwise it would cause f_p(1) to be greater than 1).
-    When upsilon = 0, almost all of the precipitation is found in the 2nd PDF
-    component (as long as f_p <= 1 - mixt_frac, otherwise it would cause
-    f_p(2) to be greater than 1). Precipitation is split between the two PDF
-    components according to upsilon.
+    and also has an upper limit of 1.  Precipitation is split between the two PDF components
+    according to upsilon.  Whenever hydrometeors are present, each PDF component has a precipitation
+    fraction of at least precip_frac_tol, including when upsilon = 0 or upsilon = 1.
 
-    Returns:
-        (precip_frac_1, precip_frac_2)
-
-    Fortran declarations (component_precip_frac_specify in src/CLUBB_core/precipitation_fraction.F90):
-
-        !--------------------------- Input Variables ---------------------------
-        integer, intent(in) :: &
-          nzt,          & ! Number of model thermodynamic vertical grid levels
-          ngrdcol,      & ! Number of grid columns
-          hydromet_dim    ! Number of hydrometeor species
-
-        real( kind = core_rknd ), dimension(hydromet_dim), intent(in) :: &
-          hydromet_tol    ! Tolerance values for all hydrometeors    [units vary]
-
-        real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
-          upsilon_precip_frac_rat    ! ratio mixt_frac*precip_frac_1/precip_frac [-]
-
-        real( kind = core_rknd ), dimension(ngrdcol,nzt,hydromet_dim), intent(in) :: &
-          hydromet    ! Mean of hydrometeor, hm (overall)           [units vary]
-
-        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
-          precip_frac, & ! Precipitation fraction (overall)                      [-]
-          mixt_frac      ! Mixture fraction                                      [-]
-
-        real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
-          precip_frac_tol    ! Minimum precip. frac. when hydromet. are present  [-]
-
-        !--------------------------- Output Variables ---------------------------
-        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) :: &
-          precip_frac_1, & ! Precipitation fraction (1st PDF component)     [-]
-          precip_frac_2    ! Precipitation fraction (2nd PDF component)     [-]
+    Arguments:
+        hydromet_dim: Number of precipitating hydrometeor fields.
+        hydromet_tol: Tolerance values for all hydrometeors [units vary]
+        upsilon_precip_frac_rat: ratio mixt_frac*precip_frac_1/precip_frac [-]
+        hydromet: Mean of hydrometeor, hm (overall) [units vary]
+        precip_frac: Precipitation fraction (overall) [-]
+        mixt_frac: Mixture fraction [-]
+        precip_frac_tol: Minimum precip. frac. when hydromet. are present [-]
     """
     del hydromet_dim
 
-    precip_frac_tol = precip_frac_tol[:, None]
+    precip_frac_tol = jnp.asarray(precip_frac_tol)[:, None]
+    upsilon_precip_frac_rat = jnp.asarray(upsilon_precip_frac_rat)
 
     has_hydromet = jnp.any(hydromet >= hydromet_tol[None, None, :], axis=2)
     one_minus_mixt_frac = 1.0 - mixt_frac
@@ -841,35 +735,7 @@ def precip_frac_assert_check(
     precip_frac_2,
     precip_frac_tol,
 ):
-    """Assertion check for the precipitation fraction code.
-
-    Fortran declarations (precip_frac_assert_check in src/CLUBB_core/precipitation_fraction.F90):
-
-        !--------------------------- Input Variables ---------------------------
-        integer, intent(in) :: &
-          nzt,          & ! Number of thermodynamic levels [-]
-          ngrdcol,      & ! Number of grid columns [-]
-          hydromet_dim    ! Number of hydrometeor species
-
-        real( kind = core_rknd ), dimension(hydromet_dim), intent(in) :: &
-          hydromet_tol    ! Tolerance values for all hydrometeors    [units vary]
-
-        real( kind = core_rknd ), dimension(ngrdcol,nzt,hydromet_dim), intent(in) :: &
-          hydromet    ! Mean of hydrometeor, hm (overall)           [units vary]
-
-        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
-          mixt_frac,     & ! Mixture fraction                               [-]
-          precip_frac,   & ! Precipitation fraction (overall)               [-]
-          precip_frac_1, & ! Precipitation fraction (1st PDF component)     [-]
-          precip_frac_2    ! Precipitation fraction (2nd PDF component)     [-]
-
-        real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
-          precip_frac_tol    ! Minimum precip. frac. when hydromet. are present  [-]
-
-        !--------------------------- Input/Output Variables ---------------------------
-        type(err_info_type), intent(inout) :: &
-          err_info        ! err_info struct containing err_code and err_header
-    """
+    """Assertion check for the precipitation fraction code."""
     hydromet = np.asarray(hydromet, dtype=np.float64)
     hydromet_tol = np.asarray(hydromet_tol, dtype=np.float64)
     mixt_frac = np.asarray(mixt_frac, dtype=np.float64)

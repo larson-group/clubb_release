@@ -1,0 +1,38 @@
+{
+  "canonical_source": "src/CLUBB_core/new_tsdadg_pdf.F90",
+  "canonical_sha256": "38a1467cb60e3ce5d061880815d9f351bcdab93922fed6dd854ad1dcd12d0f1c",
+  "target_sha256": "4b27a8eeafbce37af7fb5d1a045d3dceb7f059869413ecc900190f08f4b89062",
+  "routines": [
+    {
+      "name": "tsdadg_pdf_driver",
+      "arguments": 25,
+      "ordered_assignment_trees": 17,
+      "ordered_Native_IF_predicates": 8
+    },
+    {
+      "name": "calc_setter_parameters",
+      "arguments": 13,
+      "ordered_assignment_trees": 18,
+      "ordered_Native_IF_predicates": 4
+    },
+    {
+      "name": "calc_L_x_Skx_fnc",
+      "arguments": 6,
+      "ordered_assignment_trees": 5,
+      "ordered_Native_IF_predicates": 1
+    },
+    {
+      "name": "calc_respnder_parameters",
+      "arguments": 12,
+      "ordered_assignment_trees": 13,
+      "ordered_Native_IF_predicates": 1
+    }
+  ],
+  "immutable_small_l_values": 6,
+  "ordered_helper_calls": 12,
+  "ordered_helper_arguments": 129,
+  "exact_warning_and_data_labels": 12,
+  "warning_payload_fields": 6,
+  "complete_source_method_comment_regions": 2,
+  "runtime": "Source only; compilation/numerical evidence pending."
+}

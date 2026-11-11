@@ -1,0 +1,306 @@
+{
+  "status": "untested isolated draft",
+  "canonical_source": "src/CLUBB_core/pdf_utilities.F90",
+  "canonical_sha256": "c8def57a51ec4b0b57986e5321c95386ca6635010454edcf6c7bec8b102ae084",
+  "routines": [
+    {
+      "name": "mean_L2N",
+      "line": 33,
+      "kind": "function",
+      "arguments": [
+        "mu_x",
+        "sigma2_on_mu2"
+      ],
+      "result": "mu_x_n",
+      "all_arguments_required": true
+    },
+    {
+      "name": "mean_L2N_dp",
+      "line": 79,
+      "kind": "function",
+      "arguments": [
+        "mu_x",
+        "sigma2_on_mu2"
+      ],
+      "result": "mu_x_n",
+      "all_arguments_required": true
+    },
+    {
+      "name": "stdev_L2N",
+      "line": 122,
+      "kind": "function",
+      "arguments": [
+        "sigma2_on_mu2"
+      ],
+      "result": "sigma_x_n",
+      "all_arguments_required": true
+    },
+    {
+      "name": "stdev_L2N_dp",
+      "line": 164,
+      "kind": "function",
+      "arguments": [
+        "sigma2_on_mu2"
+      ],
+      "result": "sigma_x_n",
+      "all_arguments_required": true
+    },
+    {
+      "name": "corr_NL2NN",
+      "line": 207,
+      "kind": "function",
+      "arguments": [
+        "corr_x_y",
+        "sigma_y_n",
+        "y_sigma2_on_mu2"
+      ],
+      "result": "corr_x_y_n",
+      "all_arguments_required": true
+    },
+    {
+      "name": "corr_NL2NN_dp",
+      "line": 277,
+      "kind": "function",
+      "arguments": [
+        "corr_x_y",
+        "sigma_y_n",
+        "y_sigma2_on_mu2"
+      ],
+      "result": "corr_x_y_n",
+      "all_arguments_required": true
+    },
+    {
+      "name": "corr_NN2NL",
+      "line": 348,
+      "kind": "subroutine",
+      "arguments": [
+        "nz",
+        "ngrdcol",
+        "corr_x_y_n",
+        "sigma_y_n",
+        "y_sigma2_on_mu2",
+        "corr_x_y"
+      ],
+      "result": null,
+      "all_arguments_required": true
+    },
+    {
+      "name": "corr_LL2NN",
+      "line": 439,
+      "kind": "function",
+      "arguments": [
+        "corr_x_y",
+        "sigma_x_n",
+        "sigma_y_n",
+        "x_sigma2_on_mu2",
+        "y_sigma2_on_mu2"
+      ],
+      "result": "corr_x_y_n",
+      "all_arguments_required": true
+    },
+    {
+      "name": "corr_LL2NN_dp",
+      "line": 517,
+      "kind": "function",
+      "arguments": [
+        "corr_x_y",
+        "sigma_x_n",
+        "sigma_y_n",
+        "x_sigma2_on_mu2",
+        "y_sigma2_on_mu2"
+      ],
+      "result": "corr_x_y_n",
+      "all_arguments_required": true
+    },
+    {
+      "name": "corr_NN2LL",
+      "line": 590,
+      "kind": "subroutine",
+      "arguments": [
+        "nz",
+        "ngrdcol",
+        "corr_x_y_n",
+        "sigma_x_n",
+        "sigma_y_n",
+        "x_sigma2_on_mu2",
+        "y_sigma2_on_mu2",
+        "corr_x_y"
+      ],
+      "result": null,
+      "all_arguments_required": true
+    },
+    {
+      "name": "compute_mean_binormal",
+      "line": 679,
+      "kind": "function",
+      "arguments": [
+        "mu_x_1",
+        "mu_x_2",
+        "mixt_frac"
+      ],
+      "result": "xm",
+      "all_arguments_required": true
+    },
+    {
+      "name": "compute_variance_binormal",
+      "line": 720,
+      "kind": "function",
+      "arguments": [
+        "xm",
+        "mu_x_1",
+        "mu_x_2",
+        "stdev_x_1",
+        "stdev_x_2",
+        "mixt_frac"
+      ],
+      "result": "xp2",
+      "all_arguments_required": true
+    },
+    {
+      "name": "calc_comp_corrs_binormal",
+      "line": 766,
+      "kind": "subroutine",
+      "arguments": [
+        "nz",
+        "ngrdcol",
+        "xpyp",
+        "xm",
+        "ym",
+        "mu_x_1",
+        "mu_x_2",
+        "mu_y_1",
+        "mu_y_2",
+        "sigma_x_1_sqd",
+        "sigma_x_2_sqd",
+        "sigma_y_1_sqd",
+        "sigma_y_2_sqd",
+        "mixt_frac",
+        "corr_x_y_1",
+        "corr_x_y_2"
+      ],
+      "result": null,
+      "all_arguments_required": true
+    },
+    {
+      "name": "calc_corr_chi_x",
+      "line": 912,
+      "kind": "function",
+      "arguments": [
+        "crt_i",
+        "cthl_i",
+        "sigma_rt_i",
+        "sigma_thl_i",
+        "sigma_chi_i",
+        "corr_rt_x_i",
+        "corr_thl_x_i"
+      ],
+      "result": "corr_chi_x_i",
+      "all_arguments_required": true
+    },
+    {
+      "name": "calc_corr_eta_x",
+      "line": 1028,
+      "kind": "function",
+      "arguments": [
+        "crt_i",
+        "cthl_i",
+        "sigma_rt_i",
+        "sigma_thl_i",
+        "sigma_eta_i",
+        "corr_rt_x_i",
+        "corr_thl_x_i"
+      ],
+      "result": "corr_eta_x_i",
+      "all_arguments_required": true
+    },
+    {
+      "name": "calc_corr_rt_x",
+      "line": 1106,
+      "kind": "function",
+      "arguments": [
+        "crt_i",
+        "sigma_rt_i",
+        "sigma_chi_i",
+        "sigma_eta_i",
+        "corr_chi_x_i",
+        "corr_eta_x_i"
+      ],
+      "result": "corr_rt_x_i",
+      "all_arguments_required": true
+    },
+    {
+      "name": "calc_corr_thl_x",
+      "line": 1175,
+      "kind": "function",
+      "arguments": [
+        "cthl_i",
+        "sigma_thl_i",
+        "sigma_chi_i",
+        "sigma_eta_i",
+        "corr_chi_x_i",
+        "corr_eta_x_i"
+      ],
+      "result": "corr_thl_x_i",
+      "all_arguments_required": true
+    },
+    {
+      "name": "calc_xp2",
+      "line": 1246,
+      "kind": "function",
+      "arguments": [
+        "mu_x_1",
+        "mu_x_2",
+        "mu_x_1_n",
+        "mu_x_2_n",
+        "sigma_x_1",
+        "sigma_x_2",
+        "sigma_x_1_n",
+        "sigma_x_2_n",
+        "mixt_frac",
+        "x_frac_1",
+        "x_frac_2",
+        "x_mean"
+      ],
+      "result": "xp2",
+      "all_arguments_required": true
+    },
+    {
+      "name": "smooth_corr_quotient",
+      "line": 1360,
+      "kind": "subroutine",
+      "arguments": [
+        "ngrdcol",
+        "nz",
+        "numerator",
+        "denominator",
+        "denom_thresh",
+        "quotient"
+      ],
+      "result": null,
+      "all_arguments_required": true
+    }
+  ],
+  "branch_inventory": {
+    "mean_L2N": "core tiny guard; dp deliberately has none",
+    "corr_NL2NN": "positive transformed stddev vs undefined fallback; ordered upper/lower clipping; dp casts core correlation limit to double",
+    "corr_NN2NL": "positive transformed stddev vs original correlation; tiny guard only on ratio; ordered clipping",
+    "corr_LL2NN": "both transformed stddevs positive vs original correlation; ordered clipping; core log_arg temporary, dp direct expression",
+    "corr_NN2LL": "both transformed stddevs positive vs original correlation; no added denominator guard; ordered clipping",
+    "calc_comp_corrs_binormal": "source numerator/denominator; smooth quotient; then second component equals first",
+    "calc_corr_chi_x/calc_corr_eta_x": "strict > chi/eta tolerance; otherwise zero; then ordered clipping",
+    "calc_corr_rt_x/calc_corr_thl_x": "strict > rt/thl tolerance; otherwise zero; then ordered clipping",
+    "calc_xp2": "both sigma magnitudes <eps; first only; second only; neither; then negative variance->zero",
+    "smooth_corr_quotient": "two sequential smooth_max calls per cell; abs(num)/max correlation then threshold; numerator divided afterward"
+  },
+  "dependencies": {
+    "constants": "one,one_dp,zero,zero_dp,two,eps,max_mag_correlation,min_max_smth_mag,chi_tol,eta_tol,rt_tol,thl_tol; numeric_limits<real_t>::min() for Native tiny",
+    "lower_native_helper": "advance_helper_module.F90:smooth_max_scalars1723\u20131761; exact partial draft included"
+  },
+  "scope_decision": "All 19 public Native routines, including four dp variants and calc_xp2 omitted by JAX, are retained; no JAX gradient floors, clipping replacements or guard changes.",
+  "view_adaptations": [
+    "compute_variance_binormal rank2 execution-space inputs -> owned Real2D",
+    "calc_corr_chi_x rank2 execution-space inputs -> owned Real2D",
+    "calc_corr_eta_x rank2 execution-space inputs -> owned Real2D"
+  ],
+  "bfb_specific_choices": "No new explicit FMA, forced association or math-library workaround. Native integer squares map to parenthesized products. Arithmetic equivalence/BFB pending model comparisons."
+}

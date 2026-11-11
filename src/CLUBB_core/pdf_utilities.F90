@@ -53,12 +53,12 @@ module pdf_utilities
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
+    ! Input Variables
     real( kind = core_rknd ), intent(in) ::  &
       mu_x,          & ! Mean of x (ith PDF component)                     [-]
       sigma2_on_mu2    ! Ratio:  sigma_x^2 / mu_x^2 (ith PDF component)    [-]
 
-    !--------------------------- Output Variables ---------------------------
+    ! Return Variable
     real( kind = core_rknd ) ::  &
       mu_x_n  ! Mean of ln x (ith PDF component)           [-]
 
@@ -143,11 +143,11 @@ module pdf_utilities
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
+    ! Input Variables
     real( kind = core_rknd ), intent(in) ::  &
       sigma2_on_mu2    ! Ratio:  sigma_x^2 / mu_x^2 (ith PDF component)    [-]
 
-    !--------------------------- Output Variables ---------------------------
+    ! Return Variable
     real( kind = core_rknd ) ::  &
       sigma_x_n  ! Standard deviation of ln x (ith PDF component)   [-]
 
@@ -230,13 +230,13 @@ module pdf_utilities
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
+    ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
       corr_x_y,        & ! Correlation of x and y (ith PDF component)       [-]
       sigma_y_n,       & ! Standard deviation of ln y (ith PDF component)   [-]
       y_sigma2_on_mu2    ! Ratio:  sigma_y^2 / mu_y^2 (ith PDF component)   [-]
 
-    !--------------------------- Output Variables ---------------------------
+    ! Return Variable
     real( kind = core_rknd ) ::  &
       corr_x_y_n  ! Correlation of x and ln y (ith PDF component) [-]
 
@@ -372,7 +372,7 @@ module pdf_utilities
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
+    ! Input Variables
     integer, intent(in) :: &
       nz,      & ! Number of vertical levels
       ngrdcol    ! Number of grid columns
@@ -382,7 +382,7 @@ module pdf_utilities
       sigma_y_n,       & ! Standard deviation of ln y (ith PDF component)   [-]
       y_sigma2_on_mu2    ! Ratio:  sigma_y^2 / mu_y^2 (ith PDF component)   [-]
 
-    !--------------------------- Output Variables ---------------------------
+    ! Output Variable
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) ::  &
       corr_x_y  ! Correlation of x and y (ith PDF component) [-]
       
@@ -464,7 +464,7 @@ module pdf_utilities
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
+    ! Input Variables
     real( kind = core_rknd ), intent(in) ::  &
       corr_x_y,        & ! Correlation of x and y (ith PDF component)       [-]
       sigma_x_n,       & ! Standard deviation of ln x (ith PDF component)   [-]
@@ -472,7 +472,7 @@ module pdf_utilities
       x_sigma2_on_mu2, & ! Ratio:  sigma_x^2 / mu_x^2 (ith PDF component)   [-]
       y_sigma2_on_mu2    ! Ratio:  sigma_y^2 / mu_y^2 (ith PDF component)   [-]
 
-    !--------------------------- Output Variables ---------------------------
+    ! Return Variable
     real( kind = core_rknd ) ::  &
       corr_x_y_n  ! Correlation of ln x and ln y (ith PDF component)  [-]
 
@@ -616,7 +616,7 @@ module pdf_utilities
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
+    ! Input Variables
     integer, intent(in) :: &
       nz,      & ! Number of vertical levels
       ngrdcol    ! Number of grid columns
@@ -628,7 +628,7 @@ module pdf_utilities
       x_sigma2_on_mu2, & ! Ratio:  sigma_x^2 / mu_x^2 (ith PDF component)   [-]
       y_sigma2_on_mu2    ! Ratio:  sigma_y^2 / mu_y^2 (ith PDF component)   [-]
 
-    !--------------------------- Output Variables ---------------------------
+    ! Output Variable
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) ::  &
       corr_x_y  ! Correlation of x and y (ith PDF component)  [-]
       
@@ -696,13 +696,13 @@ module pdf_utilities
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
+    ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
       mu_x_1,    & ! First PDF component mean of 'x'                       [?]
       mu_x_2,    & ! Second PDF component mean of 'x'                      [?]
       mixt_frac    ! Weight of the first PDF component                     [-]
 
-    !--------------------------- Output Variables ---------------------------
+    ! Output Variables
     real( kind = core_rknd ) :: &
       xm           ! Mean of 'x' (overall)                                 [?]
 
@@ -738,7 +738,7 @@ module pdf_utilities
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
+    ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
       xm,        & ! Overall mean of 'x'                                   [?]
       mu_x_1,    & ! First PDF component mean of 'x'                       [?]
@@ -747,7 +747,7 @@ module pdf_utilities
       stdev_x_2, & ! Standard deviation of 'x' in the second PDF component [?]
       mixt_frac    ! Weight of the first PDF component                     [-]
 
-    !--------------------------- Output Variables ---------------------------
+    ! Output Variables
     real( kind = core_rknd ) :: &
       xp2          ! Variance of 'x' (overall)                             [?^2]
 
@@ -977,7 +977,7 @@ module pdf_utilities
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
+    ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
       crt_i,        & ! Coefficient of r_t for chi (old s) (ith PDF comp.)   [-]
       cthl_i,       & ! Coefficient of th_l for chi (ith PDF comp.)  [(kg/kg)/K]
@@ -987,7 +987,7 @@ module pdf_utilities
       corr_rt_x_i,  & ! Correlation of r_t and x (ith PDF component)         [-]
       corr_thl_x_i    ! Correlation of th_l and x (ith PDF component)        [-]
 
-    !--------------------------- Output Variables ---------------------------
+    ! Return Variable
     real( kind = core_rknd ) :: &
       corr_chi_x_i  ! Correlation of chi and x (ith PDF component)   [-]
 
@@ -1055,7 +1055,7 @@ module pdf_utilities
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
+    ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
       crt_i,        & ! Coefficient of r_t for chi (old s) (ith PDF comp.)   [-]
       cthl_i,       & ! Coefficient of th_l for chi (ith PDF comp.)  [(kg/kg)/K]
@@ -1125,7 +1125,7 @@ module pdf_utilities
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
+    ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
       crt_i,        & ! Coef. of r_t in chi/eta eqns. (ith PDF component)    [-]
       sigma_rt_i,   & ! Standard deviation of r_t (ith PDF component)    [kg/kg]
@@ -1134,7 +1134,7 @@ module pdf_utilities
       corr_chi_x_i, & ! Correlation of chi and x (ith PDF component)         [-]
       corr_eta_x_i    ! Correlation of eta and x (ith PDF component)         [-]
 
-    !--------------------------- Output Variables ---------------------------
+    ! Return Variable
     real( kind = core_rknd ) :: &
       corr_rt_x_i   ! Correlation of rt and x (ith PDF component)            [-]
 
@@ -1195,7 +1195,7 @@ module pdf_utilities
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
+    ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
       cthl_i,       & ! Coef. of thl:  chi/eta eqns. (ith PDF comp.) [(kg/kg)/K]
       sigma_thl_i,  & ! Standard deviation of thl (ith PDF component)        [K]
@@ -1204,7 +1204,7 @@ module pdf_utilities
       corr_chi_x_i, & ! Correlation of chi and x (ith PDF component)         [-]
       corr_eta_x_i    ! Correlation of eta and x (ith PDF component)         [-]
 
-    !--------------------------- Output Variables ---------------------------
+    ! Return Variable
     real( kind = core_rknd ) :: &
       corr_thl_x_i    ! Correlation of thl and x (ith PDF component)         [-]
 

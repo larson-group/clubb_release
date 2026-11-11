@@ -1,0 +1,1687 @@
+[
+  {
+    "name": "calc_wp3_on_wp2",
+    "module": "advance_helper_module",
+    "source": "src/CLUBB_core/advance_helper_module.F90",
+    "arguments": [
+      {
+        "name": "nzm",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "nzt",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "ngrdcol",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "gr",
+        "kind": "grid",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "wp2",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "wp3",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "wp3_on_wp2",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "wp3_on_wp2_zt",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      }
+    ],
+    "result": null,
+    "cpp_name": "calc_wp3_on_wp2",
+    "existing_bridge": false
+  },
+  {
+    "name": "calc_turb_adv_range",
+    "module": "mono_flux_limiter",
+    "source": "src/CLUBB_core/mono_flux_limiter.F90",
+    "arguments": [
+      {
+        "name": "nzm",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "nzt",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "ngrdcol",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "gr",
+        "kind": "grid",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "dt",
+        "kind": "real",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "w_1_zm",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "w_2_zm",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "varnce_w_1_zm",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "varnce_w_2_zm",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "mixt_frac_zm",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "stats",
+        "kind": "stats_type",
+        "dims": [],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "low_lev_effect",
+        "kind": "integer",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "high_lev_effect",
+        "kind": "integer",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      }
+    ],
+    "result": null,
+    "cpp_name": "calc_turb_adv_range",
+    "existing_bridge": false
+  },
+  {
+    "name": "diffusion_zm_lhs",
+    "module": "diffusion",
+    "source": "src/CLUBB_core/diffusion.F90",
+    "arguments": [
+      {
+        "name": "nzm",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "nzt",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "ngrdcol",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "gr",
+        "kind": "grid",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "K_zt",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "K_zm",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "nu",
+        "kind": "real",
+        "dims": [
+          "ngrdcol"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "invrs_rho_ds_zm",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "rho_ds_zt",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "lhs",
+        "kind": "real",
+        "dims": [
+          "3",
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      }
+    ],
+    "result": null,
+    "cpp_name": "diffusion_zm_lhs",
+    "existing_bridge": false
+  },
+  {
+    "name": "term_ma_zm_lhs",
+    "module": "mean_adv",
+    "source": "src/CLUBB_core/mean_adv.F90",
+    "arguments": [
+      {
+        "name": "nzm",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "nzt",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "ngrdcol",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "wm_zm",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "invrs_dzm",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "weights_zm2zt",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt",
+          "m_above:m_below"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "lhs_ma",
+        "kind": "real",
+        "dims": [
+          "ndiags3",
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      }
+    ],
+    "result": null,
+    "cpp_name": "term_ma_zm_lhs",
+    "existing_bridge": false
+  },
+  {
+    "name": "diffusion_zt_lhs",
+    "module": "diffusion",
+    "source": "src/CLUBB_core/diffusion.F90",
+    "arguments": [
+      {
+        "name": "nzm",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "nzt",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "ngrdcol",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "gr",
+        "kind": "grid",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "K_zm",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "K_zt",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "nu",
+        "kind": "real",
+        "dims": [
+          "ngrdcol"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "invrs_rho_ds_ztzxt",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "rho_ds_zm",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "lhs",
+        "kind": "real",
+        "dims": [
+          "3",
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      }
+    ],
+    "result": null,
+    "cpp_name": "diffusion_zt_lhs",
+    "existing_bridge": false
+  },
+  {
+    "name": "term_ma_zt_lhs",
+    "module": "mean_adv",
+    "source": "src/CLUBB_core/mean_adv.F90",
+    "arguments": [
+      {
+        "name": "nzm",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "nzt",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "ngrdcol",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "wm_zt",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "weights_zt2zm",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm",
+          "t_above:t_below"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "invrs_dzt",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "invrs_dzm",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "l_upwind_xm_ma",
+        "kind": "logical",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "grid_dir",
+        "kind": "real",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "lhs_ma",
+        "kind": "real",
+        "dims": [
+          "ndiags3",
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      }
+    ],
+    "result": null,
+    "cpp_name": "term_ma_zt_lhs",
+    "existing_bridge": false
+  },
+  {
+    "name": "xpyp_term_ta_pdf_rhs",
+    "module": "turbulent_adv_pdf",
+    "source": "src/CLUBB_core/turbulent_adv_pdf.F90",
+    "arguments": [
+      {
+        "name": "nzm",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "nzt",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "ngrdcol",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "gr",
+        "kind": "grid",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "term_wpxpyp_explicit",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "rho_ds_zt",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "rho_ds_zm",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "invrs_rho_ds_zm",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "l_upwind_xpyp_turbulent_adv",
+        "kind": "logical",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "sgn_turbulent_vel",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "term_wpxpyp_explicit_zm",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "rhs_ta",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      }
+    ],
+    "result": null,
+    "cpp_name": "xpyp_term_ta_pdf_rhs",
+    "existing_bridge": false
+  },
+  {
+    "name": "xpyp_term_ta_pdf_lhs",
+    "module": "turbulent_adv_pdf",
+    "source": "src/CLUBB_core/turbulent_adv_pdf.F90",
+    "arguments": [
+      {
+        "name": "nzm",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "nzt",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "ngrdcol",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "gr",
+        "kind": "grid",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "coef_wpxpyp_implicit",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "rho_ds_zt",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "rho_ds_zm",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "invrs_rho_ds_zm",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "l_upwind_xpyp_turbulent_adv",
+        "kind": "logical",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "sgn_turbulent_vel",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "coef_wpxpyp_implicit_zm",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "lhs_ta",
+        "kind": "real",
+        "dims": [
+          "ndiags3",
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      }
+    ],
+    "result": null,
+    "cpp_name": "xpyp_term_ta_pdf_lhs",
+    "existing_bridge": false
+  },
+  {
+    "name": "xpyp_term_ta_pdf_lhs_godunov",
+    "module": "turbulent_adv_pdf",
+    "source": "src/CLUBB_core/turbulent_adv_pdf.F90",
+    "arguments": [
+      {
+        "name": "nzm",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "nzt",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "ngrdcol",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "gr",
+        "kind": "grid",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "coef_wpxpyp_implicit",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "invrs_rho_ds_zm",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "rho_ds_zm",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "lhs_ta",
+        "kind": "real",
+        "dims": [
+          "ndiags3",
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      }
+    ],
+    "result": null,
+    "cpp_name": "xpyp_term_ta_pdf_lhs_godunov",
+    "existing_bridge": false
+  },
+  {
+    "name": "monotonic_turbulent_flux_limit",
+    "module": "mono_flux_limiter",
+    "source": "src/CLUBB_core/mono_flux_limiter.F90",
+    "arguments": [
+      {
+        "name": "nzm",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "nzt",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "ngrdcol",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "gr",
+        "kind": "grid",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "solve_type",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "dt",
+        "kind": "real",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "xm_old",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "xp2",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "wm_zt",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "xm_forcing",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "rho_ds_zm",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "rho_ds_zt",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "invrs_rho_ds_zm",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "invrs_rho_ds_zt",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "xp2_threshold",
+        "kind": "real",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "xm_tol",
+        "kind": "real",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "l_implemented",
+        "kind": "logical",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "low_lev_effect",
+        "kind": "integer",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "high_lev_effect",
+        "kind": "integer",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "tridiag_solve_method",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "l_upwind_xm_ma",
+        "kind": "logical",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "l_mono_flux_lim_spikefix",
+        "kind": "logical",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "stats",
+        "kind": "stats_type",
+        "dims": [],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "xm",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "wpxp",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "err_info",
+        "kind": "err_info_type",
+        "dims": [],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      }
+    ],
+    "result": null,
+    "cpp_name": "monotonic_turbulent_flux_limit",
+    "existing_bridge": false
+  },
+  {
+    "name": "pos_definite_adj",
+    "module": "pos_definite_module",
+    "source": "src/CLUBB_core/pos_definite_module.F90",
+    "arguments": [
+      {
+        "name": "nzm",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "nzt",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "ngrdcol",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "gr",
+        "kind": "grid",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "dt",
+        "kind": "real",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "field_np1",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "flux_np1",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "field_n",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "field_pd",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "flux_pd",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      }
+    ],
+    "result": null,
+    "cpp_name": "pos_definite_adj",
+    "existing_bridge": false
+  },
+  {
+    "name": "fill_holes_vertical_api",
+    "module": "fill_holes",
+    "source": "src/CLUBB_core/fill_holes.F90",
+    "arguments": [
+      {
+        "name": "nz",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "ngrdcol",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "threshold",
+        "kind": "real",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "lower_hf_level",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "upper_hf_level",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "dz",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nz"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "rho_ds",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nz"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "grid_dir_indx",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "fill_holes_type",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "field",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nz"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      }
+    ],
+    "result": null,
+    "cpp_name": "fill_holes_vertical_api",
+    "existing_bridge": false
+  },
+  {
+    "name": "clip_covar",
+    "module": "clip_explicit",
+    "source": "src/CLUBB_core/clip_explicit.F90",
+    "arguments": [
+      {
+        "name": "nzm",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "ngrdcol",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "solve_type",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "xp2",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "yp2",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "xpyp",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "xpyp_chnge",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      }
+    ],
+    "result": null,
+    "cpp_name": "clip_covar",
+    "existing_bridge": false
+  },
+  {
+    "name": "stats_update_budget_2d",
+    "module": "stats_netcdf",
+    "source": "src/CLUBB_core/stats_netcdf.F90",
+    "arguments": [
+      {
+        "name": "name",
+        "kind": "character",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": "*"
+      },
+      {
+        "name": "values",
+        "kind": "real",
+        "dims": [
+          ":",
+          ":"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "stats",
+        "kind": "stats_type",
+        "dims": [],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      }
+    ],
+    "result": null,
+    "cpp_name": "stats_update_budget",
+    "existing_bridge": false
+  }
+]

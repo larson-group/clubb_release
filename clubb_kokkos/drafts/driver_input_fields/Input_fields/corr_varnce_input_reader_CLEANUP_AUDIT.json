@@ -1,0 +1,17 @@
+{
+  "date_UTC": "2026-11-06T06:53:45.193189+00:00",
+  "separate_cleanup": [
+    "sourcearguments/order/comments/units/errorstrings reread",
+    "100columns/no trailingwhitespace",
+    "real publicowners reused; allscientific lowercallspermanentCpp",
+    "call-local storage; no globals/thread_local/f2kdevicecalls",
+    "explicit returntype functions withdevicecode; namedtemplateparameters"
+  ],
+  "sha256": {
+    "src/Input_fields/corr_varnce_input_reader.F90": "928175bbfe977a9893de16693e5464991ee9e6edbac1a8753a71b7216ca9f33c",
+    "clubb_kokkos/drafts/driver_input_fields/Input_fields/corr_varnce_input_reader.hpp": "d97a02312b6874080449c686e0b37b345a18d9dae5af8521bedd89d9ded767fd",
+    "clubb_kokkos/drafts/driver_input_fields/CLUBB_core/matrix_operations_set_lower_triangular_matrix.fragment.hpp": "099a208db706063e70360d026e5aa16e709813a7049f65008b7bb74fc2289948"
+  },
+  "remaining_scientific_scope_defects": [],
+  "runtime": "pending"
+}

@@ -40,21 +40,14 @@ def _lower_mask(n):
 
 
 def mirror_lower_triangular_matrix(matrix):
-    """Mirrors the elements of a lower triangular matrix to the upper
-    triangle so that it is symmetric.
+    """Mirror the lower triangular entries to the upper triangle.
 
-    Returns:
-        matrix
+    Description:
+      Mirrors the elements of a lower triangular matrix to the upper
+      triangle so that it is symmetric.
 
-    Fortran declarations (mirror_lower_triangular_matrix in src/CLUBB_core/matrix_operations.F90):
-
-        !--------------------------- Input Variables ---------------------------
-        integer, intent(in) :: &
-          nvars ! Number of variables in each dimension of square matrix
-
-        !--------------------------- Input/Output Variables ---------------------------
-        real( kind = core_rknd ), dimension(nvars,nvars), intent(inout) :: &
-          matrix  ! Lower triangluar square matrix
+    References:
+      None
     """
     #----- Begin Code -----
     lower = jnp.tril(matrix)
@@ -78,29 +71,16 @@ def _portable_cholesky(matrix):
 
 def Cholesky_factor(a_input):
     """Create a Cholesky factorization of a_input.
-    If the factorization fails we use a modified a_input matrix and attempt
-    to factorize again.
+
+    Description:
+      Create a Cholesky factorization of a_input.
+      If the factorization fails we use a modified a_input matrix and attempt
+      to factorize again.
 
     References:
-
-    Returns:
-        (a_scaling, a_cholesky, l_scaled)
-
-    Fortran declarations (Cholesky_factor in src/CLUBB_core/matrix_operations.F90):
-
-           ! Coefficient applied if the decomposition doesn't work
-
-        !--------------------------- Input Variables ---------------------------
-        integer, intent(in) :: ndim
-
-        real( kind = core_rknd ), dimension(ndim,ndim), intent(in) :: a_input
-
-        !--------------------------- Output Variables ---------------------------
-        real( kind = core_rknd ), dimension(ndim), intent(out) :: a_scaling
-
-        real( kind = core_rknd ), dimension(ndim,ndim), intent(out) :: a_Cholesky
-
-        logical, intent(out) :: l_scaled
+      <http://www.netlib.org/lapack/explore-html/a00868.html> dpotrf
+      <http://www.netlib.org/lapack/explore-html/a00860.html> dpoequ
+      <http://www.netlib.org/lapack/explore-html/a00753.html> dlaqsy
     """
     n = a_input.shape[0]
     diag = jnp.diagonal(a_input)

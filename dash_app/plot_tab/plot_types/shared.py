@@ -1415,7 +1415,6 @@ def plot_graph_shell_style(size_value):
 
 
 def make_plot_card(controls, graph_id, size_button=None, size_value="normal", subtitle=None, help_button_id=None, card_id=None, close_button_id=None, render_signal_id=None, graph_shell_id=None, size_store_id=None):
-    """Build controls and a fixed-height graph with an overlaid load/error indicator."""
     title_children = []
     if help_button_id is not None:
         title_children.append(
@@ -1447,15 +1446,12 @@ def make_plot_card(controls, graph_id, size_button=None, size_value="normal", su
         [
             header,
             dcc.Store(id=size_store_id, data=normalize_plot_size(size_value)) if size_store_id is not None else html.Div(style={"display": "none"}),
+            html.Div(id=({"type": "plots-load-message", "index": graph_id["index"]}
+                         if isinstance(graph_id, dict) else f"{graph_id}-load-message"),
+                     className="plots-load-message", role="status"),
             html.Div(id=render_signal_id, style={"display": "none"}) if render_signal_id is not None else html.Div(style={"display": "none"}),
             html.Div(
-                [
-                    dcc.Graph(id=graph_id, config={"displayModeBar": True}, className="plots-graph", style={"height": "100%"}),
-                    html.Div(id=({"type": "plots-load-message", "index": graph_id["index"]}
-                                 if isinstance(graph_id, dict) else f"{graph_id}-load-message"),
-                             className="plots-load-message", role="status",
-                             **{"aria-live": "polite", "aria-atomic": "true"}),
-                ],
+                dcc.Graph(id=graph_id, config={"displayModeBar": True}, className="plots-graph", style={"height": "100%"}),
                 id=graph_shell_id,
                 className="plots-graph-shell",
                 style=plot_graph_shell_style(size_value),

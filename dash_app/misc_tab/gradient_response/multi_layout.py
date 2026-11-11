@@ -45,7 +45,7 @@ def build_multi_layout(params, fields, cases):
         html.Div([
             html.Div('JAX EXPLORER', className='gradient-response-eyebrow'),
             html.H2('Loss and gradient'),
-            html.P('Compare field metrics and gradients across selected parameters. Select a field to explore its response.'),
+            html.P('Compare fields and parameters across four sensitivity maps. Select a cell to explore its response.'),
         ], className='gradient-multi-header'),
         html.Div([
             html.Div([
@@ -77,14 +77,7 @@ def build_multi_layout(params, fields, cases):
                     {'label': 'Forward', 'value': 'forward'},
                     {'label': 'Backward (reverse)', 'value': 'reverse'},
                 ], value='auto', clearable=False),
-                html.Label('Gradient target', htmlFor='gradient-multi-target'),
-                styled_dropdown(id='gradient-multi-target', options=[
-                    {'label': 'Each field and metric', 'value': 'metrics'},
-                    {'label': 'Combined RMSE loss', 'value': 'loss'},
-                ], value='metrics', clearable=False),
-                html.P('Combined RMSE loss differentiates one scalar across all selected fields. All four field metrics remain visible.',
-                       className='gradient-response-help'),
-                html.P('Auto uses backward differentiation when parameters outnumber fields, or when more than one parameter is selected for combined loss.',
+                html.P('Auto uses backward differentiation when parameters outnumber fields, and forward otherwise.',
                        className='gradient-response-help'),
                 html.Div([
                     html.Div([html.Label('Average start (s)', htmlFor='gradient-multi-start'),
@@ -93,20 +86,17 @@ def build_multi_layout(params, fields, cases):
                               dcc.Input(id='gradient-multi-end', type='number', value=default_end, min=0, step=1, debounce=True)]),
                 ], className='gradient-response-range'),
                 html.Button('Calculate maps', id='gradient-multi-go', n_clicks=0, className='gradient-response-go clubb-activity-stripes'),
-                html.P('Each parameter is set to the midpoint of its range. Gradient colors show the predicted change for a positive step of 10% of that range.', className='gradient-response-help'),
+                html.P('Each parameter is set to the midpoint of its range. Colors show the predicted metric change for a positive step of 10% of that range; hover for the raw gradient.', className='gradient-response-help'),
                 html.P('The model runs from the case’s initial time through the selected averaging end.', className='gradient-response-help'),
                 html.Div(id='gradient-multi-status', role='status', className='gradient-response-status'),
             ], className='gradient-response-controls'),
             html.Div([
-                html.P('Select a field in a metric chart to calculate its response.', className='gradient-response-help'),
-                html.Div([dcc.Graph(id='gradient-multi-combined', config={'displaylogo': False, 'responsive': True})],
-                         id='gradient-multi-combined-container', className='gradient-response-chart gradient-multi-map-card'),
+                html.P('Color shows direction, not whether the change is better. Select a cell in any map to calculate its response.', className='gradient-response-help'),
                 html.Div([
                     html.Div([dcc.Graph(id=f'gradient-multi-map-{metric}', config={'displaylogo': False, 'responsive': True})],
                              id=f'gradient-multi-map-{metric}-container', className='gradient-response-chart gradient-multi-map-card')
                     for metric in ('rmse', 'correlation', 'bias-norm', 'std-ratio')
                 ], className='gradient-response-metric-grid'),
-                html.Div(id='gradient-multi-error', role='alert', className='gradient-range-error'),
                 html.Div(id='gradient-multi-detail-status', role='status', className='gradient-response-status gradient-multi-detail-status'),
                 html.Div([
                     html.Button('Calculate all maps', id='gradient-multi-points-go', n_clicks=0, disabled=True,

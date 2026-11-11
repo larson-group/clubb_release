@@ -96,9 +96,9 @@ def initialize(**config):
 # Adapt synthetic fields to the current grid/stats interface shared by validation callers.
 import numpy as np
 from clubb_jax.src.CLUBB_core.parameter_indices import iupsilon_precip_frac_rat, nparams
-from clubb_jax.src.CLUBB_core.stats_netcdf import JaxStats
+from clubb_jax.src.CLUBB_core.jax_stats import JaxStats
 from clubb_jax.src.CLUBB_core.precipitation_fraction import precip_fraction
-from clubb_jax.src.CLUBB_core.err_info_type_module import ErrInfo
+from clubb_jax.src.CLUBB_core.err_info import ErrInfo
 from clubb_jax.src.CLUBB_core.grid_class import setup_grid
 
 def precip_fraction_from_fields(

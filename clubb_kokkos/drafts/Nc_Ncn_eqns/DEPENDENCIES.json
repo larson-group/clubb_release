@@ -1,0 +1,23 @@
+{
+  "new_scientific_lower_contracts": [],
+  "reused_owners": [
+    "array_types.hpp",
+    "constants_clubb.hpp"
+  ],
+  "status": "No shared edits/build/tests. Source audit only; no numerical proof.",
+  "existing_constants": [
+    "one",
+    "zero",
+    "sqrt_2",
+    "one_half",
+    "chi_tol",
+    "Ncn_tol",
+    "cloud_frac_min",
+    "eps"
+  ],
+  "device_math": [
+    "Kokkos::erfc",
+    "Kokkos::sqrt"
+  ],
+  "group_callsite": "Replace setup temporary Nc array bridge with same-named10-input C++View overload; remove2shape inputs and transient declaration."
+}

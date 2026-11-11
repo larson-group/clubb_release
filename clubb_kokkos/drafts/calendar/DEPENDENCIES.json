@@ -1,0 +1,8 @@
+{
+  "existing_constant_owner": "constants_clubb.hpp::sec_per_day",
+  "owning_time_kind": "double = Native time_precision selected_real_kind(p=12), independent of core real_t",
+  "new_scientific_lower_contracts": [],
+  "new_mutable_state": [],
+  "integration": "Add calendar.cpp to permanent core library when its live callers are reached; Native radiation/input/stats packages still call their Native owner until those package boundaries port.",
+  "runtime_status": "Uncompiled/untested source draft."
+}

@@ -1,0 +1,100 @@
+{
+  "canonical_source": "src/CLUBB_core/Nc_Ncn_eqns.F90",
+  "canonical_sha256": "fc5636a8c2cb3833240e34fb02751db8653847fbb384a30729e130ddea089a6c",
+  "hashes": {
+    "Nc_Ncn_eqns.hpp": "d337830938d28921fdc3cfc88a152bf299dafbedfe1ae685882fe4823d65965d"
+  },
+  "routines": [
+    {
+      "name": "Ncnm_to_Nc_in_cloud",
+      "arguments": 15,
+      "ordered_assignment_trees": 4,
+      "assignment_mismatches": [],
+      "ordered_predicates": 1,
+      "predicate_mismatches": []
+    },
+    {
+      "name": "Nc_in_cloud_to_Ncnm",
+      "arguments": 10,
+      "ordered_assignment_trees": 4,
+      "assignment_mismatches": [],
+      "ordered_predicates": 1,
+      "predicate_mismatches": []
+    },
+    {
+      "name": "Ncnm_to_Ncm",
+      "arguments": 13,
+      "ordered_assignment_trees": 1,
+      "assignment_mismatches": [],
+      "ordered_predicates": 0,
+      "predicate_mismatches": []
+    },
+    {
+      "name": "Ncm_to_Ncnm",
+      "arguments": 9,
+      "ordered_assignment_trees": 3,
+      "assignment_mismatches": [],
+      "ordered_predicates": 1,
+      "predicate_mismatches": []
+    },
+    {
+      "name": "bivar_NL_chi_Ncn_mean",
+      "arguments": 6,
+      "ordered_assignment_trees": 6,
+      "assignment_mismatches": [],
+      "ordered_predicates": 5,
+      "predicate_mismatches": []
+    },
+    {
+      "name": "bivar_Ncnm_eqn_comp",
+      "arguments": 4,
+      "ordered_assignment_trees": 3,
+      "assignment_mismatches": [],
+      "ordered_predicates": 2,
+      "predicate_mismatches": []
+    }
+  ],
+  "ordered_CALLs": [
+    {
+      "name": "Ncnm_to_Nc_in_cloud",
+      "ordered_calls": 0,
+      "actuals": 0
+    },
+    {
+      "name": "Nc_in_cloud_to_Ncnm",
+      "ordered_calls": 0,
+      "actuals": 0
+    },
+    {
+      "name": "Ncnm_to_Ncm",
+      "ordered_calls": 0,
+      "actuals": 0
+    },
+    {
+      "name": "Ncm_to_Ncnm",
+      "ordered_calls": 0,
+      "actuals": 0
+    },
+    {
+      "name": "bivar_NL_chi_Ncn_mean",
+      "ordered_calls": 0,
+      "actuals": 0
+    },
+    {
+      "name": "bivar_Ncnm_eqn_comp",
+      "ordered_calls": 0,
+      "actuals": 0
+    }
+  ],
+  "kernels_reviewed": 4,
+  "manual_boundaries": [],
+  "review_kind": "Owner complete source review, with separate cleanup; independent full-file review pending.",
+  "manual_review": [
+    "Six device scalar functions preserve all21 assignments and10 predicates; four public array generics call only their exact scalar overloads.",
+    "Explicit output View return types retain first-input memory/execution space for homogeneous rank1/rank2 conformable Views, including host/strided fields. All scalar required arguments remain unchanged.",
+    "Both private elemental integral formulas use Native ERFC/SQRT branches and tolerances, with no JAX eager where/safe denominator substitution.",
+    "Native module flowchart/scientific derivations and original call/moment ordering retained. No new public physics helper or mutable global state."
+  ],
+  "remaining_lower_contracts": "None: only existing constants, Kokkos scalar math, grid/types/array owner, Native stats/debug service.",
+  "runtime_status": "No builds/tests, CPU/GPU comparisons or BFB claim. All scalar branches, thresholds, selector1/2, grid directions, stats/errors and array surfaces remain runtime-unverified."
+}

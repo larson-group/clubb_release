@@ -58,6 +58,7 @@ from __future__ import annotations
 import argparse
 import json
 from datetime import datetime
+import math
 import os
 from pathlib import Path
 import subprocess
@@ -169,15 +170,78 @@ def parse_param_spec(spec: str) -> dict:
 
 def parse_strategy_spec(spec: str) -> dict:
     """Parse one compact tuning-strategy specification."""
-    from tuner.algorithm_registry import parse_strategy
-    try:
-        return parse_strategy(spec)
-    except ValueError as exc:
-        raise argparse.ArgumentTypeError(str(exc)) from exc
+    parts = [part.strip() for part in str(spec).split(":")]
+    name = parts[0].lower() if parts and parts[0] else ""
+    if name == "random":
+        if len(parts) != 2 or not parts[1]:
+            raise argparse.ArgumentTypeError("random strategy requires random:MAX_SAMPLES")
+        max_samples = _int_from_text(parts[1], "random max_samples")
+        if max_samples < 1:
+            raise argparse.ArgumentTypeError("random max_samples must be >= 1")
+        return {"name": "random", "options": {"max_samples": max_samples}}
+
+    if name == "resolve":
+        if len(parts) != 2 or not parts[1]:
+            raise argparse.ArgumentTypeError("resolve strategy requires resolve:SPACING")
+        spacing = _float_from_text(parts[1], "resolve spacing")
+        if spacing <= 0.0:
+            raise argparse.ArgumentTypeError("resolve spacing must be > 0")
+        return {"name": "resolve", "options": {"spacing": spacing}}
+
+    if name == "simann":
+        if len(parts) > 4:
+            raise argparse.ArgumentTypeError("simann strategy uses simann[:MAX_ITERS[:INITIAL_TEMP[:FINAL_TEMP]]]")
+        options = {}
+        if len(parts) > 1 and parts[1]:
+            max_iters = _int_from_text(parts[1], "simann max_iters")
+            if max_iters < 1:
+                raise argparse.ArgumentTypeError("simann max_iters must be >= 1")
+            options["max_iters"] = max_iters
+        if len(parts) > 2 and parts[2]:
+            initial_temp = _float_from_text(parts[2], "simann initial_temp")
+            if initial_temp <= 0.0:
+                raise argparse.ArgumentTypeError("simann initial_temp must be > 0")
+            options["initial_temp"] = initial_temp
+        if len(parts) > 3 and parts[3]:
+            max_final_temp = _float_from_text(parts[3], "simann max_final_temp")
+            if max_final_temp <= 0.0:
+                raise argparse.ArgumentTypeError("simann max_final_temp must be > 0")
+            options["max_final_temp"] = max_final_temp
+        return {"name": "simann", "options": options}
+
+    if name == "adam":
+        if len(parts) != 5:
+            raise argparse.ArgumentTypeError(
+                "adam strategy requires adam:MAX_UPDATES:LEARNING_RATE:PERTURBATION:SPSA_PAIRS"
+            )
+        max_updates = _int_from_text(parts[1], "adam max updates")
+        learning_rate = _float_from_text(parts[2], "adam learning rate")
+        perturbation = _float_from_text(parts[3], "adam perturbation")
+        spsa_pairs = _int_from_text(parts[4], "adam SPSA pairs")
+        if max_updates < 1 or spsa_pairs < 1:
+            raise argparse.ArgumentTypeError("adam max updates and SPSA pairs must be >= 1")
+        if learning_rate <= 0.0 or not 0.0 < perturbation <= 0.5:
+            raise argparse.ArgumentTypeError(
+                "adam learning rate must be > 0 and perturbation must be in (0, 0.5]"
+            )
+        return {
+            "name": "adam",
+            "options": {
+                "max_updates": max_updates,
+                "learning_rate": learning_rate,
+                "perturbation": perturbation,
+                "spsa_pairs": spsa_pairs,
+            },
+        }
+
+    raise argparse.ArgumentTypeError(
+        "strategy must be random:MAX_SAMPLES, resolve:SPACING, "
+        "simann[:MAX_ITERS[:INITIAL_TEMP[:FINAL_TEMP]]], or "
+        "adam:MAX_UPDATES:LEARNING_RATE:PERTURBATION:SPSA_PAIRS"
+    )
 
 
 def build_request(args: argparse.Namespace) -> dict:
-    """Build a canonical strategy request, including required gradients and layout."""
     case_values = _split_values(args.cases)
     field_values = _split_values(args.fields)
     param_values = _split_values(args.params)
@@ -195,6 +259,8 @@ def build_request(args: argparse.Namespace) -> dict:
     strategy = parse_strategy_spec(args.strategy)
     batch_size = int(args.batch_size)
     max_workers = int(args.max_workers)
+    if strategy["name"] == "simann":
+        strategy["options"].setdefault("chain_count", max(1, max_workers * batch_size))
     request = {
         "backend": "jax" if getattr(args, "jax", False) else "fortran",
         "grad": getattr(args, "grad", False),
@@ -223,10 +289,7 @@ def build_request(args: argparse.Namespace) -> dict:
         request["override"] = args.override
     if args.seed is not None:
         request["seed"] = int(args.seed)
-    from tuner.algorithm_registry import prepare_strategy
-    request = apply_preset(request)
-    prepare_strategy(request)
-    return request
+    return apply_preset(request)
 
 
 def format_seconds(seconds: float | int | None) -> str:
@@ -251,23 +314,64 @@ def format_params(params: dict, *, limit: int = 4) -> str:
 
 def format_strategy(strategy: dict) -> str:
     """Return a compact human-readable strategy description."""
-    from tuner.algorithm_registry import get_algorithm
-    spec = get_algorithm(strategy["name"])
-    options = strategy.get("options") or {}
-    return spec.label + ", " + ", ".join(f"{key}={value}" for key, value in options.items())
+    name = strategy.get("name", "unknown")
+    options = dict(strategy.get("options") or {})
+    if name == "random":
+        return f"random, max_samples={options.get('max_samples', 'unbounded')}"
+    if name == "resolve":
+        return f"resolve, spacing={options.get('spacing', '--')}"
+    if name == "simann":
+        return (
+            f"simann, max_iters={options.get('max_iters', 2000)}, "
+            f"chains={options.get('chain_count', 1)}, "
+            f"initial_temp={options.get('initial_temp', 1.0)}, "
+            f"max_final_temp={options.get('max_final_temp', 1.0e-12)}"
+        )
+    if name == "adam":
+        return (
+            f"adam (SPSA), updates={options.get('max_updates', 100)}, "
+            f"learning_rate={options.get('learning_rate', 0.01)}, "
+            f"perturbation={options.get('perturbation', 0.05)}, "
+            f"pairs={options.get('spsa_pairs', 2)}, chains={options.get('chain_count', 'derived')}"
+        )
+    return str(name)
 
 
 def estimate_total_samples(request: dict) -> str:
     """Return the sample count implied by the CLI request, if known."""
-    from tuner.algorithm_registry import prepare_strategy
-    candidate = dict(request)
-    candidate["strategy"] = {**request["strategy"], "options": dict(request["strategy"].get("options", {}))}
-    try:
-        prepare_strategy(candidate)
-    except ValueError:
-        return "invalid layout"
-    count = candidate["total_samples"]
-    return str(count) if count is not None else "unknown"
+    strategy = request.get("strategy") or {}
+    options = strategy.get("options") or {}
+    if strategy.get("name") == "random":
+        return str(options.get("max_samples", "unknown"))
+    if strategy.get("name") == "resolve":
+        spacing = float(options.get("spacing"))
+        total = 1
+        for spec in request.get("parameter_ranges", []):
+            span = float(spec["max"]) - float(spec["min"])
+            intervals = 1 if span == 0.0 else max(1, int(math.ceil(span / spacing)))
+            total *= intervals + 1
+        return str(total)
+    if strategy.get("name") == "simann":
+        return str(int(options.get("max_iters", 2000)) * int(options.get("chain_count", 1)))
+    if strategy.get("name") == "adam":
+        pairs = int(options.get("spsa_pairs", 2))
+        chain_count = options.get("chain_count")
+        if chain_count is None:
+            batch_size = int(request.get("batch_size", 1))
+            cases = list(request.get("cases") or [request.get("case_name")])
+            cases = [case for case in cases if case]
+            columns_per_chain = 2 * pairs
+            if not cases or batch_size % columns_per_chain:
+                return "invalid layout"
+            chain_count = (
+                batch_size // columns_per_chain
+                * math.ceil(int(request.get("max_workers", 1)) / len(cases))
+            )
+        return str(
+            int(chain_count)
+            * (2 + 2 * pairs * int(options.get("max_updates", 100)))
+        )
+    return "unknown"
 
 
 def render_status_line(status: dict) -> str:
@@ -671,7 +775,6 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument('-param_ranges', dest='params', nargs="+", help="Ranges as PARAM:MIN:MAX or linked PARAM=PARAM:MIN:MAX.", metavar='RANGE')
     parser.add_argument('-preset', dest='preset', help="Named tuner preset; explicit -cases/-fields/-param_ranges override its pieces.")
     parser.add_argument('-list_presets', dest='list_presets', action="store_true", help="List available Tune presets and exit.")
-    parser.add_argument("-list_algorithms", action="store_true", help="List algorithm requirements and typed options as JSON, then exit.")
     parser.add_argument(
         "-config",
         default=None,
@@ -680,11 +783,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("-override", default=None, help="Optional comma-separated CLUBB key=value overrides.")
     parser.add_argument(
         "-strategy",
-        default="random",
+        default="random:8",
         help=(
-            "Algorithm name followed by colon-separated positional or NAME=VALUE options. "
-            "Use -list_algorithms for types, defaults and requirements. "
-            "Example: adam_gradient:max_updates=10:learning_rate=0.01 (requires -jax). Default: random."
+            "Strategy spec: random:MAX_SAMPLES, resolve:SPACING, "
+            "simann[:MAX_ITERS[:INITIAL_TEMP[:FINAL_TEMP]]], or "
+            "adam:MAX_UPDATES:LEARNING_RATE:PERTURBATION:SPSA_PAIRS. Default: random:8."
         ),
     )
     parser.add_argument("-batch_size", type=int, default=8, help="Parameter samples per CLUBB column batch. Default: 8.")
@@ -743,10 +846,6 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
-    if args.list_algorithms:
-        from tuner.algorithm_registry import list_algorithms
-        print(json.dumps(list_algorithms(), indent=2))
-        return 0
     if args.list_presets:
         for preset in list_presets():
             print(f"{preset['name']}: {preset['description']}")

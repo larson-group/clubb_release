@@ -1,0 +1,834 @@
+[
+  {
+    "module": "math_utilities",
+    "source_sha256": "6fd8ea13c68637ff4624b667b0980def3a99920aeb81bf9c3192912fb587326d",
+    "routines": [
+      {
+        "name": "compute_sample_mean",
+        "module": "math_utilities",
+        "source": "src/SILHS/math_utilities.F90",
+        "arguments": [
+          {
+            "name": "n_levels",
+            "kind": "integer",
+            "dims": [],
+            "intent": "in",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "n_samples",
+            "kind": "integer",
+            "dims": [],
+            "intent": "in",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "ngrdcol",
+            "kind": "integer",
+            "dims": [],
+            "intent": "in",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "weight",
+            "kind": "real",
+            "dims": [
+              "ngrdcol",
+              "n_samples",
+              "n_levels"
+            ],
+            "intent": "in",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "x_sample",
+            "kind": "real",
+            "dims": [
+              "ngrdcol",
+              "n_samples",
+              "n_levels"
+            ],
+            "intent": "in",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          }
+        ],
+        "result": {
+          "name": "mean",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "n_levels"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      },
+      {
+        "name": "compute_sample_variance",
+        "module": "math_utilities",
+        "source": "src/SILHS/math_utilities.F90",
+        "arguments": [
+          {
+            "name": "n_levels",
+            "kind": "integer",
+            "dims": [],
+            "intent": "in",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "n_samples",
+            "kind": "integer",
+            "dims": [],
+            "intent": "in",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "ngrdcol",
+            "kind": "integer",
+            "dims": [],
+            "intent": "in",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "x_sample",
+            "kind": "real",
+            "dims": [
+              "ngrdcol",
+              "n_samples",
+              "n_levels"
+            ],
+            "intent": "in",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "weight",
+            "kind": "real",
+            "dims": [
+              "ngrdcol",
+              "n_samples",
+              "n_levels"
+            ],
+            "intent": "in",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "x_mean",
+            "kind": "real",
+            "dims": [
+              "ngrdcol",
+              "n_levels"
+            ],
+            "intent": "in",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          }
+        ],
+        "result": {
+          "name": "variance",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "n_levels"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      },
+      {
+        "name": "compute_sample_covariance",
+        "module": "math_utilities",
+        "source": "src/SILHS/math_utilities.F90",
+        "arguments": [
+          {
+            "name": "n_levels",
+            "kind": "integer",
+            "dims": [],
+            "intent": "in",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "n_samples",
+            "kind": "integer",
+            "dims": [],
+            "intent": "in",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "ngrdcol",
+            "kind": "integer",
+            "dims": [],
+            "intent": "in",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "weight",
+            "kind": "real",
+            "dims": [
+              "ngrdcol",
+              "n_samples",
+              "n_levels"
+            ],
+            "intent": "in",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "x_sample",
+            "kind": "real",
+            "dims": [
+              "ngrdcol",
+              "n_samples",
+              "n_levels"
+            ],
+            "intent": "in",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "x_mean",
+            "kind": "real",
+            "dims": [
+              "ngrdcol",
+              "n_levels"
+            ],
+            "intent": "in",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "y_sample",
+            "kind": "real",
+            "dims": [
+              "ngrdcol",
+              "n_samples",
+              "n_levels"
+            ],
+            "intent": "in",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "y_mean",
+            "kind": "real",
+            "dims": [
+              "ngrdcol",
+              "n_levels"
+            ],
+            "intent": "in",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          }
+        ],
+        "result": {
+          "name": "covariance",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "n_levels"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      }
+    ],
+    "scope": "Microphys-facing contracts only. Full module outline/bodies pending; not a runtime completion claim."
+  },
+  {
+    "module": "lh_microphys_var_covar_module",
+    "source_sha256": "425f280054b378bb58dc66067a20e825e7b79caa5d8a5de09315b1e06eb52d35",
+    "routines": [
+      {
+        "name": "lh_microphys_var_covar_driver_api",
+        "module": "lh_microphys_var_covar_module",
+        "source": "src/SILHS/lh_microphys_var_covar_module.F90",
+        "arguments": [
+          {
+            "name": "nzt",
+            "kind": "integer",
+            "dims": [],
+            "intent": "in",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "num_samples",
+            "kind": "integer",
+            "dims": [],
+            "intent": "in",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "ngrdcol",
+            "kind": "integer",
+            "dims": [],
+            "intent": "in",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "dt",
+            "kind": "real",
+            "dims": [],
+            "intent": "in",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "lh_sample_point_weights",
+            "kind": "real",
+            "dims": [
+              "ngrdcol",
+              "num_samples",
+              "nzt"
+            ],
+            "intent": "in",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "pdf_params",
+            "kind": "pdf_parameter",
+            "dims": [],
+            "intent": "in",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "lh_rt_all",
+            "kind": "real",
+            "dims": [
+              "ngrdcol",
+              "num_samples",
+              "nzt"
+            ],
+            "intent": "in",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "lh_thl_all",
+            "kind": "real",
+            "dims": [
+              "ngrdcol",
+              "num_samples",
+              "nzt"
+            ],
+            "intent": "in",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "lh_w_all",
+            "kind": "real",
+            "dims": [
+              "ngrdcol",
+              "num_samples",
+              "nzt"
+            ],
+            "intent": "in",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "lh_rcm_mc_all",
+            "kind": "real",
+            "dims": [
+              "ngrdcol",
+              "num_samples",
+              "nzt"
+            ],
+            "intent": "in",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "lh_rvm_mc_all",
+            "kind": "real",
+            "dims": [
+              "ngrdcol",
+              "num_samples",
+              "nzt"
+            ],
+            "intent": "in",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "lh_thlm_mc_all",
+            "kind": "real",
+            "dims": [
+              "ngrdcol",
+              "num_samples",
+              "nzt"
+            ],
+            "intent": "in",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "l_lh_instant_var_covar_src",
+            "kind": "logical",
+            "dims": [],
+            "intent": "in",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "lh_rtp2_mc_zt",
+            "kind": "real",
+            "dims": [
+              "ngrdcol",
+              "nzt"
+            ],
+            "intent": "out",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "lh_thlp2_mc_zt",
+            "kind": "real",
+            "dims": [
+              "ngrdcol",
+              "nzt"
+            ],
+            "intent": "out",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "lh_wprtp_mc_zt",
+            "kind": "real",
+            "dims": [
+              "ngrdcol",
+              "nzt"
+            ],
+            "intent": "out",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "lh_wpthlp_mc_zt",
+            "kind": "real",
+            "dims": [
+              "ngrdcol",
+              "nzt"
+            ],
+            "intent": "out",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "lh_rtpthlp_mc_zt",
+            "kind": "real",
+            "dims": [
+              "ngrdcol",
+              "nzt"
+            ],
+            "intent": "out",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          }
+        ],
+        "result": null
+      }
+    ],
+    "scope": "Microphys-facing contracts only. Full module outline/bodies pending; not a runtime completion claim."
+  },
+  {
+    "module": "est_kessler_microphys_module",
+    "source_sha256": "2c1010c3eeb4f507ffdc2266328bd65b31a7f381d9c2c1068c473a0f4bcb706a",
+    "routines": [
+      {
+        "name": "est_kessler_microphys_api",
+        "module": "est_kessler_microphys_module",
+        "source": "src/SILHS/est_kessler_microphys_module.F90",
+        "arguments": [
+          {
+            "name": "nzt",
+            "kind": "integer",
+            "dims": [],
+            "intent": "in",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "num_samples",
+            "kind": "integer",
+            "dims": [],
+            "intent": "in",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "pdf_dim",
+            "kind": "integer",
+            "dims": [],
+            "intent": "in",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "ngrdcol",
+            "kind": "integer",
+            "dims": [],
+            "intent": "in",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "X_nl_all_levs",
+            "kind": "real",
+            "dims": [
+              "ngrdcol",
+              "num_samples",
+              "nzt",
+              "pdf_dim"
+            ],
+            "intent": "in",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "pdf_params",
+            "kind": "pdf_parameter",
+            "dims": [],
+            "intent": "in",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "rcm",
+            "kind": "real",
+            "dims": [
+              "ngrdcol",
+              "nzt"
+            ],
+            "intent": "in",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "cloud_frac",
+            "kind": "real",
+            "dims": [
+              "ngrdcol",
+              "nzt"
+            ],
+            "intent": "in",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "X_mixt_comp_all_levs",
+            "kind": "integer",
+            "dims": [
+              "ngrdcol",
+              "num_samples",
+              "nzt"
+            ],
+            "intent": "in",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "lh_sample_point_weights",
+            "kind": "real",
+            "dims": [
+              "ngrdcol",
+              "num_samples",
+              "nzt"
+            ],
+            "intent": "in",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "l_lh_importance_sampling",
+            "kind": "logical",
+            "dims": [],
+            "intent": "in",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "lh_AKm",
+            "kind": "real",
+            "dims": [
+              "ngrdcol",
+              "nzt"
+            ],
+            "intent": "out",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "AKm",
+            "kind": "real",
+            "dims": [
+              "ngrdcol",
+              "nzt"
+            ],
+            "intent": "out",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "AKstd",
+            "kind": "real",
+            "dims": [
+              "ngrdcol",
+              "nzt"
+            ],
+            "intent": "out",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "AKstd_cld",
+            "kind": "real",
+            "dims": [
+              "ngrdcol",
+              "nzt"
+            ],
+            "intent": "out",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "AKm_rcm",
+            "kind": "real",
+            "dims": [
+              "ngrdcol",
+              "nzt"
+            ],
+            "intent": "out",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "AKm_rcc",
+            "kind": "real",
+            "dims": [
+              "ngrdcol",
+              "nzt"
+            ],
+            "intent": "out",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "lh_rcm_avg",
+            "kind": "real",
+            "dims": [
+              "ngrdcol",
+              "nzt"
+            ],
+            "intent": "out",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          }
+        ],
+        "result": null
+      }
+    ],
+    "scope": "Microphys-facing contracts only. Full module outline/bodies pending; not a runtime completion claim."
+  },
+  {
+    "module": "latin_hypercube_driver_module",
+    "source_sha256": "88de4e2a5245cbfe344879a03aa35d050ba3b03116e37ff1b4222a4ab7edad3f",
+    "routines": [
+      {
+        "name": "copy_X_nl_into_hydromet_all_pts",
+        "module": "latin_hypercube_driver_module",
+        "source": "src/SILHS/latin_hypercube_driver_module.F90",
+        "arguments": [
+          {
+            "name": "nzt",
+            "kind": "integer",
+            "dims": [],
+            "intent": "in",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "pdf_dim",
+            "kind": "integer",
+            "dims": [],
+            "intent": "in",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "num_samples",
+            "kind": "integer",
+            "dims": [],
+            "intent": "in",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "ngrdcol",
+            "kind": "integer",
+            "dims": [],
+            "intent": "in",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "X_nl_all_levs",
+            "kind": "real",
+            "dims": [
+              "ngrdcol",
+              "num_samples",
+              "nzt",
+              "pdf_dim"
+            ],
+            "intent": "in",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "hydromet_dim",
+            "kind": "integer",
+            "dims": [],
+            "intent": "in",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "hm_metadata",
+            "kind": "hm_metadata_type",
+            "dims": [],
+            "intent": "in",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "hydromet",
+            "kind": "real",
+            "dims": [
+              "ngrdcol",
+              "nzt",
+              "hydromet_dim"
+            ],
+            "intent": "in",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "hydromet_all_points",
+            "kind": "real",
+            "dims": [
+              "ngrdcol",
+              "num_samples",
+              "nzt",
+              "hydromet_dim"
+            ],
+            "intent": "out",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          },
+          {
+            "name": "Ncn_all_points",
+            "kind": "real",
+            "dims": [
+              "ngrdcol",
+              "num_samples",
+              "nzt"
+            ],
+            "intent": "out",
+            "optional": false,
+            "allocatable": false,
+            "character_length": ""
+          }
+        ],
+        "result": null
+      }
+    ],
+    "scope": "Microphys-facing contracts only. Full module outline/bodies pending; not a runtime completion claim."
+  }
+]

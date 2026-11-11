@@ -1,8 +1,6 @@
 """Check the JAX close_Luhar_pdf port (adg1_adg2_3d_luhar_pdf.F90)
 against Fortran."""
 
-from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
-
 import jax.numpy as jnp
 import numpy as np
 
@@ -29,7 +27,7 @@ def test_f2py_oracle():
     worst = 0.0
     for seed in (11, 22, 33):
         xm, xp2, mf, m, wpxp = _inputs(seed)
-        f = fortran.close_luhar_pdf(NZ, NG, xm, xp2, mf, m, wpxp, _X_TOL_SQD)
+        f = fortran.close_luhar_pdf(NZ, xm, xp2, mf, m, wpxp, _X_TOL_SQD)
         g = close_Luhar_pdf(xm, xp2, mf, m, wpxp, _X_TOL_SQD)
         assert len(f) == len(g)
         for fi, gi in zip(f, g):
@@ -47,7 +45,7 @@ def test_ADG1_w_closure_f2py():
         ng, nz = 2, 8
         wp2 = rng.uniform(1e-3, 2.0, (ng, nz)); wm = rng.uniform(-1.0, 1.0, (ng, nz))
         Skw = rng.uniform(-3.0, 3.0, (ng, nz)); ssw = rng.uniform(0.0, 0.6, (ng, nz)); mfmm = 0.4
-        jr = call_jax(ADG1_w_closure, jnp.asarray(wm), jnp.asarray(wp2), jnp.asarray(Skw), jnp.asarray(ssw),
+        jr = ADG1_w_closure(jnp.asarray(wm), jnp.asarray(wp2), jnp.asarray(Skw), jnp.asarray(ssw),
                             jnp.asarray(np.sqrt(wp2)), mfmm)
         fr = fortran.adg1_w_closure(nz, ng, wm, wp2, Skw, ssw, np.sqrt(wp2), mfmm, None)
         for i in range(7):
@@ -74,7 +72,7 @@ def test_ADG1_pdf_driver_f2py():
         Skw = rng.uniform(-3, 3, (ng, nz)); wprtp = rng.uniform(-1e-3, 1e-3, (ng, nz)); wpthlp = rng.uniform(-1, 1, (ng, nz))
         upwp = rng.uniform(-0.1, 0.1, (ng, nz)); vpwp = rng.uniform(-0.1, 0.1, (ng, nz))
         sqw = np.sqrt(wp2); ssw = rng.uniform(0, 0.5, (ng, nz)); beta = np.full(ng, 1.0); mfmm = 0.4
-        jr = call_jax(ADG1_pdf_driver, jnp.asarray(wm), jnp.asarray(rtm), jnp.asarray(thlm), jnp.asarray(um), jnp.asarray(vm),
+        jr = ADG1_pdf_driver(jnp.asarray(wm), jnp.asarray(rtm), jnp.asarray(thlm), jnp.asarray(um), jnp.asarray(vm),
             jnp.asarray(wp2), jnp.asarray(rtp2), jnp.asarray(thlp2), jnp.asarray(up2), jnp.asarray(vp2),
             jnp.asarray(Skw), jnp.asarray(wprtp), jnp.asarray(wpthlp), jnp.asarray(upwp), jnp.asarray(vpwp),
             jnp.asarray(sqw), jnp.asarray(ssw), jnp.asarray(beta)[:, None], mfmm)

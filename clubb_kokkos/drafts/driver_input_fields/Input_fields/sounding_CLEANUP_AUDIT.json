@@ -1,0 +1,18 @@
+{
+  "date_UTC": "2026-11-06T08:09:12.505468+00:00",
+  "attribution": "Separate owner cleanup after complete scientific/source reread.",
+  "checks": [
+    "Native routine/argument groups, descriptions/dividers, references and branch comments retained",
+    "No owning UDT capture, mutable global/thread_local state, f2k science in kernels or speculative arithmetic workaround",
+    "All source/header lines at most100 columns; no trailing whitespace",
+    "Public/primitive service names and local include dependencies inspected; missing IOP implementation explicit"
+  ],
+  "sha256": {
+    "src/Input_fields/sounding.F90": "1cc6582274d8e8c152e1afab9591d64a55bd1ec5cec519f4a2fcea9f86c51268",
+    "clubb_kokkos/drafts/driver_input_fields/Input_fields/sounding.cpp": "d1d56eac17ff1233b956a978fa2fcda0c6c43e73acea3e27c3286272b516ed59",
+    "clubb_kokkos/drafts/driver_input_fields/Input_fields/sounding.hpp": "16896160e9337e0fdbba1db4bbc2343345bd2adc96d23db685df1e4a42f504d5",
+    "clubb_kokkos/drafts/driver_input_fields/f2k/sounding_io_bridge.hpp": "a2ca74a815a20e64c0416295553787cbb8393b7d6c2689b06fa7d717f846edb7",
+    "clubb_kokkos/drafts/driver_input_fields/f2k/sounding_io_bridge.F90": "4fbe7945bdedbf313b5ee8339ecac5df6073c849d1af4dbf6c11128b728d2423"
+  },
+  "runtime_status": "SOURCE-AUDITED DRAFT ONLY; no build, CPU/CUDA execution or numerical/BFB claim. Root integrates compatible group."
+}

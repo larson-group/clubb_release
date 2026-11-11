@@ -1,0 +1,1856 @@
+{
+  "graupel_init": {
+    "name": "GRAUPEL_INIT",
+    "module": "module_mp_GRAUPEL",
+    "source": "src/Microphys/Morrison_microphys/module_mp_graupel.F90",
+    "arguments": [],
+    "result": null
+  },
+  "m2005micro_graupel": {
+    "name": "M2005MICRO_GRAUPEL",
+    "module": "module_mp_GRAUPEL",
+    "source": "src/Microphys/Morrison_microphys/module_mp_graupel.F90",
+    "arguments": [
+      {
+        "name": "QC3DTEN",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "QI3DTEN",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "QNI3DTEN",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "QR3DTEN",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NC3DTEN",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NI3DTEN",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NS3DTEN",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NR3DTEN",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "QC3D",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "QI3D",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "QNI3D",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "QR3D",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NC3D",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NI3D",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NS3D",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NR3D",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "T3DTEN",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "QV3DTEN",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "T3D",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "QV3D",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "PRES",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "RHO",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "DZQ",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "W3D",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "WVAR",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "FR",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "PRECRT",
+        "kind": "float",
+        "dims": [],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "SNOWRT",
+        "kind": "float",
+        "dims": [],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "EFFC",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "EFFI",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "EFFS",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "EFFR",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "DT",
+        "kind": "float",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "IMS",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "IME",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "JMS",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "JME",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "KMS",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "KME",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "ITS",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "ITE",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "JTS",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "JTE",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "KTS",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "KTE",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "QG3DTEN",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NG3DTEN",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "QG3D",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NG3D",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "EFFG",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "QGSTEN",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "QRSTEN",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "QISTEN",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "QNISTEN",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "QCSTEN",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NGSTEN",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NRSTEN",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NISTEN",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NSSTEN",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NCSTEN",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "CF3D",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "PRC",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "PRA",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "PSMLT",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "EVPMS",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "PRACS",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "EVPMG",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "PRACG",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "PRE",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "PGMLT",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "MNUCCC",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "PSACWS",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "PSACWI",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "QMULTS",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "QMULTG",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "PSACWG",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "PGSACW",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "PRD",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "PRCI",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "PRAI",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "QMULTR",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "QMULTRG",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "MNUCCD",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "PRACI",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "PRACIS",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "EPRD",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "MNUCCR",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "PIACR",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "PIACRS",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "PGRACS",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "PRDS",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "EPRDS",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "PSACR",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "PRDG",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "EPRDG",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NPRC1",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NRAGG",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NPRACG",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NSUBR",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NSMLTR",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NGMLTR",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NPRACS",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NNUCCR",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NIACR",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NIACRS",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NGRACS",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NSMLTS",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NSAGG",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NPRCI",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NSCNG",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NSUBS",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "PCC",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NNUCCC",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NPSACWS",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NPRA",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NPRC",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NPSACWI",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NPSACWG",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NPRAI",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NMULTS",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NMULTG",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NMULTR",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NMULTRG",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NNUCCD",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NSUBI",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NGMLTG",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NSUBG",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NACT",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "SIZEFIX_NR",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "SIZEFIX_NC",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "SIZEFIX_NI",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "SIZEFIX_NS",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "SIZEFIX_NG",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NEGFIX_NR",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NEGFIX_NC",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NEGFIX_NI",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NEGFIX_NS",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NEGFIX_NG",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NIM_MORR_CL",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "QC_INST",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "QR_INST",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "QI_INST",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "QS_INST",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "QG_INST",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NC_INST",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NR_INST",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NI_INST",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NS_INST",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "NG_INST",
+        "kind": "float",
+        "dims": [
+          "KMS:KME"
+        ],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      }
+    ],
+    "result": null
+  },
+  "polysvp": {
+    "name": "POLYSVP",
+    "module": "module_mp_GRAUPEL",
+    "source": "src/Microphys/Morrison_microphys/module_mp_graupel.F90",
+    "arguments": [
+      {
+        "name": "T",
+        "kind": "float",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "TYPE",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      }
+    ],
+    "result": {
+      "name": "POLYSVP",
+      "kind": "float",
+      "dims": [],
+      "intent": "out",
+      "optional": false,
+      "allocatable": false,
+      "character_length": ""
+    }
+  },
+  "gamma": {
+    "name": "GAMMA",
+    "module": "module_mp_GRAUPEL",
+    "source": "src/Microphys/Morrison_microphys/module_mp_graupel.F90",
+    "arguments": [
+      {
+        "name": "X",
+        "kind": "float",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      }
+    ],
+    "result": {
+      "name": "GAMMA",
+      "kind": "float",
+      "dims": [],
+      "intent": "out",
+      "optional": false,
+      "allocatable": false,
+      "character_length": ""
+    }
+  },
+  "derf1": {
+    "name": "DERF1",
+    "module": "module_mp_GRAUPEL",
+    "source": "src/Microphys/Morrison_microphys/module_mp_graupel.F90",
+    "arguments": [
+      {
+        "name": "X",
+        "kind": "float",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      }
+    ],
+    "result": {
+      "name": "DERF1",
+      "kind": "float",
+      "dims": [],
+      "intent": "out",
+      "optional": false,
+      "allocatable": false,
+      "character_length": ""
+    }
+  },
+  "radar_init": {
+    "name": "radar_init",
+    "module": "module_mp_GRAUPEL",
+    "source": "src/Microphys/Morrison_microphys/module_mp_graupel.F90",
+    "arguments": [],
+    "result": null
+  },
+  "m_complex_water_ray": {
+    "name": "m_complex_water_ray",
+    "module": "module_mp_GRAUPEL",
+    "source": "src/Microphys/Morrison_microphys/module_mp_graupel.F90",
+    "arguments": [
+      {
+        "name": "lambda",
+        "kind": "double",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "T",
+        "kind": "double",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      }
+    ],
+    "result": {
+      "name": "m_complex_water_ray",
+      "kind": "complex_double",
+      "dims": [],
+      "intent": "out",
+      "optional": false,
+      "allocatable": false,
+      "character_length": ""
+    }
+  },
+  "m_complex_ice_maetzler": {
+    "name": "m_complex_ice_maetzler",
+    "module": "module_mp_GRAUPEL",
+    "source": "src/Microphys/Morrison_microphys/module_mp_graupel.F90",
+    "arguments": [
+      {
+        "name": "lambda",
+        "kind": "double",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "T",
+        "kind": "double",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      }
+    ],
+    "result": {
+      "name": "m_complex_ice_maetzler",
+      "kind": "complex_double",
+      "dims": [],
+      "intent": "out",
+      "optional": false,
+      "allocatable": false,
+      "character_length": ""
+    }
+  },
+  "positive_qv_adj": {
+    "name": "POSITIVE_QV_ADJ",
+    "module": "module_mp_GRAUPEL",
+    "source": "src/Microphys/Morrison_microphys/module_mp_graupel.F90",
+    "arguments": [
+      {
+        "name": "QV",
+        "kind": "float",
+        "dims": [],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "QC",
+        "kind": "float",
+        "dims": [],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "QR",
+        "kind": "float",
+        "dims": [],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "QI",
+        "kind": "float",
+        "dims": [],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "QS",
+        "kind": "float",
+        "dims": [],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "QG",
+        "kind": "float",
+        "dims": [],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "T_IN_K",
+        "kind": "float",
+        "dims": [],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      }
+    ],
+    "result": null
+  }
+}

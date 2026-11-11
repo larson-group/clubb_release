@@ -13,10 +13,7 @@ The main entry point is [`src/clubb_standalone.py`](./src/clubb_standalone.py),
 and translated source lives under [`src/`](./src/):
 
 - `src/CLUBB_core/` contains the supported CLUBB core and JAX statistics code.
-- `src/Input_fields/` contains the sounding, forcing-input and netCDF
-  statistics-file readers. The namelist reader is in
-  `src/CLUBB_core/file_functions.py` and the grid-file reader in
-  `src/CLUBB_core/grid_class.py`.
+- `src/Input_fields/` contains namelist, sounding, surface, and grid readers.
 - `src/Radiation/` contains the supported radiation code.
 - `src/Microphys/` contains KK and Morrison microphysics, including cloud
   sedimentation and feedback to CLUBB. The strict comparison suite covers KK
@@ -30,12 +27,6 @@ and translated source lives under [`src/`](./src/):
 
 The detailed support boundary and conversion workflow are documented in
 [`JAX_CONVERSION_PLAN.md`](./JAX_CONVERSION_PLAN.md).
-
-Numerical kernels expect JAX arrays for array-valued arguments. Convert NumPy arrays
-or Python sequences with `jnp.asarray(value)` before calling a kernel. Array
-axes retain the Fortran order: ordinary profiles use `(column, level)`.
-Initialization, file readers, constant construction and intentional precision
-casts retain their conversions.
 
 ## Running
 
@@ -222,7 +213,7 @@ compilation. Recording can also substantially slow CPU execution; leave it off
 for baseline speed measurements. Use an existing iteration limit for initial
 exploration. Named regions mirror the timers in `clubb_driver.F90`, with an
 additional region identifying each timestep; the corresponding JAX driver
-is split between `clubb_case_initialization.py` and `advance_clubb_to_end.py`.
+is split between `clubb_case_initalization.py` and `advance_clubb_to_end.py`.
 The timer module owns timing, capture and error cleanup. Deep trace finalization
 waits for outstanding case work rather than synchronizing every region.
 Instrumentation is outside compiled physics functions and does not change model
@@ -367,18 +358,6 @@ in the `clubb_jax` Jenkins job. It needs only pytest from the JAX environment:
 ```bash
 python3 clubb_jax/run_jax.py -profile=cpu -init_env
 .venv-jax/bin/python -m pytest -v clubb_jax/human_reviewed_tests/test_file_name_parity.py
-```
-
-The human-reviewed
-[`f2py_unit_tests/test_fill_holes_vs_fortran.py`](human_reviewed_tests/f2py_unit_tests/test_fill_holes_vs_fortran.py)
-compares `fill_holes_vertical` with the Fortran routine for every
-`fill_holes_type`, on constructed hole scenarios and random fields, and
-checks `fill_holes_wp2_from_horz_tke` the same way. It needs
-the Python API build and has its own "JAX vs Fortran hole filling" stage:
-
-```bash
-./compile.py -debug -python
-bash human_reviewed_tests/run_pytests.sh -jax_f2py_human_reviewed
 ```
 
 Generated focused checks live in `auto_llm_generated_tests/pytests/unit_tests/`.

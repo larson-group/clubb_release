@@ -1,0 +1,61 @@
+{
+  "reviewer": "Independent stats_util_review agent; I/O draft authored and audited by stats_io_finish owner; permanent NetCDF write extensions authored by Root.",
+  "scope": {
+    "native": "src/CLUBB_core/stats_netcdf.F90",
+    "ranges": [
+      [
+        1085,
+        1349
+      ],
+      [
+        2294,
+        2883
+      ],
+      [
+        3091,
+        3751
+      ]
+    ],
+    "all_14_routine_bodies_read": true,
+    "permanent_netcdf_write_additions_reviewed": true,
+    "helper_interfaces": "Full new netcdf.hpp plus netcdf.cpp diff, packed-array owner, namelist Group bind/read_file and generic remap entry read as needed."
+  },
+  "sha256": {
+    "src/CLUBB_core/stats_netcdf.F90": "348fe3d29d1b4bbcd8d7317904c0b6a4368ecf8f896793449cec2884db4f8621",
+    "clubb_kokkos/drafts/stats_netcdf/stats_netcdf_io.cpp.inc": "74ab73479757c4eee9ea64c12ed14609c0e88e4868972aafd4481fe60101f3d5",
+    "clubb_kokkos/drafts/stats_netcdf/stats_netcdf.hpp": "f84addefda5ee9413df8baf6939b36fe3eaa9587f8a59a9ea8a1c924568678eb",
+    "clubb_kokkos/src/netcdf.hpp": "70095174136ffb1e8b5299223c3b2807ab27c4ce42d6e13e24b245d9152d15d6",
+    "clubb_kokkos/src/netcdf.cpp": "c4239032a982476bb8f5c438691fd4032be3d277b6cb68440ff293f6456b0c6a",
+    "clubb_kokkos/src/namelist.hpp": "a236357a139b1d4901964a9ab4f19c30b35f66039fabaaf4acad54b73e0675bc",
+    "clubb_kokkos/src/namelist.cpp": "12633f199be4d042fd8be66d7f0d23b631c33fb2fe984e28b437155b67b49dec",
+    "clubb_kokkos/src/CLUBB_core/remapping_module.hpp": "26d96f0cffd0d395b37713e4d66dd1cfaf83cdeafdadce02b4dd2fb875942d93"
+  },
+  "status": "source_review_passed",
+  "verified_defects": [],
+  "independent_mechanical_checks": {
+    "method": "Fresh parser removed source comments, located complete routine bodies with balanced C++ braces, extracted nf90 calls versus netcdf calls/shared packed-write calls, and separately extracted registry template selectors.",
+    "exact_ordered_netcdf_operation_sequences": {
+      "stats_open_netcdf": 63,
+      "stats_avg_and_write": 6,
+      "stats_lh_samples_init": 11,
+      "stats_lh_samples_write_lognormal": 1,
+      "stats_lh_samples_write_uniform": 3
+    },
+    "registry_template_arm_count": 50,
+    "exact_template_arm_order": true
+  },
+  "manual_review": {
+    "open_and_metadata": "Classic clobber; time/bounds dimensions and variables; exact text attrs, core-real numeric attrs and open/explicit time-window attrs; columns/sfc/zm/zt/optionalLH/radiation/parameter definitions all retain Native order. Numeric definitions remain double and registered/LH variables get explicit zero fill. Parameter name common width matches existing packed Fortran character actuals; all trailing blanks written. Per-grid variable shapes, source-grid LHcoordinate and unchecked status-overwrite behavior retained.",
+    "average_and_remap": "Pointwise positive counts guard each statdouble division; untouched zero-count points remain unchanged. Only ZT/ZM remap when selected; Native REAL(buffer,core_rknd) happens before existing permanent remap call, iv1 and all gr/density/pressure/method arguments retain order. Time record/bounds core casts and step-window integer arithmetic retained. Surface versus profile slabs, total/batch offsets and checked write status match.",
+    "grid": "Native grid_init body performs no validation despite its stale Native description; draft accurately ports actual allocation/spread/metadata behavior. Grid refresh guards, nzt=nzm-1 consistency, shape-dependent reallocations and host/device copies match Native ownership and arithmetic.",
+    "SILHS": "Initialization gates/mismatch diagnostics and coordinate reuse/redefine order match. Native names have identical prefix/ADJUSTL/TRIM/64width truncation. Lognormal/uniform shape guards and next-record indexing match; uniform fields then core-real mixture indices then weights written in exact order; each reached write failure propagates fatal error. Present empty name lists remain distinct from absent inputs.",
+    "date": "Existing calendar owner receives same arguments. Fixed35-character template, integer I4.4/I2.2 fields, floor hour, NINT/MOD/integer minute and rounded seconds expressions match Native including overflow stars and lack of normalization.",
+    "registry_reader": "Fixed512-character12000entry array, initialized blanks, same existing namelist Group owner and trailing-path trim, first-character-only comment filter, entry order and count, invalid line error, zero-entry return and Native fatal expansion boundary preserved. Portable allocation/read status differs from compiler-specific positive codes only as documented.",
+    "registry_expansion": "All50template selectors and every generated suffix/prefix pair manually read. Hydro first-two-character and second-species LEN_TRIM bounds, nested j/j2 order, scalar counts and8category counts retained. Max(1,ndefs+4096), dedup before capacity rejection, first wins, name64truncation, copied template metadata plus varid/nz reset and final max(1,k)compact array match. Context-owned warning and optional-dimension rejection are explicit approved ownership/undefined-boundary adaptations.",
+    "registry_parser": "Four256-character fields, full field count even beyond capacity, pipe positions and blank-only TRIM/ADJUSTL preserve tabs/leading-comment semantics. NAME64,GRID16,UNITS32,DESC128 truncation; legacy3field path; grid aliases/unknown->ZT default; default/reset fields match.",
+    "C_boundary": "Raw ncid remains unchanged; Native variable/dimension IDs andGLOBAL0 translate once by minus1, dimension lists and hyperslab starts/counts reverse once, starts subtract1. Text attrs use exact caller length, float/double/int attrs preserve xtype and value. Doublefill pointer has queried storage contract. Typed puts enforce packed source capacity and overflow checks without precision conversions; explicit counts support all unlimited/slab writes. Fixed default-write inference and unlimited rejection are documented API limits and every stats caller supplies source-shaped counts."
+  },
+  "ownership_and_structure": "All I/O state is caller-owned. Call-local intrinsic/packed-array adapters and public template memory boundaries have explicit language reasons; no Native forwarding, new global registry, new model scratch or hidden diagnostic list. Native source-range chunks preserve definition order on Root assembly. Concurrent host NetCDF access is not newly supported; sequential host-call stream is the documented current standalone scope.",
+  "numerical_evidence": "No test, compilation or model execution performed by this reviewer. Inspected owner reports of warning-free final Serial/CUDA objects and Root cross-language380-byte writer probe; these are separate from this source review. Integrated model/byte identity remains Root gate.",
+  "final_hash_coordination": "IO owner confirmed the exact draft/header hashes asserted above after final draft compilation. Review artifact records current permanent writer hashes."
+}

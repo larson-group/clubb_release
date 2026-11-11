@@ -12,8 +12,6 @@ returns EXACTLY the corresponding primitive with the documented args, so a mis-w
 all-const-equivalence bug is caught directly. Oracle-independent; never SKIPs. (iter 553)
 """
 
-from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
-
 
 from clubb_jax.src.Microphys.KK_microphys.KK_upscaled_covariances import trivar_NNL_covar_eq, _CHI_TOL
 from clubb_jax.src.Microphys.KK_microphys.PDF_integrals_covar import (
@@ -30,7 +28,7 @@ _X2A = _MC_TND / _MC_COEF
 
 
 def _eq(s_x, s_chi, s_y):
-    return float(call_jax(trivar_NNL_covar_eq, _MU_X, _MU_CHI, _MU_Y, _MU_Y_N, s_x, s_chi, s_y, _S_Y_N,
+    return float(trivar_NNL_covar_eq(_MU_X, _MU_CHI, _MU_Y, _MU_Y_N, s_x, s_chi, s_y, _S_Y_N,
                                      _RXC, _RXY_N, _RCY_N, _X_MEAN, _MC_TND, _MC_COEF,
                                      _X_TOL, _Y_TOL, _A, _B))
 
@@ -45,14 +43,14 @@ def _close(got, ref, name):
 
 def test_all_vary_base():
     _close(_eq(0.4, 0.3, 2e-4),
-           float(call_jax(trivar_NNL_covar, _MU_X, _MU_CHI, _MU_Y_N, 0.4, _s2g(0.3), _S_Y_N,
+           float(trivar_NNL_covar(_MU_X, _MU_CHI, _MU_Y_N, 0.4, _s2g(0.3), _S_Y_N,
                                   _RXC, _RXY_N, _RCY_N, _X_MEAN, _X2A, _A, _B)), "base")
     print("  all vary -> trivar_NNL_covar (base)  PASS")
 
 
 def test_c3_const_x3():
     _close(_eq(0.4, 0.3, 0.0),
-           float(call_jax(trivar_NNL_covar_const_x3, _MU_X, _MU_CHI, _MU_Y, 0.4, _s2g(0.3), _RXC, _X_MEAN, _X2A, _A, _B)),
+           float(trivar_NNL_covar_const_x3(_MU_X, _MU_CHI, _MU_Y, 0.4, _s2g(0.3), _RXC, _X_MEAN, _X2A, _A, _B)),
            "const_x3")
     print("  sigma_y≤y_tol -> const_x3  PASS")
 
@@ -66,7 +64,7 @@ def test_c2_const_x2():
 
 def test_c1_const_x1():
     _close(_eq(0.0, 0.3, 2e-4),
-           float(call_jax(trivar_NNL_covar_const_x1, _MU_X, _MU_CHI, _MU_Y_N, _s2g(0.3), _S_Y_N, _RCY_N, _X_MEAN, _X2A, _A, _B)),
+           float(trivar_NNL_covar_const_x1(_MU_X, _MU_CHI, _MU_Y_N, _s2g(0.3), _S_Y_N, _RCY_N, _X_MEAN, _X2A, _A, _B)),
            "const_x1")
     print("  sigma_x≤x_tol -> const_x1  PASS")
 
@@ -79,7 +77,7 @@ def test_c2c3_const_x2x3():
 
 def test_c1c3_const_x1x3():
     _close(_eq(0.0, 0.3, 0.0),
-           float(call_jax(trivar_NNL_covar_const_x1x3, _MU_X, _MU_CHI, _MU_Y, _s2g(0.3), _X_MEAN, _X2A, _A, _B)), "const_x1x3")
+           float(trivar_NNL_covar_const_x1x3(_MU_X, _MU_CHI, _MU_Y, _s2g(0.3), _X_MEAN, _X2A, _A, _B)), "const_x1x3")
     print("  x&y const -> const_x1x3  PASS")
 
 

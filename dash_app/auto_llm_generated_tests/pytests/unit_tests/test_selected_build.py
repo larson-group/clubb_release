@@ -121,6 +121,11 @@ def test_execution_controls_include_shared_build_selector_triggers():
             {
                 "batch_size": 8,
                 "max_workers": 4,
+                "random_max_samples": 2000,
+                "resolve_spacing": 0.1,
+                "simann_max_iters": 200,
+                "simann_initial_temp": 1.0,
+                "simann_final_temp": 1.0e-12,
             }
         )
     )
@@ -161,9 +166,7 @@ def test_selector_position_stays_in_the_viewport_and_can_open_above():
     assert above["bottom"] == "106.0px"
 
 
-@pytest.mark.parametrize("implementation", ["fortran", "python"])
-def test_compact_selector_shows_only_build_names_and_rebuild_controls(monkeypatch, implementation):
-    """The shared chooser offers Fortran/JAX and displays retired Python selections as Fortran."""
+def test_compact_selector_shows_only_build_names_and_rebuild_controls(monkeypatch):
     monkeypatch.setattr(callbacks, "job_process_is_live", lambda _job: False)
     build = {
         "name": "gcc_PRECdouble_PYTHON",
@@ -176,14 +179,12 @@ def test_compact_selector_shows_only_build_names_and_rebuild_controls(monkeypatc
     menu = callbacks.render_compact_build_selector(
         {"builds": [build]},
         {"statuses": {build["path"]: {"status": "current", "label": "current"}}},
-        implementation=implementation,
     )
 
     implementation_panel, row = menu
     assert [button.children for button in implementation_panel.children[1].children] == [
-        "Fortran", "JAX"
+        "Fortran", "Python", "JAX"
     ]
-    assert implementation_panel.children[1].children[0].to_plotly_json()["props"]["aria-pressed"] == "true"
     select, rebuild = row.children
     assert select.children == build["name"]
     assert select.id["type"] == "compile-build-selector-select"
@@ -199,6 +200,11 @@ def test_build_capabilities_follow_installed_runtime_contents(tmp_path):
     (install / "clubb_standalone").touch()
     assert build_implementation_capability(install, "fortran", tmp_path)[0] is True
 
+    runtime = install / "python"
+    (runtime / "clubb_python").mkdir(parents=True)
+    (runtime / "clubb_f2py.test.so").touch()
+    (runtime / "libclubb_f2py_backend.so").touch()
+    assert build_implementation_capability(install, "python", tmp_path)[0] is True
     assert build_implementation_capability(install, "jax", tmp_path)[0] is False
     jax_root = tmp_path / "clubb_jax"
     jax_driver = jax_root / "src" / "clubb_standalone.py"
@@ -268,8 +274,7 @@ def test_jax_selector_and_badges_do_not_inspect_fortran_builds(monkeypatch):
         {}, {}, {}, "jax", "cpu", {"cpu": {"status": "ready", "selectable": True}}, "", False,
     )
     panel, compute, timing_note = values[0]
-    assert next(button for button in panel.children[1].children
-                if button.id["index"] == "jax").children == "JAX"
+    assert panel.children[1].children[2].children == "JAX"
     assert compute.children[0].children == "Compute"
     assert "timer files required by Profile" in timing_note.children
     for badge in (values[3], values[6], values[9]):

@@ -1,0 +1,238 @@
+{
+  "preimplementation_outline": true,
+  "source": "src/CLUBB_core/index_mapping.F90",
+  "native_lines": 411,
+  "jax": "clubb_jax/src/CLUBB_core/index_mapping.py",
+  "native_inventory_and_order": [
+    "pdf2hydromet_idx",
+    "hydromet2pdf_idx",
+    "rx2Nx_hm_idx",
+    "Nx2rx_hm_idx",
+    "mvr_hm_max"
+  ],
+  "routines": [
+    {
+      "name": "pdf2hydromet_idx",
+      "module": "index_mapping",
+      "source": "src/CLUBB_core/index_mapping.F90",
+      "arguments": [
+        {
+          "name": "pdf_idx",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "hm_metadata",
+          "kind": "hm_metadata_type",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": {
+        "name": "hydromet_idx",
+        "kind": "integer",
+        "dims": [],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      "ordered_control": [
+        "if ( pdf_idx == hm_metadata%iiPDF_rr ) then",
+        "elseif ( pdf_idx == hm_metadata%iiPDF_Nr ) then",
+        "elseif ( pdf_idx == hm_metadata%iiPDF_rs ) then",
+        "elseif ( pdf_idx == hm_metadata%iiPDF_Ns ) then",
+        "elseif ( pdf_idx == hm_metadata%iiPDF_rg ) then",
+        "elseif ( pdf_idx == hm_metadata%iiPDF_Ng ) then",
+        "elseif ( pdf_idx == hm_metadata%iiPDF_ri ) then",
+        "elseif ( pdf_idx == hm_metadata%iiPDF_Ni ) then"
+      ],
+      "ordered_calls": []
+    },
+    {
+      "name": "hydromet2pdf_idx",
+      "module": "index_mapping",
+      "source": "src/CLUBB_core/index_mapping.F90",
+      "arguments": [
+        {
+          "name": "hydromet_idx",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "hm_metadata",
+          "kind": "hm_metadata_type",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": {
+        "name": "pdf_idx",
+        "kind": "integer",
+        "dims": [],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      "ordered_control": [
+        "if ( hydromet_idx == hm_metadata%iirr ) then",
+        "elseif ( hydromet_idx == hm_metadata%iiNr ) then",
+        "elseif ( hydromet_idx == hm_metadata%iiri ) then",
+        "elseif ( hydromet_idx == hm_metadata%iiNi ) then",
+        "elseif ( hydromet_idx == hm_metadata%iirs ) then",
+        "elseif ( hydromet_idx == hm_metadata%iiNs ) then",
+        "elseif ( hydromet_idx == hm_metadata%iirg ) then",
+        "elseif ( hydromet_idx == hm_metadata%iiNg ) then"
+      ],
+      "ordered_calls": []
+    },
+    {
+      "name": "rx2Nx_hm_idx",
+      "module": "index_mapping",
+      "source": "src/CLUBB_core/index_mapping.F90",
+      "arguments": [
+        {
+          "name": "rx_idx",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "hm_metadata",
+          "kind": "hm_metadata_type",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": {
+        "name": "Nx_idx",
+        "kind": "integer",
+        "dims": [],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      "ordered_control": [
+        "if ( rx_idx == hm_metadata%iirr ) then",
+        "elseif ( rx_idx == hm_metadata%iiri ) then",
+        "elseif ( rx_idx == hm_metadata%iirs ) then",
+        "elseif ( rx_idx == hm_metadata%iirg ) then"
+      ],
+      "ordered_calls": []
+    },
+    {
+      "name": "Nx2rx_hm_idx",
+      "module": "index_mapping",
+      "source": "src/CLUBB_core/index_mapping.F90",
+      "arguments": [
+        {
+          "name": "Nx_idx",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "hm_metadata",
+          "kind": "hm_metadata_type",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": {
+        "name": "rx_idx",
+        "kind": "integer",
+        "dims": [],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      "ordered_control": [
+        "if ( Nx_idx == hm_metadata%iiNr ) then",
+        "elseif ( Nx_idx == hm_metadata%iiNi ) then",
+        "elseif ( Nx_idx == hm_metadata%iiNs ) then",
+        "elseif ( Nx_idx == hm_metadata%iiNg ) then"
+      ],
+      "ordered_calls": []
+    },
+    {
+      "name": "mvr_hm_max",
+      "module": "index_mapping",
+      "source": "src/CLUBB_core/index_mapping.F90",
+      "arguments": [
+        {
+          "name": "hydromet_idx",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "hm_metadata",
+          "kind": "hm_metadata_type",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": {
+        "name": "mvr_hydromet_max",
+        "kind": "real",
+        "dims": [],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      "ordered_control": [
+        "if ( hydromet_idx == hm_metadata%iirr .or. hydromet_idx == hm_metadata%iiNr ) then",
+        "elseif ( hydromet_idx == hm_metadata%iiri .or. hydromet_idx == hm_metadata%iiNi ) then",
+        "elseif ( hydromet_idx == hm_metadata%iirs .or. hydromet_idx == hm_metadata%iiNs ) then",
+        "elseif ( hydromet_idx == hm_metadata%iirg .or. hydromet_idx == hm_metadata%iiNg ) then"
+      ],
+      "ordered_calls": []
+    }
+  ],
+  "shared_type_owner": "Existing generated clubb_kokkos/src/CLUBB_core/corr_varnce_module.hpp::hm_metadata_type,26 fields; unchanged; reuse exact converters.",
+  "numerical_evidence": "Uncompiled/untested; no runtime/BFB claim.",
+  "scope": "All five public scalar lookup functions, all arguments required, no lower calls/IO/stats/arrays. JAX supports all five but uses zero-based guarded lookups; keep Native1based semantics.",
+  "semantics": [
+    "Preserve exact field-specific IF/ELSEIF order, including order differences between inverse functions.",
+    "Unmatched result initialized0 (or zero real radius), without added active-index guard; equality with absent/sentinel metadata follows Native.",
+    "Metadata scalar indices remain1based; no View element conversion occurs in these functions.",
+    "Host lookup functions match current fill_holes metadata precomputation and avoid owning-UDT device captures.",
+    "Existing maximum-radius constants and zero already in constants_clubb.hpp."
+  ]
+}

@@ -16,7 +16,8 @@ module err_info_type_module
   private
 
   public :: err_info_type, init_err_info_api, init_default_err_info_api, &
-            set_err_info_values_api, cleanup_err_info_api
+            set_err_info_values_api, cleanup_err_info_api, &
+            f2k_get_err_info_private_api, f2k_set_err_info_private_api
 
   private :: update_headers
 
@@ -54,6 +55,70 @@ module err_info_type_module
   end type err_info_type
 
   contains
+
+  ! Temporary accessors for clubb_kokkos/src/f2k; remove with that bridge.
+  !=============================================================================
+  subroutine f2k_get_err_info_private_api( err_info, &
+                                          host_lat, host_lon, chunk_idx, mpi_rank )
+    ! Description:
+    !   Copy the private model context from err_info for a transient C++ bridge
+    !   call. The output arrays retain their allocation state.
+
+    implicit none
+
+    !--------------------------- Input Variables ---------------------------
+    type(err_info_type), intent(in) :: &
+      err_info                  ! Error context with private model values [-]
+
+    !--------------------------- Output Variables ---------------------------
+    real( kind = core_rknd ), allocatable, intent(out) :: &
+      host_lat(:), &             ! Column latitudes [degrees]
+      host_lon(:)               ! Column longitudes [degrees]
+
+    integer, intent(out) :: &
+      chunk_idx, &              ! Chunk index [-]
+      mpi_rank                  ! MPI rank [-]
+
+    !--------------------------- Begin Code ---------------------------
+    if ( allocated(err_info%host_lat) ) host_lat = err_info%host_lat
+    if ( allocated(err_info%host_lon) ) host_lon = err_info%host_lon
+
+    chunk_idx = err_info%chunk_idx
+    mpi_rank  = err_info%mpi_rank
+  end subroutine f2k_get_err_info_private_api
+
+  !=============================================================================
+  subroutine f2k_set_err_info_private_api( host_lat, host_lon, chunk_idx, mpi_rank, &
+                                          err_info )
+    ! Description:
+    !   Restore the private context from a complete bridge snapshot. The caller
+    !   copies headers separately, so this routine does not regenerate them.
+
+    implicit none
+
+    !--------------------------- Input Variables ---------------------------
+    real( kind = core_rknd ), allocatable, intent(in) :: &
+      host_lat(:), &             ! Column latitudes [degrees]
+      host_lon(:)               ! Column longitudes [degrees]
+
+    integer, intent(in) :: &
+      chunk_idx, &              ! Chunk index [-]
+      mpi_rank                  ! MPI rank [-]
+
+    !--------------------------- Input/Output Variables ---------------------------
+    type(err_info_type), intent(inout) :: &
+      err_info                  ! Error context to update [-]
+
+    !--------------------------- Begin Code ---------------------------
+    if ( allocated(err_info%host_lat) ) deallocate( err_info%host_lat )
+    if ( allocated(err_info%host_lon) ) deallocate( err_info%host_lon )
+
+    if ( allocated(host_lat) ) err_info%host_lat = host_lat
+    if ( allocated(host_lon) ) err_info%host_lon = host_lon
+
+    err_info%chunk_idx = chunk_idx
+    err_info%mpi_rank  = mpi_rank
+  end subroutine f2k_set_err_info_private_api
 
   !-----------------------------------------------------------------------
   subroutine init_default_err_info_api(ngrdcol, err_info)

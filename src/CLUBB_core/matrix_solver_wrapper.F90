@@ -35,11 +35,13 @@ module matrix_solver_wrapper
   end interface
 
   interface tridiag_solve
+      module procedure tridiag_solve_single_rhs_lhs
       module procedure tridiag_solve_single_rhs_multiple_lhs
       module procedure tridiag_solve_multiple_rhs_lhs
   end interface
 
   interface check_nan_soln
+      module procedure check_nan_soln_1d
       module procedure check_nan_soln_2d
       module procedure check_nan_soln_3d
   end interface
@@ -358,6 +360,122 @@ module matrix_solver_wrapper
   end subroutine band_solve_multiple_rhs_lhs
 
 
+
+  !-------------------------------------------------------------------
+  !                    Tridiag Solver Procedures
+  !-------------------------------------------------------------------
+
+  subroutine tridiag_solve_single_rhs_lhs( &
+                solve_name, tridiag_solve_method, & ! Intent(in)
+                ndim,                             & ! Intent(in)
+                lhs, rhs, err_info,               & ! Intent(inout)
+                soln, rcond )                       ! Intent(out)
+
+    use lapack_wrap, only: &
+      lapack_tridiag_solve,  & ! Procedure(s)
+      lapack_tridiag_solvex
+
+    use tridiag_lu_solvers, only: &
+      tridiag_lu_solve    ! Procedure(s)
+
+    use err_info_type_module, only: &
+      err_info_type        ! Type
+
+    implicit none
+
+    ! ----------------------- Input Variables -----------------------
+    character(len=*), intent(in) :: &
+      solve_name
+
+    integer, intent(in) :: &
+      tridiag_solve_method
+
+    integer, intent(in) :: &
+      ndim        ! The order of the LHS Matrix, i.e. the # of linear equations
+
+    real( kind = core_rknd ), dimension(3,ndim), intent(inout) :: &
+      lhs ! Left hand side
+
+    real( kind = core_rknd ), dimension(ndim), intent(inout) :: &
+      rhs ! Right hand side(s)
+
+    type(err_info_type), intent(inout) :: &
+      err_info        ! err_info struct containing err_code and err_header
+
+    ! ----------------------- Output Variables -----------------------
+    real( kind = core_rknd ), dimension(ndim), intent(out) :: &
+      soln
+
+    ! ----------------------- Optional Out -----------------------
+
+    ! The estimate of the reciprocal condition number of matrix
+    ! after equilibration (if done).
+    real( kind = core_rknd ), dimension(1), optional, intent(out) :: &
+      rcond
+
+    ! ----------------------- Local Variables -----------------------
+    real( kind = core_rknd ), dimension(3,ndim) :: &
+      lhs_copy ! Copy of left hand side
+
+    real( kind = core_rknd ), dimension(ndim) :: &
+      rhs_copy ! Copy of right hand side
+
+    real( kind = core_rknd ), dimension(ndim) :: &
+      dummy_soln
+
+    ! ----------------------- Begin Code -----------------------
+
+    if ( present(rcond) ) then
+
+      ! Lapack overwrites lhs and rhs, so we'll give it copies of them.
+      lhs_copy = lhs
+      rhs_copy = rhs
+
+      ! Perform LU decomp and solve system (LAPACK with diagnostics)
+      call lapack_tridiag_solvex( solve_name, ndim, 1, 1, &       ! Intent(in)
+                                  lhs_copy, rhs_copy, err_info, & ! Intent(inout)
+                                  dummy_soln, rcond )             ! Intent(out)
+    end if
+
+
+    if ( tridiag_solve_method == lapack ) then
+
+      ! Perform LU decomp and solve system (LAPACK)
+      call lapack_tridiag_solve( solve_name, ndim, 1, 1, & ! Intent(in)
+                                 lhs, rhs, err_info,     & ! Intent(inout)
+                                 soln )                    ! Intent(out)
+
+    else if ( tridiag_solve_method == tridiag_lu ) then
+
+      ! Solve the system with a tri-diagonal specific LU decomp
+      call tridiag_lu_solve( ndim,      & ! Intent(in)
+                             lhs, rhs,  & ! Intent(in)
+                             soln )       ! Intent(out)
+
+    else
+
+      ! The solve method should match one of the above
+      if ( clubb_at_least_debug_level_api( 0 ) ) then
+        write(fstderr,*) err_info%err_header_global
+        write(fstderr,*) "Error in tridiag_solve_single_rhs_lhs: "
+        write(fstderr,*) "  no case for tridiag_solve_method = ", tridiag_solve_method
+        ! General error -> set all entries to clubb_fatal_error
+        err_info%err_code = clubb_fatal_error
+      end if
+      return
+
+    end if
+
+    if ( clubb_at_least_debug_level_api( 1 ) ) then
+      call check_nan_soln( solve_name, tridiag_solve_method, ndim, soln, &
+                           err_info )
+    end if
+
+    return
+
+  end subroutine tridiag_solve_single_rhs_lhs
+
+
   subroutine tridiag_solve_single_rhs_multiple_lhs( &
                 solve_name, tridiag_solve_method, & ! Intent(in)
                 ngrdcol, ndim,                    & ! Intent(in)
@@ -605,6 +723,48 @@ module matrix_solver_wrapper
 
   end subroutine tridiag_solve_multiple_rhs_lhs
 
+  subroutine check_nan_soln_1d( solve_name, solve_method, ndim, soln, &
+                                err_info )
+
+    use err_info_type_module, only: &
+      err_info_type
+
+    implicit none
+
+    character(len=*), intent(in) :: &
+      solve_name
+
+    integer, intent(in) :: &
+      solve_method, ndim
+
+    real( kind = core_rknd ), intent(in), dimension(ndim) :: &
+      soln
+
+    type(err_info_type), intent(inout) :: &
+      err_info
+
+    integer :: k
+    logical :: l_has_nan
+
+    l_has_nan = .false.
+
+    do k = 1, ndim
+      if ( ieee_is_nan( soln(k) ) ) then
+        write(fstderr, *) "ERROR: NaN detected: soln(", k, ") = ", soln(k)
+        l_has_nan = .true.
+      end if
+    end do
+
+    if ( l_has_nan ) then
+      write(fstderr, *) err_info%err_header_global
+      write(fstderr, *) "solve_method =", solve_method
+      write(fstderr, *) trim( solve_name )//" NaNs in solution"
+      err_info%err_code = clubb_fatal_error
+    end if
+
+    return
+
+  end subroutine check_nan_soln_1d
 
   subroutine check_nan_soln_2d( solve_name, solve_method, ngrdcol, ndim, soln, &
                                 err_info )
@@ -614,7 +774,6 @@ module matrix_solver_wrapper
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
     character(len=*), intent(in) :: &
       solve_name
 
@@ -624,11 +783,9 @@ module matrix_solver_wrapper
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,ndim) :: &
       soln
 
-    !--------------------------- Input/Output Variables ---------------------------
     type(err_info_type), intent(inout) :: &
       err_info
 
-    !--------------------------- Local Variables ---------------------------
     integer :: i, k
     logical :: l_has_nan
 
@@ -664,7 +821,6 @@ module matrix_solver_wrapper
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
     character(len=*), intent(in) :: &
       solve_name
 
@@ -674,11 +830,9 @@ module matrix_solver_wrapper
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,ndim,nrhs) :: &
       soln
 
-    !--------------------------- Input/Output Variables ---------------------------
     type(err_info_type), intent(inout) :: &
       err_info
 
-    !--------------------------- Local Variables ---------------------------
     integer :: i, k, j
     logical :: l_has_nan
 

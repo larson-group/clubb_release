@@ -36,30 +36,34 @@ subroutine f2py_mono_cubic_interp(z_in, km1, k00, kp1, kp2, &
 
 end subroutine f2py_mono_cubic_interp
 
-subroutine f2py_zlinterp( ngrdcol, dim_out, dim_src, grid_out, grid_src, var_src, & ! In
-                          var_out ) ! Out
-
-  ! Description:
-  !   Call zlinterp with complete column batches through the F2PY bridge.
+subroutine f2py_zlinterp_fnc(dim_out, dim_src, grid_out, grid_src, var_src, var_out)
 
   use clubb_precision, only: core_rknd
-  use interpolation, only: zlinterp
+  use interpolation, only: zlinterp_fnc
 
   implicit none
 
-  !--------------------------- Input Variables ---------------------------
-  integer, intent(in) :: ngrdcol ! Number of grid columns [-]
-  integer, intent(in) :: dim_out ! Number of target levels [-]
-  integer, intent(in) :: dim_src ! Number of source levels [-]
-  real(core_rknd), dimension(ngrdcol, dim_out), intent(in) :: grid_out ! [m]
-  real(core_rknd), dimension(ngrdcol, dim_src), intent(in) :: grid_src ! [m]
-  real(core_rknd), dimension(ngrdcol, dim_src), intent(in) :: var_src ! [units vary]
+  integer, intent(in) :: dim_out, dim_src
+  real(core_rknd), dimension(dim_out), intent(in) :: grid_out
+  real(core_rknd), dimension(dim_src), intent(in) :: grid_src, var_src
+  real(core_rknd), dimension(dim_out), intent(out) :: var_out
 
-  !--------------------------- Output Variables ---------------------------
-  real(core_rknd), dimension(ngrdcol, dim_out), intent(out) :: var_out ! [units vary]
+  var_out = zlinterp_fnc(dim_out, dim_src, grid_out, grid_src, var_src)
 
-  !--------------------------- Begin Code ---------------------------
+end subroutine f2py_zlinterp_fnc
 
-  var_out = zlinterp(ngrdcol, dim_out, dim_src, grid_out, grid_src, var_src)
+subroutine f2py_plinterp_fnc(dim_out, dim_src, grid_out, grid_src, var_src, var_out)
 
-end subroutine f2py_zlinterp
+  use clubb_precision, only: core_rknd
+  use interpolation, only: plinterp_fnc
+
+  implicit none
+
+  integer, intent(in) :: dim_out, dim_src
+  real(core_rknd), dimension(dim_out), intent(in) :: grid_out
+  real(core_rknd), dimension(dim_src), intent(in) :: grid_src, var_src
+  real(core_rknd), dimension(dim_out), intent(out) :: var_out
+
+  var_out = plinterp_fnc(dim_out, dim_src, grid_out, grid_src, var_src)
+
+end subroutine f2py_plinterp_fnc

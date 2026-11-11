@@ -1,0 +1,34 @@
+{
+  "scope": "Whitespace-only packaging of historical drafts. Review-time hash records in older audit JSON remain unchanged; the mappings below establish equivalent committed text. Production source and numerical results are unchanged.",
+  "local_artifacts": "Remapping compiler logs remain local and are ignored; portable result summaries and recorded historical log hashes are retained.",
+  "files": [
+    {
+      "file": "clubb_kokkos/drafts/mono_flux_limiter/audit_source.py",
+      "change": "Remove extra blank lines at EOF only.",
+      "before_sha256": "819589d5b027aaacbc6809b5c6753b0e5fc0adc6cd787fb330f3aa07fcd58976",
+      "after_sha256": "64cd862d8aac6741bcd4eecdc2d1cdba6c1f5fc938383dc418ff43562198a7d7",
+      "whitespace_delimited_tokens_unchanged": true
+    },
+    {
+      "file": "clubb_kokkos/drafts/parameters_tunable/driver_io.F90.inc",
+      "change": "Remove extra blank lines at EOF only.",
+      "before_sha256": "cfeefb93796f9fe704df759174195853a2a7b03668a7bc196002f96df678d08c",
+      "after_sha256": "f5f0195abc042f46e922b7c59b78af9ef438e4eab666dde6f1c6d7ac0c3dd870",
+      "whitespace_delimited_tokens_unchanged": true
+    },
+    {
+      "file": "clubb_kokkos/drafts/parameters_tunable/driver_io.hpp.inc",
+      "change": "Remove extra blank lines at EOF only.",
+      "before_sha256": "162b39366815db49e065aee81377f7619679227331483bd2566c198ee6270d1b",
+      "after_sha256": "e44645a9c55034c0b481a41b02af59ab2059007bb4b5e13f30eca12347fb54a3",
+      "whitespace_delimited_tokens_unchanged": true
+    },
+    {
+      "file": "clubb_kokkos/drafts/remapping_module/integration.patch",
+      "change": "Use an empty context line without a trailing space; Git parses the same two-file/three-insertion patch.",
+      "before_sha256": "e402ef20369a35d733e66d25fa29dc76d6c5986c5400ebc95f7eabbc13cd2cc7",
+      "after_sha256": "b09fd957eb7feeb66580d6c47c376134a3d2712772121333cf2f037ba244da11",
+      "parsed_numstat_unchanged": true
+    }
+  ]
+}

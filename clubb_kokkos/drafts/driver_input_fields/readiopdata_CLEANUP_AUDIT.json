@@ -1,0 +1,21 @@
+{
+  "date_UTC": "2026-11-06T09:07:47.275299+00:00",
+  "attribution": "Separate owner final cleanup after full scientific/control/body reread.",
+  "checks": [
+    "All14Nativeprocedures (4wrappers,8corepublic,privateisLeapYear,externaltask_abort) retain names/sourceorder and formalgrouping where typedwidth permits.",
+    "File/public/procedure purposes, precision, units/layout, presence and exact state/I/O boundaries described.",
+    "Linewidth100/trailing whitespace checked; actual existing saturation/calc_pressure/hydrostatic/array/rawIO owners inspected.",
+    "No shared CMake/generator/live source or Root-owned rawshim edit; runtime evidence remains separate."
+  ],
+  "sha256": {
+    "src/readiopdata_module.F90": "5f98bea620b1bf415158400d1c768c853f805e8c75abc6409f9ed9ee277154f6",
+    "clubb_kokkos/drafts/driver_input_fields/readiopdata_module.cpp": "6e2fec5d9bbb8e1c30003a90b18a5b37594d9c4a6f1d6441413b3a6748547c50",
+    "clubb_kokkos/drafts/driver_input_fields/readiopdata_module.hpp": "22239490405f8a6d89689f378108498900e1c7319bfdbbbd34e7e92162a3f164",
+    "src/readiopdata_core/readiopdata_core_module.F90": "61302cec1ee1c89cdd9d0a51a3e8ca2892eea954531c82cf073e460c09964cc1",
+    "clubb_kokkos/drafts/driver_input_fields/readiopdata_core/readiopdata_core_module.cpp": "1b1bdca743b573f621bc8238332bfcb7d0ccf1ae15ce1392ad08f4e84a7548c8",
+    "clubb_kokkos/drafts/driver_input_fields/readiopdata_core/readiopdata_core_module.hpp": "db55c51c9f9a64454528956ad18fe7c47d2b9158f31c81486560e185a43c69db",
+    "clubb_kokkos/drafts/driver_input_fields/f2k/input_netcdf_io_bridge.hpp": "fa74c9402e2bb85f399dbfde1f151ac78e3df6346719233a624200c54f8956fe",
+    "clubb_kokkos/drafts/driver_input_fields/f2k/input_netcdf_io_bridge.F90": "ab1f2f6f141c5aece5a576ff99eca3b52e3288e3317802bb7055592de12e69ce"
+  },
+  "runtime_status": "DRAFT SOURCE/CLEANUP ONLY; no C++build, CPU/CUDAexecution or BFBclaim. Root owns integration and model validation; source-invalid branches remain outside defined numerical claims."
+}

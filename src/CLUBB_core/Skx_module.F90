@@ -36,12 +36,10 @@ module Skx_module
 
     implicit none
     
-    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       nz, &
       ngrdcol
 
-    !--------------------------- Local Variables ---------------------------
     ! External
     intrinsic :: min, max
 
@@ -50,7 +48,7 @@ module Skx_module
     logical, parameter ::  &
       l_clipping_kluge = .false.
 
-    !--------------------------- Input Variables ---------------------------
+    ! Input Variables
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       xp2,   & ! <x'^2>               [(x units)^2]
       xp3      ! <x'^3>               [(x units)^3]
@@ -61,7 +59,7 @@ module Skx_module
     real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
-    !--------------------------- Output Variables ---------------------------
+    ! Output Variable
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
       Skx      ! Skewness of x        [-]
 

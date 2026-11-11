@@ -151,9 +151,12 @@ module clubb_api_module
 ! The CLUBB_CAM preprocessor directives are being commented out because this
 ! code is now also used for WRF-CLUBB.
 !#ifdef CLUBB_CAM /* Code for storing pdf_parameter structs in pbuf as array */
+    num_pdf_params, &
 !#endif
     pdf_parameter, &
     implicit_coefs_terms, &
+    pack_pdf_params_api, &
+    unpack_pdf_params_api, &
     zero_pdf_params_api, &
     init_pdf_implicit_coefs_terms_api, &
     zero_pdf_implicit_coefs_terms_api
@@ -174,8 +177,6 @@ module clubb_api_module
     finalize_tau_sponge_damp_api, &   ! Procedure(s)
     initialize_tau_sponge_damp_api
 
-  use advance_helper_module, only: vertical_integral_api
-
   use grid_class, only: grid ! Type
 
   use grid_class, only: &
@@ -184,9 +185,6 @@ module clubb_api_module
 
     ! Interpolate thermodynamic level variables to momentum levels
     zt2zm_api, &
-
-    ! Refresh grid heights and interpolation weights
-    setup_grid_heights_api, &
 
     ! Deallocate grid variable
     cleanup_grid_api
@@ -285,6 +283,8 @@ module clubb_api_module
 
   public &
         advance_clubb_core_api, &
+        advance_clubb_core_api_single_col, &
+        advance_clubb_core_api_multi_col, &
         pdf_parameter, &
         implicit_coefs_terms
 
@@ -303,7 +303,7 @@ module clubb_api_module
   public &
     ! To Interact With CLUBB's Grid:
     ! For Varying Grids
-    setup_grid_heights_api, &
+    setup_grid_heights_api, &    ! if heights vary with time
     setup_grid_api
 
   public &
@@ -397,6 +397,9 @@ module clubb_api_module
 ! The CLUBB_CAM preprocessor directives are being commented out because this
 ! code is now also used for WRF-CLUBB.
 !#ifdef CLUBB_CAM /* Code for storing pdf_parameter structs in pbuf as array */
+    pack_pdf_params_api, &
+    unpack_pdf_params_api, &
+    num_pdf_params, &
 !#endif
     init_pdf_params_api, &
     init_precip_fracs_api, &
@@ -441,6 +444,9 @@ module clubb_api_module
     initialize_tau_sponge_damp_api, & ! Procedure(s)
     finalize_tau_sponge_damp_api
     
+  public &
+   copy_single_pdf_params_to_multi, &
+   copy_multi_pdf_params_to_single
 
   public &
    err_info_type,                   &
@@ -449,59 +455,950 @@ module clubb_api_module
    set_err_info_values_api,         &
    cleanup_err_info_api
 
+  interface advance_clubb_core_api
+    module procedure advance_clubb_core_api_single_col
+    module procedure advance_clubb_core_api_multi_col
+  end interface
+  
+  interface setup_grid_api
+    module procedure setup_grid_api_single_col
+    module procedure setup_grid_api_multi_col
+  end interface
 
+  interface calc_derived_params_api
+    module procedure calc_derived_params_api_single_col
+    module procedure calc_derived_params_api_multi_col
+  end interface
+  
+  interface setup_grid_heights_api
+    module procedure setup_grid_heights_api_single_col
+    module procedure setup_grid_heights_api_multi_col
+  end interface
+  
+  interface update_xp2_mc_api
+    module procedure update_xp2_mc_api_single_col
+    module procedure update_xp2_mc_api_multi_col
+  end interface
+  
 contains
 
+  !================================================================================================
+  ! advance_clubb_core - Advances the model one timestep.
+  !================================================================================================
 
-  subroutine advance_clubb_core_api &
-            ( gr, nzm, nzt, ngrdcol, & ! In
-              l_implemented, dt, fcor, fcor_y, sfc_elevation, & ! In
-              hydromet_dim, & ! In
-              sclr_dim, sclr_tol, edsclr_dim, sclr_idx, & ! In
-              thlm_forcing, rtm_forcing, um_forcing, vm_forcing, & ! In
-              sclrm_forcing, edsclrm_forcing, wprtp_forcing, & ! In
-              wpthlp_forcing, rtp2_forcing, thlp2_forcing, & ! In
-              rtpthlp_forcing, wm_zm, wm_zt, & ! In
-              wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, p_sfc, & ! In
-              wpsclrp_sfc, wpedsclrp_sfc, & ! In
-              upwp_sfc_pert, vpwp_sfc_pert, & ! In
-              rtm_ref, thlm_ref, um_ref, vm_ref, ug, vg, & ! In
-              p_in_Pa, rho_zm, rho, exner, & ! In
-              rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, & ! In
-              invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, & ! In
-              l_mix_rat_hm, & ! In
-              rfrzm, wphydrometp, & ! In
-              wp2hmp, rtphmp_zt, thlphmp_zt, & ! In
-              host_dx, host_dy, & ! In
-              clubb_params, nu_vert_res_dep, lmin, & ! In
-              mixt_frac_max_mag, T0, ts_nudge, & ! In
-              rtm_min, rtm_nudge_max_altitude, & ! In
-              clubb_config_flags, & ! In
-              stats, & ! InOut
-              um, vm, upwp, vpwp, up2, vp2, up3, vp3, & ! InOut
-              thlm, rtm, wprtp, wpthlp, & ! InOut
-              wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, & ! InOut
-              sclrm, sclrp2, sclrp3, sclrprtp, sclrpthlp, & ! InOut
-              wpsclrp, edsclrm, err_info_api, & ! InOut
-              rcm, cloud_frac, & ! InOut
-              wpthvp, wp2thvp, wp2up, rtpthvp, thlpthvp, & ! InOut
-              sclrpthvp, & ! InOut
-              wp2rtp, wp2thlp, uprcp, vprcp, rc_coef_zm, wp4, & ! InOut
-              wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac, & ! InOut
-              um_pert, vm_pert, upwp_pert, vpwp_pert, & ! InOut
-              pdf_params, pdf_params_zm, & ! InOut
-              pdf_implicit_coefs_terms, & ! InOut
-              Kh_zm, Kh_zt, & ! Out
+  subroutine advance_clubb_core_api_single_col( gr, &       ! intent(in)
+    l_implemented, dt, fcor, fcor_y, sfc_elevation, &       ! intent(in)
+    hydromet_dim, &                                         ! intent(in)
+    sclr_dim, sclr_tol, edsclr_dim, sclr_idx, &             ! intent(in)
+    thlm_forcing, rtm_forcing, um_forcing, vm_forcing, &    ! intent(in)
+    sclrm_forcing, edsclrm_forcing, wprtp_forcing, &        ! intent(in)
+    wpthlp_forcing, rtp2_forcing, thlp2_forcing, &          ! intent(in)
+    rtpthlp_forcing, wm_zm, wm_zt, &                        ! intent(in)
+    wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, p_sfc, &     ! intent(in)
+    wpsclrp_sfc, wpedsclrp_sfc, &                           ! intent(in)
+    upwp_sfc_pert, vpwp_sfc_pert, &                         ! intent(in)
+    rtm_ref, thlm_ref, um_ref, vm_ref, ug, vg, &            ! Intent(in)
+    p_in_Pa, rho_zm, rho, exner, &                          ! intent(in)
+    rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &                ! intent(in)
+    invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, &                ! intent(in) 
+    l_mix_rat_hm, &                                         ! intent(in)
+    rfrzm, &                                                ! intent(in)
+    wphydrometp, wp2hmp, rtphmp_zt, thlphmp_zt, &           ! intent(in)
+    host_dx, host_dy, &                                     ! intent(in)
+    clubb_params, nu_vert_res_dep, lmin, &                  ! intent(in)
+    mixt_frac_max_mag, T0, ts_nudge, &                      ! Intent(in)
+    rtm_min, rtm_nudge_max_altitude, &                      ! Intent(in)
+    clubb_config_flags, &                                   ! intent(in)
+    stats,         &                                        ! intent(inout)
+    um, vm, upwp, vpwp, up2, vp2, up3, vp3, &               ! intent(inout)
+    thlm, rtm, wprtp, wpthlp, &                             ! intent(inout)
+    wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, &          ! intent(inout)
+    sclrm,   &
+    sclrp2, sclrp3, sclrprtp, sclrpthlp, &                  ! intent(inout)
+    wpsclrp, edsclrm, err_info_api, &                       ! intent(inout)
+    rcm, cloud_frac, &                                      ! intent(inout)
+    wpthvp, wp2thvp, wp2up, rtpthvp, thlpthvp, &            ! intent(inout)
+    sclrpthvp, &                                            ! intent(inout)
+    wp2rtp, wp2thlp, uprcp, vprcp, rc_coef_zm, wp4, &       ! intent(inout)
+    wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac, &      ! intent(inout)
+    um_pert, vm_pert, upwp_pert, vpwp_pert, &               ! intent(inout)
+    pdf_params, pdf_params_zm, &                            ! intent(inout)
+    pdf_implicit_coefs_terms, &                             ! intent(inout)
+    Kh_zm, Kh_zt, &                                         ! intent(out)
 #ifdef CLUBB_CAM
-              qclvar, & ! Out
+    qclvar, &                                               ! intent(out)
 #endif
-              thlprcp, wprcp, w_up_in_cloud, w_down_in_cloud, & ! Out
-              cloudy_updraft_frac, cloudy_downdraft_frac, & ! Out
-              rcm_in_layer, cloud_cover, invrs_tau_zm, & ! Out
-              Lscale ) ! Out
+    thlprcp, wprcp, w_up_in_cloud, w_down_in_cloud, &       ! intent(out)
+    cloudy_updraft_frac, cloudy_downdraft_frac, &           ! intent(out)
+    rcm_in_layer, cloud_cover, invrs_tau_zm, &              ! intent(out)
+    Lscale )                                                ! intent(out)
 
-    ! Description:
-    !   Advance CLUBB for all columns in the batch.
+    use advance_clubb_core_module, only : advance_clubb_core
+
+    use pdf_parameter_module, only: &
+        implicit_coefs_terms    ! Variable Type(s)
+
+    use model_flags, only: &
+        clubb_config_flags_type
+
+    use array_index, only: &
+      sclr_idx_type
+
+    implicit none
+
+    !--------------------------- Input Variables ---------------------------
+    type (grid), intent(in) :: gr
+
+    logical, intent(in) ::  &
+      l_implemented    ! True if CLUBB is being implemented and run in a host model
+
+    real( kind = core_rknd ), intent(in) ::  &
+      dt  ! Current timestep duration    [s]
+
+    real( kind = core_rknd ), intent(in) ::  &
+      fcor,  &          ! Traditional Coriolis parameter    [s^-1]
+                        ! Vertical planetary vorticity.   Proportional to sin(latitude)
+      fcor_y, &         ! Nontraditional Coriolis parameter [s^-1]
+                        ! Meridional planetary vorticity. Proportional to cos(latitude)
+      sfc_elevation     ! Elevation of ground level    [m above MSL]
+
+    integer, intent(in) :: &
+      hydromet_dim,   & ! Total number of hydrometeor species       [#]
+      sclr_dim,       & ! Number of passive scalars                 [#]
+      edsclr_dim        ! Number of eddy-diff. passive scalars      [#]
+
+    real( kind = core_rknd ), intent(in), dimension(sclr_dim) :: &
+      sclr_tol          ! Threshold(s) on the passive scalars  [units vary]
+
+    type (sclr_idx_type), intent(in) :: &
+      sclr_idx
+
+    real( kind = core_rknd ), intent(in), dimension(gr%nzt) :: &
+      thlm_forcing,    & ! liquid potential temp. forcing (thermodynamic levels)    [K/s]
+      rtm_forcing,     & ! total water forcing (thermodynamic levels)        [(kg/kg)/s]
+      um_forcing,      & ! eastward wind forcing (thermodynamic levels)     [m/s/s]
+      vm_forcing,      & ! northward wind forcing (thermodynamic levels)     [m/s/s]
+      wm_zt,           & ! vertical mean wind component on thermo. levels   [m/s]
+      rho,             & ! Air density on thermodynamic levels       [kg/m^3]
+      rho_ds_zt,       & ! Dry, static density on thermo. levels     [kg/m^3]
+      invrs_rho_ds_zt, & ! Inverse dry, static density on thermo levs.  [m^3/kg]
+      thv_ds_zt,       & ! Dry, base-state theta_v on thermo levs.  [K]
+      rfrzm              ! Total ice-phase water mixing ratio        [kg/kg]
+
+    real( kind = core_rknd ), intent(in), dimension(gr%nzm) ::  &
+      wprtp_forcing,   & ! total water turbulent flux forcing (momentum levels)    [m*K/s^2]
+      wpthlp_forcing,  & ! liq pot temp turb flux forcing (momentum levels)   [m*(kg/kg)/s^2]
+      rtp2_forcing,    & ! total water variance forcing (momentum levels)    [(kg/kg)^2/s]
+      thlp2_forcing,   & ! liq pot temp variance forcing (momentum levels)   [K^2/s]
+      rtpthlp_forcing, & ! <r_t'th_l'> covariance forcing (momentum levels) [K*(kg/kg)/s]
+      wm_zm,           & ! vertical mean wind component on momentum levels  [m/s]
+      rho_zm,          & ! Air density on momentum levels            [kg/m^3]
+      rho_ds_zm,       & ! Dry, static density on momentum levels    [kg/m^3]
+      invrs_rho_ds_zm, & ! Inverse dry, static density on momentum levs. [m^3/kg]
+      thv_ds_zm          ! Dry, base-state theta_v on momentum levs. [K]
+
+    logical, dimension(hydromet_dim), intent(in) :: &
+      l_mix_rat_hm   ! if true, then the quantity is a hydrometeor mixing ratio
+
+    real( kind = core_rknd ), dimension(gr%nzm,hydromet_dim), intent(in) :: &
+      wphydrometp    ! Covariance of w and a hydrometeor      [(m/s) <hm units>]
+
+    real( kind = core_rknd ), dimension(gr%nzt,hydromet_dim), intent(in) :: &
+      wp2hmp,      & ! Third-order moment:  < w'^2 hm' > (hm = hydrometeor) [(m/s)^2 <hm units>]
+      rtphmp_zt,   & ! Covariance of rt and hm (on thermo levs.) [(kg/kg) <hm units>]
+      thlphmp_zt     ! Covariance of thl and hm (on thermo levs.)      [K <hm units>]
+
+    real( kind = core_rknd ), intent(in) ::  &
+      wpthlp_sfc,   & ! w' theta_l' at surface   [(m K)/s]
+      wprtp_sfc,    & ! w' r_t' at surface       [(kg m)/( kg s)]
+      upwp_sfc,     & ! u'w' at surface          [m^2/s^2]
+      vpwp_sfc,     & ! v'w' at surface          [m^2/s^2]
+      p_sfc           ! Pressure at surface      [Pa]
+
+    ! Passive scalar variables
+    real( kind = core_rknd ), intent(in), dimension(gr%nzt,sclr_dim) :: &
+      sclrm_forcing    ! Passive scalar forcing         [{units vary}/s]
+
+    real( kind = core_rknd ), intent(in), dimension(sclr_dim) ::  &
+      wpsclrp_sfc      ! Passive scalar flux at surface         [{units vary} m/s]
+
+    ! Eddy passive scalar variables
+    real( kind = core_rknd ), intent(in), dimension(gr%nzt,edsclr_dim) :: &
+      edsclrm_forcing  ! Eddy-diffusion passive scalar forcing    [{units vary}/s]
+
+    real( kind = core_rknd ), intent(in), dimension(edsclr_dim) ::  &
+      wpedsclrp_sfc    ! Eddy-diffusion passive scalar flux at surface    [{units vary} m/s
+
+    real( kind = core_rknd ), intent(in) :: &
+      upwp_sfc_pert, & ! pertubed u'w' at surface    [m^2/s^2]
+      vpwp_sfc_pert    ! pertubed v'w' at surface    [m^2/s^2]
+
+    ! Reference profiles (used for nudging, sponge damping, and Coriolis effect)
+    real( kind = core_rknd ), dimension(gr%nzt), intent(in) ::  &
+      rtm_ref,  & ! Initial total water mixing ratio             [kg/kg]
+      thlm_ref, & ! Initial liquid water potential temperature   [K]
+      um_ref,   & ! Initial u wind; Michael Falk                 [m/s]
+      vm_ref,   & ! Initial v wind; Michael Falk                 [m/s]
+      ug,       & ! u geostrophic wind                           [m/s]
+      vg          ! v geostrophic wind                           [m/s]
+
+    ! Host model horizontal grid spacing, if part of host model.
+    real( kind = core_rknd ), intent(in) :: &
+      host_dx,  & ! East-west horizontal grid spacing     [m]
+      host_dy     ! North-south horizontal grid spacing   [m]
+
+    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
+
+    type(nu_vertical_res_dep), intent(in) :: &
+      nu_vert_res_dep    ! Vertical resolution dependent nu values
+
+    real( kind = core_rknd ), intent(in) :: &
+      lmin, &                 ! Min. value for the length scale    [m]
+      mixt_frac_max_mag, &
+      T0, &                   ! Reference temperature (usually 300)  [K]
+      ts_nudge, &             ! Timescale of u/v nudging             [s]
+      rtm_min, &              ! Value below which rtm will be nudged [kg/kg]
+      rtm_nudge_max_altitude  ! Highest altitude at which to nudge rtm [m]
+
+    type( clubb_config_flags_type ), intent(in) :: &
+      clubb_config_flags ! Derived type holding all configurable CLUBB flags
+
+    type(stats_type), intent(inout) :: &
+      stats
+
+    ! These are prognostic or are planned to be in the future
+    real( kind = core_rknd ), intent(inout), dimension(gr%nzt) ::  &
+      um,      & ! eastward grid-mean wind component (thermodynamic levels)   [m/s]
+      vm,      & ! northward grid-mean wind component (thermodynamic levels)   [m/s]
+      up3,     & ! u'^3 (thermodynamic levels)                    [m^3/s^3]
+      vp3,     & ! v'^3 (thermodynamic levels)                    [m^3/s^3]
+      rtm,     & ! total water mixing ratio, r_t (thermo. levels) [kg/kg]
+      thlm,    & ! liq. water pot. temp., th_l (thermo. levels)   [K]
+      rtp3,    & ! r_t'^3 (thermodynamic levels)                  [(kg/kg)^3]
+      thlp3,   & ! th_l'^3 (thermodynamic levels)                 [K^3]
+      wp3        ! w'^3 (thermodynamic levels)                    [m^3/s^3]
+
+    real( kind = core_rknd ), intent(inout), dimension(gr%nzm) ::  &
+      upwp,    & ! u'w' (momentum levels)                         [m^2/s^2]
+      vpwp,    & ! v'w' (momentum levels)                         [m^2/s^2]
+      up2,     & ! u'^2 (momentum levels)                         [m^2/s^2]
+      vp2,     & ! v'^2 (momentum levels)                         [m^2/s^2]
+      wprtp,   & ! w' r_t' (momentum levels)                      [(kg/kg) m/s]
+      wpthlp,  & ! w'th_l' (momentum levels)                      [(m/s) K]
+      rtp2,    & ! r_t'^2 (momentum levels)                       [(kg/kg)^2]
+      thlp2,   & ! th_l'^2 (momentum levels)                      [K^2]
+      rtpthlp, & ! r_t'th_l' (momentum levels)                    [(kg/kg) K]
+      wp2        ! w'^2 (momentum levels)                         [m^2/s^2]
+
+    ! Passive scalar variables
+    real( kind = core_rknd ), intent(inout), dimension(gr%nzt,sclr_dim) :: &
+      sclrm,     & ! Passive scalar mean (thermo. levels) [units vary]
+      sclrp3       ! sclr'^3 (thermodynamic levels)       [{units vary}^3]
+
+    real( kind = core_rknd ), intent(inout), dimension(gr%nzm,sclr_dim) :: &
+      wpsclrp,   & ! w'sclr' (momentum levels)            [{units vary} m/s]
+      sclrp2,    & ! sclr'^2 (momentum levels)            [{units vary}^2]
+      sclrprtp,  & ! sclr'rt' (momentum levels)           [{units vary} (kg/kg)]
+      sclrpthlp    ! sclr'thl' (momentum levels)          [{units vary} K]
+
+    real( kind = core_rknd ), intent(inout), dimension(gr%nzt) ::  &
+      p_in_Pa, & ! Air pressure (thermodynamic levels)       [Pa]
+      exner      ! Exner function (thermodynamic levels)     [-]
+
+    real( kind = core_rknd ), intent(inout), dimension(gr%nzt) ::  &
+      rcm,        & ! cloud water mixing ratio, r_c (thermo. levels) [kg/kg]
+      cloud_frac, & ! cloud fraction (thermodynamic levels)          [-]
+      wp2thvp,    & ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
+      wp2up         ! < w'^2 u' > (thermodynamic levels)             [m^3/s^3]
+
+    real( kind = core_rknd ), intent(inout), dimension(gr%nzm) ::  &
+      wpthvp,     & ! < w' th_v' > (momentum levels)                 [kg/kg K]
+      rtpthvp,    & ! < r_t' th_v' > (momentum levels)               [kg/kg K]
+      thlpthvp      ! < th_l' th_v' > (momentum levels)              [K^2]
+
+    real( kind = core_rknd ), intent(inout), dimension(gr%nzm,sclr_dim) :: &
+      sclrpthvp     ! < sclr' th_v' > (momentum levels)   [units vary]
+
+    real( kind = core_rknd ), intent(inout), dimension(gr%nzt) ::  &
+      wp2rtp,            & ! w'^2 rt' (thermodynamic levels)      [m^2/s^2 kg/kg]
+      wp2thlp,           & ! w'^2 thl' (thermodynamic levels)     [m^2/s^2 K]
+      wpup2,             & ! w'u'^2 (thermodynamic levels)        [m^3/s^3]
+      wpvp2,             & ! w'v'^2 (thermodynamic levels)        [m^3/s^3]
+      ice_supersat_frac    ! ice cloud fraction (thermo. levels)  [-]
+
+    real( kind = core_rknd ), intent(inout), dimension(gr%nzm) ::  &
+      uprcp,             & ! < u' r_c' > (momentum levels)        [(m/s)(kg/kg)]
+      vprcp,             & ! < v' r_c' > (momentum levels)        [(m/s)(kg/kg)]
+      rc_coef_zm,        & ! Coef of X'r_c' in Eq. (34) (m-levs.) [K/(kg/kg)]
+      wp4,               & ! w'^4 (momentum levels)               [m^4/s^4]
+      wp2up2,            & ! w'^2 u'^2 (momentum levels)          [m^4/s^4]
+      wp2vp2               ! w'^2 v'^2 (momentum levels)          [m^4/s^4]
+
+    ! Variables used to track perturbed version of winds.
+    real( kind = core_rknd ), intent(inout), dimension(gr%nzt) :: &
+      um_pert,   & ! perturbed <u>       [m/s]
+      vm_pert      ! perturbed <v>       [m/s]
+
+    real( kind = core_rknd ), intent(inout), dimension(gr%nzm) :: &
+      upwp_pert, & ! perturbed <u'w'>    [m^2/s^2]
+      vpwp_pert    ! perturbed <v'w'>    [m^2/s^2] 
+
+    type(pdf_parameter), intent(inout) :: &
+      pdf_params,    & ! Fortran structure of PDF parameters on thermodynamic levels    [units vary]
+      pdf_params_zm    ! Fortran structure of PDF parameters on momentum levels        [units vary]
+
+    type(implicit_coefs_terms), intent(inout) :: &
+      pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
+
+    ! Eddy passive scalar variable
+    real( kind = core_rknd ), intent(inout), dimension(gr%nzt,edsclr_dim) :: &
+      edsclrm   ! Eddy passive scalar grid-mean (thermo. levels)   [units vary]
+
+    type(err_info_type), intent(inout) :: &
+      err_info_api          ! err_info struct containing err_code and err_header
+
+    !--------------------------- Output Variables ---------------------------
+    ! Variables that need to be output for use in other parts of the CLUBB
+    ! code, such as microphysics (rcm, pdf_params), forcings (rcm), and/or
+    ! BUGSrad (cloud_cover).
+    real( kind = core_rknd ), intent(out), dimension(gr%nzt) ::  &
+      rcm_in_layer, & ! rcm within cloud layer                          [kg/kg]
+      cloud_cover     ! cloud cover                                     [-]
+
+    ! Variables that need to be output for use in host models
+    real( kind = core_rknd ), intent(out), dimension(gr%nzt) ::  &
+      w_up_in_cloud,         & ! Average cloudy updraft velocity       [m/s]
+      w_down_in_cloud,       & ! Average cloudy downdraft velocity     [m/s]
+      cloudy_updraft_frac,   & ! cloudy updraft fraction               [-]
+      cloudy_downdraft_frac    ! cloudy downdraft fraction             [-]
+
+    real( kind = core_rknd ), intent(out), dimension(gr%nzm) ::  &
+      wprcp,                 & ! w'r_c' (momentum levels)              [(kg/kg) m/s]
+      invrs_tau_zm             ! One divided by tau on zm levels       [1/s]
+
+    real( kind = core_rknd ), dimension(gr%nzt), intent(out) :: &
+      Kh_zt    ! Eddy diffusivity coefficient on thermodynamic levels   [m^2/s]
+
+    real( kind = core_rknd ), dimension(gr%nzm), intent(out) :: &
+      Kh_zm    ! Eddy diffusivity coefficient on momentum levels        [m^2/s]
+
+#ifdef CLUBB_CAM
+    real( kind = core_rknd), intent(out), dimension(gr%nzt) :: &
+      qclvar        ! cloud water variance
+#endif
+
+    real( kind = core_rknd ), dimension(gr%nzm), intent(out) :: &
+      thlprcp    ! thl'rc'              [K kg/kg]
+
+    real( kind = core_rknd ), dimension(gr%nzt), intent(out) :: &
+      Lscale       ! Length scale                          [m]
+
+    !------------------------- Local Variables -------------------------
+    real( kind = core_rknd ), dimension(1) ::  &
+      fcor_col,  &          ! Traditional Coriolis parameter    [s^-1]
+                            ! Vertical planetary vorticity.   Proportional to sin(latitude)
+      fcor_y_col, &         ! Nontraditional Coriolis parameter [s^-1] 
+                            ! Meridional planetary vorticity. Proportional to cos(latitude)
+      sfc_elevation_col     ! Elevation of ground level    [m AMSL]
+
+    ! Input Variables
+    real( kind = core_rknd ), dimension(1,gr%nzt) ::  &
+      thlm_forcing_col,    & ! liquid potential temp. forcing (thermodynamic levels)    [K/s]
+      rtm_forcing_col,     & ! total water forcing (thermodynamic levels)        [(kg/kg)/s]
+      um_forcing_col,      & ! eastward wind forcing (thermodynamic levels)     [m/s/s]
+      vm_forcing_col,      & ! northward wind forcing (thermodynamic levels)     [m/s/s]
+      wm_zt_col,           & ! vertical mean wind component on thermo. levels   [m/s]
+      rho_col,             & ! Air density on thermodynamic levels       [kg/m^3]
+      rho_ds_zt_col,       & ! Dry, static density on thermo. levels     [kg/m^3]
+      invrs_rho_ds_zt_col, & ! Inverse dry, static density on thermo levs.  [m^3/kg]
+      thv_ds_zt_col,       & ! Dry, base-state theta_v on thermo levs.  [K]
+      rfrzm_col              ! Total ice-phase water mixing ratio        [kg/kg]
+
+    real( kind = core_rknd ), dimension(1,gr%nzm) ::  &
+      wprtp_forcing_col,   & ! total water turbulent flux forcing (momentum levels)    [m*K/s^2]
+      wpthlp_forcing_col,  & ! liq pot temp turb flux forcing (momentum levels)   [m*(kg/kg)/s^2]
+      rtp2_forcing_col,    & ! total water variance forcing (momentum levels)    [(kg/kg)^2/s]
+      thlp2_forcing_col,   & ! liq pot temp variance forcing (momentum levels)   [K^2/s]
+      rtpthlp_forcing_col, & ! <r_t'th_l'> covariance forcing (momentum levels) [K*(kg/kg)/s]
+      wm_zm_col,           & ! vertical mean wind component on momentum levels  [m/s]
+      rho_zm_col,          & ! Air density on momentum levels            [kg/m^3]
+      rho_ds_zm_col,       & ! Dry, static density on momentum levels    [kg/m^3]
+      invrs_rho_ds_zm_col, & ! Inverse dry, static density on momentum levs. [m^3/kg]
+      thv_ds_zm_col          ! Dry, base-state theta_v on momentum levs. [K]
+
+    real( kind = core_rknd ), dimension(1,gr%nzm,hydromet_dim) :: &
+      wphydrometp_col    ! Covariance of w and a hydrometeor      [(m/s) <hm units>]
+
+    real( kind = core_rknd ), dimension(1,gr%nzt,hydromet_dim) :: &
+      wp2hmp_col,      & ! Third-order moment:  < w'^2 hm' > (hm = hydrometeor) [(m/s)^2 <hm units>]
+      rtphmp_zt_col,   & ! Covariance of rt and hm (on thermo levs.) [(kg/kg) <hm units>]
+      thlphmp_zt_col     ! Covariance of thl and hm (on thermo levs.)      [K <hm units>]
+
+    real( kind = core_rknd ), dimension(1) ::  &
+      wpthlp_sfc_col,   & ! w' theta_l' at surface   [(m K)/s]
+      wprtp_sfc_col,    & ! w' r_t' at surface       [(kg m)/( kg s)]
+      upwp_sfc_col,     & ! u'w' at surface          [m^2/s^2]
+      vpwp_sfc_col,     & ! v'w' at surface          [m^2/s^2]
+      p_sfc_col           ! Pressure at surface      [Pa]
+
+    ! Passive scalar variables
+    real( kind = core_rknd ), dimension(1,gr%nzt,sclr_dim) :: &
+      sclrm_forcing_col    ! Passive scalar forcing         [{units vary}/s]
+
+    real( kind = core_rknd ), dimension(1,sclr_dim) ::  &
+      wpsclrp_sfc_col      ! Scalar flux at surface         [{units vary} m/s]
+
+    ! Eddy passive scalar variables
+    real( kind = core_rknd ), dimension(1,gr%nzt,edsclr_dim) :: &
+      edsclrm_forcing_col  ! Eddy passive scalar forcing    [{units vary}/s]
+
+    real( kind = core_rknd ), dimension(1) :: &
+      upwp_sfc_pert_col, & ! pertubed u'w' at surface    [m^2/s^2]
+      vpwp_sfc_pert_col    ! pertubed v'w' at surface    [m^2/s^2]
+
+    real( kind = core_rknd ), dimension(1,edsclr_dim) ::  &
+      wpedsclrp_sfc_col    ! Eddy-Scalar flux at surface    [{units vary} m/s]
+
+    ! Reference profiles (used for nudging, sponge damping, and Coriolis effect)
+    real( kind = core_rknd ), dimension(1,gr%nzt) ::  &
+      rtm_ref_col,  & ! Initial total water mixing ratio             [kg/kg]
+      thlm_ref_col, & ! Initial liquid water potential temperature   [K]
+      um_ref_col,   & ! Initial u wind; Michael Falk                 [m/s]
+      vm_ref_col,   & ! Initial v wind; Michael Falk                 [m/s]
+      ug_col,       & ! u geostrophic wind                           [m/s]
+      vg_col          ! v geostrophic wind                           [m/s]
+
+    ! Host model horizontal grid spacing, if part of host model.
+    real( kind = core_rknd ), dimension(1) :: &
+      host_dx_col,  & ! East-West horizontal grid spacing     [m]
+      host_dy_col     ! North-South horizontal grid spacing   [m]
+
+    real( kind = core_rknd ), dimension(1) :: &
+      lmin_col, &            ! Minimum mixing length [m]
+      mixt_frac_max_mag_col  ! Maximum allowable mixture fraction [-]
+
+    real( kind = core_rknd ), dimension(1,nparams) :: &
+      clubb_params_col    ! Array of CLUBB's tunable parameters    [units vary]
+
+    ! These are prognostic or are planned to be in the future
+    real( kind = core_rknd ), dimension(1,gr%nzt) ::  &
+      um_col,      & ! eastward grid-mean wind component (thermodynamic levels)   [m/s]
+      vm_col,      & ! northward grid-mean wind component (thermodynamic levels)   [m/s]
+      up3_col,     & ! u'^3 (thermodynamic levels)                    [m^3/s^3]
+      vp3_col,     & ! v'^3 (thermodynamic levels)                    [m^3/s^3]
+      rtm_col,     & ! total water mixing ratio, r_t (thermo. levels) [kg/kg]
+      thlm_col,    & ! liq. water pot. temp., th_l (thermo. levels)   [K]
+      rtp3_col,    & ! r_t'^3 (thermodynamic levels)                  [(kg/kg)^3]
+      thlp3_col,   & ! th_l'^3 (thermodynamic levels)                 [K^3]
+      wp3_col        ! w'^3 (thermodynamic levels)                    [m^3/s^3]
+
+    real( kind = core_rknd ), dimension(1,gr%nzm) ::  &
+      upwp_col,    & ! u'w' (momentum levels)                         [m^2/s^2]
+      vpwp_col,    & ! v'w' (momentum levels)                         [m^2/s^2]
+      up2_col,     & ! u'^2 (momentum levels)                         [m^2/s^2]
+      vp2_col,     & ! v'^2 (momentum levels)                         [m^2/s^2]
+      wprtp_col,   & ! w' r_t' (momentum levels)                      [(kg/kg) m/s]
+      wpthlp_col,  & ! w'th_l' (momentum levels)                      [(m/s) K]
+      rtp2_col,    & ! r_t'^2 (momentum levels)                       [(kg/kg)^2]
+      thlp2_col,   & ! th_l'^2 (momentum levels)                      [K^2]
+      rtpthlp_col, & ! r_t'th_l' (momentum levels)                    [(kg/kg) K]
+      wp2_col        ! w'^2 (momentum levels)                         [m^2/s^2]
+
+    ! Passive scalar variables
+    real( kind = core_rknd ), dimension(1,gr%nzt,sclr_dim) :: &
+      sclrm_col,     & ! Passive scalar mean (thermo. levels) [units vary]
+      sclrp3_col       ! sclr'^3 (thermodynamic levels)       [{units vary}^3]
+
+    real( kind = core_rknd ), dimension(1,gr%nzm,sclr_dim) :: &
+      wpsclrp_col,   & ! w'sclr' (momentum levels)            [{units vary} m/s]
+      sclrp2_col,    & ! sclr'^2 (momentum levels)            [{units vary}^2]
+      sclrprtp_col,  & ! sclr'rt' (momentum levels)           [{units vary} (kg/kg)]
+      sclrpthlp_col    ! sclr'thl' (momentum levels)          [{units vary} K]
+
+    real( kind = core_rknd ), dimension(1,gr%nzt) ::  &
+      p_in_Pa_col, & ! Air pressure (thermodynamic levels)       [Pa]
+      exner_col      ! Exner function (thermodynamic levels)     [-]
+
+    real( kind = core_rknd ), dimension(1,gr%nzt) ::  &
+      rcm_col,        & ! cloud water mixing ratio, r_c (thermo. levels) [kg/kg]
+      cloud_frac_col, & ! cloud fraction (thermodynamic levels)          [-]
+      wp2thvp_col,    & ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
+      wp2up_col         ! < w'^2 u' > (thermodynamic levels)             [m^3/s^3]
+
+    real( kind = core_rknd ), dimension(1,gr%nzm) ::  &
+      wpthvp_col,     & ! < w' th_v' > (momentum levels)                 [kg/kg K]
+      rtpthvp_col,    & ! < r_t' th_v' > (momentum levels)               [kg/kg K]
+      thlpthvp_col      ! < th_l' th_v' > (momentum levels)              [K^2]
+
+    real( kind = core_rknd ), dimension(1,gr%nzm,sclr_dim) :: &
+      sclrpthvp_col     ! < sclr' th_v' > (momentum levels)   [units vary]
+
+    real( kind = core_rknd ), dimension(1,gr%nzt) ::  &
+      wp2rtp_col,            & ! w'^2 rt' (thermodynamic levels)      [m^2/s^2 kg/kg]
+      wp2thlp_col,           & ! w'^2 thl' (thermodynamic levels)     [m^2/s^2 K]
+      wpup2_col,             & ! w'u'^2 (thermodynamic levels)        [m^3/s^3]
+      wpvp2_col,             & ! w'v'^2 (thermodynamic levels)        [m^3/s^3]
+      ice_supersat_frac_col    ! ice cloud fraction (thermo. levels)  [-]
+
+    real( kind = core_rknd ), dimension(1,gr%nzm) ::  &
+      uprcp_col,             & ! < u' r_c' > (momentum levels)        [(m/s)(kg/kg)]
+      vprcp_col,             & ! < v' r_c' > (momentum levels)        [(m/s)(kg/kg)]
+      rc_coef_zm_col,        & ! Coef of X'r_c' in Eq. (34) (m-levs.) [K/(kg/kg)]
+      wp4_col,               & ! w'^4 (momentum levels)               [m^4/s^4]
+      wp2up2_col,            & ! w'^2 u'^2 (momentum levels)          [m^4/s^4]
+      wp2vp2_col               ! w'^2 v'^2 (momentum levels)          [m^4/s^4]
+
+    ! Variables used to track perturbed version of winds.
+    real( kind = core_rknd ), dimension(1,gr%nzt) :: &
+      um_pert_col,   & ! perturbed <u>       [m/s]
+      vm_pert_col      ! perturbed <v>       [m/s]
+
+    real( kind = core_rknd ), dimension(1,gr%nzm) :: &
+      upwp_pert_col, & ! perturbed <u'w'>    [m^2/s^2]
+      vpwp_pert_col    ! perturbed <v'w'>    [m^2/s^2]
+
+      real( kind = core_rknd ), dimension(1,gr%nzt,edsclr_dim) :: &
+      edsclrm_col   ! Eddy passive scalar mean (thermo. levels)   [units vary]
+
+    real( kind = core_rknd ), dimension(1,gr%nzt) ::  &
+      rcm_in_layer_col, & ! rcm in cloud layer                              [kg/kg]
+      cloud_cover_col     ! cloud cover                                     [-]
+
+    ! Variables that need to be output for use in host models
+    real( kind = core_rknd ), dimension(1,gr%nzt) ::  &
+      w_up_in_cloud_col,         & ! Average cloudy updraft velocity       [m/s]
+      w_down_in_cloud_col,       & ! Average cloudy downdraft velocity     [m/s]
+      cloudy_updraft_frac_col,   & ! cloudy updraft fraction               [-]
+      cloudy_downdraft_frac_col    ! cloudy downdraft fraction             [-]
+
+    real( kind = core_rknd ), dimension(1,gr%nzm) ::  &
+      wprcp_col,                 & ! w'r_c' (momentum levels)              [(kg/kg) m/s]
+      invrs_tau_zm_col             ! One divided by tau on zm levels       [1/s]
+
+    real( kind = core_rknd ), dimension(1,gr%nzt) :: &
+      Kh_zt_col    ! Eddy diffusivity coefficient on thermodynamic levels   [m^2/s]
+
+    real( kind = core_rknd ), dimension(1,gr%nzm) :: &
+      Kh_zm_col    ! Eddy diffusivity coefficient on momentum levels        [m^2/s]
+
+#ifdef CLUBB_CAM
+    real( kind = core_rknd), dimension(1,gr%nzt) :: &
+      qclvar_col        ! cloud water variance
+#endif
+
+    real( kind = core_rknd ), dimension(1,gr%nzm) :: &
+      thlprcp_col    ! thl'rc'              [K kg/kg]
+      
+    real( kind = core_rknd ), dimension(1,gr%nzt) :: & ! 1 because ngrdcol is set to 1
+                                                       ! in the subroutine call to
+                                                       ! advance_clubb_core
+      Lscale_col   ! Length scale                          [m]
+
+    !------------------------- Begin Code -------------------------
+
+    fcor_col(1) = fcor
+    fcor_y_col(1) = fcor_y
+    sfc_elevation_col(1) = sfc_elevation
+
+    thlm_forcing_col(1,:) = thlm_forcing
+    rtm_forcing_col(1,:) = rtm_forcing
+    um_forcing_col(1,:) = um_forcing
+    vm_forcing_col(1,:) = vm_forcing
+    sclrm_forcing_col(1,:,:) = sclrm_forcing
+    edsclrm_forcing_col(1,:,:) = edsclrm_forcing
+    wprtp_forcing_col(1,:) = wprtp_forcing
+    wpthlp_forcing_col(1,:) = wpthlp_forcing
+    rtp2_forcing_col(1,:) = rtp2_forcing
+    thlp2_forcing_col(1,:) = thlp2_forcing
+    rtpthlp_forcing_col(1,:) = rtpthlp_forcing
+    wm_zm_col(1,:) = wm_zm
+    wm_zt_col(1,:) = wm_zt
+
+    wpthlp_sfc_col(1) = wpthlp_sfc
+    wprtp_sfc_col(1) = wprtp_sfc
+    upwp_sfc_col(1) = upwp_sfc
+    vpwp_sfc_col(1) = vpwp_sfc
+    p_sfc_col(1) = p_sfc
+
+    wpsclrp_sfc_col(1,:) = wpsclrp_sfc
+    wpedsclrp_sfc_col(1,:) = wpedsclrp_sfc
+
+    upwp_sfc_pert_col(1) = upwp_sfc_pert
+    vpwp_sfc_pert_col(1) = vpwp_sfc_pert
+
+    rtm_ref_col(1,:) = rtm_ref
+    thlm_ref_col(1,:) = thlm_ref
+    um_ref_col(1,:) = um_ref
+    vm_ref_col(1,:) = vm_ref
+    ug_col(1,:) = ug
+    vg_col(1,:) = vg
+
+    p_in_Pa_col(1,:) = p_in_Pa
+    rho_zm_col(1,:) = rho_zm
+    rho_col(1,:) = rho
+    exner_col(1,:) = exner
+    rho_ds_zm_col(1,:) = rho_ds_zm
+    rho_ds_zt_col(1,:) = rho_ds_zt
+    invrs_rho_ds_zm_col(1,:) = invrs_rho_ds_zm
+    invrs_rho_ds_zt_col(1,:) = invrs_rho_ds_zt
+    thv_ds_zm_col(1,:) = thv_ds_zm
+    thv_ds_zt_col(1,:) = thv_ds_zt
+    rfrzm_col(1,:) = rfrzm
+
+    wphydrometp_col(1,:,:) = wphydrometp
+    wp2hmp_col(1,:,:) = wp2hmp
+    rtphmp_zt_col(1,:,:) = rtphmp_zt
+    thlphmp_zt_col(1,:,:) = thlphmp_zt
+
+    host_dx_col(1) = host_dx
+    host_dy_col(1) = host_dy
+
+    clubb_params_col(1,:) = clubb_params
+    lmin_col(1) = lmin
+    mixt_frac_max_mag_col(1) = mixt_frac_max_mag
+
+    um_col(1,:) = um
+    vm_col(1,:) = vm
+    upwp_col(1,:) = upwp
+    vpwp_col(1,:) = vpwp
+    up2_col(1,:) = up2
+    vp2_col(1,:) = vp2
+    up3_col(1,:) = up3
+    vp3_col(1,:) = vp3
+    thlm_col(1,:) = thlm
+    rtm_col(1,:) = rtm
+    wprtp_col(1,:) = wprtp
+    wpthlp_col(1,:) = wpthlp
+    wp2_col(1,:) = wp2
+    wp3_col(1,:) = wp3
+    rtp2_col(1,:) = rtp2
+    rtp3_col(1,:) = rtp3
+    thlp2_col(1,:) = thlp2
+    thlp3_col(1,:) = thlp3
+    rtpthlp_col(1,:) = rtpthlp
+
+    sclrm_col(1,:,:) = sclrm
+    sclrp2_col(1,:,:) = sclrp2
+    sclrp3_col(1,:,:) = sclrp3
+    sclrprtp_col(1,:,:) = sclrprtp
+    sclrpthlp_col(1,:,:) = sclrpthlp
+    wpsclrp_col(1,:,:) = wpsclrp
+    edsclrm_col(1,:,:) = edsclrm
+
+    rcm_col(1,:) = rcm
+    cloud_frac_col(1,:) = cloud_frac
+    wpthvp_col(1,:) = wpthvp
+    wp2thvp_col(1,:) = wp2thvp
+    wp2up_col(1,:) = wp2up
+    rtpthvp_col(1,:) = rtpthvp
+    thlpthvp_col(1,:) = thlpthvp
+    sclrpthvp_col(1,:,:) = sclrpthvp
+    wp2rtp_col(1,:) = wp2rtp
+    wp2thlp_col(1,:) = wp2thlp
+    uprcp_col(1,:) = uprcp
+    vprcp_col(1,:) = vprcp
+    rc_coef_zm_col(1,:) = rc_coef_zm
+    wp4_col(1,:) = wp4
+    wpup2_col(1,:) = wpup2
+    wpvp2_col(1,:) = wpvp2
+    wp2up2_col(1,:) = wp2up2
+    wp2vp2_col(1,:) = wp2vp2
+    ice_supersat_frac_col(1,:) = ice_supersat_frac
+    um_pert_col(1,:) = um_pert
+    vm_pert_col(1,:) = vm_pert
+    upwp_pert_col(1,:) = upwp_pert
+    vpwp_pert_col(1,:) = vpwp_pert
+    Kh_zm_col(1,:) = Kh_zm
+    Kh_zt_col(1,:) = Kh_zt
+#ifdef CLUBB_CAM
+    qclvar_col(1,:) = qclvar
+#endif
+    thlprcp_col(1,:) = thlprcp
+    wprcp_col(1,:) = wprcp
+    w_up_in_cloud_col(1,:) = w_up_in_cloud
+    w_down_in_cloud_col(1,:) = w_down_in_cloud
+    cloudy_updraft_frac_col(1,:) = cloudy_updraft_frac
+    cloudy_downdraft_frac_col(1,:) = cloudy_downdraft_frac
+    rcm_in_layer_col(1,:) = rcm_in_layer
+    cloud_cover_col(1,:) = cloud_cover
+    invrs_tau_zm_col(1,:) = invrs_tau_zm
+    Lscale_col(1,:) = Lscale
+
+    !$acc data copyin( gr, gr%zm, gr%zt, gr%dzm, gr%dzt, gr%invrs_dzt, gr%invrs_dzm, &
+    !$acc              gr%weights_zt2zm, gr%weights_zm2zt, &
+    !$acc              nu_vert_res_dep, nu_vert_res_dep%nu2, nu_vert_res_dep%nu9, &
+    !$acc              nu_vert_res_dep%nu1, nu_vert_res_dep%nu8, nu_vert_res_dep%nu10, &
+    !$acc              nu_vert_res_dep%nu6, &
+    !$acc              sclr_idx, clubb_params_col, lmin_col, mixt_frac_max_mag_col, &
+    !$acc              fcor_col, sfc_elevation_col, thlm_forcing_col, rtm_forcing_col, &
+    !$acc              um_forcing_col, &
+    !$acc              vm_forcing_col, wprtp_forcing_col, wpthlp_forcing_col, rtp2_forcing_col, &
+    !$acc              thlp2_forcing_col, &
+    !$acc              rtpthlp_forcing_col, wm_zm_col, wm_zt_col, rho_zm_col, rho_col, &
+    !$acc              rho_ds_zm_col, rho_ds_zt_col, &
+    !$acc              invrs_rho_ds_zm_col, invrs_rho_ds_zt_col, thv_ds_zm_col, thv_ds_zt_col, &
+    !$acc              rfrzm_col, &
+    !$acc              wpthlp_sfc_col, &
+    !$acc              wprtp_sfc_col, upwp_sfc_col, vpwp_sfc_col, p_sfc_col, & 
+    !$acc              upwp_sfc_pert_col, vpwp_sfc_pert_col, rtm_ref_col, thlm_ref_col, &
+    !$acc              um_ref_col, &
+    !$acc              vm_ref_col, ug_col, vg_col, host_dx_col, host_dy_col, &
+    !$acc              pdf_params, pdf_params_zm, err_info_api, err_info_api%err_header ) &
+    !$acc        copy( um_col, upwp_col, vm_col, vpwp_col, up2_col, vp2_col, up3_col, vp3_col, &
+    !$acc              rtm_col, wprtp_col, thlm_col, wpthlp_col, rtp2_col, &
+    !$acc              rtp3_col, thlp2_col, thlp3_col, rtpthlp_col, wp2_col, wp3_col, &
+    !$acc              p_in_Pa_col, exner_col, rcm_col, cloud_frac_col, wpthvp_col, wp2thvp_col, &
+    !$acc              rtpthvp_col, thlpthvp_col, wp2rtp_col, wp2thlp_col, uprcp_col, vprcp_col, &
+    !$acc              rc_coef_zm_col, wp2up_col, &
+    !$acc              wp4_col, wpup2_col, wpvp2_col, wp2up2_col, wp2vp2_col, &
+    !$acc              ice_supersat_frac_col, um_pert_col, &
+    !$acc              vm_pert_col, upwp_pert_col, vpwp_pert_col, &
+    !$acc              err_info_api%err_code, &
+    !$acc              pdf_params%w_1, pdf_params%w_2, &
+    !$acc              pdf_params%varnce_w_1, pdf_params%varnce_w_2, &
+    !$acc              pdf_params%rt_1, pdf_params%rt_2, &
+    !$acc              pdf_params%varnce_rt_1, pdf_params%varnce_rt_2,  &
+    !$acc              pdf_params%thl_1, pdf_params%thl_2, &
+    !$acc              pdf_params%varnce_thl_1, pdf_params%varnce_thl_2, &
+    !$acc              pdf_params%corr_w_rt_1, pdf_params%corr_w_rt_2,  &
+    !$acc              pdf_params%corr_w_thl_1, pdf_params%corr_w_thl_2, &
+    !$acc              pdf_params%corr_rt_thl_1, pdf_params%corr_rt_thl_2,&
+    !$acc              pdf_params%alpha_thl, pdf_params%alpha_rt, &
+    !$acc              pdf_params%crt_1, pdf_params%crt_2, pdf_params%cthl_1, &
+    !$acc              pdf_params%cthl_2, pdf_params%chi_1, &
+    !$acc              pdf_params%chi_2, pdf_params%stdev_chi_1, &
+    !$acc              pdf_params%stdev_chi_2, pdf_params%stdev_eta_1, &
+    !$acc              pdf_params%stdev_eta_2, pdf_params%covar_chi_eta_1, &
+    !$acc              pdf_params%covar_chi_eta_2, pdf_params%corr_w_chi_1, &
+    !$acc              pdf_params%corr_w_chi_2, pdf_params%corr_w_eta_1, &
+    !$acc              pdf_params%corr_w_eta_2, pdf_params%corr_chi_eta_1, &
+    !$acc              pdf_params%corr_chi_eta_2, pdf_params%rsatl_1, &
+    !$acc              pdf_params%rsatl_2, pdf_params%rc_1, pdf_params%rc_2, &
+    !$acc              pdf_params%cloud_frac_1, pdf_params%cloud_frac_2,  &
+    !$acc              pdf_params%mixt_frac, pdf_params%ice_supersat_frac_1, &
+    !$acc              pdf_params%ice_supersat_frac_2, &
+    !$acc              pdf_params_zm%w_1, pdf_params_zm%w_2, &
+    !$acc              pdf_params_zm%varnce_w_1, pdf_params_zm%varnce_w_2, &
+    !$acc              pdf_params_zm%rt_1, pdf_params_zm%rt_2, &
+    !$acc              pdf_params_zm%varnce_rt_1, pdf_params_zm%varnce_rt_2,  &
+    !$acc              pdf_params_zm%thl_1, pdf_params_zm%thl_2, &
+    !$acc              pdf_params_zm%varnce_thl_1, pdf_params_zm%varnce_thl_2, &
+    !$acc              pdf_params_zm%corr_w_rt_1, pdf_params_zm%corr_w_rt_2,  &
+    !$acc              pdf_params_zm%corr_w_thl_1, pdf_params_zm%corr_w_thl_2, &
+    !$acc              pdf_params_zm%corr_rt_thl_1, pdf_params_zm%corr_rt_thl_2,&
+    !$acc              pdf_params_zm%alpha_thl, pdf_params_zm%alpha_rt, &
+    !$acc              pdf_params_zm%crt_1, pdf_params_zm%crt_2, pdf_params_zm%cthl_1, &
+    !$acc              pdf_params_zm%cthl_2, pdf_params_zm%chi_1, &
+    !$acc              pdf_params_zm%chi_2, pdf_params_zm%stdev_chi_1, &
+    !$acc              pdf_params_zm%stdev_chi_2, pdf_params_zm%stdev_eta_1, &
+    !$acc              pdf_params_zm%stdev_eta_2, pdf_params_zm%covar_chi_eta_1, &
+    !$acc              pdf_params_zm%covar_chi_eta_2, pdf_params_zm%corr_w_chi_1, &
+    !$acc              pdf_params_zm%corr_w_chi_2, pdf_params_zm%corr_w_eta_1, &
+    !$acc              pdf_params_zm%corr_w_eta_2, pdf_params_zm%corr_chi_eta_1, &
+    !$acc              pdf_params_zm%corr_chi_eta_2, pdf_params_zm%rsatl_1, &
+    !$acc              pdf_params_zm%rsatl_2, pdf_params_zm%rc_1, pdf_params_zm%rc_2, &
+    !$acc              pdf_params_zm%cloud_frac_1, pdf_params_zm%cloud_frac_2,  &
+    !$acc              pdf_params_zm%mixt_frac, pdf_params_zm%ice_supersat_frac_1, &
+    !$acc              pdf_params_zm%ice_supersat_frac_2 ) &
+    !$acc     copyout( rcm_in_layer_col, cloud_cover_col, wprcp_col, w_up_in_cloud_col, &
+    !$acc              w_down_in_cloud_col, &
+    !$acc              cloudy_updraft_frac_col, cloudy_downdraft_frac_col, invrs_tau_zm_col, &
+    !$acc              Kh_zt_col, Kh_zm_col, thlprcp_col, Lscale_col )
+
+    !$acc data if( sclr_dim > 0 ) &
+    !$acc      copyin( sclr_tol, sclrm_forcing_col, wpsclrp_sfc_col ) &
+    !$acc        copy( sclrm_col, wpsclrp_col, sclrp2_col, sclrp3_col, sclrprtp_col, &
+    !$acc              sclrpthlp_col, sclrpthvp_col )
+
+    !$acc data if( edsclr_dim > 0 ) &
+    !$acc      copyin( wpedsclrp_sfc_col, edsclrm_forcing_col ) &
+    !$acc        copy( edsclrm_col )
+
+    !$acc data if( hydromet_dim > 0 ) &
+    !$acc      copyin( wphydrometp_col, wp2hmp_col, rtphmp_zt_col, thlphmp_zt_col, &
+    !$acc              l_mix_rat_hm )
+
+#ifdef CLUBB_CAM
+    !$acc data copyout( qclvar_col )
+#endif
+
+    call advance_clubb_core( gr, gr%nzm, gr%nzt, 1,             &             ! intent(in)
+      l_implemented, dt, fcor_col, fcor_y_col, sfc_elevation_col, &           ! intent(in)
+      hydromet_dim, &                                                         ! intent(in)
+      sclr_dim, sclr_tol, edsclr_dim, sclr_idx, &                             ! intent(in)
+      thlm_forcing_col, rtm_forcing_col, um_forcing_col, vm_forcing_col, &    ! intent(in)
+      sclrm_forcing_col, edsclrm_forcing_col, wprtp_forcing_col, &            ! intent(in)
+      wpthlp_forcing_col, rtp2_forcing_col, thlp2_forcing_col, &              ! intent(in)
+      rtpthlp_forcing_col, wm_zm_col, wm_zt_col, &                            ! intent(in)
+      wpthlp_sfc_col, wprtp_sfc_col, upwp_sfc_col, vpwp_sfc_col, p_sfc_col, & ! intent(in)
+      wpsclrp_sfc_col, wpedsclrp_sfc_col, &                                   ! intent(in)
+      upwp_sfc_pert_col, vpwp_sfc_pert_col, &                                 ! intent(in)
+      rtm_ref_col, thlm_ref_col, um_ref_col, vm_ref_col, ug_col, vg_col, &    ! Intent(in)
+      p_in_Pa_col, rho_zm_col, rho_col, exner_col, &                          ! intent(in)
+      rho_ds_zm_col, rho_ds_zt_col, invrs_rho_ds_zm_col, &                    ! intent(in)
+      invrs_rho_ds_zt_col, thv_ds_zm_col, thv_ds_zt_col, &                    ! intent(in)
+      l_mix_rat_hm, &                                                         ! intent(in)
+      rfrzm_col, &                                                            ! intent(in)
+      wphydrometp_col, wp2hmp_col, rtphmp_zt_col, thlphmp_zt_col, &               ! intent(in)
+      host_dx_col, host_dy_col, &                                                 ! intent(in)
+      clubb_params_col, nu_vert_res_dep, lmin_col, &                                  ! intent(in)
+      mixt_frac_max_mag_col, T0, ts_nudge, &                                      ! Intent(in)
+      rtm_min, rtm_nudge_max_altitude, &                                          ! Intent(in)
+      clubb_config_flags, &                                                       ! intent(in)
+      stats,         &                                                            ! intent(inout)
+      um_col, vm_col, upwp_col, vpwp_col, up2_col, vp2_col, up3_col, vp3_col, &   ! intent(inout)
+      thlm_col, rtm_col, wprtp_col, wpthlp_col, &                                 ! intent(inout)
+      wp2_col, wp3_col, rtp2_col, rtp3_col, thlp2_col, thlp3_col, rtpthlp_col, &  ! intent(inout)
+      sclrm_col,   &
+      sclrp2_col, sclrp3_col, sclrprtp_col, sclrpthlp_col, &                      ! intent(inout)
+      wpsclrp_col, edsclrm_col, &                                                 ! intent(inout)
+      rcm_col, cloud_frac_col, &                                                  ! intent(inout)
+      wpthvp_col, wp2thvp_col, wp2up_col, rtpthvp_col, thlpthvp_col, &            ! intent(inout)
+      sclrpthvp_col, &                                                            ! intent(inout)
+      wp2rtp_col, wp2thlp_col, uprcp_col, vprcp_col, rc_coef_zm_col, wp4_col, &   ! intent(inout)
+      wpup2_col, wpvp2_col, wp2up2_col, wp2vp2_col, ice_supersat_frac_col, &      ! intent(inout)
+      um_pert_col, vm_pert_col, upwp_pert_col, vpwp_pert_col, &                   ! intent(inout)
+      pdf_params, pdf_params_zm, &                                                ! intent(inout)
+      pdf_implicit_coefs_terms, &                                                 ! intent(inout)
+      err_info_api, &                                                             ! intent(inout)
+      Kh_zm_col, Kh_zt_col, &                                                     ! intent(out)
+#ifdef CLUBB_CAM
+               qclvar_col, &                                                      ! intent(out)
+#endif
+      thlprcp_col, wprcp_col, w_up_in_cloud_col, w_down_in_cloud_col, &           ! intent(out)
+      cloudy_updraft_frac_col, cloudy_downdraft_frac_col, &                       ! intent(out)
+      rcm_in_layer_col, cloud_cover_col, invrs_tau_zm_col, &                      ! intent(out)
+      Lscale_col )
+
+    !$acc end data
+    !$acc end data
+    !$acc end data
+    !$acc end data
+
+#ifdef CLUBB_CAM
+    !$acc end data
+#endif
+
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
+      if ( any(err_info_api%err_code == clubb_fatal_error) ) then
+        write(fstderr,*) err_info_api%err_header_global
+        write(fstderr,*) "Fatal error advance_clubb_core in API module"
+        return
+      end if
+    end if
+
+    um = um_col(1,:)
+    upwp = upwp_col(1,:)
+    vm = vm_col(1,:)
+    vpwp = vpwp_col(1,:)
+    up2 = up2_col(1,:)
+    vp2 = vp2_col(1,:)
+    up3 = up3_col(1,:)
+    vp3 = vp3_col(1,:)
+    rtm = rtm_col(1,:)
+    wprtp = wprtp_col(1,:)
+    thlm = thlm_col(1,:)
+    wpthlp = wpthlp_col(1,:)
+    rtp2 = rtp2_col(1,:)
+    rtp3 = rtp3_col(1,:)
+    thlp2 = thlp2_col(1,:)
+    thlp3 = thlp3_col(1,:)
+    rtpthlp = rtpthlp_col(1,:)
+    wp2 = wp2_col(1,:)
+    wp3 = wp3_col(1,:)
+    sclrm = sclrm_col(1,:,:)
+    wpsclrp = wpsclrp_col(1,:,:)
+    sclrp2 = sclrp2_col(1,:,:)
+    sclrp3 = sclrp3_col(1,:,:)
+    sclrprtp = sclrprtp_col(1,:,:)
+    sclrpthlp = sclrpthlp_col(1,:,:)
+    p_in_Pa = p_in_Pa_col(1,:)
+    exner = exner_col(1,:)
+    rcm = rcm_col(1,:)
+    cloud_frac = cloud_frac_col(1,:)
+    wpthvp = wpthvp_col(1,:)
+    wp2thvp = wp2thvp_col(1,:)
+    wp2up = wp2up_col(1,:)
+    rtpthvp = rtpthvp_col(1,:)
+    thlpthvp = thlpthvp_col(1,:)
+    sclrpthvp = sclrpthvp_col(1,:,:)
+    wp2rtp = wp2rtp_col(1,:)
+    wp2thlp = wp2thlp_col(1,:)
+    uprcp = uprcp_col(1,:)
+    vprcp = vprcp_col(1,:)
+    rc_coef_zm = rc_coef_zm_col(1,:)
+    wp4 = wp4_col(1,:)
+    wpup2 = wpup2_col(1,:)
+    wpvp2 = wpvp2_col(1,:)
+    wp2vp2 = wp2vp2_col(1,:)
+    wp2up2 = wp2up2_col(1,:)
+    ice_supersat_frac = ice_supersat_frac_col(1,:)
+    edsclrm = edsclrm_col(1,:,:)
+    rcm_in_layer = rcm_in_layer_col(1,:)
+    cloud_cover  = cloud_cover_col(1,:)
+    wprcp = wprcp_col(1,:)
+    w_up_in_cloud = w_up_in_cloud_col(1,:)
+    w_down_in_cloud = w_down_in_cloud_col(1,:)
+    cloudy_updraft_frac = cloudy_updraft_frac_col(1,:)
+    cloudy_downdraft_frac = cloudy_downdraft_frac_col(1,:)
+    invrs_tau_zm = invrs_tau_zm_col(1,:)
+    Kh_zt = Kh_zt_col(1,:)
+    Kh_zm = Kh_zm_col(1,:)
+#ifdef CLUBB_CAM
+    qclvar = qclvar_col(1,:)
+#endif
+    thlprcp = thlprcp_col(1,:)
+    Lscale = Lscale_col(1,:)
+
+  end subroutine advance_clubb_core_api_single_col
+
+  subroutine advance_clubb_core_api_multi_col( gr, nzm, nzt, ngrdcol, &  ! intent(in)
+    l_implemented, dt, fcor, fcor_y, sfc_elevation, &       ! intent(in)
+    hydromet_dim, &                                         ! intent(in)
+    sclr_dim, sclr_tol, edsclr_dim, sclr_idx, &             ! intent(in)
+    thlm_forcing, rtm_forcing, um_forcing, vm_forcing, &    ! intent(in)
+    sclrm_forcing, edsclrm_forcing, wprtp_forcing, &        ! intent(in)
+    wpthlp_forcing, rtp2_forcing, thlp2_forcing, &          ! intent(in)
+    rtpthlp_forcing, wm_zm, wm_zt, &                        ! intent(in)
+    wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, p_sfc, &     ! intent(in)
+    wpsclrp_sfc, wpedsclrp_sfc, &                           ! intent(in)
+    upwp_sfc_pert, vpwp_sfc_pert, &                         ! intent(in)
+    rtm_ref, thlm_ref, um_ref, vm_ref, ug, vg, &            ! Intent(in)
+    p_in_Pa, rho_zm, rho, exner, &                          ! intent(in)
+    rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &                ! intent(in)
+    invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, &                ! intent(in) 
+    l_mix_rat_hm, &                                         ! intent(in)
+    rfrzm, &                                                ! intent(in)
+    wphydrometp, wp2hmp, rtphmp_zt, thlphmp_zt, &           ! intent(in)
+    host_dx, host_dy, &                                     ! intent(in)
+    clubb_params, nu_vert_res_dep, lmin, &                  ! intent(in)
+    mixt_frac_max_mag, T0, ts_nudge, &                      ! Intent(in)
+    rtm_min, rtm_nudge_max_altitude, &                      ! Intent(in)
+    clubb_config_flags, &                                   ! intent(in)
+    stats,         &                                        ! intent(inout)
+    um, vm, upwp, vpwp, up2, vp2, up3, vp3, &               ! intent(inout)
+    thlm, rtm, wprtp, wpthlp, &                             ! intent(inout)
+    wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, &          ! intent(inout)
+    sclrm,   &
+    sclrp2, sclrp3, sclrprtp, sclrpthlp, &                  ! intent(inout)
+    wpsclrp, edsclrm, err_info_api, &                       ! intent(inout)
+    rcm, cloud_frac, &                                      ! intent(inout)
+    wpthvp, wp2thvp, wp2up, rtpthvp, thlpthvp, &            ! intent(inout)
+    sclrpthvp, &                                            ! intent(inout)
+    wp2rtp, wp2thlp, uprcp, vprcp, rc_coef_zm, wp4, &       ! intent(inout)
+    wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac, &      ! intent(inout)
+    um_pert, vm_pert, upwp_pert, vpwp_pert, &               ! intent(inout)
+    pdf_params, pdf_params_zm, &                            ! intent(inout)
+    pdf_implicit_coefs_terms, &                             ! intent(inout)
+    Kh_zm, Kh_zt, &                                         ! intent(out)
+#ifdef CLUBB_CAM
+    qclvar, &                                               ! intent(out)
+#endif
+    thlprcp, wprcp, w_up_in_cloud, w_down_in_cloud, &       ! intent(out)
+    cloudy_updraft_frac, cloudy_downdraft_frac, &           ! intent(out)
+    rcm_in_layer, cloud_cover, invrs_tau_zm, &              ! intent(out)
+    Lscale )                                                ! intent(out)
 
     use advance_clubb_core_module, only : advance_clubb_core
 
@@ -918,7 +1815,7 @@ contains
       end if
     end if
 
-  end subroutine advance_clubb_core_api
+  end subroutine advance_clubb_core_api_multi_col
 
   subroutine calculate_thlp2_rad_api( ngrdcol, nzm, nzt, gr, &
                                       rcm, thlprcp, radht, clubb_params, &
@@ -1018,18 +1915,308 @@ contains
       year )
   end function leap_year_api
 
+  !================================================================================================
+  ! vertical_integral - Computes the vertical integral.
+  !================================================================================================
+
+  function vertical_integral_api( &
+    total_idx, rho_ds, &
+    field, dz )
+
+    use advance_helper_module, only : vertical_integral
+
+    implicit none
+
+    ! Input variables
+    integer, intent(in) :: &
+      total_idx  ! The total numer of indices within the range of averaging
+
+    real( kind = core_rknd ), dimension(total_idx), intent(in) ::  &
+      rho_ds,  & ! Dry, static density                   [kg/m^3]
+      field,   & ! The field to be vertically averaged   [Units vary]
+      dz         ! Level thickness                       [1/m]
+    ! Note:  The rho_ds and field points need to be arranged from
+    !        lowest to highest in altitude, with rho_ds(1) and
+    !        field(1) actually their respective values at level k = begin_idx.
+
+    real( kind = core_rknd ) :: &
+      vertical_integral_api ! Integral in the numerator (see description)
+
+    vertical_integral_api = vertical_integral( &
+      total_idx, rho_ds, &
+      field, dz )
+  end function vertical_integral_api
+
+  !================================================================================================
+  ! setup_grid_heights - Sets the heights and interpolation weights of the column.
+  !================================================================================================
+
+  subroutine setup_grid_heights_api_single_col( &
+    l_implemented, l_ascending_grid, &
+    grid_type, deltaz, zm_init, momentum_heights,  &
+    gr, thermodynamic_heights, &
+    err_info_api )
+
+    use grid_class, only: &
+        grid, & ! Type
+        setup_grid_heights
+
+    implicit none
+
+    ! Input Variables
+
+    type(grid), intent(inout) :: gr
+
+    ! True if CLUBB is being implemented and run in a host model
+    logical, intent(in) :: l_implemented
+
+    ! Flag for having the model use its traditional ascending grid (where the
+    ! lowest-numbered grid level is at the surface or model lower boundary).
+    ! When this flag is turned off, a descending grid is used (where the
+    ! lowest-numbered grid level is at the model upper boundary).
+    logical, intent(in) :: l_ascending_grid
+
+    ! If CLUBB is running on it's own, this option determines if it is using:
+    ! 1) an evenly-spaced grid;
+    ! 2) a stretched (unevenly-spaced) grid entered on the thermodynamic grid
+    !    levels (with momentum levels set halfway between thermodynamic levels);
+    !    or
+    ! 3) a stretched (unevenly-spaced) grid entered on the momentum grid levels
+    !    (with thermodynamic levels set halfway between momentum levels).
+    integer, intent(in) :: grid_type
+
+    ! If the CLUBB model is running by itself, and is using an evenly-spaced
+    ! grid (grid_type = 1), it needs the vertical grid spacing and
+    ! momentum-level starting altitude as input.
+    real( kind = core_rknd ), intent(in) ::  &
+      deltaz,   & ! Vertical grid spacing                  [m]
+      zm_init     ! Initial grid altitude (momentum level) [m]
+
+    ! If the CLUBB parameterization is implemented in a host model, it needs to
+    ! use the host model's momentum level altitudes and thermodynamic level
+    ! altitudes.
+    ! If the CLUBB model is running by itself, but is using a stretched grid
+    ! entered on thermodynamic levels (grid_type = 2), it needs to use the
+    ! thermodynamic level altitudes as input.
+    ! If the CLUBB model is running by itself, but is using a stretched grid
+    ! entered on momentum levels (grid_type = 3), it needs to use the momentum
+    ! level altitudes as input.
+    real( kind = core_rknd ), intent(in), dimension(gr%nzm) ::  &
+      momentum_heights      ! Momentum level altitudes (input)      [m]
+
+    real( kind = core_rknd ), intent(in), dimension(gr%nzt) ::  &
+      thermodynamic_heights ! Thermodynamic level altitudes (input) [m]
+
+    ! ------------------- InOut Variables -------------------
+
+    type(err_info_type), intent(inout) :: &
+      err_info_api          ! err_info struct containing err_code and err_header
+
+    ! ------------------- Local Variables -------------------
+
+    real( kind = core_rknd ), dimension(1) ::  &
+      deltaz_col,   & ! Vertical grid spacing                  [m]
+      zm_init_col     ! Initial grid altitude (momentum level) [m]
+
+    real( kind = core_rknd ), dimension(1,gr%nzm) ::  &
+      momentum_heights_col      ! Momentum level altitudes (input)      [m]
+
+    real( kind = core_rknd ), dimension(1,gr%nzt) ::  &
+      thermodynamic_heights_col ! Thermodynamic level altitudes (input) [m]
+
+    ! ------------------- Begin Code -------------------
+
+    deltaz_col(1) = deltaz
+    zm_init_col(1) = zm_init
+    momentum_heights_col(1,:) = momentum_heights
+    thermodynamic_heights_col(1,:) = thermodynamic_heights
+
+    call setup_grid_heights( &
+      gr%nzm, gr%nzt, 1, & ! intent(in)
+      l_implemented, l_ascending_grid, & ! intent(in)
+      grid_type, deltaz_col, zm_init_col, & ! intent(in)
+      momentum_heights_col, thermodynamic_heights_col, & ! intent(in)
+      gr, err_info_api ) ! intent(inout)
+
+    if ( any(err_info_api%err_code == clubb_fatal_error) ) then
+      write(fstderr, *) err_info_api%err_header_global
+      write(fstderr, *) "Error in CLUBB calling setup_grid_heights"
+    endif
+
+  end subroutine setup_grid_heights_api_single_col
+
+  !================================================================================================
+  ! setup_grid_heights - Sets the heights and interpolation weights of the column.
+  !================================================================================================
+
+  subroutine setup_grid_heights_api_multi_col( &
+      nzm, nzt, ngrdcol, &
+      l_implemented, l_ascending_grid, &
+      grid_type, deltaz, zm_init, momentum_heights,  &
+      gr, thermodynamic_heights, &
+      err_info_api )
+
+    use grid_class, only: &
+        grid, & ! Type
+        setup_grid_heights
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      nzm, &
+      nzt, &
+      ngrdcol
+
+    type (grid), intent(inout) :: gr
+
+    ! True if CLUBB is being implemented and run in a host model
+    logical, intent(in) :: l_implemented
+
+    ! Flag for having the model use its traditional ascending grid (where the
+    ! lowest-numbered grid level is at the surface or model lower boundary).
+    ! When this flag is turned off, a descending grid is used (where the
+    ! lowest-numbered grid level is at the model upper boundary).
+    logical, intent(in) :: l_ascending_grid
+
+    ! If CLUBB is running on it's own, this option determines if it is using:
+    ! 1) an evenly-spaced grid;
+    ! 2) a stretched (unevenly-spaced) grid entered on the thermodynamic grid
+    !    levels (with momentum levels set halfway between thermodynamic levels);
+    !    or
+    ! 3) a stretched (unevenly-spaced) grid entered on the momentum grid levels
+    !    (with thermodynamic levels set halfway between momentum levels).
+    integer, intent(in) :: grid_type
+
+    ! If the CLUBB model is running by itself, and is using an evenly-spaced
+    ! grid (grid_type = 1), it needs the vertical grid spacing and
+    ! momentum-level starting altitude as input.
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
+      deltaz,   & ! Vertical grid spacing                  [m]
+      zm_init     ! Initial grid altitude (momentum level) [m]
+
+    ! If the CLUBB parameterization is implemented in a host model, it needs to
+    ! use the host model's momentum level altitudes and thermodynamic level
+    ! altitudes.
+    ! If the CLUBB model is running by itself, but is using a stretched grid
+    ! entered on thermodynamic levels (grid_type = 2), it needs to use the
+    ! thermodynamic level altitudes as input.
+    ! If the CLUBB model is running by itself, but is using a stretched grid
+    ! entered on momentum levels (grid_type = 3), it needs to use the momentum
+    ! level altitudes as input.
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) ::  &
+      momentum_heights      ! Momentum level altitudes (input)      [m]
+
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) ::  &
+      thermodynamic_heights ! Thermodynamic level altitudes (input) [m]
+
+    ! ------------------- InOut Variables -------------------
+    type(err_info_type), intent(inout) :: &
+      err_info_api          ! err_info struct containing err_code and err_header
+
+    ! ------------------- Begin Code -------------------
+
+    call setup_grid_heights( &
+      nzm, nzt, ngrdcol, & ! intent(in)
+      l_implemented, l_ascending_grid, & ! intent(in)
+      grid_type, deltaz, zm_init, & ! intent(in)
+      momentum_heights, thermodynamic_heights, & ! intent(in)
+      gr, err_info_api ) ! intent(inout)
+
+    if ( any(err_info_api%err_code == clubb_fatal_error) ) then
+      write(fstderr, *) err_info_api%err_header_global
+      write(fstderr, *) "Error in CLUBB calling setup_grid_heights"
+    endif
+
+  end subroutine setup_grid_heights_api_multi_col
+
+  !================================================================================================
+  ! setup_grid - This subroutine sets up the CLUBB vertical grid for a single column
+  !================================================================================================
+  subroutine setup_grid_api_single_col( nzmax, sfc_elevation, l_implemented, &
+                                        l_ascending_grid, grid_type, deltaz, zm_init, zm_top, &
+                                        momentum_heights, thermodynamic_heights, &
+                                        gr, err_info_api )
+
+    use grid_class, only: &
+        grid, & ! Type
+        setup_grid
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      nzmax  ! Number of vertical levels in grid      [#]
+
+    type(grid), intent(inout) :: gr
+
+    real( kind = core_rknd ), intent(in) :: &
+      sfc_elevation  ! Elevation of ground level    [m AMSL]
+
+    logical, intent(in) :: l_implemented
+    
+    logical, intent(in) :: l_ascending_grid
+
+    integer, intent(in) :: grid_type
+
+    real( kind = core_rknd ), intent(in) :: &
+      deltaz,   & ! Vertical grid spacing                  [m]
+      zm_init,  & ! Initial grid altitude (momentum level) [m]
+      zm_top      ! Maximum grid altitude (momentum level) [m]
+
+    real( kind = core_rknd ), intent(in), dimension(nzmax) :: &
+      momentum_heights      ! Momentum level altitudes (input)      [m]
+
+    real( kind = core_rknd ), intent(in), dimension(nzmax-1) :: &
+      thermodynamic_heights ! Thermodynamic level altitudes (input) [m]
+
+    ! ------------------- InOut Variables -------------------
+    type(err_info_type), intent(inout) :: &
+      err_info_api          ! err_info struct containing err_code and err_header
+
+    ! ------------------- Local Variables -------------------
+    real( kind = core_rknd ), dimension(1) :: &
+      sfc_elevation_col  ! Elevation of ground level    [m AMSL]
+
+    real( kind = core_rknd ), dimension(1) :: &
+      deltaz_col,   & ! Vertical grid spacing                  [m]
+      zm_init_col,  & ! Initial grid altitude (momentum level) [m]
+      zm_top_col      ! Maximum grid altitude (momentum level) [m]
+
+    real( kind = core_rknd ), dimension(1,nzmax) :: &
+      momentum_heights_col      ! Momentum level altitudes (input)      [m]
+
+    real( kind = core_rknd ), dimension(1,nzmax-1) :: &
+      thermodynamic_heights_col ! Thermodynamic level altitudes (input) [m]
+
+    ! ------------------- Begin Code -------------------
+
+    sfc_elevation_col(1)            = sfc_elevation
+    deltaz_col(1)                   = deltaz
+    zm_init_col(1)                  = zm_init
+    zm_top_col(1)                   = zm_top
+    momentum_heights_col(1,:)       = momentum_heights
+    thermodynamic_heights_col(1,:)  = thermodynamic_heights
+
+    call setup_grid( nzmax, 1, sfc_elevation_col, l_implemented,                  & ! intent(in)
+                     l_ascending_grid, grid_type, deltaz_col, zm_init_col,        & ! intent(in)
+                     zm_top_col, momentum_heights_col, thermodynamic_heights_col, & ! intent(in)
+                     gr, err_info_api )                                             ! intent(inout)
+
+    if ( any(err_info_api%err_code == clubb_fatal_error) ) then
+      write(fstderr, *) err_info_api%err_header_global
+      write(fstderr, *) "Error in CLUBB calling setup_grid"
+    endif
+
+  end subroutine setup_grid_api_single_col
 
   !================================================================================================
   ! setup_grid - This subroutine sets up the CLUBB vertical grid.
   !================================================================================================
-  subroutine setup_grid_api( nzmax, ngrdcol, sfc_elevation, l_implemented, & ! In
-                             l_ascending_grid, grid_type, deltaz, zm_init, zm_top, & ! In
-                             momentum_heights, & ! In
-                             thermodynamic_heights, & ! In
-                             gr, err_info_api ) ! InOut
-
-    ! Description:
-    !   Set up the vertical grids for all columns in the batch.
+  subroutine setup_grid_api_multi_col( nzmax, ngrdcol, sfc_elevation, l_implemented, &
+                                       l_ascending_grid, grid_type, deltaz, zm_init, zm_top, &
+                                       momentum_heights, thermodynamic_heights, &
+                                       gr, err_info_api )
 
     use grid_class, only: &
         grid, & ! Type
@@ -1080,7 +2267,7 @@ contains
       write(fstderr, *) "Error in CLUBB calling setup_grid"
     endif
 
-  end subroutine setup_grid_api
+  end subroutine setup_grid_api_multi_col
 
   !================================================================================================
   ! lin_interpolate_two_points - Computes a linear interpolation of the value of a variable.
@@ -1110,21 +2297,90 @@ contains
 
   end function lin_interpolate_two_points_api
 
+  !================================================================================================
+  ! calc_derived_params_api
+  ! Adjusts background eddy diffusivity based on vertical grid spacing
+  ! and calculates
+  !================================================================================================
 
+  subroutine calc_derived_params_api_single_col( gr, grid_type, deltaz,    & ! Intent(in)
+                                                  clubb_params,             & ! Intent(in)
+                                                  l_prescribed_avg_deltaz,  & ! Intent(in)
+                                                  nu_vert_res_dep, lmin,    & ! Intent(inout)
+                                                  mixt_frac_max_mag )         ! Intent(inout)
+
+    use parameters_tunable, only : calc_derived_params
+
+    implicit none
+
+    ! Input Variables
+
+    ! Grid definition
+    type(grid), intent(in) :: &
+      gr
+
+    ! If CLUBB is running on it's own, this option determines
+    ! if it is using:
+    ! 1) an evenly-spaced grid,
+    ! 2) a stretched (unevenly-spaced) grid entered on the
+    !    thermodynamic grid levels (with momentum levels set
+    !    halfway between thermodynamic levels), or
+    ! 3) a stretched (unevenly-spaced) grid entered on the
+    !    momentum grid levels (with thermodynamic levels set
+    !    halfway between momentum levels).
+    integer, intent(in) :: grid_type
+
+    real( kind = core_rknd ), intent(in) ::  &
+      deltaz  ! Change per height level        [m]
+
+    real( kind = core_rknd ), intent(in), dimension(nparams) :: & 
+      clubb_params  ! Tuneable model parameters      [-]
+
+    logical, intent(in) :: &
+      l_prescribed_avg_deltaz ! used in calc_derived_params_api. If .true., avg_deltaz = deltaz
+
+    ! Output Variables
+    type(nu_vertical_res_dep), intent(inout) :: &
+      nu_vert_res_dep    ! Vertical resolution dependent nu values
+
+    real( kind = core_rknd ), intent(inout) :: &
+      mixt_frac_max_mag, &
+      lmin    ! Min. value for the length scale    [m]
+
+    ! Local variables
+    real( kind = core_rknd ), dimension(1) ::  &
+      deltaz_col, &          ! Change per height level [m]
+      lmin_col, &            ! Minimum mixing length [m]
+      mixt_frac_max_mag_col  ! Maximum allowable mixture fraction [-]
+
+    real( kind = core_rknd ), dimension(1,nparams) :: & 
+      clubb_params_col  ! Tuneable model parameters      [-]
+      
+    deltaz_col(1) = deltaz
+    clubb_params_col(1,:) = clubb_params
+
+    call calc_derived_params( gr, 1, grid_type, deltaz_col,  & ! Intent(in)
+                               clubb_params,                  & ! Intent(in)
+                               l_prescribed_avg_deltaz,       & ! Intent(in)
+                               nu_vert_res_dep, lmin_col,     & ! Intent(inout)
+                               mixt_frac_max_mag_col )          ! Intent(inout)
+
+    lmin = lmin_col(1)
+    mixt_frac_max_mag = mixt_frac_max_mag_col(1)
+
+  end subroutine calc_derived_params_api_single_col
+  
   !================================================================================================
   ! calc_derived_params_api - Adjusts background eddy diffusivity based
   ! on vertical grid spacing
   !                    and calculates 
   !================================================================================================
 
-  subroutine calc_derived_params_api( gr, ngrdcol, grid_type, deltaz,  & ! Intent(in)
+  subroutine calc_derived_params_api_multi_col( gr, ngrdcol, grid_type, deltaz,  & ! Intent(in)
                                                  clubb_params,                    & ! Intent(in)
                                                  l_prescribed_avg_deltaz,         & ! Intent(in)
                                                  nu_vert_res_dep, lmin,           & ! Intent(inout)
                                                  mixt_frac_max_mag )                ! Intent(inout)
-
-    ! Description:
-    !   Calculate grid-dependent parameters for all columns in the batch.
 
     use parameters_tunable, only : calc_derived_params
 
@@ -1173,7 +2429,7 @@ contains
                                nu_vert_res_dep, lmin,          & ! Intent(inout)
                                mixt_frac_max_mag )               ! Intent(inout)
 
-  end subroutine calc_derived_params_api
+  end subroutine calc_derived_params_api_multi_col
 
   !================================================================================================
   ! init_pdf_params - allocates arrays for pdf_params
@@ -1197,7 +2453,154 @@ contains
                           pdf_params ) ! intent(out)
     
   end subroutine init_pdf_params_api
+  
+  !================================================================================================
+  ! copy_single_pdf_params_to_multi - copies values of a single column version of pdf_params
+  !   to a multiple column version for a specified column.
+  !
+  ! NOTE: THIS SUBROUTINE IS INTENDED TO BE TEMPORARY AND SHOULD BECOME UNNECESSARY ONCE 
+  !       CLUBB IS ABLE TO OPERATE OVER MULTIPLE COLUMNS.
+  !       See https://github.com/larson-group/cam/issues/129#issuecomment-827944454
+  !================================================================================================
+  subroutine copy_single_pdf_params_to_multi( pdf_params_single, icol, &
+                                              pdf_params_multi )
+    
+    implicit none
 
+    ! Input Variable(s)
+    integer, intent(in) :: &
+      icol   ! Column number to copy to
+      
+    type(pdf_parameter), intent(in) :: &
+      pdf_params_single  ! PDF parameters            [units vary]
+
+    ! Output Variable(s)
+    type(pdf_parameter), intent(inout) :: &
+      pdf_params_multi  ! PDF parameters            [units vary]
+      
+    pdf_params_multi%w_1(icol,:)                  = pdf_params_single%w_1(1,:) 
+    pdf_params_multi%w_2(icol,:)                  = pdf_params_single%w_2(1,:) 
+    pdf_params_multi%varnce_w_1(icol,:)           = pdf_params_single%varnce_w_1(1,:) 
+    pdf_params_multi%varnce_w_2(icol,:)           = pdf_params_single%varnce_w_2(1,:) 
+    pdf_params_multi%rt_1(icol,:)                 = pdf_params_single%rt_1(1,:) 
+    pdf_params_multi%rt_2(icol,:)                 = pdf_params_single%rt_2(1,:) 
+    pdf_params_multi%varnce_rt_1(icol,:)          = pdf_params_single%varnce_rt_1(1,:) 
+    pdf_params_multi%varnce_rt_2(icol,:)          = pdf_params_single%varnce_rt_2(1,:) 
+    pdf_params_multi%thl_1(icol,:)                = pdf_params_single%thl_1(1,:) 
+    pdf_params_multi%thl_2(icol,:)                = pdf_params_single%thl_2(1,:) 
+    pdf_params_multi%varnce_thl_1(icol,:)         = pdf_params_single%varnce_thl_1(1,:) 
+    pdf_params_multi%varnce_thl_2(icol,:)         = pdf_params_single%varnce_thl_2(1,:) 
+    pdf_params_multi%corr_w_rt_1(icol,:)          = pdf_params_single%corr_w_rt_1(1,:) 
+    pdf_params_multi%corr_w_rt_2(icol,:)          = pdf_params_single%corr_w_rt_2(1,:) 
+    pdf_params_multi%corr_w_thl_1(icol,:)         = pdf_params_single%corr_w_thl_1(1,:) 
+    pdf_params_multi%corr_w_thl_2(icol,:)         = pdf_params_single%corr_w_thl_2(1,:) 
+    pdf_params_multi%corr_rt_thl_1(icol,:)        = pdf_params_single%corr_rt_thl_1(1,:) 
+    pdf_params_multi%corr_rt_thl_2(icol,:)        = pdf_params_single%corr_rt_thl_2(1,:) 
+    pdf_params_multi%alpha_thl(icol,:)            = pdf_params_single%alpha_thl(1,:) 
+    pdf_params_multi%alpha_rt(icol,:)             = pdf_params_single%alpha_rt(1,:) 
+    pdf_params_multi%crt_1(icol,:)                = pdf_params_single%crt_1(1,:) 
+    pdf_params_multi%crt_2(icol,:)                = pdf_params_single%crt_2(1,:) 
+    pdf_params_multi%cthl_1(icol,:)               = pdf_params_single%cthl_1(1,:) 
+    pdf_params_multi%cthl_2(icol,:)               = pdf_params_single%cthl_2(1,:) 
+    pdf_params_multi%chi_1(icol,:)                = pdf_params_single%chi_1(1,:) 
+    pdf_params_multi%chi_2(icol,:)                = pdf_params_single%chi_2(1,:) 
+    pdf_params_multi%stdev_chi_1(icol,:)          = pdf_params_single%stdev_chi_1(1,:) 
+    pdf_params_multi%stdev_chi_2(icol,:)          = pdf_params_single%stdev_chi_2(1,:) 
+    pdf_params_multi%stdev_eta_1(icol,:)          = pdf_params_single%stdev_eta_1(1,:) 
+    pdf_params_multi%stdev_eta_2(icol,:)          = pdf_params_single%stdev_eta_2(1,:) 
+    pdf_params_multi%covar_chi_eta_1(icol,:)      = pdf_params_single%covar_chi_eta_1(1,:) 
+    pdf_params_multi%covar_chi_eta_2(icol,:)      = pdf_params_single%covar_chi_eta_2(1,:) 
+    pdf_params_multi%corr_w_chi_1(icol,:)         = pdf_params_single%corr_w_chi_1(1,:) 
+    pdf_params_multi%corr_w_chi_2(icol,:)         = pdf_params_single%corr_w_chi_2(1,:) 
+    pdf_params_multi%corr_w_eta_1(icol,:)         = pdf_params_single%corr_w_eta_1(1,:) 
+    pdf_params_multi%corr_w_eta_2(icol,:)         = pdf_params_single%corr_w_eta_2(1,:) 
+    pdf_params_multi%corr_chi_eta_1(icol,:)       = pdf_params_single%corr_chi_eta_1(1,:) 
+    pdf_params_multi%corr_chi_eta_2(icol,:)       = pdf_params_single%corr_chi_eta_2(1,:) 
+    pdf_params_multi%rsatl_1(icol,:)              = pdf_params_single%rsatl_1(1,:) 
+    pdf_params_multi%rsatl_2(icol,:)              = pdf_params_single%rsatl_2(1,:) 
+    pdf_params_multi%rc_1(icol,:)                 = pdf_params_single%rc_1(1,:) 
+    pdf_params_multi%rc_2(icol,:)                 = pdf_params_single%rc_2(1,:) 
+    pdf_params_multi%cloud_frac_1(icol,:)         = pdf_params_single%cloud_frac_1(1,:) 
+    pdf_params_multi%cloud_frac_2(icol,:)         = pdf_params_single%cloud_frac_2(1,:) 
+    pdf_params_multi%mixt_frac(icol,:)            = pdf_params_single%mixt_frac(1,:) 
+    pdf_params_multi%ice_supersat_frac_1(icol,:)  = pdf_params_single%ice_supersat_frac_1(1,:) 
+    pdf_params_multi%ice_supersat_frac_2(icol,:)  = pdf_params_single%ice_supersat_frac_2(1,:) 
+    
+  end subroutine copy_single_pdf_params_to_multi
+  
+  !================================================================================================
+  ! copy_multi_pdf_params_to_single - copies values of a multiple column version of pdf_params
+  !   at a specified column to a single column version.
+  !
+  ! NOTE: THIS SUBROUTINE IS INTENDED TO BE TEMPORARY AND SHOULD BECOME UNNECESSARY ONCE 
+  !       CLUBB IS ABLE TO OPERATE OVER MULTIPLE COLUMNS.
+  !       See https://github.com/larson-group/cam/issues/129#issuecomment-827944454
+  !================================================================================================
+  subroutine copy_multi_pdf_params_to_single( pdf_params_multi, icol, &
+                                              pdf_params_single )
+    
+    implicit none
+
+    ! Input Variable(s)
+    integer, intent(in) :: &
+      icol   ! Column number to copy to
+      
+    type(pdf_parameter), intent(in) :: &
+      pdf_params_multi  ! PDF parameters            [units vary]
+
+    ! Output Variable(s)
+    type(pdf_parameter), intent(inout) :: &
+      pdf_params_single   ! PDF parameters            [units vary]
+      
+    pdf_params_single%w_1(1,:)                  = pdf_params_multi%w_1(icol,:) 
+    pdf_params_single%w_2(1,:)                  = pdf_params_multi%w_2(icol,:) 
+    pdf_params_single%varnce_w_1(1,:)           = pdf_params_multi%varnce_w_1(icol,:) 
+    pdf_params_single%varnce_w_2(1,:)           = pdf_params_multi%varnce_w_2(icol,:) 
+    pdf_params_single%rt_1(1,:)                 = pdf_params_multi%rt_1(icol,:) 
+    pdf_params_single%rt_2(1,:)                 = pdf_params_multi%rt_2(icol,:) 
+    pdf_params_single%varnce_rt_1(1,:)          = pdf_params_multi%varnce_rt_1(icol,:) 
+    pdf_params_single%varnce_rt_2(1,:)          = pdf_params_multi%varnce_rt_2(icol,:) 
+    pdf_params_single%thl_1(1,:)                = pdf_params_multi%thl_1(icol,:) 
+    pdf_params_single%thl_2(1,:)                = pdf_params_multi%thl_2(icol,:) 
+    pdf_params_single%varnce_thl_1(1,:)         = pdf_params_multi%varnce_thl_1(icol,:) 
+    pdf_params_single%varnce_thl_2(1,:)         = pdf_params_multi%varnce_thl_2(icol,:) 
+    pdf_params_single%corr_w_rt_1(1,:)          = pdf_params_multi%corr_w_rt_1(icol,:) 
+    pdf_params_single%corr_w_rt_2(1,:)          = pdf_params_multi%corr_w_rt_2(icol,:) 
+    pdf_params_single%corr_w_thl_1(1,:)         = pdf_params_multi%corr_w_thl_1(icol,:) 
+    pdf_params_single%corr_w_thl_2(1,:)         = pdf_params_multi%corr_w_thl_2(icol,:) 
+    pdf_params_single%corr_rt_thl_1(1,:)        = pdf_params_multi%corr_rt_thl_1(icol,:) 
+    pdf_params_single%corr_rt_thl_2(1,:)        = pdf_params_multi%corr_rt_thl_2(icol,:) 
+    pdf_params_single%alpha_thl(1,:)            = pdf_params_multi%alpha_thl(icol,:) 
+    pdf_params_single%alpha_rt(1,:)             = pdf_params_multi%alpha_rt(icol,:) 
+    pdf_params_single%crt_1(1,:)                = pdf_params_multi%crt_1(icol,:) 
+    pdf_params_single%crt_2(1,:)                = pdf_params_multi%crt_2(icol,:) 
+    pdf_params_single%cthl_1(1,:)               = pdf_params_multi%cthl_1(icol,:) 
+    pdf_params_single%cthl_2(1,:)               = pdf_params_multi%cthl_2(icol,:) 
+    pdf_params_single%chi_1(1,:)                = pdf_params_multi%chi_1(icol,:) 
+    pdf_params_single%chi_2(1,:)                = pdf_params_multi%chi_2(icol,:) 
+    pdf_params_single%stdev_chi_1(1,:)          = pdf_params_multi%stdev_chi_1(icol,:) 
+    pdf_params_single%stdev_chi_2(1,:)          = pdf_params_multi%stdev_chi_2(icol,:) 
+    pdf_params_single%stdev_eta_1(1,:)          = pdf_params_multi%stdev_eta_1(icol,:) 
+    pdf_params_single%stdev_eta_2(1,:)          = pdf_params_multi%stdev_eta_2(icol,:) 
+    pdf_params_single%covar_chi_eta_1(1,:)      = pdf_params_multi%covar_chi_eta_1(icol,:) 
+    pdf_params_single%covar_chi_eta_2(1,:)      = pdf_params_multi%covar_chi_eta_2(icol,:) 
+    pdf_params_single%corr_w_chi_1(1,:)         = pdf_params_multi%corr_w_chi_1(icol,:) 
+    pdf_params_single%corr_w_chi_2(1,:)         = pdf_params_multi%corr_w_chi_2(icol,:) 
+    pdf_params_single%corr_w_eta_1(1,:)         = pdf_params_multi%corr_w_eta_1(icol,:) 
+    pdf_params_single%corr_w_eta_2(1,:)         = pdf_params_multi%corr_w_eta_2(icol,:) 
+    pdf_params_single%corr_chi_eta_1(1,:)       = pdf_params_multi%corr_chi_eta_1(icol,:) 
+    pdf_params_single%corr_chi_eta_2(1,:)       = pdf_params_multi%corr_chi_eta_2(icol,:) 
+    pdf_params_single%rsatl_1(1,:)              = pdf_params_multi%rsatl_1(icol,:) 
+    pdf_params_single%rsatl_2(1,:)              = pdf_params_multi%rsatl_2(icol,:) 
+    pdf_params_single%rc_1(1,:)                 = pdf_params_multi%rc_1(icol,:) 
+    pdf_params_single%rc_2(1,:)                 = pdf_params_multi%rc_2(icol,:) 
+    pdf_params_single%cloud_frac_1(1,:)         = pdf_params_multi%cloud_frac_1(icol,:) 
+    pdf_params_single%cloud_frac_2(1,:)         = pdf_params_multi%cloud_frac_2(icol,:) 
+    pdf_params_single%mixt_frac(1,:)            = pdf_params_multi%mixt_frac(icol,:) 
+    pdf_params_single%ice_supersat_frac_1(1,:)  = pdf_params_multi%ice_supersat_frac_1(icol,:) 
+    pdf_params_single%ice_supersat_frac_2(1,:)  = pdf_params_multi%ice_supersat_frac_2(icol,:) 
+    
+  end subroutine copy_multi_pdf_params_to_single
 
   !================================================================================================
   ! calculate_spurious_source - Checks whether there is conservation within the column.
@@ -1233,14 +2636,10 @@ contains
   !================================================================================================
   ! update_xp2_mc - Calculates the effects of rain evaporation on rtp2 and thlp2
   !================================================================================================
-  subroutine update_xp2_mc_api( gr, nzm, nzt, ngrdcol, dt, cloud_frac, rcm, rvm, & ! In
-                                thlm, & ! In
-                                wm, exner, rrm_evap, pdf_params, & ! In
-                                rtp2_mc, thlp2_mc, wprtp_mc, wpthlp_mc, & ! InOut
-                                rtpthlp_mc ) ! InOut
-
-    ! Description:
-    !   Update second-moment microphysics tendencies for all columns in the batch.
+  subroutine update_xp2_mc_api_multi_col( gr, nzm, nzt, ngrdcol, dt, cloud_frac, rcm, rvm, thlm, &
+                                          wm, exner, rrm_evap, pdf_params,        &
+                                          rtp2_mc, thlp2_mc, wprtp_mc, wpthlp_mc,    &
+                                          rtpthlp_mc )
 
     use advance_xp2_xpyp_module, only: &
         update_xp2_mc
@@ -1286,7 +2685,98 @@ contains
                         rtp2_mc, thlp2_mc, wprtp_mc, wpthlp_mc,    & ! intent(inout)
                         rtpthlp_mc ) ! intent(inout)
     return
-  end subroutine update_xp2_mc_api
+  end subroutine update_xp2_mc_api_multi_col
 
+  !================================================================================================
+  ! update_xp2_mc - Calculates the effects of rain evaporation on rtp2 and thlp2
+  !================================================================================================
+  subroutine update_xp2_mc_api_single_col( gr, nzm, nzt, dt, cloud_frac, rcm, rvm, thlm, &
+                                           wm, exner, rrm_evap, pdf_params,        &
+                                           rtp2_mc, thlp2_mc, wprtp_mc, wpthlp_mc,    &
+                                           rtpthlp_mc )
+
+    use advance_xp2_xpyp_module, only: &
+        update_xp2_mc
+
+     ! Type
+
+    implicit none
+
+    ! -------------------- Input Variables --------------------
+    integer, intent(in) :: &
+      nzm, & ! Momentum points in the Vertical        [-]
+      nzt    ! Thermodynamic points in the Vertical
+
+    type(grid), intent(in) :: gr
+
+    real( kind = core_rknd ), intent(in) :: dt ! Model timestep        [s]
+
+    real( kind = core_rknd ), dimension(nzt), intent(in) :: &
+      cloud_frac, &       !Cloud fraction                        [-]
+      rcm, &              !Cloud water mixing ratio              [kg/kg]
+      rvm, &              !Vapor water mixing ratio              [kg/kg]
+      thlm, &             !Liquid potential temperature          [K]
+      wm, &               !Mean vertical velocity                [m/s]
+      exner, &            !Exner function                        [-]
+      rrm_evap         !Evaporation of rain                   [kg/kg/s]
+                          !It is expected that this variable is negative, as
+                          !that is the convention in Morrison microphysics
+
+    type(pdf_parameter), intent(in) :: &
+      pdf_params ! PDF parameters
+
+    ! -------------------- Input/Output Variables --------------------
+    real( kind = core_rknd ), dimension(nzm), intent(inout) :: &
+      rtp2_mc, &    !Tendency of <rt'^2> due to evaporation   [(kg/kg)^2/s]
+      thlp2_mc, &   !Tendency of <thl'^2> due to evaporation  [K^2/s]
+      wprtp_mc, &   !Tendency of <w'rt'> due to evaporation   [m*(kg/kg)/s^2]
+      wpthlp_mc, &  !Tendency of <w'thl'> due to evaporation  [m*K/s^2]
+      rtpthlp_mc    !Tendency of <rt'thl'> due to evaporation [K*(kg/kg)/s]
+
+    ! -------------------- Local Variables --------------------
+    real( kind = core_rknd ), dimension(1,nzt) :: &
+      cloud_frac_col, &       !Cloud fraction                        [-]
+      rcm_col, &              !Cloud water mixing ratio              [kg/kg]
+      rvm_col, &              !Vapor water mixing ratio              [kg/kg]
+      thlm_col, &             !Liquid potential temperature          [K]
+      wm_col, &               !Mean vertical velocity                [m/s]
+      exner_col, &            !Exner function                        [-]
+      rrm_evap_col         !Evaporation of rain                   [kg/kg/s]
+                          !It is expected that this variable is negative, as
+                          !that is the convention in Morrison microphysics
+
+    real( kind = core_rknd ), dimension(1,nzm) :: &
+      rtp2_mc_col, &    !Tendency of <rt'^2> due to evaporation   [(kg/kg)^2/s]
+      thlp2_mc_col, &   !Tendency of <thl'^2> due to evaporation  [K^2/s]
+      wprtp_mc_col, &   !Tendency of <w'rt'> due to evaporation   [m*(kg/kg)/s^2]
+      wpthlp_mc_col, &  !Tendency of <w'thl'> due to evaporation  [m*K/s^2]
+      rtpthlp_mc_col    !Tendency of <rt'thl'> due to evaporation [K*(kg/kg)/s]
+
+    cloud_frac_col(1,:) = cloud_frac
+    rcm_col(1,:) = rcm
+    rvm_col(1,:) = rvm
+    thlm_col(1,:) = thlm
+    wm_col(1,:) = wm
+    exner_col(1,:) = exner
+    rrm_evap_col(1,:) = rrm_evap
+    rtp2_mc_col(1,:) = rtp2_mc
+    thlp2_mc_col(1,:) = thlp2_mc
+    wprtp_mc_col(1,:) = wprtp_mc
+    wpthlp_mc_col(1,:) = wpthlp_mc
+    rtpthlp_mc_col(1,:) = rtpthlp_mc
+
+    call update_xp2_mc( gr, nzm, nzt, 1, dt, cloud_frac_col, rcm_col, rvm_col, thlm_col, & ! In
+                        wm_col, exner_col, rrm_evap_col, pdf_params,        & ! In
+                        rtp2_mc_col, thlp2_mc_col, wprtp_mc_col, wpthlp_mc_col,    & ! In/Out
+                        rtpthlp_mc_col ) ! In/Out
+
+    rtp2_mc = rtp2_mc_col(1,:)
+    thlp2_mc = thlp2_mc_col(1,:)
+    wprtp_mc = wprtp_mc_col(1,:)
+    wpthlp_mc = wpthlp_mc_col(1,:)
+    rtpthlp_mc = rtpthlp_mc_col(1,:)
+
+    return
+  end subroutine update_xp2_mc_api_single_col
 
 end module clubb_api_module

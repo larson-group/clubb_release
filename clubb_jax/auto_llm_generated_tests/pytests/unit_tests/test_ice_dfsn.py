@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 """validate the JAX ice_dfsn port (cloud-water depletion by diffusional growth of ice)."""
-
-from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
 from utilities.output_paths import REPO_ROOT as _REPO_ROOT
 import os
 
@@ -23,7 +21,7 @@ _N_I, _MASS_INIT, _RCM_THR = 2000.0, 1.0e-11, 1.0e-5
 _A, _B, _KU, _Q, _N = 2.05e-3, 1.8, 55.0, 0.17, 0.70
 
 
-from clubb_jax.src.CLUBB_core.stats_netcdf import JaxStats
+from clubb_jax.src.CLUBB_core.jax_stats import JaxStats
 from clubb_jax.src.Microphys.ice_dfsn_module import ice_dfsn as source_ice_dfsn
 
 
@@ -85,7 +83,7 @@ def _numpy_ice_dfsn(gr, dt, thlm, rcm, exner, p, rho):
 def test_ice_dfsn_vs_numpy():
     gr, thlm, rcm, exner, p, rho = _make_grid_and_profile()
     dt = 60.0
-    g_rcm, g_thl = call_jax(ice_dfsn, gr, dt, thlm, rcm, exner, p, rho, _SAT_FORMULA)
+    g_rcm, g_thl = ice_dfsn(gr, dt, thlm, rcm, exner, p, rho, _SAT_FORMULA)
     g_rcm, g_thl = np.asarray(g_rcm), np.asarray(g_thl)
     r_rcm, r_thl = _numpy_ice_dfsn(gr, dt, thlm, rcm, exner, p, rho)
     rel_rcm = np.max(np.abs(g_rcm - r_rcm) / (np.abs(r_rcm) + 1e-30))
@@ -98,7 +96,7 @@ def test_ice_dfsn_vs_numpy():
 def test_branches_and_coupling():
     gr, thlm, rcm, exner, p, rho = _make_grid_and_profile()
     T = np.asarray(thlm2T_in_K(jnp.asarray(thlm), jnp.asarray(exner), jnp.asarray(rcm)))
-    g_rcm, g_thl = call_jax(ice_dfsn, gr, 60.0, thlm, rcm, exner, p, rho, _SAT_FORMULA)
+    g_rcm, g_thl = ice_dfsn(gr, 60.0, thlm, rcm, exner, p, rho, _SAT_FORMULA)
     g_rcm = np.asarray(g_rcm)
     outside = ~((rcm >= _RCM_THR) & (T < T_freeze_K))
     assert np.all(g_rcm[outside] == 0.0), "tendency nonzero outside in-cloud/below-freezing"
@@ -115,7 +113,7 @@ def test_over_depletion_cap():
     rcm = np.zeros(nzt)
     rcm[8:24] = 1.01e-5   # just above the in-cloud threshold
     dt = 1.0e5            # large dt to force the unclamped tendency to over-deplete (exercises the cap)
-    g_rcm, _ = call_jax(ice_dfsn, gr, dt, thlm, rcm, exner, p, rho, _SAT_FORMULA)
+    g_rcm, _ = ice_dfsn(gr, dt, thlm, rcm, exner, p, rho, _SAT_FORMULA)
     g_rcm = np.asarray(g_rcm)
     # No level may remove more liquid than exists: rcm + tend*dt >= 0 (within fp).
     assert np.all(rcm + g_rcm * dt >= -1e-18), "over-depletion cap failed"

@@ -1,0 +1,1040 @@
+[
+  {
+    "name": "stats_accumulate",
+    "arguments": [
+      {
+        "name": "nzm",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "nzt",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "ngrdcol",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "sclr_dim",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "edsclr_dim",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "gr",
+        "kind": "grid",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "dt",
+        "kind": "real",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "l_implemented",
+        "kind": "logical",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "l_host_applies_sfc_fluxes",
+        "kind": "logical",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "l_stability_correct_tau_zm",
+        "kind": "logical",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "clubb_params",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nparams"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "um",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "vm",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "upwp",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "vpwp",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "up2",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "vp2",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "thlm",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "rtm",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "thlm_before",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "rtm_before",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "thlm_forcing",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "rtm_forcing",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "wpthlp_sfc",
+        "kind": "real",
+        "dims": [
+          "ngrdcol"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "wprtp_sfc",
+        "kind": "real",
+        "dims": [
+          "ngrdcol"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "wprtp",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "wpthlp",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "wp2",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "wp3",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "rtp2",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "rtp3",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "thlp2",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "thlp3",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "rtpthlp",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "p_in_Pa",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "exner",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "rho",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "rho_zm",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "rho_ds_zm",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "rho_ds_zt",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "thv_ds_zm",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "thv_ds_zt",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "wm_zt",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "wm_zm",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "rcm",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "cloud_frac",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "thvm",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "ug",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "vg",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "ddzt_umvm_sqd",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "stability_correction",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "Kh_zt",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "rsat",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "Kh_zm",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "em",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "sclrm",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt",
+          "sclr_dim"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "sclrp2",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm",
+          "sclr_dim"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "sclrprtp",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm",
+          "sclr_dim"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "sclrpthlp",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm",
+          "sclr_dim"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "sclrm_forcing",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt",
+          "sclr_dim"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "wpsclrp",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm",
+          "sclr_dim"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "wpedsclrp",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm",
+          "edsclr_dim"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "edsclrm",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt",
+          "edsclr_dim"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "edsclrm_forcing",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt",
+          "edsclr_dim"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "saturation_formula",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "stats",
+        "kind": "stats_type",
+        "dims": [],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      }
+    ]
+  },
+  {
+    "name": "stats_accumulate_hydromet_api",
+    "arguments": [
+      {
+        "name": "gr",
+        "kind": "grid",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "ngrdcol",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "hydromet_dim",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "hm_metadata",
+        "kind": "hm_metadata_type",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "hydromet",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "gr%nzt",
+          "hydromet_dim"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "rho_ds_zt",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "gr%nzt"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "stats",
+        "kind": "stats_type",
+        "dims": [],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      }
+    ]
+  },
+  {
+    "name": "stats_accumulate_lh_tend",
+    "arguments": [
+      {
+        "name": "gr",
+        "kind": "grid",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "ngrdcol",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "hydromet_dim",
+        "kind": "integer",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "hm_metadata",
+        "kind": "hm_metadata_type",
+        "dims": [],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "lh_hydromet_mc",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "gr%nzt",
+          "hydromet_dim"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "lh_Ncm_mc",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "gr%nzt"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "lh_thlm_mc",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "gr%nzt"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "lh_rvm_mc",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "gr%nzt"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "lh_rcm_mc",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "gr%nzt"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "lh_AKm",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "gr%nzt"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "AKm",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "gr%nzt"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "AKstd",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "gr%nzt"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "AKstd_cld",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "gr%nzt"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "lh_rcm_avg",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "gr%nzt"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "AKm_rcm",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "gr%nzt"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "AKm_rcc",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "gr%nzt"
+        ],
+        "intent": "in",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      {
+        "name": "stats",
+        "kind": "stats_type",
+        "dims": [],
+        "intent": "inout",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      }
+    ]
+  }
+]

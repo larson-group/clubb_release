@@ -1,0 +1,22 @@
+{
+  "canonical_source": "src/CLUBB_core/pos_definite_module.F90",
+  "canonical_sha256": "0e934f18109ffe5aaa95787a6da1541d31b69431fc0662344d6f1857936cb924",
+  "cpp_sha256": "1adbcf496b6b4f2027b804b2e5d4b1588b48579b4760bee2ac991521e409bed2",
+  "hpp_sha256": "e13576504daf3c634fe96caef690a16f236f0999dfcd05f6d9eda49e71f3e3c6",
+  "native_procedures": 1,
+  "required_arguments": 10,
+  "ordered_native_assignment_trees": 24,
+  "ddzm_materialization_and_argument_order": "exact",
+  "branch_predicates": 5,
+  "independent_kernels": 9,
+  "manual_review": [
+    "Complete Native and JAX scope read before outline/implementation; all scientific descriptions/cartoons/citation/code comments preserved in order, copied field_pd comment corrected.",
+    "Native grid metadata1-based physical limiter range maps to ordinal grid_dir_indx steps. Both ascending/descending cases compute the exact source kphalf/kp1/k_zt; lower bound term retains dz_over_dt(k_zt).",
+    "All flux levels initialized by distinct limiter writes or unchanged endpoint copies; per-call scratch is local, not shared global state.",
+    "Before and after ANY scans cover nzt and drive whole-column budgets on nzm/nzt respectively. Masks are recomputed on opposite sides of the field update.",
+    "Value copies retain Native array ownership; shared adapter restores all four caller arrays. Lower ddzm stays C++, only existing debug query is host f2k.",
+    "No device f2k, owning-grid capture, nested launch, host diagnostics or float reduction. All branch-local indices are assigned before use.",
+    "Separate final cleanup verifies Native groups/case, complete comments/units, physical-vs-storage indexing, adapter contracts,100columns and whitespace."
+  ],
+  "numerical_evidence": "Uncompiled/untested; no CPU/GPU model or BFB claim and no deliberate BFB arithmetic workaround."
+}

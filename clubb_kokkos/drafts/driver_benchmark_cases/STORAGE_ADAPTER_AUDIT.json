@@ -1,0 +1,217 @@
+[
+  {
+    "routine": "prescribe_forcings",
+    "arrays": [
+      {
+        "name": "um",
+        "intent": "in",
+        "restore": false
+      },
+      {
+        "name": "vm",
+        "intent": "in",
+        "restore": false
+      },
+      {
+        "name": "thlm",
+        "intent": "in",
+        "restore": false
+      },
+      {
+        "name": "p_in_Pa",
+        "intent": "in",
+        "restore": false
+      },
+      {
+        "name": "exner",
+        "intent": "in",
+        "restore": false
+      },
+      {
+        "name": "rho",
+        "intent": "in",
+        "restore": false
+      },
+      {
+        "name": "rho_zm",
+        "intent": "in",
+        "restore": false
+      },
+      {
+        "name": "thvm",
+        "intent": "in",
+        "restore": false
+      },
+      {
+        "name": "veg_T_in_K",
+        "intent": "in",
+        "restore": false
+      },
+      {
+        "name": "rho_lin_spline_vals",
+        "intent": "in",
+        "restore": false
+      },
+      {
+        "name": "rho_lin_spline_levels",
+        "intent": "in",
+        "restore": false
+      },
+      {
+        "name": "rtm",
+        "intent": "inout",
+        "restore": true
+      },
+      {
+        "name": "wm_zm",
+        "intent": "inout",
+        "restore": true
+      },
+      {
+        "name": "wm_zt",
+        "intent": "inout",
+        "restore": true
+      },
+      {
+        "name": "ug",
+        "intent": "inout",
+        "restore": true
+      },
+      {
+        "name": "vg",
+        "intent": "inout",
+        "restore": true
+      },
+      {
+        "name": "um_ref",
+        "intent": "inout",
+        "restore": true
+      },
+      {
+        "name": "vm_ref",
+        "intent": "inout",
+        "restore": true
+      },
+      {
+        "name": "thlm_forcing",
+        "intent": "inout",
+        "restore": true
+      },
+      {
+        "name": "rtm_forcing",
+        "intent": "inout",
+        "restore": true
+      },
+      {
+        "name": "um_forcing",
+        "intent": "inout",
+        "restore": true
+      },
+      {
+        "name": "vm_forcing",
+        "intent": "inout",
+        "restore": true
+      },
+      {
+        "name": "wprtp_forcing",
+        "intent": "inout",
+        "restore": true
+      },
+      {
+        "name": "wpthlp_forcing",
+        "intent": "inout",
+        "restore": true
+      },
+      {
+        "name": "rtp2_forcing",
+        "intent": "inout",
+        "restore": true
+      },
+      {
+        "name": "thlp2_forcing",
+        "intent": "inout",
+        "restore": true
+      },
+      {
+        "name": "rtpthlp_forcing",
+        "intent": "inout",
+        "restore": true
+      },
+      {
+        "name": "wpsclrp",
+        "intent": "inout",
+        "restore": true
+      },
+      {
+        "name": "sclrm_forcing",
+        "intent": "inout",
+        "restore": true
+      },
+      {
+        "name": "edsclrm_forcing",
+        "intent": "inout",
+        "restore": true
+      },
+      {
+        "name": "wpthlp_sfc",
+        "intent": "inout",
+        "restore": true
+      },
+      {
+        "name": "wprtp_sfc",
+        "intent": "inout",
+        "restore": true
+      },
+      {
+        "name": "upwp_sfc",
+        "intent": "inout",
+        "restore": true
+      },
+      {
+        "name": "vpwp_sfc",
+        "intent": "inout",
+        "restore": true
+      },
+      {
+        "name": "T_sfc",
+        "intent": "inout",
+        "restore": true
+      },
+      {
+        "name": "p_sfc",
+        "intent": "inout",
+        "restore": true
+      },
+      {
+        "name": "wpsclrp_sfc",
+        "intent": "inout",
+        "restore": true
+      },
+      {
+        "name": "wpedsclrp_sfc",
+        "intent": "inout",
+        "restore": true
+      }
+    ]
+  },
+  {
+    "routine": "initialize_t_dependent_input",
+    "arrays": [
+      {
+        "name": "rho",
+        "intent": "in",
+        "restore": false
+      },
+      {
+        "name": "grid",
+        "intent": "in",
+        "restore": false
+      },
+      {
+        "name": "p_in_Pa",
+        "intent": "in",
+        "restore": false
+      }
+    ]
+  }
+]

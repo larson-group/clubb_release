@@ -1,0 +1,719 @@
+{
+  "native_inventory_and_order": [
+    "Ncnm_to_Nc_in_cloud",
+    "Nc_in_cloud_to_Ncnm",
+    "Ncnm_to_Ncm",
+    "Ncm_to_Ncnm",
+    "bivar_NL_chi_Ncn_mean",
+    "bivar_Ncnm_eqn_comp"
+  ],
+  "public_inventory": [
+    "Ncnm_to_Nc_in_cloud",
+    "Nc_in_cloud_to_Ncnm",
+    "Ncnm_to_Ncm",
+    "Ncm_to_Ncnm"
+  ],
+  "routines": [
+    {
+      "name": "Ncnm_to_Nc_in_cloud",
+      "module": "Nc_Ncn_eqns",
+      "source": "src/CLUBB_core/Nc_Ncn_eqns.F90",
+      "arguments": [
+        {
+          "name": "mu_chi_1",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mu_chi_2",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mu_Ncn_1",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mu_Ncn_2",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma_chi_1",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma_chi_2",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma_Ncn_1",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma_Ncn_2",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma_Ncn_1_n",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma_Ncn_2_n",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "corr_chi_Ncn_1_n",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "corr_chi_Ncn_2_n",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mixt_frac",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "cloud_frac_1",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "cloud_frac_2",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": {
+        "name": "Nc_in_cloud",
+        "kind": "real",
+        "dims": [],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      "source_lines": [
+        153,
+        248
+      ],
+      "call_and_function_order": [
+        "Ncm = Ncnm_to_Ncm( mu_chi_1, mu_chi_2, mu_Ncn_1, mu_Ncn_2, sigma_chi_1, sigma_chi_2, sigma_Ncn_1, sigma_Ncn_2, sigma_Ncn_1_n, sigma_Ncn_2_n, corr_chi_Ncn_1_n, corr_chi_Ncn_2_n, mixt_frac )"
+      ],
+      "branches_in_order": [
+        "if ( cloud_frac > cloud_frac_min ) then",
+        "else"
+      ]
+    },
+    {
+      "name": "Nc_in_cloud_to_Ncnm",
+      "module": "Nc_Ncn_eqns",
+      "source": "src/CLUBB_core/Nc_Ncn_eqns.F90",
+      "arguments": [
+        {
+          "name": "mu_chi_1",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mu_chi_2",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma_chi_1",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma_chi_2",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mixt_frac",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "Nc_in_cloud",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "cloud_frac_1",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "cloud_frac_2",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "const_Ncnp2_on_Ncnm2",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "const_corr_chi_Ncn",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": {
+        "name": "Ncnm",
+        "kind": "real",
+        "dims": [],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      "source_lines": [
+        251,
+        345
+      ],
+      "call_and_function_order": [
+        "Ncnm = Ncm_to_Ncnm( mu_chi_1, mu_chi_2, sigma_chi_1, sigma_chi_2, mixt_frac, Ncm, const_Ncnp2_on_Ncnm2, const_corr_chi_Ncn, Nc_in_cloud )"
+      ],
+      "branches_in_order": [
+        "if ( cloud_frac > cloud_frac_min .and. abs(const_corr_chi_Ncn * const_Ncnp2_on_Ncnm2) > eps ) then",
+        "else"
+      ]
+    },
+    {
+      "name": "Ncnm_to_Ncm",
+      "module": "Nc_Ncn_eqns",
+      "source": "src/CLUBB_core/Nc_Ncn_eqns.F90",
+      "arguments": [
+        {
+          "name": "mu_chi_1",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mu_chi_2",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mu_Ncn_1",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mu_Ncn_2",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma_chi_1",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma_chi_2",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma_Ncn_1",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma_Ncn_2",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma_Ncn_1_n",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma_Ncn_2_n",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "corr_chi_Ncn_1_n",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "corr_chi_Ncn_2_n",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mixt_frac",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": {
+        "name": "Ncm",
+        "kind": "real",
+        "dims": [],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      "source_lines": [
+        348,
+        473
+      ],
+      "call_and_function_order": [
+        "Ncm = mixt_frac * bivar_NL_chi_Ncn_mean( mu_chi_1, mu_Ncn_1, sigma_chi_1, sigma_Ncn_1, sigma_Ncn_1_n, corr_chi_Ncn_1_n ) + ( one - mixt_frac ) * bivar_NL_chi_Ncn_mean( mu_chi_2, mu_Ncn_2, sigma_chi_2, sigma_Ncn_2, sigma_Ncn_2_n, corr_chi_Ncn_2_n )"
+      ],
+      "branches_in_order": []
+    },
+    {
+      "name": "Ncm_to_Ncnm",
+      "module": "Nc_Ncn_eqns",
+      "source": "src/CLUBB_core/Nc_Ncn_eqns.F90",
+      "arguments": [
+        {
+          "name": "mu_chi_1",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mu_chi_2",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma_chi_1",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma_chi_2",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mixt_frac",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "Ncm",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "const_Ncnp2_on_Ncnm2",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "const_corr_chi_Ncn",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "Ncnm_val_denom_0",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": {
+        "name": "Ncnm",
+        "kind": "real",
+        "dims": [],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      "source_lines": [
+        476,
+        704
+      ],
+      "call_and_function_order": [
+        "denominator_term = mixt_frac * bivar_Ncnm_eqn_comp( mu_chi_1, sigma_chi_1, const_Ncnp2_on_Ncnm2, const_corr_chi_Ncn ) + ( one - mixt_frac ) * bivar_Ncnm_eqn_comp( mu_chi_2, sigma_chi_2, const_Ncnp2_on_Ncnm2, const_corr_chi_Ncn )"
+      ],
+      "branches_in_order": [
+        "if ( denominator_term > zero ) then",
+        "else"
+      ]
+    },
+    {
+      "name": "bivar_NL_chi_Ncn_mean",
+      "module": "Nc_Ncn_eqns",
+      "source": "src/CLUBB_core/Nc_Ncn_eqns.F90",
+      "arguments": [
+        {
+          "name": "mu_chi_i",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mu_Ncn_i",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma_chi_i",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma_Ncn_i",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma_Ncn_i_n",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "corr_chi_Ncn_i_n",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": {
+        "name": "bivar_NL_chi_Ncn_mean",
+        "kind": "real",
+        "dims": [],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      "source_lines": [
+        707,
+        853
+      ],
+      "call_and_function_order": [
+        "bivar_NL_chi_Ncn_mean = mu_Ncn_i",
+        "bivar_NL_chi_Ncn_mean = zero",
+        "bivar_NL_chi_Ncn_mean = mu_Ncn_i",
+        "bivar_NL_chi_Ncn_mean = zero",
+        "bivar_NL_chi_Ncn_mean = mu_Ncn_i * one_half * erfc( - ( mu_chi_i / ( sqrt_2 * sigma_chi_i ) ) )",
+        "bivar_NL_chi_Ncn_mean = one_half * mu_Ncn_i * erfc( - ( one / sqrt_2 ) * ( ( mu_chi_i / sigma_chi_i ) + corr_chi_Ncn_i_n * sigma_Ncn_i_n ) )"
+      ],
+      "branches_in_order": [
+        "if ( sigma_chi_i <= chi_tol .and. sigma_Ncn_i <= Ncn_tol ) then",
+        "if ( mu_chi_i > zero ) then",
+        "else",
+        "elseif ( sigma_chi_i <= chi_tol ) then",
+        "if ( mu_chi_i > zero ) then",
+        "else",
+        "elseif ( sigma_Ncn_i <= Ncn_tol ) then",
+        "else"
+      ]
+    },
+    {
+      "name": "bivar_Ncnm_eqn_comp",
+      "module": "Nc_Ncn_eqns",
+      "source": "src/CLUBB_core/Nc_Ncn_eqns.F90",
+      "arguments": [
+        {
+          "name": "mu_chi_i",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma_chi_i",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "const_Ncnp2_on_Ncnm2",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "const_corr_chi_Ncn",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": {
+        "name": "bivar_Ncnm_eqn_comp",
+        "kind": "real",
+        "dims": [],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      "source_lines": [
+        856,
+        949
+      ],
+      "call_and_function_order": [
+        "bivar_Ncnm_eqn_comp = one",
+        "bivar_Ncnm_eqn_comp = zero",
+        "bivar_Ncnm_eqn_comp = one_half * erfc( - ( one / sqrt_2 ) * ( ( mu_chi_i / sigma_chi_i ) + const_corr_chi_Ncn * sqrt( const_Ncnp2_on_Ncnm2 ) ) )"
+      ],
+      "branches_in_order": [
+        "if ( sigma_chi_i <= chi_tol ) then",
+        "if ( mu_chi_i > zero ) then",
+        "else",
+        "else"
+      ]
+    }
+  ],
+  "read_evidence": {
+    "native_lines": 953,
+    "jax_lines": 484,
+    "full_read_before_implementation": true
+  },
+  "native_sha256": "fc5636a8c2cb3833240e34fb02751db8653847fbb384a30729e130ddea089a6c",
+  "jax_sha256": "899fe79fc0756a30292fd44dee3da89dfb23fa8ae42aa9050e9743398c175ede",
+  "ownership": "Scalar device functions and column-first LayoutLeft Views; local scratch, no mutable global storage; existing Native stats and error owners.",
+  "supported_scope": "All6 Native elemental functions, preserving scalar control flow. Four public homogeneous rank1/rank2 View overloads cover actual repository array caller; all-scalar calls preserve Native contract. No mixed scalar/View broadcasting API without a live caller.",
+  "jax_differences": [
+    "Keep conditional Native branches rather than eagerly evaluated where masks/safe denominators.",
+    "Preserve Native ERFC/SQRT and tolerance thresholds without GPU math emulation."
+  ],
+  "lower_dependencies": "Only existing constants and Kokkos scalar math; four public and two private functions form a complete closed group."
+}

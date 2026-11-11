@@ -1,0 +1,400 @@
+{
+  "canonical_source": "src/CLUBB_core/sfc_varnce_module.F90",
+  "canonical_sha256": "a52f5a887f2a55b36abb3586f1c2ce9a85211467716d19b5a9633ff8893148bf",
+  "full_native_read_before_code": true,
+  "jax_scope": "One routine, active previous-code scheme. JAX omits source-constant-false Andre1978 branch; complete Native draft will retain it, with the false parameter. Native errors, search and arithmetic remain authoritative rather than JAX rewrites.",
+  "routines": [
+    {
+      "name": "calc_sfc_varnce",
+      "module": "sfc_varnce_module",
+      "source": "src/CLUBB_core/sfc_varnce_module.F90",
+      "arguments": [
+        {
+          "name": "nzm",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sclr_dim",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sclr_idx",
+          "kind": "sclr_idx_type",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "gr",
+          "kind": "grid",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "dt",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sfc_elevation",
+          "kind": "real",
+          "dims": [
+            "ngrdcol"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "upwp_sfc",
+          "kind": "real",
+          "dims": [
+            "ngrdcol"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "vpwp_sfc",
+          "kind": "real",
+          "dims": [
+            "ngrdcol"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wpthlp",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wprtp_sfc",
+          "kind": "real",
+          "dims": [
+            "ngrdcol"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "um",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "vm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "Lscale_up",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wpsclrp_sfc",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "sclr_dim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lhs_splat_wp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "tau_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_vary_convect_depth",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "T0",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "up2_sfc_coef",
+          "kind": "real",
+          "dims": [
+            "ngrdcol"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "a_const",
+          "kind": "real",
+          "dims": [
+            "ngrdcol"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "stats",
+          "kind": "stats_type",
+          "dims": [],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "up2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "vp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "thlp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rtp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rtpthlp",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sclrp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm",
+            "sclr_dim"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sclrprtp",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm",
+            "sclr_dim"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sclrpthlp",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm",
+            "sclr_dim"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "err_info",
+          "kind": "err_info_type",
+          "dims": [],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null
+    }
+  ],
+  "native_inventory_and_order": [
+    "calc_sfc_varnce"
+  ],
+  "branch_outline": [
+    "Begin six surface budgets in thlp2,rtp2,rtpthlp,up2,vp2,wp2 order when sampled",
+    "Per-column positive heat-flux depth search from native lower momentum level, advancing signed grid_dir_indx until flux<=0 or height>=1000m; negative flux sets1m",
+    "Source l_andre_1978=false: retain full dormant wind-oriented friction/Monin-Obukhov/stability/splat/scalar formula branch",
+    "Default scheme: friction/convective velocity with fixed or diagnosed convective depth; velocity moments; scalar second moments and realizability floor; splatting correction; passive scalar emulation indices and variance coefficient",
+    "Clip wp2 to wp2_max; if lowest momentum level differs from surface, eliminate surface effects in core then passive scalar moments",
+    "Finalize six budgets in same field order",
+    "Debug>=2: call public Native sfc_varnce_check by column with6scalar+3scalar-profile inputs, preserve all-column fatal/error-header semantics and complete input/output dump order"
+  ],
+  "state_and_dependencies": [
+    "Column-first LayoutLeft Views and local call-owned scratch; no mutable global",
+    "sclr_idx and grid metadata retain Native one-based index values; fields/scalars captured individually",
+    "Stats begin/finalize use existing transient backend at host callsites; Native array/dt expressions become explicit callsite-only division buffers",
+    "sfc_varnce_check remains explicit public Native f2k call pending its live port; no new check physics or altered NaN/infinity behavior",
+    "Existing parser legacy INTENT overrides for dt/up2_sfc_coef/a_const retained; all arguments required"
+  ],
+  "known_native_assumptions": [
+    "Heat-flux depth search has no explicit upper-grid bound; reproduce Native stopping criteria rather than silently clamp",
+    "Native Andre branch can evaluate fractional powers on negative heat flux; keep source condition/order with false compile-time parameter"
+  ],
+  "validation": "Pending source cleanup/audit, build and maintained CPU-vs-CPU zero-tolerance model comparison; no tests/builds in isolated task."
+}

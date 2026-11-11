@@ -1,0 +1,118 @@
+{
+  "source": "src/Radiation/bugsrad_driver.F90:init_radiation",
+  "fields": [
+    {
+      "slot": 2,
+      "name": "rad_scheme",
+      "kind": "text"
+    },
+    {
+      "slot": 3,
+      "name": "sol_const",
+      "kind": "double"
+    },
+    {
+      "slot": 4,
+      "name": "alvdr",
+      "kind": "double"
+    },
+    {
+      "slot": 5,
+      "name": "alvdf",
+      "kind": "double"
+    },
+    {
+      "slot": 6,
+      "name": "alndr",
+      "kind": "double"
+    },
+    {
+      "slot": 7,
+      "name": "alndf",
+      "kind": "double"
+    },
+    {
+      "slot": 8,
+      "name": "kappa",
+      "kind": "real"
+    },
+    {
+      "slot": 9,
+      "name": "F0",
+      "kind": "real"
+    },
+    {
+      "slot": 10,
+      "name": "F1",
+      "kind": "real"
+    },
+    {
+      "slot": 11,
+      "name": "eff_drop_radius",
+      "kind": "real"
+    },
+    {
+      "slot": 12,
+      "name": "gc",
+      "kind": "real"
+    },
+    {
+      "slot": 13,
+      "name": "omega",
+      "kind": "real"
+    },
+    {
+      "slot": 14,
+      "name": "Fs_values",
+      "kind": "array"
+    },
+    {
+      "slot": 15,
+      "name": "cos_solar_zen_values",
+      "kind": "array"
+    },
+    {
+      "slot": 16,
+      "name": "cos_solar_zen_times",
+      "kind": "array"
+    },
+    {
+      "slot": 17,
+      "name": "radiation_top",
+      "kind": "real"
+    },
+    {
+      "slot": 18,
+      "name": "l_fix_cos_solar_zen",
+      "kind": "bool"
+    },
+    {
+      "slot": 19,
+      "name": "l_sw_radiation",
+      "kind": "bool"
+    },
+    {
+      "slot": 20,
+      "name": "slr",
+      "kind": "double"
+    },
+    {
+      "slot": 21,
+      "name": "l_rad_above_cloud",
+      "kind": "bool"
+    },
+    {
+      "slot": 22,
+      "name": "l_use_default_std_atmosphere",
+      "kind": "bool"
+    }
+  ],
+  "reader_extra": {
+    "slot": 23,
+    "name": "l_calc_thlp2_rad",
+    "kind": "bool"
+  },
+  "native_rad_scheme_length": 20,
+  "native_array_length": 20,
+  "scope": "pure local namelist/text I/O; defaults and nparam loop remain C++"
+}

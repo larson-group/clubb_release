@@ -12,10 +12,6 @@ One of the two states may be covered by the `default` run.
 - `run_bindiff_w_flags_config_host_flags.json`: flag settings used by the generalized vertical grid host-flags test.
 - `config_core_flags_wo_never_supported_jax_features.json` : core model flags to test clubb_jax vs fortran clubb without flags  
 that jax per design will never support. E.g. LAPACK configurations.
-It also leaves out `l_use_tke_in_wp2_wp3_K_dfsn = .true.`. With that flag, cobra and
-dycoms2_rf02_ds amplify roundoff so strongly that the `-O0` and `-O2` Fortran builds
-reach different solutions within 40 timesteps, so a JAX-vs-Fortran comparison cannot
-pass.
 
 ## What is a flag?
 
@@ -46,8 +42,9 @@ Overrides from a flag set work the same way for both kinds.
 
 1. `run_scripts/run_clubb_w_varying_flags.py -flag_config_file <file>.json` (or `human_reviewed_tests/run_jax_vs_fortran_cases.py -flag_config_file <file>.json`)
    reads the JSON with `input/scripts/flag_sets.py`.
-   Both scripts add an unmodified `default` run and can omit it with
-   `-skip_default_flags`; `default` cannot be used as a custom flag set name.
+   An unmodified `default` run is always added by the JAX comparison harness.
+   The varying-flags runner can omit it with `-skip_default_flags`; `default`
+   cannot be used as a custom flag set name.
    Each flag set becomes one `-override` string, e.g. `l_diffuse_rtm_and_thlm=.true.,saturation_formula=2`.
 2. For every (flag set, case) pair it calls `run_scripts/run_scm.py -override ... <case>`, writing to `output/<flag_set_name>/`.
 3. `run_scm.py` calls `input/scripts/create_case_namelist.py`, which builds one combined `<case>.in` namelist.

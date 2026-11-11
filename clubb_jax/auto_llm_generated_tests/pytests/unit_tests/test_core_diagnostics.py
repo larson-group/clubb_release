@@ -4,8 +4,6 @@ Synthetic failures verify host callbacks, source index order, full dumps and
 unchanged failure status without needing a full atmospheric case.
 """
 
-from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
-
 import io
 
 import jax
@@ -13,14 +11,14 @@ import jax.numpy as jnp
 import numpy as np
 import pytest
 
-from clubb_jax.src.CLUBB_core.err_info_type_module import ErrInfo
+from clubb_jax.src.CLUBB_core.err_info import ErrInfo
 from clubb_jax.src.CLUBB_core import error_code
 from clubb_jax.src.CLUBB_core.numerical_check import check_nan, check_negative
 from clubb_jax.src.CLUBB_core.matrix_solver_wrapper import (
-    check_nan_soln_2d, check_nan_soln_3d,
+    check_nan_soln_1d, check_nan_soln_2d, check_nan_soln_3d,
 )
 from clubb_jax.src.CLUBB_core.model_flags import get_default_config_flags, print_clubb_config_flags_api
-from clubb_jax.src.CLUBB_core.pdf_parameter_module import init_pdf_params, print_pdf_params
+from clubb_jax.src.CLUBB_core.pdf_params import init_pdf_params, print_pdf_params
 from clubb_jax.src.CLUBB_core.clip_explicit import clip_rcm
 
 
@@ -43,7 +41,7 @@ def _ready(result, capsys):
 
 def test_negative_runtime_prints_preserve_level_then_column_order(capsys):
     info = ErrInfo.initialized(2, mpi_rank=5, chunk_idx=3)
-    run = jax.jit(lambda values: call_jax(check_negative, values, "rtm", "advance_clubb_core", info))
+    run = jax.jit(lambda values: check_negative(values, "rtm", "advance_clubb_core", info))
     healthy = run(jnp.ones((2, 3)))
     assert _ready(healthy, capsys).err == ""
     values = jnp.array([[1.0, -2.0, 1.0], [-3.0, 1.0, -4.0]])
@@ -56,10 +54,14 @@ def test_negative_runtime_prints_preserve_level_then_column_order(capsys):
         assert [text.index(value) for value in indices] == sorted(text.index(value) for value in indices)
 
 
-@pytest.mark.parametrize("rank", [2, 3])
+@pytest.mark.parametrize("rank", [1, 2, 3])
 def test_solver_nan_locations_and_existing_column_status(rank, capsys):
     info = ErrInfo.initialized(2)
-    if rank == 2:
+    if rank == 1:
+        values = jnp.array([1.0, jnp.nan, 2.0])
+        run = jax.jit(lambda v: check_nan_soln_1d("test", 2, 3, v, info))
+        location, codes = "soln( 2 )", [99, 99]
+    elif rank == 2:
         values = jnp.ones((2, 3)).at[1, 2].set(jnp.nan)
         run = jax.jit(lambda v: check_nan_soln_2d("test", 2, 2, 3, v, info))
         location, codes = "soln( 2 , 3 )", [0, 99]
@@ -75,7 +77,7 @@ def test_solver_nan_locations_and_existing_column_status(rank, capsys):
 
 def test_nonfinite_check_keeps_source_message_and_fatal_status(capsys):
     info = ErrInfo.initialized(2)
-    result = jax.jit(lambda v: call_jax(check_nan, v, "rho", "input", info))(jnp.array([1.0, jnp.inf]))
+    result = jax.jit(lambda v: check_nan(v, "rho", "input", info))(jnp.array([1.0, jnp.inf]))
     text = _ready(result, capsys).err
     assert "rho  is NaN in  input" in text
     np.testing.assert_array_equal(result.err_code, [99, 99])

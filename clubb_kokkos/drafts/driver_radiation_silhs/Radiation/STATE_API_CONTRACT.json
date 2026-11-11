@@ -1,0 +1,18 @@
+{
+  "ownership": "One state owner per CLUBB case; no mutable C++ globals or Native global/UDT copy. Native formal arguments retain names/order; explicit state is appended only for actual module data.",
+  "shared_headers": [
+    "Radiation/parameters_radiation.hpp",
+    "Radiation/extended_atmosphere_module.hpp"
+  ],
+  "states": {
+    "parameters_radiation_state": "All22 Native fields, names/order/kinds retained. Fixed lookup arrays have20 core-real entries; config remains host metadata.",
+    "extended_atmosphere_state": "Two dimension integers and seven owned Real1D Views; heights [m],temperature [K],pressure [mb]. Returned bounds stay Native one-based.",
+    "radiation_variables_state": "Nine regular fields plus19 double-precision extension diagnostic arrays and four indices; Native allocation/reset/cleanup semantics.",
+    "simple_rad_state": "Owned33-height and33x36 heating table Views, with height/time axes retained.",
+    "soil_vegetation_state": "Case-owned l_soil_veg; three temperatures remain ordinary Native formals."
+  },
+  "input_fields_agreement": "Sounding read_sounding and its two extension helpers append const parameters_radiation_state& parameters_radiation and extended_atmosphere_state& extended_atmosphere. No Native global copy.",
+  "public_storage_adapters": "HostSpace/strided fields stage through the existing shared array owner; no local conversion registry or scalar bridge in device kernels.",
+  "Native_stats": "Existing caller-owned f2k::stats_type and stats_update. Scalar column indices are converted to the established zero-based bridge convention.",
+  "SILHS_next": "Eleven Native files including mt95. parameters_silhs.hpp type/API contract is stabilized for Microphys; bodies follow Radiation handoff."
+}

@@ -1,0 +1,806 @@
+{
+  "Native_source": "src/CLUBB_core/stats_clubb_utilities.F90",
+  "Native_sha256": "66857329cb3020de9cd8a15ac762678ea7abaf06d74f617654f2f294e465f270",
+  "attribution": "Owner fullNative743lines plus complete target reread; separate source and cleanup passes. No independent reviewer claim.",
+  "routines": [
+    {
+      "name": "stats_accumulate",
+      "arguments": 66,
+      "exact_original_formals_order": true
+    },
+    {
+      "name": "stats_accumulate_hydromet_api",
+      "arguments": 7,
+      "exact_original_formals_order": true
+    },
+    {
+      "name": "stats_accumulate_lh_tend",
+      "arguments": 17,
+      "exact_original_formals_order": true
+    }
+  ],
+  "ordered_stats_updates": {
+    "count": 102,
+    "all_names_payloads_stats_and_explicit_column_roles_checked": true,
+    "records": [
+      {
+        "index": 1,
+        "name": "\"T_in_K\"",
+        "native_payload": "T_in_K",
+        "CPP_payload": "T_in_K",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 2,
+        "name": "\"rsati\"",
+        "native_payload": "rsati",
+        "CPP_payload": "rsati",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 3,
+        "name": "\"rcm_in_cloud\"",
+        "native_payload": "rcm_in_cloud",
+        "CPP_payload": "rcm_in_cloud",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 4,
+        "name": "\"shear\"",
+        "native_payload": "shear",
+        "CPP_payload": "shear",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 5,
+        "name": "\"thlm\"",
+        "native_payload": "thlm",
+        "CPP_payload": "thlm",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 6,
+        "name": "\"thvm\"",
+        "native_payload": "thvm",
+        "CPP_payload": "thvm",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 7,
+        "name": "\"rtm\"",
+        "native_payload": "rtm",
+        "CPP_payload": "rtm",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 8,
+        "name": "\"rcm\"",
+        "native_payload": "rcm",
+        "CPP_payload": "rcm",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 9,
+        "name": "\"um\"",
+        "native_payload": "um",
+        "CPP_payload": "um",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 10,
+        "name": "\"vm\"",
+        "native_payload": "vm",
+        "CPP_payload": "vm",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 11,
+        "name": "\"wm_zt\"",
+        "native_payload": "wm_zt",
+        "CPP_payload": "wm_zt",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 12,
+        "name": "\"ug\"",
+        "native_payload": "ug",
+        "CPP_payload": "ug",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 13,
+        "name": "\"vg\"",
+        "native_payload": "vg",
+        "CPP_payload": "vg",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 14,
+        "name": "\"p_in_Pa\"",
+        "native_payload": "p_in_Pa",
+        "CPP_payload": "p_in_Pa",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 15,
+        "name": "\"exner\"",
+        "native_payload": "exner",
+        "CPP_payload": "exner",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 16,
+        "name": "\"rho_ds_zt\"",
+        "native_payload": "rho_ds_zt",
+        "CPP_payload": "rho_ds_zt",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 17,
+        "name": "\"thv_ds_zt\"",
+        "native_payload": "thv_ds_zt",
+        "CPP_payload": "thv_ds_zt",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 18,
+        "name": "\"wp3\"",
+        "native_payload": "wp3",
+        "CPP_payload": "wp3",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 19,
+        "name": "\"Kh_zt\"",
+        "native_payload": "Kh_zt",
+        "CPP_payload": "Kh_zt",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 20,
+        "name": "\"rho\"",
+        "native_payload": "rho",
+        "CPP_payload": "rho",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 21,
+        "name": "\"rsat\"",
+        "native_payload": "rsat",
+        "CPP_payload": "rsat",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 22,
+        "name": "\"thlp3\"",
+        "native_payload": "thlp3",
+        "CPP_payload": "thlp3",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 23,
+        "name": "\"rtp3\"",
+        "native_payload": "rtp3",
+        "CPP_payload": "rtp3",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 24,
+        "name": "\"wp3_on_wp2_zt\"",
+        "native_payload": "wp3_on_wp2_zt",
+        "CPP_payload": "wp3_on_wp2_zt",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 25,
+        "name": "\"sclr\"//trim(sclr_idx)//\"m\"",
+        "native_payload": "sclrm(:,:,sclr)",
+        "CPP_payload": "Kokkos::subview(sclrm, Kokkos::ALL, Kokkos::ALL, sclr - 1)",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 26,
+        "name": "\"sclr\"//trim(sclr_idx)//\"m_f\"",
+        "native_payload": "sclrm_forcing(:,:,sclr)",
+        "CPP_payload": "Kokkos::subview(sclrm_forcing, Kokkos::ALL, Kokkos::ALL, sclr - 1)",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 27,
+        "name": "\"edsclr\"//trim(sclr_idx)//\"m\"",
+        "native_payload": "edsclrm(:,:,edsclr)",
+        "CPP_payload": "Kokkos::subview(edsclrm, Kokkos::ALL, Kokkos::ALL, edsclr - 1)",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 28,
+        "name": "\"edsclr\"//trim(sclr_idx)//\"m_f\"",
+        "native_payload": "edsclrm_forcing(:,:,edsclr)",
+        "CPP_payload": "Kokkos::subview(edsclrm_forcing, Kokkos::ALL, Kokkos::ALL, edsclr - 1)",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 29,
+        "name": "\"wm_zm\"",
+        "native_payload": "wm_zm",
+        "CPP_payload": "wm_zm",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 30,
+        "name": "\"ddzt_umvm_sqd\"",
+        "native_payload": "ddzt_umvm_sqd",
+        "CPP_payload": "ddzt_umvm_sqd",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 31,
+        "name": "\"wp2\"",
+        "native_payload": "wp2",
+        "CPP_payload": "wp2",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 32,
+        "name": "\"rtp2\"",
+        "native_payload": "rtp2",
+        "CPP_payload": "rtp2",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 33,
+        "name": "\"thlp2\"",
+        "native_payload": "thlp2",
+        "CPP_payload": "thlp2",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 34,
+        "name": "\"rtpthlp\"",
+        "native_payload": "rtpthlp",
+        "CPP_payload": "rtpthlp",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 35,
+        "name": "\"wprtp\"",
+        "native_payload": "wprtp",
+        "CPP_payload": "wprtp",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 36,
+        "name": "\"wpthlp\"",
+        "native_payload": "wpthlp",
+        "CPP_payload": "wpthlp",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 37,
+        "name": "\"stability_correction\"",
+        "native_payload": "stability_correction",
+        "CPP_payload": "stability_correction",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 38,
+        "name": "\"Kh_zm\"",
+        "native_payload": "Kh_zm",
+        "CPP_payload": "Kh_zm",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 39,
+        "name": "\"upwp\"",
+        "native_payload": "upwp",
+        "CPP_payload": "upwp",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 40,
+        "name": "\"vpwp\"",
+        "native_payload": "vpwp",
+        "CPP_payload": "vpwp",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 41,
+        "name": "\"vp2\"",
+        "native_payload": "vp2",
+        "CPP_payload": "vp2",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 42,
+        "name": "\"up2\"",
+        "native_payload": "up2",
+        "CPP_payload": "up2",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 43,
+        "name": "\"rho_zm\"",
+        "native_payload": "rho_zm",
+        "CPP_payload": "rho_zm",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 44,
+        "name": "\"rho_ds_zm\"",
+        "native_payload": "rho_ds_zm",
+        "CPP_payload": "rho_ds_zm",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 45,
+        "name": "\"thv_ds_zm\"",
+        "native_payload": "thv_ds_zm",
+        "CPP_payload": "thv_ds_zm",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 46,
+        "name": "\"em\"",
+        "native_payload": "em",
+        "CPP_payload": "em",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 47,
+        "name": "\"wp3_on_wp2\"",
+        "native_payload": "wp3_on_wp2",
+        "CPP_payload": "wp3_on_wp2",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 48,
+        "name": "\"wp3_on_wp2_cfl_num\"",
+        "native_payload": "wp3_on_wp2 * dt / dzm",
+        "CPP_payload": "wp3_on_wp2_cfl_num",
+        "check": "Native array expression materialized once with exact wp3_on_wp2*dt/dzm order"
+      },
+      {
+        "index": 49,
+        "name": "\"gamma_Skw_fnc\"",
+        "native_payload": "gamma_Skw_fnc",
+        "CPP_payload": "gamma_Skw_fnc",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 50,
+        "name": "\"sclr\"//trim(sclr_idx)//\"p2\"",
+        "native_payload": "sclrp2(:,:,sclr)",
+        "CPP_payload": "Kokkos::subview(sclrp2, Kokkos::ALL, Kokkos::ALL, sclr - 1)",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 51,
+        "name": "\"sclr\"//trim(sclr_idx)//\"prtp\"",
+        "native_payload": "sclrprtp(:,:,sclr)",
+        "CPP_payload": "Kokkos::subview(sclrprtp, Kokkos::ALL, Kokkos::ALL, sclr - 1)",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 52,
+        "name": "\"sclr\"//trim(sclr_idx)//\"pthlp\"",
+        "native_payload": "sclrpthlp(:,:,sclr)",
+        "CPP_payload": "Kokkos::subview(sclrpthlp, Kokkos::ALL, Kokkos::ALL, sclr - 1)",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 53,
+        "name": "\"wpsclr\"//trim(sclr_idx)//\"p\"",
+        "native_payload": "wpsclrp(:,:,sclr)",
+        "CPP_payload": "Kokkos::subview(wpsclrp, Kokkos::ALL, Kokkos::ALL, sclr - 1)",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 54,
+        "name": "\"wpedsclr\"//trim(sclr_idx)//\"p\"",
+        "native_payload": "wpedsclrp(:,:,edsclr)",
+        "CPP_payload": "Kokkos::subview(wpedsclrp, Kokkos::ALL, Kokkos::ALL, edsclr - 1)",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 55,
+        "name": "\"cc\"",
+        "native_payload": "maxval( cloud_frac(i,:) )",
+        "CPP_payload": "cc",
+        "check": "Native MAXVAL -> explicit ordered host maximum; same cloud_frac row, same column role"
+      },
+      {
+        "index": 56,
+        "name": "\"z_cloud_base\"",
+        "native_payload": "xtmp",
+        "CPP_payload": "xtmp",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 57,
+        "name": "\"lwp\"",
+        "native_payload": "xtmp",
+        "CPP_payload": "xtmp",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 58,
+        "name": "\"vwp\"",
+        "native_payload": "xtmp",
+        "CPP_payload": "xtmp",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 59,
+        "name": "\"thlm_vert_avg\"",
+        "native_payload": "vertical_avg( nzt, rho_ds_zt(i,:), thlm(i,:), dzt(i,:) )",
+        "CPP_payload": "vertical_avg(nzt, Kokkos::subview(rho_ds_zt, i, Kokkos::ALL),\n                                Kokkos::subview(thlm, i, Kokkos::ALL),\n                                Kokkos::subview(dzt, i, Kokkos::ALL))",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 60,
+        "name": "\"rtm_vert_avg\"",
+        "native_payload": "vertical_avg( nzt, rho_ds_zt(i,:), rtm(i,:), dzt(i,:) )",
+        "CPP_payload": "vertical_avg(nzt, Kokkos::subview(rho_ds_zt, i, Kokkos::ALL),\n                                Kokkos::subview(rtm, i, Kokkos::ALL),\n                                Kokkos::subview(dzt, i, Kokkos::ALL))",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 61,
+        "name": "\"um_vert_avg\"",
+        "native_payload": "vertical_avg( nzt, rho_ds_zt(i,:), um(i,:), dzt(i,:) )",
+        "CPP_payload": "vertical_avg(nzt, Kokkos::subview(rho_ds_zt, i, Kokkos::ALL),\n                                Kokkos::subview(um, i, Kokkos::ALL),\n                                Kokkos::subview(dzt, i, Kokkos::ALL))",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 62,
+        "name": "\"vm_vert_avg\"",
+        "native_payload": "vertical_avg( nzt, rho_ds_zt(i,:), vm(i,:), dzt(i,:) )",
+        "CPP_payload": "vertical_avg(nzt, Kokkos::subview(rho_ds_zt, i, Kokkos::ALL),\n                                Kokkos::subview(vm, i, Kokkos::ALL),\n                                Kokkos::subview(dzt, i, Kokkos::ALL))",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 63,
+        "name": "\"wp2_vert_avg\"",
+        "native_payload": "vertical_avg( nzm, rho_ds_zm(i,:), wp2(i,:), dzm(i,:) )",
+        "CPP_payload": "vertical_avg(nzm, Kokkos::subview(rho_ds_zm, i, Kokkos::ALL),\n                                Kokkos::subview(wp2, i, Kokkos::ALL),\n                                Kokkos::subview(dzm, i, Kokkos::ALL))",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 64,
+        "name": "\"up2_vert_avg\"",
+        "native_payload": "vertical_avg( nzm, rho_ds_zm(i,:), up2(i,:), dzm(i,:) )",
+        "CPP_payload": "vertical_avg(nzm, Kokkos::subview(rho_ds_zm, i, Kokkos::ALL),\n                                Kokkos::subview(up2, i, Kokkos::ALL),\n                                Kokkos::subview(dzm, i, Kokkos::ALL))",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 65,
+        "name": "\"vp2_vert_avg\"",
+        "native_payload": "vertical_avg( nzm, rho_ds_zm(i,:), vp2(i,:), dzm(i,:) )",
+        "CPP_payload": "vertical_avg(nzm, Kokkos::subview(rho_ds_zm, i, Kokkos::ALL),\n                                Kokkos::subview(vp2, i, Kokkos::ALL),\n                                Kokkos::subview(dzm, i, Kokkos::ALL))",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 66,
+        "name": "\"rtp2_vert_avg\"",
+        "native_payload": "vertical_avg( nzm, rho_ds_zm(i,:), rtp2(i,:), dzm(i,:) )",
+        "CPP_payload": "vertical_avg(nzm, Kokkos::subview(rho_ds_zm, i, Kokkos::ALL),\n                                Kokkos::subview(rtp2, i, Kokkos::ALL),\n                                Kokkos::subview(dzm, i, Kokkos::ALL))",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 67,
+        "name": "\"thlp2_vert_avg\"",
+        "native_payload": "vertical_avg( nzm, rho_ds_zm(i,:), thlp2(i,:), dzm(i,:) )",
+        "CPP_payload": "vertical_avg(nzm, Kokkos::subview(rho_ds_zm, i, Kokkos::ALL),\n                                Kokkos::subview(thlp2, i, Kokkos::ALL),\n                                Kokkos::subview(dzm, i, Kokkos::ALL))",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 68,
+        "name": "\"tot_vartn_normlzd_rtm\"",
+        "native_payload": "xtmp",
+        "CPP_payload": "xtmp",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 69,
+        "name": "\"tot_vartn_normlzd_thlm\"",
+        "native_payload": "xtmp",
+        "CPP_payload": "xtmp",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 70,
+        "name": "\"tot_vartn_normlzd_wprtp\"",
+        "native_payload": "xtmp",
+        "CPP_payload": "xtmp",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 71,
+        "name": "\"rtm_spur_src\"",
+        "native_payload": "rtm_spur_src",
+        "CPP_payload": "rtm_spur_src",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 72,
+        "name": "\"thlm_spur_src\"",
+        "native_payload": "thlm_spur_src",
+        "CPP_payload": "thlm_spur_src",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 73,
+        "name": "\"rrm\"",
+        "native_payload": "hydromet(:,:,hm_metadata%iirr)",
+        "CPP_payload": "Kokkos::subview(hydromet, Kokkos::ALL, Kokkos::ALL, hm_metadata.iirr - 1)",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 74,
+        "name": "\"rsm\"",
+        "native_payload": "hydromet(:,:,hm_metadata%iirs)",
+        "CPP_payload": "Kokkos::subview(hydromet, Kokkos::ALL, Kokkos::ALL, hm_metadata.iirs - 1)",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 75,
+        "name": "\"rim\"",
+        "native_payload": "hydromet(:,:,hm_metadata%iiri)",
+        "CPP_payload": "Kokkos::subview(hydromet, Kokkos::ALL, Kokkos::ALL, hm_metadata.iiri - 1)",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 76,
+        "name": "\"rgm\"",
+        "native_payload": "hydromet(:,:,hm_metadata%iirg)",
+        "CPP_payload": "Kokkos::subview(hydromet, Kokkos::ALL, Kokkos::ALL, hm_metadata.iirg - 1)",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 77,
+        "name": "\"Nim\"",
+        "native_payload": "hydromet(:,:,hm_metadata%iiNi)",
+        "CPP_payload": "Kokkos::subview(hydromet, Kokkos::ALL, Kokkos::ALL, hm_metadata.iiNi - 1)",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 78,
+        "name": "\"Nrm\"",
+        "native_payload": "hydromet(:,:,hm_metadata%iiNr)",
+        "CPP_payload": "Kokkos::subview(hydromet, Kokkos::ALL, Kokkos::ALL, hm_metadata.iiNr - 1)",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 79,
+        "name": "\"Nsm\"",
+        "native_payload": "hydromet(:,:,hm_metadata%iiNs)",
+        "CPP_payload": "Kokkos::subview(hydromet, Kokkos::ALL, Kokkos::ALL, hm_metadata.iiNs - 1)",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 80,
+        "name": "\"Ngm\"",
+        "native_payload": "hydromet(:,:,hm_metadata%iiNg)",
+        "CPP_payload": "Kokkos::subview(hydromet, Kokkos::ALL, Kokkos::ALL, hm_metadata.iiNg - 1)",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 81,
+        "name": "\"swp\"",
+        "native_payload": "xtmp",
+        "CPP_payload": "xtmp",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 82,
+        "name": "\"iwp\"",
+        "native_payload": "xtmp",
+        "CPP_payload": "xtmp",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 83,
+        "name": "\"rwp\"",
+        "native_payload": "xtmp",
+        "CPP_payload": "xtmp",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 84,
+        "name": "\"lh_thlm_mc\"",
+        "native_payload": "lh_thlm_mc",
+        "CPP_payload": "lh_thlm_mc",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 85,
+        "name": "\"lh_rcm_mc\"",
+        "native_payload": "lh_rcm_mc",
+        "CPP_payload": "lh_rcm_mc",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 86,
+        "name": "\"lh_rvm_mc\"",
+        "native_payload": "lh_rvm_mc",
+        "CPP_payload": "lh_rvm_mc",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 87,
+        "name": "\"lh_Ncm_mc\"",
+        "native_payload": "lh_Ncm_mc",
+        "CPP_payload": "lh_Ncm_mc",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 88,
+        "name": "\"lh_rrm_mc\"",
+        "native_payload": "lh_hydromet_mc(:,:,hm_metadata%iirr)",
+        "CPP_payload": "Kokkos::subview(lh_hydromet_mc, Kokkos::ALL, Kokkos::ALL, hm_metadata.iirr - 1)",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 89,
+        "name": "\"lh_rsm_mc\"",
+        "native_payload": "lh_hydromet_mc(:,:,hm_metadata%iirs)",
+        "CPP_payload": "Kokkos::subview(lh_hydromet_mc, Kokkos::ALL, Kokkos::ALL, hm_metadata.iirs - 1)",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 90,
+        "name": "\"lh_rim_mc\"",
+        "native_payload": "lh_hydromet_mc(:,:,hm_metadata%iiri)",
+        "CPP_payload": "Kokkos::subview(lh_hydromet_mc, Kokkos::ALL, Kokkos::ALL, hm_metadata.iiri - 1)",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 91,
+        "name": "\"lh_rgm_mc\"",
+        "native_payload": "lh_hydromet_mc(:,:,hm_metadata%iirg)",
+        "CPP_payload": "Kokkos::subview(lh_hydromet_mc, Kokkos::ALL, Kokkos::ALL, hm_metadata.iirg - 1)",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 92,
+        "name": "\"lh_Nim_mc\"",
+        "native_payload": "lh_hydromet_mc(:,:,hm_metadata%iiNi)",
+        "CPP_payload": "Kokkos::subview(lh_hydromet_mc, Kokkos::ALL, Kokkos::ALL, hm_metadata.iiNi - 1)",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 93,
+        "name": "\"lh_Nrm_mc\"",
+        "native_payload": "lh_hydromet_mc(:,:,hm_metadata%iiNr)",
+        "CPP_payload": "Kokkos::subview(lh_hydromet_mc, Kokkos::ALL, Kokkos::ALL, hm_metadata.iiNr - 1)",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 94,
+        "name": "\"lh_Nsm_mc\"",
+        "native_payload": "lh_hydromet_mc(:,:,hm_metadata%iiNs)",
+        "CPP_payload": "Kokkos::subview(lh_hydromet_mc, Kokkos::ALL, Kokkos::ALL, hm_metadata.iiNs - 1)",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 95,
+        "name": "\"lh_Ngm_mc\"",
+        "native_payload": "lh_hydromet_mc(:,:,hm_metadata%iiNg)",
+        "CPP_payload": "Kokkos::subview(lh_hydromet_mc, Kokkos::ALL, Kokkos::ALL, hm_metadata.iiNg - 1)",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 96,
+        "name": "\"AKm\"",
+        "native_payload": "AKm",
+        "CPP_payload": "AKm",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 97,
+        "name": "\"lh_AKm\"",
+        "native_payload": "lh_AKm",
+        "CPP_payload": "lh_AKm",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 98,
+        "name": "\"lh_rcm_avg\"",
+        "native_payload": "lh_rcm_avg",
+        "CPP_payload": "lh_rcm_avg",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 99,
+        "name": "\"AKstd\"",
+        "native_payload": "AKstd",
+        "CPP_payload": "AKstd",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 100,
+        "name": "\"AKstd_cld\"",
+        "native_payload": "AKstd_cld",
+        "CPP_payload": "AKstd_cld",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 101,
+        "name": "\"AKm_rcm\"",
+        "native_payload": "AKm_rcm",
+        "CPP_payload": "AKm_rcm",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      },
+      {
+        "index": 102,
+        "name": "\"AKm_rcc\"",
+        "native_payload": "AKm_rcc",
+        "CPP_payload": "AKm_rcc",
+        "check": "field/expression matches after explicit View selection and index-role adaptation"
+      }
+    ]
+  },
+  "ordered_membership_queries": {
+    "count": 15,
+    "exact_name_and_stats_order": true
+  },
+  "ordered_scientific_lower_calls": {
+    "count": 29,
+    "names": [
+      "calc_wp3_on_wp2",
+      "thlm2t_in_k_api",
+      "sat_mixrat_ice",
+      "zt2zm_api",
+      "skx_func",
+      "compute_gamma_skw",
+      "lin_interpolate_two_points",
+      "vertical_integral",
+      "vertical_integral",
+      "vertical_avg",
+      "vertical_avg",
+      "vertical_avg",
+      "vertical_avg",
+      "vertical_avg",
+      "vertical_avg",
+      "vertical_avg",
+      "vertical_avg",
+      "vertical_avg",
+      "vertical_integral",
+      "vertical_integral",
+      "vertical_integral",
+      "calculate_spurious_source",
+      "vertical_integral",
+      "vertical_integral",
+      "vertical_integral",
+      "calculate_spurious_source",
+      "vertical_integral",
+      "vertical_integral",
+      "vertical_integral"
+    ],
+    "exact_source_order": true
+  },
+  "manual_branch_review": [
+    "Native l_sample guards only; no new enabled gate; zero-sized passive/eddy fields retain dimensions and transfer no elements.",
+    "T_in_K runs for T or ice-saturation registry entry; T update still occurs under combined guard; ice saturation uses selected Native formula.",
+    "Cloud water WHERE, shear interior k2..nzm-1 with both boundary zeros, zt/zm/scalar/eddy update order.",
+    "Gamma uses existing zt2zm, Skx and compute_gamma_Skw owners, correct w_tol and clubb_params; no reimplemented physics.",
+    "Cloud cover MAXVAL, Native bottom-up cloud-base search/interpolation/last-level sentinel, liquid/vapor paths and all9mean inputs.",
+    "All3normalized variations retain endpoint epsilon guard and -999 sentinel; explicit increasing-level sums preserve expression grouping initially, runtimeBFB not claimed.",
+    "Spurious source l_implemented or both ALL(abs(wm)<eps), exact physical top/surface1based grid indices, optional host-applied surface fluxes,12same-named diagnostic vectors and Native flux/integral/residual/update order; -9999 when excluded.",
+    "Hydromet eight metadata>0 guards/updates then swp/iwp/rwp with raw gr.dzt (no new grid_dir multiplication).",
+    "LH thlm/rcm/rvm/Ncm then8hydromets then7Kessler fields; same data names, no clipped/reordered payloads."
+  ],
+  "ownership": "Only caller-owned stats_type mutates. Canonical host scientific inputs are snapshots; generic overloads stage through existing array_types. All local scratch percall; no mutableglobal/cache or Native scientific fallback. Existing device-kernel-only lower APIs cross explicitly via to_execution_space and to_host_space; scalar profile integral/average helpers retain their own packed ordered execution owner.",
+  "adaptations": [
+    "HostSpace canonical API with generic rankchecked View input adapters. No original leading scalar/array/formal is removed/reordered or madeoptional.",
+    "Native ADJUSTL/TRIM(I/O integer) becomes std::to_string for field suffixes.",
+    "Metadata/grid-bound integers retain Native1based values and subtract1only at View element selection. Explicit C++stats column argument uses translated loop i0..ngrdcol-1.",
+    "Native MAXVAL/SUM/ALL expressions use explicit host loops; vapor/CFL array expressions are materialized with unchanged operation order.",
+    "OpenACC update directives are replaced by explicit Kokkos memory-owner staging and existing C++ lower calls."
+  ],
+  "new_BFB_arithmetic_workarounds": [],
+  "numerical_status": "Pending Root atomic integration/maintained CPUwholemodel comparison. Ordered initial source translation and compile success are not BFB proof. GPU numerical causes/performance outside scope.",
+  "sha256": {
+    "stats_clubb_utilities.hpp": "4e261ecf13a2915e12bbe91f9de17c7175eb3a7c6e6548871cb5b9a8f0839088",
+    "stats_clubb_utilities.cpp": "f4953904cd01f9a8d3158473c8124446ae1534890ea1fc3a1d2c739760df64f2"
+  }
+}

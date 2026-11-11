@@ -9,7 +9,7 @@ def test_tune_form_values_are_not_browser_persisted():
     """A loaded Tune revision must win over stale browser form values."""
     root = html.Div(
         [
-            dcc.Input(id="tune-batch-size", value=8),
+            dcc.Input(id="tune-random-max-samples", value=2000),
             dcc.Input(id={"type": "tune-case-name", "index": 0}, value="arm"),
             dcc.Input(id="run-some-control", value="kept"),
             dcc.Store(id="tune-workspace-selection", data={}),

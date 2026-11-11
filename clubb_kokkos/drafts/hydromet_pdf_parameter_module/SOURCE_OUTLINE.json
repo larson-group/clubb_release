@@ -1,0 +1,119 @@
+{
+  "native_inventory_and_order": [
+    "init_hydromet_pdf_params",
+    "init_precip_fracs_api",
+    "zero_precip_fracs_api"
+  ],
+  "routines": [
+    {
+      "name": "init_hydromet_pdf_params",
+      "module": "hydromet_pdf_parameter_module",
+      "source": "src/CLUBB_core/hydromet_pdf_parameter_module.F90",
+      "arguments": [
+        {
+          "name": "hydromet_pdf_params",
+          "kind": "hydromet_pdf_parameter",
+          "dims": [],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "source_lines": [
+        73,
+        114
+      ],
+      "calls_in_order": [],
+      "branches_in_order": []
+    },
+    {
+      "name": "init_precip_fracs_api",
+      "module": "hydromet_pdf_parameter_module",
+      "source": "src/CLUBB_core/hydromet_pdf_parameter_module.F90",
+      "arguments": [
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "precip_fracs",
+          "kind": "precipitation_fractions",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "source_lines": [
+        117,
+        151
+      ],
+      "calls_in_order": [
+        "call zero_precip_fracs_api( precip_fracs )"
+      ],
+      "branches_in_order": []
+    },
+    {
+      "name": "zero_precip_fracs_api",
+      "module": "hydromet_pdf_parameter_module",
+      "source": "src/CLUBB_core/hydromet_pdf_parameter_module.F90",
+      "arguments": [
+        {
+          "name": "precip_fracs",
+          "kind": "precipitation_fractions",
+          "dims": [],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "source_lines": [
+        154,
+        187
+      ],
+      "calls_in_order": [],
+      "branches_in_order": []
+    }
+  ],
+  "read_evidence": {
+    "native_lines": 191,
+    "jax_actual_file": "clubb_jax/src/CLUBB_core/hydromet_pdf_parameter_module.py",
+    "jax_lines": 136,
+    "full_read_before_implementation": true
+  },
+  "native_sha256": "2e1e3b570b37b8eef9e45ee69b770e423764cd0ce8d6aa8cf0898529840d34b7",
+  "jax_sha256": "bd00879a59564e1cbad1807adccd6ab623923049889a5738209b09fbabc1cb60",
+  "mirror_owner": "Existing generated clubb_kokkos/src/CLUBB_core/hydromet_pdf_parameter_module.hpp; no duplicate type definition or shared edit.",
+  "deliverable": "Procedure definition and declaration merge fragments; root preserves generator-owned schema region.",
+  "storage": "Existing case-owned Kokkos Views and scalar metadata; no mutable global C++ storage.",
+  "public_inventory": [
+    "init_hydromet_pdf_params",
+    "init_precip_fracs_api",
+    "zero_precip_fracs_api"
+  ],
+  "adaptations": [
+    "Native fixed-size arrays of eight values use existing View fields; allocate missing storage once and zero all 18 fields in source order.",
+    "Reuse existing generated hydromet_pdf_parameter_collection::zero for its actual whole-grid C++ adapter, rather than duplicate schema.",
+    "IntentOut precipitation initializer releases/recreates fields, sets metadata, then calls Native-named reset."
+  ]
+}

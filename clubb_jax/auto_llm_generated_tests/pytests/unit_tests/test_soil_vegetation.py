@@ -8,7 +8,7 @@ import numpy as np
 
 
 from clubb_jax.src.Radiation.soil_vegetation import advance_soil_veg, initialize_soil_veg
-from clubb_jax.src.CLUBB_core.stats_netcdf import JaxStats
+from clubb_jax.src.CLUBB_core.jax_stats import JaxStats
 
 _CP, _LV, _RD = 1004.67, 2.5e6, 287.04
 _KAPPA, _P0, _SB, _PI = _RD / _CP, 1.0e5, 5.6704e-8, math.pi

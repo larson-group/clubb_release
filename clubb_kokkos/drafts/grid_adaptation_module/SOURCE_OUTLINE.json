@@ -1,0 +1,39 @@
+{
+  "canonical": "src/CLUBB_core/grid_adaptation_module.F90:48\u2013171",
+  "scope": "setup_gr_dycore only; existing reachable fixed/output grid. Other adaptive/generalized algorithms excluded.",
+  "signature": [
+    "iunit In",
+    "ngrdcol In",
+    "grid_sfc rank1 In",
+    "grid_top rank1 In",
+    "l_ascending_grid In",
+    "gr Out",
+    "err_info InOut"
+  ],
+  "source_order": [
+    "IntentOut grid release",
+    "local73/72level I/O buffers",
+    "column loop: public read_grid_heights then sfc_elevation/deltaz zero",
+    "ANY fatal diagnostic without return",
+    "first-column upper trim and all-column endpoint overwrite",
+    "first-column lower trim and all-column endpoint overwrite",
+    "13argument setup_grid",
+    "debug0 ANY fatal diagnostic"
+  ],
+  "constants": {
+    "nzmax": 73,
+    "grid_type": 3,
+    "l_implemented": false,
+    "momentum_file": "../input/grid/dycore.grd",
+    "thermodynamic_file": ""
+  },
+  "adaptations": [
+    "Call-local HostSpace I/O buffers; shared array owner stages two input vectors once.",
+    "Named mutable Out column subviews for existing public Fortran reader.",
+    "Kokkos IntentOut releases grid Views; constructor owns resulting execution-space data.",
+    "No new callbacks, global state, guards or arithmetic association."
+  ],
+  "source_read": "Complete Native bounded procedure read before draft; actual JAX has no matching body, while C++driver already exposes fixed-grid option.",
+  "independent_review": "/tmp/clubb_setup_gr_dycore_independent_source_audit.json",
+  "runtime": "Before/control frozen binary BOMEX/ATEX5x30s MCdebug2 l_add_dycore_grid=true:2/2strictBFB4.6s. New helper not yetcompiled/reached."
+}

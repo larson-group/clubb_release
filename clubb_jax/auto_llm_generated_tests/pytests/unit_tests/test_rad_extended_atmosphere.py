@@ -17,32 +17,34 @@ _ROOT = str(_REPO_ROOT)
 
 import numpy as np
 
-from clubb_jax.src.Input_fields.input_reader import one_dim_read_var, read_one_dim_file
-from clubb_jax.src.Input_fields.sounding import read_sounding_file, convert_snd2extended_atm
+from clubb_jax.src.Input_fields.sounding import (
+    read_sounding, convert_pressure_sounding_to_z, read_ozone_sounding, convert_snd2extended_atm)
 from clubb_jax.src.CLUBB_core.constants_clubb import p0, kappa
 
-_CASE_DATA = _ROOT + "/input/case_data"
+_CASE = _ROOT + "/input/case_data/cgils_s11"
 _P_SFC, _SAT = 1.02078e5, 3
 
 
 def test_real_cgils_extended_atmosphere():
-    snd_f, oz_f = _CASE_DATA + "/cgils_s11_sounding.in", _CASE_DATA + "/cgils_s11_ozone_sounding.in"
+    snd_f, oz_f = _CASE + "_sounding.in", _CASE + "_ozone_sounding.in"
     if not (os.path.exists(snd_f) and os.path.exists(oz_f)):
         raise AssertionError("  real cgils extended atmosphere: required input missing (files absent)")
-    n, z, theta, rt, _, _, _, _, p_in_Pa, _, _, _, _, retVars = read_sounding_file(
-        0, "cgils_s11", _CASE_DATA, 10000, _P_SFC, _SAT, 0.0)
-    o3l = read_one_dim_file(0, 1, oz_f)[0].values
+    snd = read_sounding(snd_f)
+    snd = convert_pressure_sounding_to_z(snd, _P_SFC, 0.0, _SAT)
+    o3l = read_ozone_sounding(oz_f)
+    n = len(snd['z'])
     assert len(o3l) == n, f"ozone levels {len(o3l)} != sounding levels {n}"
 
-    ext = convert_snd2extended_atm(0, "cgils_s11", _CASE_DATA, 8, _P_SFC, 0.0, retVars, _SAT)
+    ext = convert_snd2extended_atm(
+        snd['z'], snd['theta'], snd['temperature_type'], snd['rt'], snd['p_in_Pa'], _P_SFC, o3l)
     # Structure / convert_snd2extended_atm semantics
     for k in ('alt', 'T_in_K', 'sp_hmdty', 'p_in_mb', 'o3l'):
         assert k in ext and len(ext[k]) == n, f"ext['{k}'] missing or wrong length"
     assert np.all(np.diff(ext['alt']) > 0), "extended altitudes not ascending"
-    assert np.allclose(ext['alt'], z), "extended altitudes != converted sounding altitudes"
-    assert np.allclose(ext['T_in_K'], theta), "T[K] column not copied verbatim"
+    assert np.allclose(ext['T_in_K'], np.asarray(snd['theta'], float)), "T[K] column not copied verbatim"
+    rt = np.asarray(snd['rt'], float)
     assert np.allclose(ext['sp_hmdty'], rt / (1.0 + rt)), "sp_hmdty != rt/(1+rt)"
-    assert np.allclose(ext['p_in_mb'], p_in_Pa / 100.0), "p_in_mb != p/100"
+    assert np.allclose(ext['p_in_mb'], np.asarray(snd['p_in_Pa'], float) / 100.0), "p_in_mb != p/100"
     assert np.allclose(ext['o3l'], o3l), "o3l != ozone sounding"
     # Physical sanity: reaches the stratosphere, pressure decreasing with altitude, ozone positive.
     assert ext['alt'][-1] > 25e3, "extension does not reach the stratosphere (>25 km)"
@@ -51,18 +53,15 @@ def test_real_cgils_extended_atmosphere():
     print(f"  real cgils_s11 extended atmosphere: {n} levels, alt→{ext['alt'][-1]/1e3:.1f} km, structure OK  PASS")
 
 
-def test_theta_branch_exner_conversion(tmp_path):
+def test_theta_branch_exner_conversion():
     # Synthetic thm[K] (potential-temperature) sounding: T_in_K must be θ·exner, exner[0] from p_sfc.
     p = np.linspace(1.0e5, 2.0e4, 12)
     theta = np.full(12, 300.0)                              # constant θ
     rt = np.full(12, 1.0e-3)
+    z = np.linspace(0, 11000, 12)
+    o3l = np.full(12, 5e-8)
     p_sfc = 1.01e5
-    retVars = [one_dim_read_var(name, 'Press[Pa]', values)
-               for name, values in (('Press[Pa]', p), ('thm[K]', theta), ('rt[kg/kg]', rt))]
-    (tmp_path / "synthetic_ozone_sounding.in").write_text(
-        "'o3[kg/kg]'\n" + "5.0e-8\n" * 12
-    )
-    ext = convert_snd2extended_atm(0, "synthetic", tmp_path, 3, p_sfc, 0.0, retVars, _SAT)
+    ext = convert_snd2extended_atm(z, theta, 'thm[K]', rt, p, p_sfc, o3l)
     exner = (p / p0) ** kappa
     exner[0] = (p_sfc / p0) ** kappa                        # Fortran uses p_sfc for level 1
     assert np.allclose(ext['T_in_K'], theta * exner), "thm[K] branch: T_in_K != θ·exner (or wrong level-1 exner)"

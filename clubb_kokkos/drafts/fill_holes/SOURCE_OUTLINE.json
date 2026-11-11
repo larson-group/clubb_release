@@ -1,0 +1,1328 @@
+{
+  "source": "src/CLUBB_core/fill_holes.F90",
+  "source_sha256": "f5b0897ad0000115a8a4a9662e9f564767dcfb28d7b18f3a3e95438e5e3d6140",
+  "native_lines": 2749,
+  "complete_native_and_jax_read": true,
+  "scope_evidence": "clubb_jax/src/CLUBB_core/fill_holes.py:1-13,235-323 explicitly supports global/sliding only; all8Native public entries are implemented. JAX is scope evidence only; direct Native ordered arithmetic/bounds/guards retained.",
+  "routines": [
+    {
+      "name": "fill_holes_vertical_api",
+      "native_line": 26,
+      "supported": true,
+      "arguments": [
+        {
+          "name": "nz",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "threshold",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lower_hf_level",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "upper_hf_level",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "dz",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rho_ds",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "grid_dir_indx",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "fill_holes_type",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "field",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "calls": [
+        "call fill_holes_global( nz, ngrdcol, threshold, lower_hf_level, upper_hf_level, dz, rho_ds, grid_dir_indx, field )",
+        "call fill_holes_sliding_window( nz, ngrdcol, threshold, lower_hf_level, upper_hf_level, dz, rho_ds, grid_dir_indx, field )",
+        "call fill_holes_widening_windows( nz, ngrdcol, threshold, lower_hf_level, upper_hf_level, dz, rho_ds, grid_dir_indx, field )",
+        "call fill_holes_smart_window( nz, ngrdcol, threshold, lower_hf_level, upper_hf_level, dz, rho_ds, grid_dir_indx, field )",
+        "call fill_holes_smart_window_smooth( nz, ngrdcol, threshold, lower_hf_level, upper_hf_level, dz, rho_ds, grid_dir_indx, field )",
+        "call fill_holes_parallel( nz, ngrdcol, threshold, lower_hf_level, upper_hf_level, dz, rho_ds, grid_dir_indx, field )"
+      ],
+      "source_order_and_comments": "Native authority; source complete read before draft creation."
+    },
+    {
+      "name": "fill_holes_global",
+      "native_line": 267,
+      "supported": true,
+      "arguments": [
+        {
+          "name": "nz",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "threshold",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lower_hf_level",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "upper_hf_level",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "dz",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rho_ds",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "grid_dir_indx",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "field",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "calls": [],
+      "source_order_and_comments": "Native authority; source complete read before draft creation."
+    },
+    {
+      "name": "fill_holes_sliding_window",
+      "native_line": 442,
+      "supported": true,
+      "arguments": [
+        {
+          "name": "nz",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "threshold",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lower_hf_level",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "upper_hf_level",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "dz",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rho_ds",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "grid_dir_indx",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "field",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "calls": [
+        "call fill_holes_global( nz, ngrdcol, threshold, lower_hf_level, upper_hf_level, dz, rho_ds, grid_dir_indx, field )"
+      ],
+      "source_order_and_comments": "Native authority; source complete read before draft creation."
+    },
+    {
+      "name": "fill_holes_widening_windows",
+      "native_line": 695,
+      "supported": false,
+      "arguments": [
+        {
+          "name": "nz",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "threshold",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lower_hf_level",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "upper_hf_level",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "dz",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rho_ds",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "grid_dir_indx",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "field",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "calls": [],
+      "source_order_and_comments": "Native authority; source complete read before draft creation."
+    },
+    {
+      "name": "fill_holes_smart_window",
+      "native_line": 861,
+      "supported": false,
+      "arguments": [
+        {
+          "name": "nz",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "threshold",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lower_hf_level",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "upper_hf_level",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "dz",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rho_ds",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "grid_dir_indx",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "field",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "calls": [],
+      "source_order_and_comments": "Native authority; source complete read before draft creation."
+    },
+    {
+      "name": "fill_holes_smart_window_smooth",
+      "native_line": 1113,
+      "supported": false,
+      "arguments": [
+        {
+          "name": "nz",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "threshold",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lower_hf_level",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "upper_hf_level",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "dz",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rho_ds",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "grid_dir_indx",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "field",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "calls": [],
+      "source_order_and_comments": "Native authority; source complete read before draft creation."
+    },
+    {
+      "name": "fill_holes_parallel",
+      "native_line": 1385,
+      "supported": false,
+      "arguments": [
+        {
+          "name": "nz",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "threshold",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lower_hf_level",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "upper_hf_level",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "dz",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rho_ds",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "grid_dir_indx",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "field",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "calls": [
+        "call fill_holes_global( nz, ngrdcol, threshold, lower_hf_level, upper_hf_level, dz, rho_ds, grid_dir_indx, field )"
+      ],
+      "source_order_and_comments": "Native authority; source complete read before draft creation."
+    },
+    {
+      "name": "fill_holes_wp2_from_horz_tke",
+      "native_line": 1705,
+      "supported": true,
+      "arguments": [
+        {
+          "name": "nz",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "threshold",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lower_hf_level",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "upper_hf_level",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "up2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "vp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "calls": [],
+      "source_order_and_comments": "Native authority; source complete read before draft creation."
+    },
+    {
+      "name": "hole_filling_hm_one_lev",
+      "native_line": 1901,
+      "supported": true,
+      "arguments": [
+        {
+          "name": "num_hm_fill",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "hm_one_lev",
+          "kind": "real",
+          "dims": [
+            "num_hm_fill"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "hm_one_lev_filled",
+          "kind": "real",
+          "dims": [
+            "num_hm_fill"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "calls": [],
+      "source_order_and_comments": "Native authority; source complete read before draft creation."
+    },
+    {
+      "name": "fill_holes_hydromet_api",
+      "native_line": 2029,
+      "supported": true,
+      "arguments": [
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "hydromet_dim",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "hydromet",
+          "kind": "real",
+          "dims": [
+            "nzt",
+            "hydromet_dim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_frozen_hm",
+          "kind": "logical",
+          "dims": [
+            "hydromet_dim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_mix_rat_hm",
+          "kind": "logical",
+          "dims": [
+            "hydromet_dim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "hydromet_filled",
+          "kind": "real",
+          "dims": [
+            "nzt",
+            "hydromet_dim"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "calls": [
+        "call hole_filling_hm_one_lev( num_frozen_hm, hydromet_frozen(i,:), hydromet_frozen_filled(i,:) )"
+      ],
+      "source_order_and_comments": "Native authority; source complete read before draft creation."
+    },
+    {
+      "name": "fill_holes_wv",
+      "native_line": 2131,
+      "supported": true,
+      "arguments": [
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "dt",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "exner",
+          "kind": "real",
+          "dims": [
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "hydromet_name",
+          "kind": "character",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": "10"
+        },
+        {
+          "name": "rvm_mc",
+          "kind": "real",
+          "dims": [
+            "nzt"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "thlm_mc",
+          "kind": "real",
+          "dims": [
+            "nzt"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "hydromet",
+          "kind": "real",
+          "dims": [
+            "nzt"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "calls": [],
+      "source_order_and_comments": "Native authority; source complete read before draft creation."
+    },
+    {
+      "name": "fill_holes_driver_api",
+      "native_line": 2214,
+      "supported": true,
+      "arguments": [
+        {
+          "name": "gr",
+          "kind": "grid",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "dt",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "hydromet_dim",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "hm_metadata",
+          "kind": "hm_metadata_type",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_fill_holes_hm",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rho_ds_zt",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "exner",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "fill_holes_type",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "stats",
+          "kind": "stats_type",
+          "dims": [],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "thlm_mc",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rvm_mc",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "hydromet",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt",
+            "hydromet_dim"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "calls": [
+        "call setup_stats_names( ihm, hydromet_dim, hm_metadata%hydromet_list, max_velocity, name_bt, name_hf, name_wvhf, name_cl, name_mc )",
+        "call stats_begin_budget( name_hf, hydromet(:,:,ihm) / dt, stats )",
+        "call fill_holes_hydromet_api( nzt, hydromet_dim, hydromet(i,:,:), hm_metadata%l_frozen_hm, hm_metadata%l_mix_rat_hm, hydromet_filled(i,:,:) )",
+        "call setup_stats_names( ihm, hydromet_dim, hm_metadata%hydromet_list, max_velocity, name_bt, name_hf, name_wvhf, name_cl, name_mc )",
+        "call fill_holes_vertical_api( nzt, 1, zero_threshold, 1, nzt, gr%dzt(i:i,:), rho_ds_zt(i:i,:), 1, fill_holes_type, hydromet(i:i,:,ihm) )",
+        "call stats_finalize_budget( name_hf, hydromet(:,:,ihm) / dt, stats )",
+        "call stats_begin_budget( name_wvhf, hydromet(:,:,ihm) / dt, stats )",
+        "call fill_holes_wv( nzt, dt, exner(i,:), hydromet_name, rvm_mc(i,:), thlm_mc(i,:), hydromet(i,:,ihm) )",
+        "call stats_finalize_budget( name_wvhf, hydromet(:,:,ihm) / dt, stats )",
+        "call stats_begin_budget( name_cl, hydromet(:,:,ihm) / dt, stats )",
+        "call stats_finalize_budget( name_cl, hydromet(:,:,ihm) / dt, stats )",
+        "call clip_hydromet_conc_mvr( nzt, hydromet_dim, hm_metadata, hydromet(i,:,:), hydromet_clipped(i,:,:) )",
+        "call setup_stats_names( ihm, hydromet_dim, hm_metadata%hydromet_list, max_velocity, name_bt, name_hf, name_wvhf, name_cl, name_mc )",
+        "call stats_begin_budget( name_cl, hydromet(:,:,ihm) / dt, stats )",
+        "call stats_finalize_budget( name_cl, hydromet(:,:,ihm) / dt, stats )"
+      ],
+      "source_order_and_comments": "Native authority; source complete read before draft creation."
+    },
+    {
+      "name": "clip_hydromet_conc_mvr",
+      "native_line": 2479,
+      "supported": true,
+      "arguments": [
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "hydromet_dim",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "hm_metadata",
+          "kind": "hm_metadata_type",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "hydromet",
+          "kind": "real",
+          "dims": [
+            "nzt",
+            "hydromet_dim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "hydromet_clipped",
+          "kind": "real",
+          "dims": [
+            "nzt",
+            "hydromet_dim"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "calls": [],
+      "source_order_and_comments": "Native authority; source complete read before draft creation."
+    },
+    {
+      "name": "setup_stats_names",
+      "native_line": 2624,
+      "supported": true,
+      "arguments": [
+        {
+          "name": "ihm",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "hydromet_dim",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "hydromet_list",
+          "kind": "character",
+          "dims": [
+            "hydromet_dim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": "10"
+        },
+        {
+          "name": "max_velocity",
+          "kind": "real",
+          "dims": [],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "name_bt",
+          "kind": "character",
+          "dims": [],
+          "intent": "out",
+          "optional": true,
+          "allocatable": false,
+          "character_length": "*"
+        },
+        {
+          "name": "name_hf",
+          "kind": "character",
+          "dims": [],
+          "intent": "out",
+          "optional": true,
+          "allocatable": false,
+          "character_length": "*"
+        },
+        {
+          "name": "name_wvhf",
+          "kind": "character",
+          "dims": [],
+          "intent": "out",
+          "optional": true,
+          "allocatable": false,
+          "character_length": "*"
+        },
+        {
+          "name": "name_cl",
+          "kind": "character",
+          "dims": [],
+          "intent": "out",
+          "optional": true,
+          "allocatable": false,
+          "character_length": "*"
+        },
+        {
+          "name": "name_mc",
+          "kind": "character",
+          "dims": [],
+          "intent": "out",
+          "optional": true,
+          "allocatable": false,
+          "character_length": "*"
+        }
+      ],
+      "calls": [],
+      "source_order_and_comments": "Native authority; source complete read before draft creation."
+    }
+  ],
+  "execution": "Independent columns parallel; vertical integrals/window sweeps and same-phase species redistribution remain sequential per column/level. Host I/O only. No device f2k calls.",
+  "audit_pending": true
+}

@@ -1,0 +1,37 @@
+{
+  "scope": "Draft object compile only; no linked runtime or model/BFB assertion",
+  "status": "pass",
+  "Cpp_sha256": "74ab73479757c4eee9ea64c12ed14609c0e88e4868972aafd4481fe60101f3d5",
+  "header_sha256": "f84addefda5ee9413df8baf6939b36fe3eaa9587f8a59a9ea8a1c924568678eb",
+  "settings": {
+    "core_real": 8,
+    "optimization": "O0",
+    "cxx_standard": "20",
+    "NVHPC": "26.9",
+    "Kokkos": "5.2.2"
+  },
+  "serial": {
+    "compiler": "nvc++",
+    "object": "/tmp/clubb_stats_io_serial.o",
+    "object_sha256": "dfb190d60af0715d591646f4ed73780fa4145dfc56512799bd9d7c0b21eb6753",
+    "exit_code": 0,
+    "final_warnings": [],
+    "command": "nvc++ -DCLUBB_REAL_TYPE=8 -std=c++20 -O0 -g -Iclubb_kokkos/drafts/stats_netcdf -Iclubb_kokkos/src -Iclubb_kokkos/src/CLUBB_core -Ibuild/kokkos_serial_nvhpc26_debug/install/include -I[nf-config --includedir] -x c++ -c clubb_kokkos/drafts/stats_netcdf/stats_netcdf_io.cpp.inc -o /tmp/clubb_stats_io_serial.o"
+  },
+  "cuda": {
+    "compiler": "nvcc_wrapper",
+    "arch": "sm_86",
+    "object": "/tmp/clubb_stats_io_cuda.o",
+    "object_sha256": "3b50e2d2575592a48630fe5b384ff1421f6de8dc707f1e35457eb83cf6edacb4",
+    "exit_code": 0,
+    "final_warnings": [],
+    "command": "nvcc_wrapper -DCLUBB_REAL_TYPE=8 -std=c++20 -O0 -g -extended-lambda -Wext-lambda-captures-this -arch=sm_86 -Iclubb_kokkos/drafts/stats_netcdf -Iclubb_kokkos/src -Iclubb_kokkos/src/CLUBB_core -I$Kokkos_ROOT/include -I[nf-config --includedir] -c /tmp/clubb_stats_io_probe.cpp -o /tmp/clubb_stats_io_cuda.o",
+    "copied_source_sha256": "74ab73479757c4eee9ea64c12ed14609c0e88e4868972aafd4481fe60101f3d5"
+  },
+  "explained_initial_probe_failures": [
+    "nvcc_wrapper ignores .inc extension as source despite -x c++; copy exact draft to .cpp before compilation.",
+    "Manual CUDA probe initially omitted Kokkos include directory; adding $Kokkos_ROOT/include matches configured target dependency.",
+    "Native unchecked status local produced set_but_not_used warning; marked maybe_unused; final Serial/CUDA warning-free."
+  ],
+  "source_changes_since_final_compiles": false
+}

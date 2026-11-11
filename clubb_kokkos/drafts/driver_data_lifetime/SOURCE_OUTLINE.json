@@ -1,0 +1,2510 @@
+{
+  "status": "read-only source map; no implementation or numerical validation by this agent",
+  "date": "2026-11-06",
+  "source_hashes": {
+    "src/clubb_driver.F90": "1987ac30149dd41d5eaff41d77a1674e65588d3149316748a81692c3fc724bc1",
+    "clubb_kokkos/src/clubb_driver.cpp": "645e19ef607729015700aaa68c9416a75cf20cb6c3af3e34e1e5bc25c0e0b16d",
+    "clubb_kokkos/src/clubb_driver.hpp": "d8cd8717bb94abb3c7d3116c3f765ba6e25fac5ded67941c1e86b63e8b869b57",
+    "clubb_kokkos/src/Benchmark_cases/prescribe_forcings.cpp": "3e2e5f4bb828b5495bd891ce3d398438d808cb4dd35f25341547db229fcf1c3e",
+    "clubb_kokkos/src/Benchmark_cases/prescribe_forcings.hpp": "ea933c2dfcb76aded2ec0c93bad4a10d9a6ce1e6fec713ffb2cb8bc1c313f78b",
+    "clubb_kokkos/src/CLUBB_core/calc_pressure.hpp": "690541eca35639be20a5db7083f7b2b54a4b64e71ded9f6a69be721b7e3007ae",
+    "clubb_kokkos/src/CLUBB_core/clubb_api_module.hpp": "826395437efe302b82198a31e1bb5f790752f14428ff487d901c96a93d8f873d",
+    "clubb_kokkos/src/Microphys/pdf_hydromet_microphys_wrapper.hpp": "47f1516baaefb2729f1c27edd5647dc2eef1044c45179838db574b8af2827455",
+    "clubb_kokkos/src/Microphys/microphys_driver.hpp": "adcb5a97c9b39221b27f55a9d062e633565608930930962a5d870c13a920df2d",
+    "clubb_kokkos/src/Microphys/advance_microphys_module.hpp": "742224aad56fd37f743046a8286cfbcb6be8a1c26644fe8939aa3bc599daccd4",
+    "clubb_kokkos/src/Radiation/radiation_module.cpp": "3ff2ee80c1fb11ed844ae13448912322b194d6faf94e3a546118d203e01e538a",
+    "clubb_kokkos/src/Radiation/radiation_module.hpp": "0d9c307542bdfaf25677be39bba415a6045b3325e9e70a5eb95ab7047d4473b9"
+  },
+  "routines": [
+    {
+      "name": "init_clubb_case",
+      "fortran_lines": [
+        928,
+        2826
+      ],
+      "calls_in_source_order": [
+        {
+          "line": 1243,
+          "name": "timer_initialize"
+        },
+        {
+          "line": 1244,
+          "name": "timer_start"
+        },
+        {
+          "line": 1373,
+          "name": "init_default_err_info_api"
+        },
+        {
+          "line": 1376,
+          "name": "timer_stop"
+        },
+        {
+          "line": 1381,
+          "name": "init_default_err_info_api"
+        },
+        {
+          "line": 1384,
+          "name": "timer_stop"
+        },
+        {
+          "line": 1411,
+          "name": "init_default_err_info_api"
+        },
+        {
+          "line": 1414,
+          "name": "timer_stop"
+        },
+        {
+          "line": 1419,
+          "name": "init_default_err_info_api"
+        },
+        {
+          "line": 1422,
+          "name": "timer_stop"
+        },
+        {
+          "line": 1427,
+          "name": "init_default_err_info_api"
+        },
+        {
+          "line": 1430,
+          "name": "timer_stop"
+        },
+        {
+          "line": 1435,
+          "name": "init_default_err_info_api"
+        },
+        {
+          "line": 1438,
+          "name": "timer_stop"
+        },
+        {
+          "line": 1445,
+          "name": "init_clubb_params_api"
+        },
+        {
+          "line": 1455,
+          "name": "init_default_err_info_api"
+        },
+        {
+          "line": 1464,
+          "name": "set_err_info_values_api"
+        },
+        {
+          "line": 1469,
+          "name": "set_err_info_values_api"
+        },
+        {
+          "line": 1475,
+          "name": "initialize_soil_veg"
+        },
+        {
+          "line": 1477,
+          "name": "set_default_clubb_config_flags_api"
+        },
+        {
+          "line": 1545,
+          "name": "timer_start"
+        },
+        {
+          "line": 1559,
+          "name": "timer_stop"
+        },
+        {
+          "line": 1649,
+          "name": "timer_stop"
+        },
+        {
+          "line": 1660,
+          "name": "timer_stop"
+        },
+        {
+          "line": 1670,
+          "name": "set_clubb_debug_level_api"
+        },
+        {
+          "line": 1672,
+          "name": "timer_stop"
+        },
+        {
+          "line": 1673,
+          "name": "timer_disable"
+        },
+        {
+          "line": 1679,
+          "name": "timer_start"
+        },
+        {
+          "line": 1686,
+          "name": "write_date"
+        },
+        {
+          "line": 1688,
+          "name": "write_text"
+        },
+        {
+          "line": 1689,
+          "name": "write_text"
+        },
+        {
+          "line": 1691,
+          "name": "write_text"
+        },
+        {
+          "line": 1692,
+          "name": "write_text"
+        },
+        {
+          "line": 1694,
+          "name": "write_text"
+        },
+        {
+          "line": 1698,
+          "name": "execute_command_line"
+        },
+        {
+          "line": 1699,
+          "name": "execute_command_line"
+        },
+        {
+          "line": 1700,
+          "name": "execute_command_line"
+        },
+        {
+          "line": 1702,
+          "name": "execute_command_line"
+        },
+        {
+          "line": 1703,
+          "name": "execute_command_line"
+        },
+        {
+          "line": 1710,
+          "name": "write_text"
+        },
+        {
+          "line": 1714,
+          "name": "write_text"
+        },
+        {
+          "line": 1716,
+          "name": "write_text"
+        },
+        {
+          "line": 1717,
+          "name": "write_text"
+        },
+        {
+          "line": 1721,
+          "name": "write_text"
+        },
+        {
+          "line": 1722,
+          "name": "write_text"
+        },
+        {
+          "line": 1724,
+          "name": "write_text"
+        },
+        {
+          "line": 1728,
+          "name": "write_text"
+        },
+        {
+          "line": 1730,
+          "name": "write_text"
+        },
+        {
+          "line": 1731,
+          "name": "write_text"
+        },
+        {
+          "line": 1735,
+          "name": "write_text"
+        },
+        {
+          "line": 1737,
+          "name": "write_text"
+        },
+        {
+          "line": 1740,
+          "name": "write_text"
+        },
+        {
+          "line": 1742,
+          "name": "write_text"
+        },
+        {
+          "line": 1745,
+          "name": "write_text"
+        },
+        {
+          "line": 1747,
+          "name": "write_text"
+        },
+        {
+          "line": 1750,
+          "name": "write_text"
+        },
+        {
+          "line": 1752,
+          "name": "write_text"
+        },
+        {
+          "line": 1755,
+          "name": "write_text"
+        },
+        {
+          "line": 1757,
+          "name": "write_text"
+        },
+        {
+          "line": 1761,
+          "name": "write_text"
+        },
+        {
+          "line": 1763,
+          "name": "write_text"
+        },
+        {
+          "line": 1764,
+          "name": "write_text"
+        },
+        {
+          "line": 1766,
+          "name": "write_text"
+        },
+        {
+          "line": 1767,
+          "name": "write_text"
+        },
+        {
+          "line": 1768,
+          "name": "write_text"
+        },
+        {
+          "line": 1769,
+          "name": "write_text"
+        },
+        {
+          "line": 1770,
+          "name": "write_text"
+        },
+        {
+          "line": 1771,
+          "name": "write_text"
+        },
+        {
+          "line": 1772,
+          "name": "write_text"
+        },
+        {
+          "line": 1773,
+          "name": "write_text"
+        },
+        {
+          "line": 1775,
+          "name": "write_text"
+        },
+        {
+          "line": 1776,
+          "name": "write_text"
+        },
+        {
+          "line": 1777,
+          "name": "write_text"
+        },
+        {
+          "line": 1779,
+          "name": "write_text"
+        },
+        {
+          "line": 1780,
+          "name": "write_text"
+        },
+        {
+          "line": 1782,
+          "name": "write_text"
+        },
+        {
+          "line": 1784,
+          "name": "write_text"
+        },
+        {
+          "line": 1786,
+          "name": "write_text"
+        },
+        {
+          "line": 1789,
+          "name": "write_text"
+        },
+        {
+          "line": 1790,
+          "name": "write_text"
+        },
+        {
+          "line": 1792,
+          "name": "write_text"
+        },
+        {
+          "line": 1793,
+          "name": "write_text"
+        },
+        {
+          "line": 1794,
+          "name": "write_text"
+        },
+        {
+          "line": 1795,
+          "name": "write_text"
+        },
+        {
+          "line": 1796,
+          "name": "write_text"
+        },
+        {
+          "line": 1797,
+          "name": "write_text"
+        },
+        {
+          "line": 1798,
+          "name": "write_text"
+        },
+        {
+          "line": 1799,
+          "name": "write_text"
+        },
+        {
+          "line": 1800,
+          "name": "write_text"
+        },
+        {
+          "line": 1802,
+          "name": "write_text"
+        },
+        {
+          "line": 1804,
+          "name": "write_text"
+        },
+        {
+          "line": 1805,
+          "name": "write_text"
+        },
+        {
+          "line": 1806,
+          "name": "write_text"
+        },
+        {
+          "line": 1808,
+          "name": "write_text"
+        },
+        {
+          "line": 1810,
+          "name": "write_text"
+        },
+        {
+          "line": 1812,
+          "name": "write_text"
+        },
+        {
+          "line": 1815,
+          "name": "write_text"
+        },
+        {
+          "line": 1818,
+          "name": "write_text"
+        },
+        {
+          "line": 1821,
+          "name": "write_text"
+        },
+        {
+          "line": 1824,
+          "name": "write_text"
+        },
+        {
+          "line": 1827,
+          "name": "write_text"
+        },
+        {
+          "line": 1830,
+          "name": "write_text"
+        },
+        {
+          "line": 1833,
+          "name": "write_text"
+        },
+        {
+          "line": 1836,
+          "name": "write_text"
+        },
+        {
+          "line": 1839,
+          "name": "write_text"
+        },
+        {
+          "line": 1842,
+          "name": "write_text"
+        },
+        {
+          "line": 1845,
+          "name": "write_text"
+        },
+        {
+          "line": 1848,
+          "name": "write_text"
+        },
+        {
+          "line": 1851,
+          "name": "write_text"
+        },
+        {
+          "line": 1854,
+          "name": "write_text"
+        },
+        {
+          "line": 1857,
+          "name": "write_text"
+        },
+        {
+          "line": 1860,
+          "name": "write_text"
+        },
+        {
+          "line": 1863,
+          "name": "write_text"
+        },
+        {
+          "line": 1866,
+          "name": "write_text"
+        },
+        {
+          "line": 1869,
+          "name": "write_text"
+        },
+        {
+          "line": 1872,
+          "name": "write_text"
+        },
+        {
+          "line": 1875,
+          "name": "write_text"
+        },
+        {
+          "line": 1878,
+          "name": "write_text"
+        },
+        {
+          "line": 1882,
+          "name": "write_text"
+        },
+        {
+          "line": 1886,
+          "name": "write_text"
+        },
+        {
+          "line": 1889,
+          "name": "write_text"
+        },
+        {
+          "line": 1890,
+          "name": "write_text"
+        },
+        {
+          "line": 1891,
+          "name": "write_text"
+        },
+        {
+          "line": 1892,
+          "name": "write_text"
+        },
+        {
+          "line": 1893,
+          "name": "write_text"
+        },
+        {
+          "line": 1895,
+          "name": "write_text"
+        },
+        {
+          "line": 1897,
+          "name": "write_text"
+        },
+        {
+          "line": 1898,
+          "name": "write_text"
+        },
+        {
+          "line": 1899,
+          "name": "write_text"
+        },
+        {
+          "line": 1900,
+          "name": "write_text"
+        },
+        {
+          "line": 1901,
+          "name": "write_text"
+        },
+        {
+          "line": 1903,
+          "name": "write_text"
+        },
+        {
+          "line": 1906,
+          "name": "write_text"
+        },
+        {
+          "line": 1908,
+          "name": "write_text"
+        },
+        {
+          "line": 1909,
+          "name": "write_text"
+        },
+        {
+          "line": 1911,
+          "name": "write_text"
+        },
+        {
+          "line": 1912,
+          "name": "write_text"
+        },
+        {
+          "line": 1913,
+          "name": "write_text"
+        },
+        {
+          "line": 1914,
+          "name": "write_text"
+        },
+        {
+          "line": 1915,
+          "name": "write_text"
+        },
+        {
+          "line": 1917,
+          "name": "write_text"
+        },
+        {
+          "line": 1919,
+          "name": "write_text"
+        },
+        {
+          "line": 1921,
+          "name": "write_text"
+        },
+        {
+          "line": 1923,
+          "name": "write_text"
+        },
+        {
+          "line": 1925,
+          "name": "write_text"
+        },
+        {
+          "line": 1926,
+          "name": "write_text"
+        },
+        {
+          "line": 1927,
+          "name": "write_text"
+        },
+        {
+          "line": 1929,
+          "name": "write_text"
+        },
+        {
+          "line": 1930,
+          "name": "write_text"
+        },
+        {
+          "line": 1931,
+          "name": "write_text"
+        },
+        {
+          "line": 1932,
+          "name": "write_text"
+        },
+        {
+          "line": 1943,
+          "name": "timer_stop"
+        },
+        {
+          "line": 1963,
+          "name": "read_grid_heights"
+        },
+        {
+          "line": 1993,
+          "name": "init_microphys"
+        },
+        {
+          "line": 2005,
+          "name": "init_radiation"
+        },
+        {
+          "line": 2009,
+          "name": "simple_rad_lba_init"
+        },
+        {
+          "line": 2013,
+          "name": "initialize_clubb_config_flags_type_api"
+        },
+        {
+          "line": 2084,
+          "name": "timer_start"
+        },
+        {
+          "line": 2090,
+          "name": "write_text"
+        },
+        {
+          "line": 2092,
+          "name": "write_text"
+        },
+        {
+          "line": 2093,
+          "name": "write_text"
+        },
+        {
+          "line": 2096,
+          "name": "print_clubb_config_flags_api"
+        },
+        {
+          "line": 2097,
+          "name": "print_clubb_config_flags_api"
+        },
+        {
+          "line": 2099,
+          "name": "write_text"
+        },
+        {
+          "line": 2101,
+          "name": "write_text"
+        },
+        {
+          "line": 2102,
+          "name": "write_text"
+        },
+        {
+          "line": 2111,
+          "name": "execute_command_line"
+        },
+        {
+          "line": 2114,
+          "name": "timer_stop"
+        },
+        {
+          "line": 2122,
+          "name": "setup_grid_api"
+        },
+        {
+          "line": 2132,
+          "name": "timer_stop"
+        },
+        {
+          "line": 2141,
+          "name": "setup_grid_api"
+        },
+        {
+          "line": 2152,
+          "name": "timer_stop"
+        },
+        {
+          "line": 2400,
+          "name": "setup_gr_dycore"
+        },
+        {
+          "line": 2446,
+          "name": "setup_gr_fixed_min"
+        },
+        {
+          "line": 2502,
+          "name": "inputfields_init"
+        },
+        {
+          "line": 2517,
+          "name": "timer_stop"
+        },
+        {
+          "line": 2527,
+          "name": "timer_stop"
+        },
+        {
+          "line": 2535,
+          "name": "timer_stop"
+        },
+        {
+          "line": 2551,
+          "name": "initialize_clubb"
+        },
+        {
+          "line": 2574,
+          "name": "timer_stop"
+        },
+        {
+          "line": 2580,
+          "name": "setup_radiation_variables"
+        },
+        {
+          "line": 2585,
+          "name": "setup_bugsrad_variables"
+        },
+        {
+          "line": 2595,
+          "name": "timer_start"
+        },
+        {
+          "line": 2605,
+          "name": "stats_init_api"
+        },
+        {
+          "line": 2617,
+          "name": "stats_init_api"
+        },
+        {
+          "line": 2636,
+          "name": "stats_init_api"
+        },
+        {
+          "line": 2646,
+          "name": "stats_init_api"
+        },
+        {
+          "line": 2658,
+          "name": "timer_stop"
+        },
+        {
+          "line": 2664,
+          "name": "timer_stop"
+        },
+        {
+          "line": 2675,
+          "name": "timer_stop"
+        },
+        {
+          "line": 2682,
+          "name": "latin_hypercube_2D_output_api"
+        },
+        {
+          "line": 2690,
+          "name": "timer_stop"
+        },
+        {
+          "line": 2712,
+          "name": "init_pdf_params_api"
+        },
+        {
+          "line": 2713,
+          "name": "init_pdf_params_api"
+        },
+        {
+          "line": 2717,
+          "name": "init_pdf_implicit_coefs_terms_api"
+        },
+        {
+          "line": 2723,
+          "name": "init_precip_fracs_api"
+        },
+        {
+          "line": 2729,
+          "name": "calc_derived_params_api"
+        },
+        {
+          "line": 2823,
+          "name": "set_case_initial_conditions"
+        },
+        {
+          "line": 2824,
+          "name": "timer_stop"
+        }
+      ],
+      "optional_arguments": [
+        "clubb_params_in",
+        "model_flags_array"
+      ],
+      "required_intent_groups": {
+        "in": [
+          "runfile"
+        ],
+        "out": [
+          "err_info"
+        ]
+      }
+    },
+    {
+      "name": "set_case_initial_conditions",
+      "fortran_lines": [
+        2831,
+        3314
+      ],
+      "calls_in_source_order": [
+        {
+          "line": 2881,
+          "name": "timer_start"
+        },
+        {
+          "line": 2883,
+          "name": "stats_reset_api"
+        },
+        {
+          "line": 2891,
+          "name": "timer_stop"
+        },
+        {
+          "line": 2897,
+          "name": "start_next_stats_batch_api"
+        },
+        {
+          "line": 2899,
+          "name": "timer_stop"
+        },
+        {
+          "line": 2914,
+          "name": "timer_stop"
+        },
+        {
+          "line": 2929,
+          "name": "reset_radiation_variables"
+        },
+        {
+          "line": 2932,
+          "name": "reset_bugsrad_variables"
+        },
+        {
+          "line": 3182,
+          "name": "zero_pdf_params_api"
+        },
+        {
+          "line": 3183,
+          "name": "zero_pdf_params_api"
+        },
+        {
+          "line": 3187,
+          "name": "zero_pdf_implicit_coefs_terms_api"
+        },
+        {
+          "line": 3192,
+          "name": "zero_precip_fracs_api"
+        },
+        {
+          "line": 3199,
+          "name": "init_hydromet_pdf_params"
+        },
+        {
+          "line": 3235,
+          "name": "restart_clubb"
+        },
+        {
+          "line": 3281,
+          "name": "calc_derived_params_api"
+        },
+        {
+          "line": 3290,
+          "name": "check_clubb_settings_api"
+        },
+        {
+          "line": 3303,
+          "name": "timer_stop"
+        },
+        {
+          "line": 3312,
+          "name": "timer_stop"
+        }
+      ],
+      "optional_arguments": [
+        "clubb_params_in",
+        "batch_num"
+      ],
+      "required_intent_groups": {
+        "inout": [
+          "err_info"
+        ]
+      }
+    },
+    {
+      "name": "advance_clubb_to_end",
+      "fortran_lines": [
+        3319,
+        4213
+      ],
+      "calls_in_source_order": [
+        {
+          "line": 3427,
+          "name": "timer_start"
+        },
+        {
+          "line": 3445,
+          "name": "timer_start"
+        },
+        {
+          "line": 3446,
+          "name": "stats_begin_timestep_api"
+        },
+        {
+          "line": 3447,
+          "name": "timer_stop"
+        },
+        {
+          "line": 3461,
+          "name": "timer_start"
+        },
+        {
+          "line": 3464,
+          "name": "compute_timestep"
+        },
+        {
+          "line": 3470,
+          "name": "stat_fields_reader"
+        },
+        {
+          "line": 3506,
+          "name": "clip_skewness_core"
+        },
+        {
+          "line": 3511,
+          "name": "timer_stop"
+        },
+        {
+          "line": 3516,
+          "name": "timer_start"
+        },
+        {
+          "line": 3538,
+          "name": "timer_stop"
+        },
+        {
+          "line": 3544,
+          "name": "timer_stop"
+        },
+        {
+          "line": 3548,
+          "name": "calculate_thvm"
+        },
+        {
+          "line": 3553,
+          "name": "timer_start"
+        },
+        {
+          "line": 3554,
+          "name": "prescribe_forcings"
+        },
+        {
+          "line": 3579,
+          "name": "timer_stop"
+        },
+        {
+          "line": 3637,
+          "name": "timer_start"
+        },
+        {
+          "line": 3638,
+          "name": "calculate_thlp2_rad_api"
+        },
+        {
+          "line": 3641,
+          "name": "timer_stop"
+        },
+        {
+          "line": 3649,
+          "name": "timer_start"
+        },
+        {
+          "line": 3650,
+          "name": "advance_clubb_core_api"
+        },
+        {
+          "line": 3693,
+          "name": "timer_stop"
+        },
+        {
+          "line": 3700,
+          "name": "timer_start"
+        },
+        {
+          "line": 3701,
+          "name": "clubb_generalized_grid_testing"
+        },
+        {
+          "line": 3744,
+          "name": "timer_stop"
+        },
+        {
+          "line": 3776,
+          "name": "timer_start"
+        },
+        {
+          "line": 3777,
+          "name": "pdf_hydromet_microphys_prep"
+        },
+        {
+          "line": 3799,
+          "name": "timer_stop"
+        },
+        {
+          "line": 3803,
+          "name": "timer_start"
+        },
+        {
+          "line": 3804,
+          "name": "silhs_generalized_grid_testing"
+        },
+        {
+          "line": 3826,
+          "name": "timer_stop"
+        },
+        {
+          "line": 3847,
+          "name": "timer_start"
+        },
+        {
+          "line": 3862,
+          "name": "calc_microphys_scheme_tendcies"
+        },
+        {
+          "line": 3893,
+          "name": "timer_stop"
+        },
+        {
+          "line": 3894,
+          "name": "timer_start"
+        },
+        {
+          "line": 3897,
+          "name": "advance_microphys"
+        },
+        {
+          "line": 3917,
+          "name": "timer_stop"
+        },
+        {
+          "line": 3936,
+          "name": "timer_start"
+        },
+        {
+          "line": 3946,
+          "name": "cloud_drop_sed"
+        },
+        {
+          "line": 3952,
+          "name": "timer_stop"
+        },
+        {
+          "line": 3962,
+          "name": "stats_update"
+        },
+        {
+          "line": 3963,
+          "name": "stats_update"
+        },
+        {
+          "line": 3972,
+          "name": "stats_update"
+        },
+        {
+          "line": 3973,
+          "name": "stats_update"
+        },
+        {
+          "line": 3974,
+          "name": "stats_update"
+        },
+        {
+          "line": 3975,
+          "name": "stats_update"
+        },
+        {
+          "line": 3976,
+          "name": "stats_update"
+        },
+        {
+          "line": 3977,
+          "name": "stats_update"
+        },
+        {
+          "line": 3978,
+          "name": "stats_update"
+        },
+        {
+          "line": 3979,
+          "name": "stats_update"
+        },
+        {
+          "line": 3980,
+          "name": "stats_update"
+        },
+        {
+          "line": 3985,
+          "name": "timer_start"
+        },
+        {
+          "line": 3986,
+          "name": "advance_clubb_radiation"
+        },
+        {
+          "line": 3999,
+          "name": "timer_stop"
+        },
+        {
+          "line": 4012,
+          "name": "timer_start"
+        },
+        {
+          "line": 4013,
+          "name": "calc_grid_dens"
+        },
+        {
+          "line": 4035,
+          "name": "timer_stop"
+        },
+        {
+          "line": 4040,
+          "name": "timer_start"
+        },
+        {
+          "line": 4041,
+          "name": "normalize_grid_density"
+        },
+        {
+          "line": 4049,
+          "name": "timer_stop"
+        },
+        {
+          "line": 4052,
+          "name": "timer_start"
+        },
+        {
+          "line": 4054,
+          "name": "stats_update"
+        },
+        {
+          "line": 4055,
+          "name": "stats_update"
+        },
+        {
+          "line": 4056,
+          "name": "stats_update"
+        },
+        {
+          "line": 4057,
+          "name": "stats_update"
+        },
+        {
+          "line": 4058,
+          "name": "stats_update"
+        },
+        {
+          "line": 4059,
+          "name": "stats_update"
+        },
+        {
+          "line": 4061,
+          "name": "stats_update"
+        },
+        {
+          "line": 4062,
+          "name": "stats_update"
+        },
+        {
+          "line": 4063,
+          "name": "stats_update"
+        },
+        {
+          "line": 4064,
+          "name": "stats_update"
+        },
+        {
+          "line": 4066,
+          "name": "timer_stop"
+        },
+        {
+          "line": 4076,
+          "name": "timer_start"
+        },
+        {
+          "line": 4077,
+          "name": "stats_update_grid"
+        },
+        {
+          "line": 4079,
+          "name": "timer_stop"
+        },
+        {
+          "line": 4092,
+          "name": "timer_start"
+        },
+        {
+          "line": 4093,
+          "name": "adapt_grid"
+        },
+        {
+          "line": 4134,
+          "name": "timer_stop"
+        },
+        {
+          "line": 4149,
+          "name": "timer_start"
+        },
+        {
+          "line": 4150,
+          "name": "initialize_t_dependent_input"
+        },
+        {
+          "line": 4154,
+          "name": "timer_stop"
+        },
+        {
+          "line": 4167,
+          "name": "timer_start"
+        },
+        {
+          "line": 4168,
+          "name": "stats_end_timestep_api"
+        },
+        {
+          "line": 4169,
+          "name": "timer_stop"
+        },
+        {
+          "line": 4199,
+          "name": "timer_start"
+        },
+        {
+          "line": 4201,
+          "name": "timer_stop"
+        },
+        {
+          "line": 4211,
+          "name": "timer_stop"
+        }
+      ],
+      "optional_arguments": [
+        "l_suppress_stats",
+        "itime_start",
+        "itime_end"
+      ],
+      "required_intent_groups": {
+        "in": [
+          "l_stdout"
+        ],
+        "inout": [
+          "err_info"
+        ]
+      }
+    },
+    {
+      "name": "clean_up_clubb",
+      "fortran_lines": [
+        4218,
+        4674
+      ],
+      "calls_in_source_order": [
+        {
+          "line": 4280,
+          "name": "timer_start"
+        },
+        {
+          "line": 4372,
+          "name": "timer_start"
+        },
+        {
+          "line": 4373,
+          "name": "stats_finalize_api"
+        },
+        {
+          "line": 4374,
+          "name": "timer_stop"
+        },
+        {
+          "line": 4378,
+          "name": "finalize_tau_sponge_damp_api"
+        },
+        {
+          "line": 4381,
+          "name": "finalize_tau_sponge_damp_api"
+        },
+        {
+          "line": 4384,
+          "name": "finalize_tau_sponge_damp_api"
+        },
+        {
+          "line": 4387,
+          "name": "finalize_tau_sponge_damp_api"
+        },
+        {
+          "line": 4390,
+          "name": "finalize_tau_sponge_damp_api"
+        },
+        {
+          "line": 4393,
+          "name": "finalize_tau_sponge_damp_api"
+        },
+        {
+          "line": 4398,
+          "name": "finalize_extended_atm"
+        },
+        {
+          "line": 4401,
+          "name": "cleanup_grid_api"
+        },
+        {
+          "line": 4404,
+          "name": "cleanup_radiation_variables"
+        },
+        {
+          "line": 4407,
+          "name": "cleanup_bugsrad_variables"
+        },
+        {
+          "line": 4411,
+          "name": "cleanup_microphys"
+        },
+        {
+          "line": 4414,
+          "name": "cleanup_input_fields"
+        },
+        {
+          "line": 4418,
+          "name": "cleanup_latin_hypercube_arrays"
+        },
+        {
+          "line": 4670,
+          "name": "timer_stop"
+        },
+        {
+          "line": 4672,
+          "name": "timer_finalize"
+        }
+      ],
+      "optional_arguments": [],
+      "required_intent_groups": {
+        "inout": [
+          "err_info"
+        ]
+      }
+    }
+  ],
+  "lifecycle_outline": [
+    {
+      "routine": "init_clubb_case",
+      "steps": [
+        "Initialize timers, reset settings/defaults; resolve total parameter columns and runtime batch width; reject invalid matrix/batch shapes before full allocation.",
+        "Initialize err_info; set soil references; read model/stats/configuration namelists, enforce existing supported-feature gates, allocate per-column input constants and tolerances.",
+        "Read grids; initialize microphysics and radiation settings; construct configurable flags and physics grid; allocate runtime fields and 1-column initial profiles.",
+        "Prepare fixed dycore/output grid if enabled; apply optional tuner flag override; determine time range and restart input owner.",
+        "Read sounding once through initialize_clubb into initial profiles; initialize radiation arrays, stats file/registry and optional SILHS output; check all existing fatal paths.",
+        "Initialize PDF, implicit coefficient and precipitation structures; calculate derived parameters.",
+        "Native enter data(copyin constants, grids, initial profiles; create evolving outputs), with separate scalar/eddy/hydrometeor clauses; reset first runtime state."
+      ]
+    },
+    {
+      "routine": "set_case_initial_conditions",
+      "steps": [
+        "Start timer; reset stats sampling state first. Validate optional batch index; select next stats output batch for batch>1.",
+        "Validate replacement parameter matrix shape or copy selected stored batch into active clubb_params. Do not overwrite newly supplied host parameters from stale device data.",
+        "Reset radiation state; reset host-only microphysics state Ncm_mc/wpNcp/Nccnm/Ncm/Nc_in_cloud.",
+        "Initialize SILHS unused sentinels and every Native reset field in source order on thermodynamic/momentum/surface grids; conditional passive/eddy/hydrometeor groups.",
+        "Zero PDF/implicit/precipitation data and initialize hydrometeor PDF fields; handle normal vs restart time, restart fields and inverse densities.",
+        "Refresh derived parameters from current parameters/grid/deltaz; debug settings validation may return fatal. Native explicit update device refreshes parameters/lmin/mixture limit and six vertical viscosities."
+      ]
+    },
+    {
+      "routine": "advance_clubb_to_end",
+      "steps": [
+        "Resolve stats enabled/suppression and optional time-window endpoints; start outer timer.",
+        "For each iteration begin stats only under l_stats. Native input-fields branch is excluded in C++ init; retain current gate.",
+        "Debug>=2 invalid_model_arrays check; fatal branch preserves timer stop and ends whole loop.",
+        "Calculate thvm; prescribe forcing; debug>=0 fatal exit.",
+        "Combine prior microphysical/radiative tendencies into forcing and zero total ice; sum ice hydrometeors in iiri,iirs,iirg order.",
+        "Optional radiative thlp2 forcing; advance core; debug>=0 fatal exit. Native descending-grid test remains excluded.",
+        "Compute radiation cadence (first timestep or dt_rad interval); conditional PDF preparation/SILHS; debug>=0 fatal exit.",
+        "If active microphysics: host scheme tendencies then device-capable advance_microphys; debug>=0 per-column fatal messages/exit. Else optional cloud sedimentation; sampled Ncm update.",
+        "Sample total microphysical tendencies; optional radiation/soil scheme, retaining prior radht between radiation timesteps and fatal exit.",
+        "Native time-adaptive-grid density/adaptation/write blocks remain excluded. Fixed dycore sampled stats_update_grid remains active.",
+        "End/flush stats only under l_stats; fatal exit; update time only after successful timestep; optional iteration output."
+      ]
+    },
+    {
+      "routine": "clean_up_clubb",
+      "steps": [
+        "Start cleanup timer; Native exit data delete balances base and optional enters before host resource cleanup.",
+        "Finalize stats/files; release optional sponge, forcing input, extended atmosphere, grid, radiation, microphysics, restart input and SILHS state in source order.",
+        "Release every runtime/initial/parameter allocation; reset column/batch dimensions to one; stop cleanup timer; finalize timing output file."
+      ]
+    }
+  ],
+  "existing_cpp_exclusions": [
+    "All six sponge damping settings",
+    "l_input_fields",
+    "l_test_grid_generalization",
+    "grid_adapt_in_time_method>no_grid_adaptation",
+    "microphysics except none/khairoutdinov_kogan/morrison",
+    "l_gfdl_activation",
+    "radiation except none/simplified/simplified_bomex/lba",
+    "l_silhs_rad",
+    "BUGSrad extended radiation fields"
+  ],
+  "native_openacc_directives": [
+    {
+      "fortran_lines": [
+        2735,
+        2808
+      ],
+      "directive": "enter data copyin( gr, gr%zm, gr%zt, gr%dzm, gr%dzt, gr%invrs_dzt, gr%invrs_dzm,   gr%weights_zt2zm, gr%weights_zm2zt,   nu_vert_res_dep, nu_vert_res_dep%nu2, nu_vert_res_dep%nu9,   nu_vert_res_dep%nu1, nu_vert_res_dep%nu8, nu_vert_res_dep%nu10,   nu_vert_res_dep%nu6,   pdf_params, pdf_params_zm,   sclr_idx, clubb_params, lmin, mixt_frac_max_mag, hm_metadata,   T_sfc, p_sfc, fcor, fcor_y, sfc_elevation,   dummy_dx, dummy_dy, deltaz,   pdf_params%w_1, pdf_params%w_2, pdf_params%varnce_w_1,   pdf_params%varnce_w_2, pdf_params%mixt_frac,   pdf_params_zm%w_1, pdf_params_zm%w_2, pdf_params_zm%varnce_w_1,   pdf_params_zm%varnce_w_2, pdf_params_zm%mixt_frac,   thlm_init, rtm_init, um_init, vm_init, ug_init, vg_init,   wp2_init, up2_init, vp2_init, upwp_init, rcm_init, wm_zt_init,   wm_zm_init, em_init, exner_init, thvm_init, p_in_Pa_init, p_in_Pa_zm_init,   rho_init, rho_zm_init, rho_ds_zm_init, rho_ds_zt_init,   invrs_rho_ds_zm_init, invrs_rho_ds_zt_init, thv_ds_zm_init,   thv_ds_zt_init, rtm_ref_init, thlm_ref_init, um_ref_init,   deep_soil_T_in_K_init, sfc_soil_T_in_K_init, veg_T_in_K_init,   vm_ref_init, err_info, err_info%err_header )   create( rtm, wm_zt, ug, vg, um_ref, vm_ref, thlm_forcing, rtm_forcing,   um_forcing, vm_forcing, wm_zm, wprtp_forcing, wpthlp_forcing,   rtp2_forcing, thlp2_forcing, rtpthlp_forcing, wpthlp_sfc,   wprtp_sfc, upwp_sfc, vpwp_sfc,   deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K, rcm_mc, rvm_mc,   thlm_mc, radht, wprtp_mc, wpthlp_mc, rtp2_mc, thlp2_mc, rtpthlp_mc,   thlprcp, wprtp, wpthlp, rtp2, thlp2, rtpthlp,   wp2, wp3, wp2thvp, rtpthvp, thlpthvp,   rho_zm, rho, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm,   invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt,   upwp_sfc_pert, vpwp_sfc_pert, rtm_ref,   thlm_ref, um, upwp,   vm, vpwp, up2, vp2, up3, vp3, thlm,   rtp3, thlp3, p_in_Pa, exner,   rcm, cloud_frac, wpthvp, wp2rtp, wp2up,   wp2thlp, uprcp, vprcp, rc_coef_zm, wp4, wpup2, wpvp2,   wp2up2, wp2vp2, ice_supersat_frac, um_pert, vm_pert, upwp_pert, vpwp_pert,   rcm_in_layer, cloud_cover, wprcp, w_up_in_cloud, w_down_in_cloud, cloudy_updraft_frac,   cloudy_downdraft_frac, invrs_tau_zm, Kh_zt, Kh_zm, Lscale,   X_nl_all_levs, x_mixt_comp_all_levs, lh_sample_point_weights,   lh_rt_clipped, lh_thl_clipped, lh_rc_clipped, lh_rv_clipped, lh_Nc_clipped,   mu_x_1_n, mu_x_2_n, sigma_x_1_n, sigma_x_2_n,   corr_array_1_n, corr_array_2_n, corr_cholesky_mtx_1, corr_cholesky_mtx_2,   rfrzm, thvm,   err_info%err_code,   pdf_params%rt_1, pdf_params%rt_2,   pdf_params%varnce_rt_1, pdf_params%varnce_rt_2, pdf_params%thl_1,   pdf_params%thl_2, pdf_params%varnce_thl_1, pdf_params%varnce_thl_2,   pdf_params%corr_w_rt_1, pdf_params%corr_w_rt_2, pdf_params%corr_w_thl_1,   pdf_params%corr_w_thl_2, pdf_params%corr_rt_thl_1, pdf_params%corr_rt_thl_2,   pdf_params%alpha_thl, pdf_params%alpha_rt, pdf_params%crt_1, pdf_params%crt_2,   pdf_params%cthl_1, pdf_params%cthl_2, pdf_params%chi_1, pdf_params%chi_2,   pdf_params%stdev_chi_1, pdf_params%stdev_chi_2, pdf_params%stdev_eta_1,   pdf_params%stdev_eta_2, pdf_params%covar_chi_eta_1, pdf_params%covar_chi_eta_2,   pdf_params%corr_w_chi_1, pdf_params%corr_w_chi_2, pdf_params%corr_w_eta_1,   pdf_params%corr_w_eta_2, pdf_params%corr_chi_eta_1, pdf_params%corr_chi_eta_2,   pdf_params%rsatl_1, pdf_params%rsatl_2, pdf_params%rc_1, pdf_params%rc_2,   pdf_params%cloud_frac_1, pdf_params%cloud_frac_2,   pdf_params%ice_supersat_frac_1, pdf_params%ice_supersat_frac_2,   pdf_params_zm%rt_1, pdf_params_zm%rt_2,   pdf_params_zm%varnce_rt_1, pdf_params_zm%varnce_rt_2, pdf_params_zm%thl_1,   pdf_params_zm%thl_2, pdf_params_zm%varnce_thl_1, pdf_params_zm%varnce_thl_2,   pdf_params_zm%corr_w_rt_1, pdf_params_zm%corr_w_rt_2, pdf_params_zm%corr_w_thl_1,   pdf_params_zm%corr_w_thl_2, pdf_params_zm%corr_rt_thl_1, pdf_params_zm%corr_rt_thl_2,   pdf_params_zm%alpha_thl, pdf_params_zm%alpha_rt, pdf_params_zm%crt_1, pdf_params_zm%crt_2,   pdf_params_zm%cthl_1, pdf_params_zm%cthl_2, pdf_params_zm%chi_1, pdf_params_zm%chi_2,   pdf_params_zm%stdev_chi_1, pdf_params_zm%stdev_chi_2, pdf_params_zm%stdev_eta_1,   pdf_params_zm%stdev_eta_2, pdf_params_zm%covar_chi_eta_1, pdf_params_zm%covar_chi_eta_2,   pdf_params_zm%corr_w_chi_1, pdf_params_zm%corr_w_chi_2, pdf_params_zm%corr_w_eta_1,   pdf_params_zm%corr_w_eta_2, pdf_params_zm%corr_chi_eta_1, pdf_params_zm%corr_chi_eta_2,   pdf_params_zm%rsatl_1, pdf_params_zm%rsatl_2, pdf_params_zm%rc_1, pdf_params_zm%rc_2,   pdf_params_zm%cloud_frac_1, pdf_params_zm%cloud_frac_2,   pdf_params_zm%ice_supersat_frac_1, pdf_params_zm%ice_supersat_frac_2 )",
+      "fields": {
+        "copyin": [
+          "gr",
+          "gr%zm",
+          "gr%zt",
+          "gr%dzm",
+          "gr%dzt",
+          "gr%invrs_dzt",
+          "gr%invrs_dzm",
+          "gr%weights_zt2zm",
+          "gr%weights_zm2zt",
+          "nu_vert_res_dep",
+          "nu_vert_res_dep%nu2",
+          "nu_vert_res_dep%nu9",
+          "nu_vert_res_dep%nu1",
+          "nu_vert_res_dep%nu8",
+          "nu_vert_res_dep%nu10",
+          "nu_vert_res_dep%nu6",
+          "pdf_params",
+          "pdf_params_zm",
+          "sclr_idx",
+          "clubb_params",
+          "lmin",
+          "mixt_frac_max_mag",
+          "hm_metadata",
+          "T_sfc",
+          "p_sfc",
+          "fcor",
+          "fcor_y",
+          "sfc_elevation",
+          "dummy_dx",
+          "dummy_dy",
+          "deltaz",
+          "pdf_params%w_1",
+          "pdf_params%w_2",
+          "pdf_params%varnce_w_1",
+          "pdf_params%varnce_w_2",
+          "pdf_params%mixt_frac",
+          "pdf_params_zm%w_1",
+          "pdf_params_zm%w_2",
+          "pdf_params_zm%varnce_w_1",
+          "pdf_params_zm%varnce_w_2",
+          "pdf_params_zm%mixt_frac",
+          "thlm_init",
+          "rtm_init",
+          "um_init",
+          "vm_init",
+          "ug_init",
+          "vg_init",
+          "wp2_init",
+          "up2_init",
+          "vp2_init",
+          "upwp_init",
+          "rcm_init",
+          "wm_zt_init",
+          "wm_zm_init",
+          "em_init",
+          "exner_init",
+          "thvm_init",
+          "p_in_Pa_init",
+          "p_in_Pa_zm_init",
+          "rho_init",
+          "rho_zm_init",
+          "rho_ds_zm_init",
+          "rho_ds_zt_init",
+          "invrs_rho_ds_zm_init",
+          "invrs_rho_ds_zt_init",
+          "thv_ds_zm_init",
+          "thv_ds_zt_init",
+          "rtm_ref_init",
+          "thlm_ref_init",
+          "um_ref_init",
+          "deep_soil_T_in_K_init",
+          "sfc_soil_T_in_K_init",
+          "veg_T_in_K_init",
+          "vm_ref_init",
+          "err_info",
+          "err_info%err_header"
+        ],
+        "create": [
+          "rtm",
+          "wm_zt",
+          "ug",
+          "vg",
+          "um_ref",
+          "vm_ref",
+          "thlm_forcing",
+          "rtm_forcing",
+          "um_forcing",
+          "vm_forcing",
+          "wm_zm",
+          "wprtp_forcing",
+          "wpthlp_forcing",
+          "rtp2_forcing",
+          "thlp2_forcing",
+          "rtpthlp_forcing",
+          "wpthlp_sfc",
+          "wprtp_sfc",
+          "upwp_sfc",
+          "vpwp_sfc",
+          "deep_soil_T_in_K",
+          "sfc_soil_T_in_K",
+          "veg_T_in_K",
+          "rcm_mc",
+          "rvm_mc",
+          "thlm_mc",
+          "radht",
+          "wprtp_mc",
+          "wpthlp_mc",
+          "rtp2_mc",
+          "thlp2_mc",
+          "rtpthlp_mc",
+          "thlprcp",
+          "wprtp",
+          "wpthlp",
+          "rtp2",
+          "thlp2",
+          "rtpthlp",
+          "wp2",
+          "wp3",
+          "wp2thvp",
+          "rtpthvp",
+          "thlpthvp",
+          "rho_zm",
+          "rho",
+          "rho_ds_zm",
+          "rho_ds_zt",
+          "invrs_rho_ds_zm",
+          "invrs_rho_ds_zt",
+          "thv_ds_zm",
+          "thv_ds_zt",
+          "upwp_sfc_pert",
+          "vpwp_sfc_pert",
+          "rtm_ref",
+          "thlm_ref",
+          "um",
+          "upwp",
+          "vm",
+          "vpwp",
+          "up2",
+          "vp2",
+          "up3",
+          "vp3",
+          "thlm",
+          "rtp3",
+          "thlp3",
+          "p_in_Pa",
+          "exner",
+          "rcm",
+          "cloud_frac",
+          "wpthvp",
+          "wp2rtp",
+          "wp2up",
+          "wp2thlp",
+          "uprcp",
+          "vprcp",
+          "rc_coef_zm",
+          "wp4",
+          "wpup2",
+          "wpvp2",
+          "wp2up2",
+          "wp2vp2",
+          "ice_supersat_frac",
+          "um_pert",
+          "vm_pert",
+          "upwp_pert",
+          "vpwp_pert",
+          "rcm_in_layer",
+          "cloud_cover",
+          "wprcp",
+          "w_up_in_cloud",
+          "w_down_in_cloud",
+          "cloudy_updraft_frac",
+          "cloudy_downdraft_frac",
+          "invrs_tau_zm",
+          "Kh_zt",
+          "Kh_zm",
+          "Lscale",
+          "X_nl_all_levs",
+          "x_mixt_comp_all_levs",
+          "lh_sample_point_weights",
+          "lh_rt_clipped",
+          "lh_thl_clipped",
+          "lh_rc_clipped",
+          "lh_rv_clipped",
+          "lh_Nc_clipped",
+          "mu_x_1_n",
+          "mu_x_2_n",
+          "sigma_x_1_n",
+          "sigma_x_2_n",
+          "corr_array_1_n",
+          "corr_array_2_n",
+          "corr_cholesky_mtx_1",
+          "corr_cholesky_mtx_2",
+          "rfrzm",
+          "thvm",
+          "err_info%err_code",
+          "pdf_params%rt_1",
+          "pdf_params%rt_2",
+          "pdf_params%varnce_rt_1",
+          "pdf_params%varnce_rt_2",
+          "pdf_params%thl_1",
+          "pdf_params%thl_2",
+          "pdf_params%varnce_thl_1",
+          "pdf_params%varnce_thl_2",
+          "pdf_params%corr_w_rt_1",
+          "pdf_params%corr_w_rt_2",
+          "pdf_params%corr_w_thl_1",
+          "pdf_params%corr_w_thl_2",
+          "pdf_params%corr_rt_thl_1",
+          "pdf_params%corr_rt_thl_2",
+          "pdf_params%alpha_thl",
+          "pdf_params%alpha_rt",
+          "pdf_params%crt_1",
+          "pdf_params%crt_2",
+          "pdf_params%cthl_1",
+          "pdf_params%cthl_2",
+          "pdf_params%chi_1",
+          "pdf_params%chi_2",
+          "pdf_params%stdev_chi_1",
+          "pdf_params%stdev_chi_2",
+          "pdf_params%stdev_eta_1",
+          "pdf_params%stdev_eta_2",
+          "pdf_params%covar_chi_eta_1",
+          "pdf_params%covar_chi_eta_2",
+          "pdf_params%corr_w_chi_1",
+          "pdf_params%corr_w_chi_2",
+          "pdf_params%corr_w_eta_1",
+          "pdf_params%corr_w_eta_2",
+          "pdf_params%corr_chi_eta_1",
+          "pdf_params%corr_chi_eta_2",
+          "pdf_params%rsatl_1",
+          "pdf_params%rsatl_2",
+          "pdf_params%rc_1",
+          "pdf_params%rc_2",
+          "pdf_params%cloud_frac_1",
+          "pdf_params%cloud_frac_2",
+          "pdf_params%ice_supersat_frac_1",
+          "pdf_params%ice_supersat_frac_2",
+          "pdf_params_zm%rt_1",
+          "pdf_params_zm%rt_2",
+          "pdf_params_zm%varnce_rt_1",
+          "pdf_params_zm%varnce_rt_2",
+          "pdf_params_zm%thl_1",
+          "pdf_params_zm%thl_2",
+          "pdf_params_zm%varnce_thl_1",
+          "pdf_params_zm%varnce_thl_2",
+          "pdf_params_zm%corr_w_rt_1",
+          "pdf_params_zm%corr_w_rt_2",
+          "pdf_params_zm%corr_w_thl_1",
+          "pdf_params_zm%corr_w_thl_2",
+          "pdf_params_zm%corr_rt_thl_1",
+          "pdf_params_zm%corr_rt_thl_2",
+          "pdf_params_zm%alpha_thl",
+          "pdf_params_zm%alpha_rt",
+          "pdf_params_zm%crt_1",
+          "pdf_params_zm%crt_2",
+          "pdf_params_zm%cthl_1",
+          "pdf_params_zm%cthl_2",
+          "pdf_params_zm%chi_1",
+          "pdf_params_zm%chi_2",
+          "pdf_params_zm%stdev_chi_1",
+          "pdf_params_zm%stdev_chi_2",
+          "pdf_params_zm%stdev_eta_1",
+          "pdf_params_zm%stdev_eta_2",
+          "pdf_params_zm%covar_chi_eta_1",
+          "pdf_params_zm%covar_chi_eta_2",
+          "pdf_params_zm%corr_w_chi_1",
+          "pdf_params_zm%corr_w_chi_2",
+          "pdf_params_zm%corr_w_eta_1",
+          "pdf_params_zm%corr_w_eta_2",
+          "pdf_params_zm%corr_chi_eta_1",
+          "pdf_params_zm%corr_chi_eta_2",
+          "pdf_params_zm%rsatl_1",
+          "pdf_params_zm%rsatl_2",
+          "pdf_params_zm%rc_1",
+          "pdf_params_zm%rc_2",
+          "pdf_params_zm%cloud_frac_1",
+          "pdf_params_zm%cloud_frac_2",
+          "pdf_params_zm%ice_supersat_frac_1",
+          "pdf_params_zm%ice_supersat_frac_2"
+        ]
+      }
+    },
+    {
+      "fortran_lines": [
+        2810,
+        2813
+      ],
+      "directive": "enter data if( sclr_dim > 0 )   copyin( sclr_tol, sclrm_init )   create( sclrm_forcing, wpsclrp_sfc, sclrm,   wpsclrp, sclrp2, sclrp3, sclrprtp, sclrpthlp, sclrpthvp )",
+      "fields": {
+        "copyin": [
+          "sclr_tol",
+          "sclrm_init"
+        ],
+        "create": [
+          "sclrm_forcing",
+          "wpsclrp_sfc",
+          "sclrm",
+          "wpsclrp",
+          "sclrp2",
+          "sclrp3",
+          "sclrprtp",
+          "sclrpthlp",
+          "sclrpthvp"
+        ]
+      }
+    },
+    {
+      "fortran_lines": [
+        2815,
+        2817
+      ],
+      "directive": "enter data if( edsclr_dim > 0 )   copyin( edsclrm_init )   create( wpedsclrp_sfc, edsclrm_forcing, edsclrm )",
+      "fields": {
+        "copyin": [
+          "edsclrm_init"
+        ],
+        "create": [
+          "wpedsclrp_sfc",
+          "edsclrm_forcing",
+          "edsclrm"
+        ]
+      }
+    },
+    {
+      "fortran_lines": [
+        2819,
+        2821
+      ],
+      "directive": "enter data if( hydromet_dim > 0 )   copyin( hm_metadata%l_mix_rat_hm )   create( wphydrometp, wp2hmp, rtphmp_zt, thlphmp_zt )",
+      "fields": {
+        "copyin": [
+          "hm_metadata%l_mix_rat_hm"
+        ],
+        "create": [
+          "wphydrometp",
+          "wp2hmp",
+          "rtphmp_zt",
+          "thlphmp_zt"
+        ]
+      }
+    },
+    {
+      "fortran_lines": [
+        2954,
+        2954
+      ],
+      "directive": "parallel loop gang vector collapse(3) default(present)",
+      "fields": {}
+    },
+    {
+      "fortran_lines": [
+        2965,
+        2965
+      ],
+      "directive": "parallel loop gang vector collapse(2) default(present)",
+      "fields": {}
+    },
+    {
+      "fortran_lines": [
+        3022,
+        3022
+      ],
+      "directive": "parallel loop gang vector collapse(2) default(present)",
+      "fields": {}
+    },
+    {
+      "fortran_lines": [
+        3069,
+        3069
+      ],
+      "directive": "parallel loop gang vector default(present)",
+      "fields": {}
+    },
+    {
+      "fortran_lines": [
+        3083,
+        3083
+      ],
+      "directive": "parallel loop gang vector collapse(3) default(present)",
+      "fields": {}
+    },
+    {
+      "fortran_lines": [
+        3094,
+        3094
+      ],
+      "directive": "parallel loop gang vector collapse(3) default(present)",
+      "fields": {}
+    },
+    {
+      "fortran_lines": [
+        3107,
+        3107
+      ],
+      "directive": "parallel loop gang vector collapse(2) default(present)",
+      "fields": {}
+    },
+    {
+      "fortran_lines": [
+        3118,
+        3118
+      ],
+      "directive": "parallel loop gang vector collapse(3) default(present)",
+      "fields": {}
+    },
+    {
+      "fortran_lines": [
+        3128,
+        3128
+      ],
+      "directive": "parallel loop gang vector collapse(2) default(present)",
+      "fields": {}
+    },
+    {
+      "fortran_lines": [
+        3139,
+        3139
+      ],
+      "directive": "parallel loop gang vector collapse(3) default(present)",
+      "fields": {}
+    },
+    {
+      "fortran_lines": [
+        3150,
+        3150
+      ],
+      "directive": "parallel loop gang vector collapse(3) default(present)",
+      "fields": {}
+    },
+    {
+      "fortran_lines": [
+        3276,
+        3276
+      ],
+      "directive": "update host( deltaz, gr%zt, gr%zm )",
+      "fields": {
+        "host": [
+          "deltaz",
+          "gr%zt",
+          "gr%zm"
+        ]
+      }
+    },
+    {
+      "fortran_lines": [
+        3278,
+        3278
+      ],
+      "directive": "update host( deltaz, clubb_params, gr%zt, gr%zm )",
+      "fields": {
+        "host": [
+          "deltaz",
+          "clubb_params",
+          "gr%zt",
+          "gr%zm"
+        ]
+      }
+    },
+    {
+      "fortran_lines": [
+        3308,
+        3310
+      ],
+      "directive": "update device( clubb_params, lmin, mixt_frac_max_mag,   nu_vert_res_dep%nu1,nu_vert_res_dep%nu2, nu_vert_res_dep%nu6,   nu_vert_res_dep%nu8, nu_vert_res_dep%nu9, nu_vert_res_dep%nu10 )",
+      "fields": {
+        "device": [
+          "clubb_params",
+          "lmin",
+          "mixt_frac_max_mag",
+          "nu_vert_res_dep%nu1",
+          "nu_vert_res_dep%nu2",
+          "nu_vert_res_dep%nu6",
+          "nu_vert_res_dep%nu8",
+          "nu_vert_res_dep%nu9",
+          "nu_vert_res_dep%nu10"
+        ]
+      }
+    },
+    {
+      "fortran_lines": [
+        3518,
+        3519
+      ],
+      "directive": "update host( um, vm, rtm, wprtp, thlm, wpthlp, rtp2, thlp2, rtpthlp, wp2, wp3,   wp2thvp, rtpthvp, thlpthvp, wp2up )",
+      "fields": {
+        "host": [
+          "um",
+          "vm",
+          "rtm",
+          "wprtp",
+          "thlm",
+          "wpthlp",
+          "rtp2",
+          "thlp2",
+          "rtpthlp",
+          "wp2",
+          "wp3",
+          "wp2thvp",
+          "rtpthvp",
+          "thlpthvp",
+          "wp2up"
+        ]
+      }
+    },
+    {
+      "fortran_lines": [
+        3521,
+        3522
+      ],
+      "directive": "if( sclr_dim > 0   ) update host( sclrm ) if( edsclr_dim > 0 ) update host( edsclrm )",
+      "fields": {
+        "host": [
+          "sclrm",
+          "edsclrm"
+        ]
+      }
+    },
+    {
+      "fortran_lines": [
+        3589,
+        3589
+      ],
+      "directive": "parallel loop gang vector collapse(2) default(present)",
+      "fields": {}
+    },
+    {
+      "fortran_lines": [
+        3607,
+        3607
+      ],
+      "directive": "parallel loop gang vector collapse(2) default(present)",
+      "fields": {}
+    },
+    {
+      "fortran_lines": [
+        3620,
+        3620
+      ],
+      "directive": "update host( rfrzm )",
+      "fields": {
+        "host": [
+          "rfrzm"
+        ]
+      }
+    },
+    {
+      "fortran_lines": [
+        3630,
+        3630
+      ],
+      "directive": "update device( rfrzm )",
+      "fields": {
+        "device": [
+          "rfrzm"
+        ]
+      }
+    },
+    {
+      "fortran_lines": [
+        3849,
+        3859
+      ],
+      "directive": "update host( thlm, p_in_Pa, exner, rho, rho_zm, rtm, rcm, cloud_frac, wm_zt, wm_zm,   wp2, wp3, Kh_zm, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt,   X_nl_all_levs, X_mixt_comp_all_levs,  lh_sample_point_weights, mu_x_1_n, mu_x_2_n,   sigma_x_1_n, sigma_x_2_n, corr_array_1_n, corr_array_2_n,   lh_rt_clipped, lh_thl_clipped, lh_rc_clipped, lh_rv_clipped, lh_Nc_clipped,   pdf_params%mixt_frac, pdf_params%chi_1, pdf_params%chi_2,   pdf_params%rt_1, pdf_params%rt_2, pdf_params%rc_1, pdf_params%rc_2,   pdf_params%thl_1, pdf_params%thl_2, pdf_params%w_1, pdf_params%w_2,   pdf_params%cloud_frac_1, pdf_params%cloud_frac_2, pdf_params%cthl_1, pdf_params%cthl_2,   pdf_params%crt_1, pdf_params%crt_2, pdf_params%stdev_chi_1, pdf_params%stdev_chi_2,   pdf_params%varnce_w_1, pdf_params%varnce_w_2 )",
+      "fields": {
+        "host": [
+          "thlm",
+          "p_in_Pa",
+          "exner",
+          "rho",
+          "rho_zm",
+          "rtm",
+          "rcm",
+          "cloud_frac",
+          "wm_zt",
+          "wm_zm",
+          "wp2",
+          "wp3",
+          "Kh_zm",
+          "rho_ds_zm",
+          "rho_ds_zt",
+          "invrs_rho_ds_zt",
+          "X_nl_all_levs",
+          "X_mixt_comp_all_levs",
+          "lh_sample_point_weights",
+          "mu_x_1_n",
+          "mu_x_2_n",
+          "sigma_x_1_n",
+          "sigma_x_2_n",
+          "corr_array_1_n",
+          "corr_array_2_n",
+          "lh_rt_clipped",
+          "lh_thl_clipped",
+          "lh_rc_clipped",
+          "lh_rv_clipped",
+          "lh_Nc_clipped",
+          "pdf_params%mixt_frac",
+          "pdf_params%chi_1",
+          "pdf_params%chi_2",
+          "pdf_params%rt_1",
+          "pdf_params%rt_2",
+          "pdf_params%rc_1",
+          "pdf_params%rc_2",
+          "pdf_params%thl_1",
+          "pdf_params%thl_2",
+          "pdf_params%w_1",
+          "pdf_params%w_2",
+          "pdf_params%cloud_frac_1",
+          "pdf_params%cloud_frac_2",
+          "pdf_params%cthl_1",
+          "pdf_params%cthl_2",
+          "pdf_params%crt_1",
+          "pdf_params%crt_2",
+          "pdf_params%stdev_chi_1",
+          "pdf_params%stdev_chi_2",
+          "pdf_params%varnce_w_1",
+          "pdf_params%varnce_w_2"
+        ]
+      }
+    },
+    {
+      "fortran_lines": [
+        3913,
+        3913
+      ],
+      "directive": "update device( rcm_mc, rvm_mc, thlm_mc, wprtp_mc, wpthlp_mc, rtp2_mc, thlp2_mc, rtpthlp_mc )",
+      "fields": {
+        "device": [
+          "rcm_mc",
+          "rvm_mc",
+          "thlm_mc",
+          "wprtp_mc",
+          "wpthlp_mc",
+          "rtp2_mc",
+          "thlp2_mc",
+          "rtpthlp_mc"
+        ]
+      }
+    },
+    {
+      "fortran_lines": [
+        3915,
+        3915
+      ],
+      "directive": "if( hydromet_dim > 0 ) update device( wphydrometp )",
+      "fields": {
+        "device": [
+          "wphydrometp"
+        ]
+      }
+    },
+    {
+      "fortran_lines": [
+        3938,
+        3938
+      ],
+      "directive": "update host( cloud_frac, rcm, rho_zm, rho, exner )",
+      "fields": {
+        "host": [
+          "cloud_frac",
+          "rcm",
+          "rho_zm",
+          "rho",
+          "exner"
+        ]
+      }
+    },
+    {
+      "fortran_lines": [
+        3950,
+        3950
+      ],
+      "directive": "update device( rcm_mc, thlm_mc )",
+      "fields": {
+        "device": [
+          "rcm_mc",
+          "thlm_mc"
+        ]
+      }
+    },
+    {
+      "fortran_lines": [
+        3958,
+        3958
+      ],
+      "directive": "update host( cloud_frac )",
+      "fields": {
+        "host": [
+          "cloud_frac"
+        ]
+      }
+    },
+    {
+      "fortran_lines": [
+        3969,
+        3969
+      ],
+      "directive": "update host( rvm_mc, rcm_mc, thlm_mc, wprtp_mc, wpthlp_mc, rtp2_mc, thlp2_mc, rtpthlp_mc )",
+      "fields": {
+        "host": [
+          "rvm_mc",
+          "rcm_mc",
+          "thlm_mc",
+          "wprtp_mc",
+          "wpthlp_mc",
+          "rtp2_mc",
+          "thlp2_mc",
+          "rtpthlp_mc"
+        ]
+      }
+    },
+    {
+      "fortran_lines": [
+        4282,
+        4355
+      ],
+      "directive": "exit data delete( gr, gr%zm, gr%zt, gr%dzm, gr%dzt, gr%invrs_dzt, gr%invrs_dzm,   gr%weights_zt2zm, gr%weights_zm2zt,   nu_vert_res_dep, nu_vert_res_dep%nu2, nu_vert_res_dep%nu9,   nu_vert_res_dep%nu1, nu_vert_res_dep%nu8, nu_vert_res_dep%nu10,   nu_vert_res_dep%nu6,   pdf_params, pdf_params_zm,   sclr_idx, clubb_params, lmin, mixt_frac_max_mag, hm_metadata,   T_sfc, p_sfc, fcor, fcor_y, sfc_elevation,   dummy_dx, dummy_dy,   pdf_params%w_1, pdf_params%w_2, pdf_params%varnce_w_1,   pdf_params%varnce_w_2, pdf_params%mixt_frac,   pdf_params_zm%w_1, pdf_params_zm%w_2, pdf_params_zm%varnce_w_1,   pdf_params_zm%varnce_w_2, pdf_params_zm%mixt_frac,   thlm_init, rtm_init, um_init, vm_init, ug_init, vg_init,   wp2_init, up2_init, vp2_init, upwp_init, rcm_init, wm_zt_init,   wm_zm_init, em_init, exner_init, thvm_init, p_in_Pa_init, p_in_Pa_zm_init,   rho_init, rho_zm_init, rho_ds_zm_init, rho_ds_zt_init,   invrs_rho_ds_zm_init, invrs_rho_ds_zt_init, thv_ds_zm_init,   thv_ds_zt_init, rtm_ref_init, thlm_ref_init, um_ref_init,   deep_soil_T_in_K_init, sfc_soil_T_in_K_init, veg_T_in_K_init,   vm_ref_init, err_info, err_info%err_header,   rtm, wm_zt, ug, vg, um_ref, vm_ref, thlm_forcing, rtm_forcing,   um_forcing, vm_forcing, wm_zm, wprtp_forcing, wpthlp_forcing,   rtp2_forcing, thlp2_forcing, rtpthlp_forcing, wpthlp_sfc,   wprtp_sfc, upwp_sfc, vpwp_sfc,   deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K, rcm_mc, rvm_mc,   thlm_mc, radht, wprtp_mc, wpthlp_mc, rtp2_mc, thlp2_mc, rtpthlp_mc,   thlprcp, wprtp, wpthlp, rtp2, thlp2, rtpthlp,   wp2, wp3, wp2thvp, rtpthvp, thlpthvp,   rho_zm, rho, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm,   invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt,   upwp_sfc_pert, vpwp_sfc_pert, rtm_ref,   thlm_ref, um, upwp,   vm, vpwp, up2, vp2, up3, vp3, thlm,   rtp3, thlp3, p_in_Pa, exner,   rcm, cloud_frac, wpthvp, wp2rtp, wp2up,   wp2thlp, uprcp, vprcp, rc_coef_zm, wp4, wpup2, wpvp2,   wp2up2, wp2vp2, ice_supersat_frac, um_pert, vm_pert, upwp_pert, vpwp_pert,   rcm_in_layer, cloud_cover, wprcp, w_up_in_cloud, w_down_in_cloud, cloudy_updraft_frac,   cloudy_downdraft_frac, invrs_tau_zm, Kh_zt, Kh_zm, Lscale,   X_nl_all_levs, x_mixt_comp_all_levs, lh_sample_point_weights,   lh_rt_clipped, lh_thl_clipped, lh_rc_clipped, lh_rv_clipped, lh_Nc_clipped,   mu_x_1_n, mu_x_2_n, sigma_x_1_n, sigma_x_2_n,   corr_array_1_n, corr_array_2_n, corr_cholesky_mtx_1, corr_cholesky_mtx_2,   rfrzm, thvm, deltaz,   err_info%err_code,   pdf_params%rt_1, pdf_params%rt_2,   pdf_params%varnce_rt_1, pdf_params%varnce_rt_2, pdf_params%thl_1,   pdf_params%thl_2, pdf_params%varnce_thl_1, pdf_params%varnce_thl_2,   pdf_params%corr_w_rt_1, pdf_params%corr_w_rt_2, pdf_params%corr_w_thl_1,   pdf_params%corr_w_thl_2, pdf_params%corr_rt_thl_1, pdf_params%corr_rt_thl_2,   pdf_params%alpha_thl, pdf_params%alpha_rt, pdf_params%crt_1, pdf_params%crt_2,   pdf_params%cthl_1, pdf_params%cthl_2, pdf_params%chi_1, pdf_params%chi_2,   pdf_params%stdev_chi_1, pdf_params%stdev_chi_2, pdf_params%stdev_eta_1,   pdf_params%stdev_eta_2, pdf_params%covar_chi_eta_1, pdf_params%covar_chi_eta_2,   pdf_params%corr_w_chi_1, pdf_params%corr_w_chi_2, pdf_params%corr_w_eta_1,   pdf_params%corr_w_eta_2, pdf_params%corr_chi_eta_1, pdf_params%corr_chi_eta_2,   pdf_params%rsatl_1, pdf_params%rsatl_2, pdf_params%rc_1, pdf_params%rc_2,   pdf_params%cloud_frac_1, pdf_params%cloud_frac_2,   pdf_params%ice_supersat_frac_1, pdf_params%ice_supersat_frac_2,   pdf_params_zm%rt_1, pdf_params_zm%rt_2,   pdf_params_zm%varnce_rt_1, pdf_params_zm%varnce_rt_2, pdf_params_zm%thl_1,   pdf_params_zm%thl_2, pdf_params_zm%varnce_thl_1, pdf_params_zm%varnce_thl_2,   pdf_params_zm%corr_w_rt_1, pdf_params_zm%corr_w_rt_2, pdf_params_zm%corr_w_thl_1,   pdf_params_zm%corr_w_thl_2, pdf_params_zm%corr_rt_thl_1, pdf_params_zm%corr_rt_thl_2,   pdf_params_zm%alpha_thl, pdf_params_zm%alpha_rt, pdf_params_zm%crt_1, pdf_params_zm%crt_2,   pdf_params_zm%cthl_1, pdf_params_zm%cthl_2, pdf_params_zm%chi_1, pdf_params_zm%chi_2,   pdf_params_zm%stdev_chi_1, pdf_params_zm%stdev_chi_2, pdf_params_zm%stdev_eta_1,   pdf_params_zm%stdev_eta_2, pdf_params_zm%covar_chi_eta_1, pdf_params_zm%covar_chi_eta_2,   pdf_params_zm%corr_w_chi_1, pdf_params_zm%corr_w_chi_2, pdf_params_zm%corr_w_eta_1,   pdf_params_zm%corr_w_eta_2, pdf_params_zm%corr_chi_eta_1, pdf_params_zm%corr_chi_eta_2,   pdf_params_zm%rsatl_1, pdf_params_zm%rsatl_2, pdf_params_zm%rc_1, pdf_params_zm%rc_2,   pdf_params_zm%cloud_frac_1, pdf_params_zm%cloud_frac_2,   pdf_params_zm%ice_supersat_frac_1, pdf_params_zm%ice_supersat_frac_2 )",
+      "fields": {
+        "delete": [
+          "gr",
+          "gr%zm",
+          "gr%zt",
+          "gr%dzm",
+          "gr%dzt",
+          "gr%invrs_dzt",
+          "gr%invrs_dzm",
+          "gr%weights_zt2zm",
+          "gr%weights_zm2zt",
+          "nu_vert_res_dep",
+          "nu_vert_res_dep%nu2",
+          "nu_vert_res_dep%nu9",
+          "nu_vert_res_dep%nu1",
+          "nu_vert_res_dep%nu8",
+          "nu_vert_res_dep%nu10",
+          "nu_vert_res_dep%nu6",
+          "pdf_params",
+          "pdf_params_zm",
+          "sclr_idx",
+          "clubb_params",
+          "lmin",
+          "mixt_frac_max_mag",
+          "hm_metadata",
+          "T_sfc",
+          "p_sfc",
+          "fcor",
+          "fcor_y",
+          "sfc_elevation",
+          "dummy_dx",
+          "dummy_dy",
+          "pdf_params%w_1",
+          "pdf_params%w_2",
+          "pdf_params%varnce_w_1",
+          "pdf_params%varnce_w_2",
+          "pdf_params%mixt_frac",
+          "pdf_params_zm%w_1",
+          "pdf_params_zm%w_2",
+          "pdf_params_zm%varnce_w_1",
+          "pdf_params_zm%varnce_w_2",
+          "pdf_params_zm%mixt_frac",
+          "thlm_init",
+          "rtm_init",
+          "um_init",
+          "vm_init",
+          "ug_init",
+          "vg_init",
+          "wp2_init",
+          "up2_init",
+          "vp2_init",
+          "upwp_init",
+          "rcm_init",
+          "wm_zt_init",
+          "wm_zm_init",
+          "em_init",
+          "exner_init",
+          "thvm_init",
+          "p_in_Pa_init",
+          "p_in_Pa_zm_init",
+          "rho_init",
+          "rho_zm_init",
+          "rho_ds_zm_init",
+          "rho_ds_zt_init",
+          "invrs_rho_ds_zm_init",
+          "invrs_rho_ds_zt_init",
+          "thv_ds_zm_init",
+          "thv_ds_zt_init",
+          "rtm_ref_init",
+          "thlm_ref_init",
+          "um_ref_init",
+          "deep_soil_T_in_K_init",
+          "sfc_soil_T_in_K_init",
+          "veg_T_in_K_init",
+          "vm_ref_init",
+          "err_info",
+          "err_info%err_header",
+          "rtm",
+          "wm_zt",
+          "ug",
+          "vg",
+          "um_ref",
+          "vm_ref",
+          "thlm_forcing",
+          "rtm_forcing",
+          "um_forcing",
+          "vm_forcing",
+          "wm_zm",
+          "wprtp_forcing",
+          "wpthlp_forcing",
+          "rtp2_forcing",
+          "thlp2_forcing",
+          "rtpthlp_forcing",
+          "wpthlp_sfc",
+          "wprtp_sfc",
+          "upwp_sfc",
+          "vpwp_sfc",
+          "deep_soil_T_in_K",
+          "sfc_soil_T_in_K",
+          "veg_T_in_K",
+          "rcm_mc",
+          "rvm_mc",
+          "thlm_mc",
+          "radht",
+          "wprtp_mc",
+          "wpthlp_mc",
+          "rtp2_mc",
+          "thlp2_mc",
+          "rtpthlp_mc",
+          "thlprcp",
+          "wprtp",
+          "wpthlp",
+          "rtp2",
+          "thlp2",
+          "rtpthlp",
+          "wp2",
+          "wp3",
+          "wp2thvp",
+          "rtpthvp",
+          "thlpthvp",
+          "rho_zm",
+          "rho",
+          "rho_ds_zm",
+          "rho_ds_zt",
+          "invrs_rho_ds_zm",
+          "invrs_rho_ds_zt",
+          "thv_ds_zm",
+          "thv_ds_zt",
+          "upwp_sfc_pert",
+          "vpwp_sfc_pert",
+          "rtm_ref",
+          "thlm_ref",
+          "um",
+          "upwp",
+          "vm",
+          "vpwp",
+          "up2",
+          "vp2",
+          "up3",
+          "vp3",
+          "thlm",
+          "rtp3",
+          "thlp3",
+          "p_in_Pa",
+          "exner",
+          "rcm",
+          "cloud_frac",
+          "wpthvp",
+          "wp2rtp",
+          "wp2up",
+          "wp2thlp",
+          "uprcp",
+          "vprcp",
+          "rc_coef_zm",
+          "wp4",
+          "wpup2",
+          "wpvp2",
+          "wp2up2",
+          "wp2vp2",
+          "ice_supersat_frac",
+          "um_pert",
+          "vm_pert",
+          "upwp_pert",
+          "vpwp_pert",
+          "rcm_in_layer",
+          "cloud_cover",
+          "wprcp",
+          "w_up_in_cloud",
+          "w_down_in_cloud",
+          "cloudy_updraft_frac",
+          "cloudy_downdraft_frac",
+          "invrs_tau_zm",
+          "Kh_zt",
+          "Kh_zm",
+          "Lscale",
+          "X_nl_all_levs",
+          "x_mixt_comp_all_levs",
+          "lh_sample_point_weights",
+          "lh_rt_clipped",
+          "lh_thl_clipped",
+          "lh_rc_clipped",
+          "lh_rv_clipped",
+          "lh_Nc_clipped",
+          "mu_x_1_n",
+          "mu_x_2_n",
+          "sigma_x_1_n",
+          "sigma_x_2_n",
+          "corr_array_1_n",
+          "corr_array_2_n",
+          "corr_cholesky_mtx_1",
+          "corr_cholesky_mtx_2",
+          "rfrzm",
+          "thvm",
+          "deltaz",
+          "err_info%err_code",
+          "pdf_params%rt_1",
+          "pdf_params%rt_2",
+          "pdf_params%varnce_rt_1",
+          "pdf_params%varnce_rt_2",
+          "pdf_params%thl_1",
+          "pdf_params%thl_2",
+          "pdf_params%varnce_thl_1",
+          "pdf_params%varnce_thl_2",
+          "pdf_params%corr_w_rt_1",
+          "pdf_params%corr_w_rt_2",
+          "pdf_params%corr_w_thl_1",
+          "pdf_params%corr_w_thl_2",
+          "pdf_params%corr_rt_thl_1",
+          "pdf_params%corr_rt_thl_2",
+          "pdf_params%alpha_thl",
+          "pdf_params%alpha_rt",
+          "pdf_params%crt_1",
+          "pdf_params%crt_2",
+          "pdf_params%cthl_1",
+          "pdf_params%cthl_2",
+          "pdf_params%chi_1",
+          "pdf_params%chi_2",
+          "pdf_params%stdev_chi_1",
+          "pdf_params%stdev_chi_2",
+          "pdf_params%stdev_eta_1",
+          "pdf_params%stdev_eta_2",
+          "pdf_params%covar_chi_eta_1",
+          "pdf_params%covar_chi_eta_2",
+          "pdf_params%corr_w_chi_1",
+          "pdf_params%corr_w_chi_2",
+          "pdf_params%corr_w_eta_1",
+          "pdf_params%corr_w_eta_2",
+          "pdf_params%corr_chi_eta_1",
+          "pdf_params%corr_chi_eta_2",
+          "pdf_params%rsatl_1",
+          "pdf_params%rsatl_2",
+          "pdf_params%rc_1",
+          "pdf_params%rc_2",
+          "pdf_params%cloud_frac_1",
+          "pdf_params%cloud_frac_2",
+          "pdf_params%ice_supersat_frac_1",
+          "pdf_params%ice_supersat_frac_2",
+          "pdf_params_zm%rt_1",
+          "pdf_params_zm%rt_2",
+          "pdf_params_zm%varnce_rt_1",
+          "pdf_params_zm%varnce_rt_2",
+          "pdf_params_zm%thl_1",
+          "pdf_params_zm%thl_2",
+          "pdf_params_zm%varnce_thl_1",
+          "pdf_params_zm%varnce_thl_2",
+          "pdf_params_zm%corr_w_rt_1",
+          "pdf_params_zm%corr_w_rt_2",
+          "pdf_params_zm%corr_w_thl_1",
+          "pdf_params_zm%corr_w_thl_2",
+          "pdf_params_zm%corr_rt_thl_1",
+          "pdf_params_zm%corr_rt_thl_2",
+          "pdf_params_zm%alpha_thl",
+          "pdf_params_zm%alpha_rt",
+          "pdf_params_zm%crt_1",
+          "pdf_params_zm%crt_2",
+          "pdf_params_zm%cthl_1",
+          "pdf_params_zm%cthl_2",
+          "pdf_params_zm%chi_1",
+          "pdf_params_zm%chi_2",
+          "pdf_params_zm%stdev_chi_1",
+          "pdf_params_zm%stdev_chi_2",
+          "pdf_params_zm%stdev_eta_1",
+          "pdf_params_zm%stdev_eta_2",
+          "pdf_params_zm%covar_chi_eta_1",
+          "pdf_params_zm%covar_chi_eta_2",
+          "pdf_params_zm%corr_w_chi_1",
+          "pdf_params_zm%corr_w_chi_2",
+          "pdf_params_zm%corr_w_eta_1",
+          "pdf_params_zm%corr_w_eta_2",
+          "pdf_params_zm%corr_chi_eta_1",
+          "pdf_params_zm%corr_chi_eta_2",
+          "pdf_params_zm%rsatl_1",
+          "pdf_params_zm%rsatl_2",
+          "pdf_params_zm%rc_1",
+          "pdf_params_zm%rc_2",
+          "pdf_params_zm%cloud_frac_1",
+          "pdf_params_zm%cloud_frac_2",
+          "pdf_params_zm%ice_supersat_frac_1",
+          "pdf_params_zm%ice_supersat_frac_2"
+        ]
+      }
+    },
+    {
+      "fortran_lines": [
+        4358,
+        4361
+      ],
+      "directive": "exit data if( sclr_dim > 0 )   delete( sclr_tol, sclrm_init,   sclrm_forcing, wpsclrp_sfc, sclrm,   wpsclrp, sclrp2, sclrp3, sclrprtp, sclrpthlp, sclrpthvp )",
+      "fields": {
+        "delete": [
+          "sclr_tol",
+          "sclrm_init",
+          "sclrm_forcing",
+          "wpsclrp_sfc",
+          "sclrm",
+          "wpsclrp",
+          "sclrp2",
+          "sclrp3",
+          "sclrprtp",
+          "sclrpthlp",
+          "sclrpthvp"
+        ]
+      }
+    },
+    {
+      "fortran_lines": [
+        4363,
+        4365
+      ],
+      "directive": "exit data if( edsclr_dim > 0 )   delete( edsclrm_init,   wpedsclrp_sfc, edsclrm_forcing, edsclrm )",
+      "fields": {
+        "delete": [
+          "edsclrm_init",
+          "wpedsclrp_sfc",
+          "edsclrm_forcing",
+          "edsclrm"
+        ]
+      }
+    },
+    {
+      "fortran_lines": [
+        4367,
+        4369
+      ],
+      "directive": "exit data if( hydromet_dim > 0 )   delete( hm_metadata%l_mix_rat_hm,   wphydrometp, wp2hmp, rtphmp_zt, thlphmp_zt )",
+      "fields": {
+        "delete": [
+          "hm_metadata%l_mix_rat_hm",
+          "wphydrometp",
+          "wp2hmp",
+          "rtphmp_zt",
+          "thlphmp_zt"
+        ]
+      }
+    }
+  ],
+  "source_scope": "Source hashes record the pre-lifetime implementation captured before root integration; Native source is unchanged."
+}

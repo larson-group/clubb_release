@@ -1,0 +1,17 @@
+{
+  "scope": "Separate final source/format/ownership cleanup",
+  "hashes": {
+    "matrix_operations.hpp": "a0f7fdfd27cd6499da153b21299051a4e18c90a5418facfdf2c9a36bcdffc365",
+    "lapack_dependencies.hpp": "014cdf9e0f7e4e24b21c056c84086004ed35c0f4fb87a586422e8eb8f707a9af"
+  },
+  "checks": [
+    "Four approved Native routines in source order and13required arguments; four unused JAX-omitted public routines explicitly excluded.",
+    "17ordered assignment trees and7ordered lower calls match after documented value-copy/raw-buffer syntax mapping.",
+    "Native10attempt limit,0.1_core coefficient,180workspace, scaling flags/info branches/minimum scan/tau/restoration and final modification retained.",
+    "All debug labels/full matrix and eigen payloads preserved; arbitrary Native I/O unit registry not invented.",
+    "Private named namespace, generic memory-space policies, two independent kernels and explicit void enclosing types checked; all host scratch local.",
+    "Missing LAPACK entries extend actual existing core+raw-shim owners; no direct raw symbol, global cache or device bridge.",
+    "Scientific comments/references, case-sensitive names, Native argument groups/core kinds,100columns/whitespace checked."
+  ],
+  "runtime_status": "Uncompiled/untested; no CPU/GPU/model/BFB claim."
+}

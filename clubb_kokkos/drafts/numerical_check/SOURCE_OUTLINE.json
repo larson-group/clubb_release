@@ -1,0 +1,2583 @@
+{
+  "preimplementation_outline": true,
+  "source": "src/CLUBB_core/numerical_check.F90",
+  "native_lines": 1889,
+  "jax": "clubb_jax/src/CLUBB_core/numerical_check.py",
+  "supported_scope": "All12Native procedures; full settings validation and detailed PDF schema included",
+  "starting_live_sha256": {
+    "cpp": "7b6fb57615db69d014cec580375a79e6ad90bb0cfea9867dbaba460907ef4e5d",
+    "hpp": "f6babf10d378c5a6e0d33c232f990313e1e990ce27b09d8659832030a86eaf33"
+  },
+  "decisions": [
+    "Preserve four live bodies exactly while integrating declarations and Native definition order",
+    "Native all-column fatal updates and NaN-before-negative/reset semantics retained",
+    "Profile interfaces preserve strided per-column device Views without bulk staging",
+    "Scalar surface checks use required scalar/array args, not JAX optionals",
+    "Native settings GPU compile gate and commented-out assignments preserved",
+    "Reuse existing native debug calls/driver_environment; no invented global accessor",
+    "Missing public lower initialize_error_headers no args and check_parameters_api3args remain explicit"
+  ],
+  "routines": [
+    {
+      "name": "length_check",
+      "module": "numerical_check",
+      "source": "src/CLUBB_core/numerical_check.F90",
+      "arguments": [
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "Lscale",
+          "kind": "real",
+          "dims": [
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "Lscale_up",
+          "kind": "real",
+          "dims": [
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "Lscale_down",
+          "kind": "real",
+          "dims": [
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "err_info",
+          "kind": "err_info_type",
+          "dims": [],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "start_line": 34,
+      "end_line": 76,
+      "scope": "public",
+      "already_live": false,
+      "ordered_calls": [
+        "call check_nan( Lscale, \"Lscale\", proc_name, err_info )",
+        "call check_nan( Lscale_up, \"Lscale_up\", proc_name, err_info )",
+        "call check_nan( Lscale_down, \"Lscale_down\", proc_name, err_info )"
+      ],
+      "ordered_control": [],
+      "comments": [
+        "",
+        "Description: This subroutine determines if any of the output",
+        "variables for the length_new subroutine carry values that",
+        "are NaNs.",
+        "",
+        "Joshua Fasching February 2008",
+        "---------------------------------------------------------------------------------",
+        "Constant Parameters",
+        "Input Variables",
+        "Input/Output Variables",
+        "-----------------------------------------------------------------------------"
+      ]
+    },
+    {
+      "name": "pdf_closure_check",
+      "module": "numerical_check",
+      "source": "src/CLUBB_core/numerical_check.F90",
+      "arguments": [
+        {
+          "name": "nz",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sclr_dim",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp4",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wprtp2",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp2rtp",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wpthlp2",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp2thlp",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "cloud_frac",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rcm",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wpthvp",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp2thvp",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp2up",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rtpthvp",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "thlpthvp",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wprcp",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp2rcp",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rtprcp",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "thlprcp",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rcp2",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wprtpthlp",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "crt_1",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "crt_2",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "cthl_1",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "cthl_2",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "pdf_params",
+          "kind": "pdf_parameter",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sclrpthvp",
+          "kind": "real",
+          "dims": [
+            "nz",
+            "sclr_dim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sclrprcp",
+          "kind": "real",
+          "dims": [
+            "nz",
+            "sclr_dim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wpsclrp2",
+          "kind": "real",
+          "dims": [
+            "nz",
+            "sclr_dim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wpsclrprtp",
+          "kind": "real",
+          "dims": [
+            "nz",
+            "sclr_dim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wpsclrpthlp",
+          "kind": "real",
+          "dims": [
+            "nz",
+            "sclr_dim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp2sclrp",
+          "kind": "real",
+          "dims": [
+            "nz",
+            "sclr_dim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "stats",
+          "kind": "stats_type",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "err_info",
+          "kind": "err_info_type",
+          "dims": [],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "start_line": 79,
+      "end_line": 359,
+      "scope": "public",
+      "already_live": false,
+      "ordered_calls": [
+        "if ( var_on_stats_list( stats, \"wp4\" ) ) call check_nan( wp4, \"wp4\", proc_name, err_info )",
+        "if ( var_on_stats_list( stats, \"wprtp2\" ) ) call check_nan( wprtp2, \"wprtp2\", proc_name, err_info )",
+        "call check_nan( wp2rtp,\"wp2rtp\", proc_name, err_info )",
+        "if ( var_on_stats_list( stats, \"wpthlp2\" ) ) call check_nan( wpthlp2, \"wpthlp2\", proc_name, err_info )",
+        "call check_nan( wp2thlp,\"wp2thlp\", proc_name, err_info )",
+        "call check_nan( cloud_frac,\"cloud_frac\", proc_name, err_info )",
+        "call check_nan( rcm,\"rcm\", proc_name, err_info )",
+        "call check_nan( wpthvp, \"wpthvp\", proc_name, err_info )",
+        "call check_nan( wp2thvp, \"wp2thvp\", proc_name, err_info )",
+        "call check_nan( wp2up, \"wp2up\", proc_name, err_info )",
+        "call check_nan( rtpthvp, \"rtpthvp\", proc_name, err_info )",
+        "call check_nan( thlpthvp, \"thlpthvp\", proc_name, err_info )",
+        "call check_nan( wprcp, \"wprcp\", proc_name, err_info )",
+        "call check_nan( wp2rcp, \"wp2rcp\", proc_name, err_info )",
+        "call check_nan( rtprcp, \"rtprcp\", proc_name, err_info )",
+        "call check_nan( thlprcp, \"thlprcp\", proc_name, err_info )",
+        "if ( var_on_stats_list( stats, \"rcp2\" ) ) call check_nan( rcp2, \"rcp2\", proc_name, err_info )",
+        "if ( var_on_stats_list( stats, \"wprtpthlp\" ) ) call check_nan( wprtpthlp, \"wprtpthlp\", proc_name, err_info )",
+        "call check_nan( crt_1, \"crt_1\", proc_name, err_info )",
+        "call check_nan( crt_2, \"crt_2\", proc_name, err_info )",
+        "call check_nan( cthl_1, \"cthl_1\", proc_name, err_info )",
+        "call check_nan( cthl_2, \"cthl_2\", proc_name, err_info )",
+        "call check_nan( pdf_params%w_1(1,:), \"pdf_params%w_1(1,:)\", proc_name, err_info )",
+        "call check_nan( pdf_params%w_2(1,:), \"pdf_params%w_2(1,:)\", proc_name, err_info )",
+        "call check_nan( pdf_params%varnce_w_1(1,:), \"pdf_params%varnce_w_1(1,:)\", proc_name, err_info )",
+        "call check_nan( pdf_params%varnce_w_2(1,:), \"pdf_params%varnce_w_2(1,:)\", proc_name, err_info )",
+        "call check_nan( pdf_params%rt_1(1,:), \"pdf_params%rt_1(1,:)\", proc_name, err_info )",
+        "call check_nan( pdf_params%rt_2(1,:), \"pdf_params%rt_2(1,:)\", proc_name, err_info )",
+        "call check_nan( pdf_params%varnce_rt_1(1,:), \"pdf_params%varnce_rt_1(1,:)\", proc_name, err_info )",
+        "call check_nan( pdf_params%varnce_rt_2(1,:), \"pdf_params%varnce_rt_2(1,:)\", proc_name, err_info )",
+        "call check_nan( pdf_params%thl_1(1,:), \"pdf_params%thl_1(1,:)\", proc_name, err_info )",
+        "call check_nan( pdf_params%thl_2(1,:), \"pdf_params%thl_2(1,:)\", proc_name, err_info )",
+        "call check_nan( pdf_params%varnce_thl_1(1,:), \"pdf_params%varnce_thl_1(1,:)\", proc_name, err_info )",
+        "call check_nan( pdf_params%varnce_thl_2(1,:), \"pdf_params%varnce_thl_2(1,:)\", proc_name, err_info )",
+        "call check_nan( pdf_params%mixt_frac(1,:), \"pdf_params%mixt_frac(1,:)\", proc_name, err_info )",
+        "call check_nan( pdf_params%corr_w_rt_1(1,:), \"pdf_params%corr_w_rt_1(1,:)\", proc_name, err_info )",
+        "call check_nan( pdf_params%corr_w_rt_2(1,:), \"pdf_params%corr_w_rt_2(1,:)\", proc_name, err_info )",
+        "call check_nan( pdf_params%corr_w_thl_1(1,:), \"pdf_params%corr_w_thl_1(1,:)\", proc_name, err_info )",
+        "call check_nan( pdf_params%corr_w_thl_2(1,:), \"pdf_params%corr_w_thl_2(1,:)\", proc_name, err_info )",
+        "call check_nan( pdf_params%corr_rt_thl_1(1,:), \"pdf_params%corr_rt_thl_1(1,:)\", proc_name, err_info )",
+        "call check_nan( pdf_params%corr_rt_thl_2(1,:), \"pdf_params%corr_rt_thl_2(1,:)\", proc_name, err_info )",
+        "call check_nan( pdf_params%rc_1(1,:), \"pdf_params%rc_1(1,:)\", proc_name, err_info )",
+        "call check_nan( pdf_params%rc_2(1,:), \"pdf_params%rc_2(1,:)\", proc_name, err_info )",
+        "call check_nan( pdf_params%rsatl_1(1,:), \"pdf_params%rsatl_1(1,:)\", proc_name, err_info )",
+        "call check_nan( pdf_params%rsatl_2(1,:), \"pdf_params%rsatl_2(1,:)\", proc_name, err_info )",
+        "call check_nan( pdf_params%cloud_frac_1(1,:), \"pdf_params%cloud_frac_1(1,:)\", proc_name, err_info )",
+        "call check_nan( pdf_params%cloud_frac_2(1,:), \"pdf_params%cloud_frac_2(1,:)\", proc_name, err_info )",
+        "call check_nan( pdf_params%chi_1(1,:), \"pdf_params%chi_1(1,:)\", proc_name, err_info )",
+        "call check_nan( pdf_params%chi_2(1,:), \"pdf_params%chi_2(1,:)\", proc_name, err_info )",
+        "call check_nan( pdf_params%stdev_chi_1(1,:), \"pdf_params%stdev_chi_1(1,:)\", proc_name, err_info )",
+        "call check_nan( pdf_params%stdev_chi_2(1,:), \"pdf_params%stdev_chi_2(1,:)\", proc_name, err_info )",
+        "call check_nan( pdf_params%stdev_eta_1(1,:), \"pdf_params%stdev_eta_1(1,:)\", proc_name, err_info )",
+        "call check_nan( pdf_params%stdev_eta_2(1,:), \"pdf_params%stdev_eta_2(1,:)\", proc_name, err_info )",
+        "call check_nan( pdf_params%covar_chi_eta_1(1,:), \"pdf_params%covar_chi_eta_1(1,:)\", proc_name, err_info )",
+        "call check_nan( pdf_params%covar_chi_eta_2(1,:), \"pdf_params%covar_chi_eta_2(1,:)\", proc_name, err_info )",
+        "call check_nan( pdf_params%corr_w_chi_1(1,:), \"pdf_params%corr_w_chi_1(1,:)\", proc_name, err_info )",
+        "call check_nan( pdf_params%corr_w_chi_2(1,:), \"pdf_params%corr_w_chi_2(1,:)\", proc_name, err_info )",
+        "call check_nan( pdf_params%corr_w_eta_1(1,:), \"pdf_params%corr_w_eta_1(1,:)\", proc_name, err_info )",
+        "call check_nan( pdf_params%corr_w_eta_2(1,:), \"pdf_params%corr_w_eta_2(1,:)\", proc_name, err_info )",
+        "call check_nan( pdf_params%corr_chi_eta_1(1,:), \"pdf_params%corr_chi_eta_1(1,:)\", proc_name, err_info )",
+        "call check_nan( pdf_params%corr_chi_eta_2(1,:), \"pdf_params%corr_chi_eta_2(1,:)\", proc_name, err_info )",
+        "call check_nan( pdf_params%alpha_thl(1,:), \"pdf_params%alpha_thl(1,:)\", proc_name, err_info )",
+        "call check_nan( pdf_params%alpha_rt(1,:), \"pdf_params%alpha_rt(1,:)\", proc_name, err_info )",
+        "call check_nan( pdf_params%ice_supersat_frac_1(1,:), \"pdf_params%ice_supersat_frac_1(1,:)\", proc_name, err_info )",
+        "call check_nan( pdf_params%ice_supersat_frac_2(1,:), \"pdf_params%ice_supersat_frac_2(1,:)\", proc_name, err_info )",
+        "call check_nan( sclrpthvp(:,sclr),\"sclrpthvp\", proc_name, err_info )",
+        "call check_nan( sclrprcp(:,sclr), \"sclrprcp\", proc_name, err_info )",
+        "call check_nan( wpsclrprtp(:,sclr), \"wpsclrprtp\", proc_name, err_info )",
+        "call check_nan( wpsclrp2(:,sclr), \"wpsclrp2\", proc_name, err_info )",
+        "call check_nan( wpsclrpthlp(:,sclr), \"wpsclrtlp\", proc_name, err_info )",
+        "call check_nan( wp2sclrp(:,sclr), \"wp2sclrp\", proc_name, err_info )"
+      ],
+      "ordered_control": [
+        "if ( var_on_stats_list( stats, \"wp4\" ) ) call check_nan( wp4, \"wp4\", proc_name, err_info )",
+        "if ( var_on_stats_list( stats, \"wprtp2\" ) ) call check_nan( wprtp2, \"wprtp2\", proc_name, err_info )",
+        "if ( var_on_stats_list( stats, \"wpthlp2\" ) ) call check_nan( wpthlp2, \"wpthlp2\", proc_name, err_info )",
+        "if ( var_on_stats_list( stats, \"rcp2\" ) ) call check_nan( rcp2, \"rcp2\", proc_name, err_info )",
+        "if ( var_on_stats_list( stats, \"wprtpthlp\" ) ) call check_nan( wprtpthlp, \"wprtpthlp\", proc_name, err_info )",
+        "if ( sclr_dim > 0 ) then",
+        "do sclr = 1, sclr_dim, 1"
+      ],
+      "comments": [
+        "Description: This subroutine determines if any of the output",
+        "variables for the pdf_closure subroutine carry values that",
+        "are NaNs.",
+        "",
+        "Joshua Fasching February 2008",
+        "---------------------------------------------------------------------------",
+        "Parameter Constants",
+        "Input Variables",
+        "Input (Optional passive scalar variables)",
+        "Input/Output variables",
+        "Local variables",
+        "-------------------------------------------------------------------------------",
+        "---- Begin Code ----",
+        "Check each PDF parameter at the grid level sent in."
+      ]
+    },
+    {
+      "name": "parameterization_check",
+      "module": "numerical_check",
+      "source": "src/CLUBB_core/numerical_check.F90",
+      "arguments": [
+        {
+          "name": "nzm",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sclr_dim",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "edsclr_dim",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "thlm_forcing",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rtm_forcing",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "um_forcing",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "vm_forcing",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wm_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wm_zt",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "p_in_Pa",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rho_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rho",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "exner",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rho_ds_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rho_ds_zt",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "invrs_rho_ds_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "invrs_rho_ds_zt",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "thv_ds_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "thv_ds_zt",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wpthlp_sfc",
+          "kind": "real",
+          "dims": [
+            "ngrdcol"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wprtp_sfc",
+          "kind": "real",
+          "dims": [
+            "ngrdcol"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "upwp_sfc",
+          "kind": "real",
+          "dims": [
+            "ngrdcol"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "vpwp_sfc",
+          "kind": "real",
+          "dims": [
+            "ngrdcol"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "p_sfc",
+          "kind": "real",
+          "dims": [
+            "ngrdcol"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "um",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "upwp",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "vm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "vpwp",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "up2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "vp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rtm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wprtp",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "thlm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wpthlp",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp3",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rtp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "thlp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rtpthlp",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "prefix",
+          "kind": "character",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": "*"
+        },
+        {
+          "name": "wpsclrp_sfc",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "sclr_dim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wpedsclrp_sfc",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "edsclr_dim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sclrm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt",
+            "sclr_dim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wpsclrp",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm",
+            "sclr_dim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sclrp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm",
+            "sclr_dim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sclrprtp",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm",
+            "sclr_dim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sclrpthlp",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm",
+            "sclr_dim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sclrm_forcing",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt",
+            "sclr_dim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "edsclrm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt",
+            "edsclr_dim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "edsclrm_forcing",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt",
+            "edsclr_dim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "err_info",
+          "kind": "err_info_type",
+          "dims": [],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "start_line": 362,
+      "end_line": 606,
+      "scope": "public",
+      "already_live": true,
+      "ordered_calls": [
+        "call check_nan( thlm_forcing, \"thlm_forcing\", prefix//proc_name, err_info )",
+        "call check_nan( rtm_forcing, \"rtm_forcing\", prefix//proc_name, err_info )",
+        "call check_nan( um_forcing, \"um_forcing\", prefix//proc_name, err_info )",
+        "call check_nan( vm_forcing, \"vm_forcing\", prefix//proc_name, err_info )",
+        "call check_nan( wm_zm, \"wm_zm\", prefix//proc_name, err_info )",
+        "call check_nan( wm_zt, \"wm_zt\", prefix//proc_name, err_info )",
+        "call check_nan( p_in_Pa, \"p_in_Pa\", prefix//proc_name, err_info )",
+        "call check_nan( rho_zm, \"rho_zm\", prefix//proc_name, err_info )",
+        "call check_nan( rho, \"rho\", prefix//proc_name, err_info )",
+        "call check_nan( exner, \"exner\", prefix//proc_name, err_info )",
+        "call check_nan( rho_ds_zm, \"rho_ds_zm\", prefix//proc_name, err_info )",
+        "call check_nan( rho_ds_zt, \"rho_ds_zt\", prefix//proc_name, err_info )",
+        "call check_nan( invrs_rho_ds_zm, \"invrs_rho_ds_zm\", prefix//proc_name, err_info )",
+        "call check_nan( invrs_rho_ds_zt, \"invrs_rho_ds_zt\", prefix//proc_name, err_info )",
+        "call check_nan( thv_ds_zm, \"thv_ds_zm\", prefix//proc_name, err_info )",
+        "call check_nan( thv_ds_zt, \"thv_ds_zt\", prefix//proc_name, err_info )",
+        "call check_nan( um, \"um\", prefix//proc_name, err_info )",
+        "call check_nan( upwp, \"upwp\", prefix//proc_name, err_info )",
+        "call check_nan( vm, \"vm\", prefix//proc_name, err_info )",
+        "call check_nan( vpwp, \"vpwp\", prefix//proc_name, err_info )",
+        "call check_nan( up2, \"up2\", prefix//proc_name, err_info )",
+        "call check_nan( vp2, \"vp2\", prefix//proc_name, err_info )",
+        "call check_nan( rtm, \"rtm\", prefix//proc_name, err_info )",
+        "call check_nan( wprtp, \"wprtp\", prefix//proc_name, err_info )",
+        "call check_nan( thlm, \"thlm\", prefix//proc_name, err_info )",
+        "call check_nan( wpthlp, \"wpthlp\", prefix//proc_name, err_info )",
+        "call check_nan( wp2, \"wp2\", prefix//proc_name, err_info )",
+        "call check_nan( wp3, \"wp3\", prefix//proc_name, err_info )",
+        "call check_nan( rtp2, \"rtp2\", prefix//proc_name, err_info )",
+        "call check_nan( thlp2, \"thlp2\", prefix//proc_name, err_info )",
+        "call check_nan( rtpthlp, \"rtpthlp\", prefix//proc_name, err_info )",
+        "call check_nan( wpthlp_sfc, \"wpthlp_sfc\", prefix//proc_name, err_info )",
+        "call check_nan( wprtp_sfc, \"wprtp_sfc\", prefix//proc_name, err_info )",
+        "call check_nan( upwp_sfc, \"upwp_sfc\", prefix//proc_name, err_info )",
+        "call check_nan( vpwp_sfc, \"vpwp_sfc\", prefix//proc_name, err_info )",
+        "call check_nan( p_sfc, \"p_sfc\", prefix//proc_name, err_info )",
+        "call check_nan( sclrm_forcing(:,:,sclr), \"sclrm_forcing\", prefix//proc_name, err_info )",
+        "call check_nan( wpsclrp_sfc(:,sclr), \"wpsclrp_sfc\", prefix//proc_name, err_info )",
+        "call check_nan( sclrm(:,:,sclr), \"sclrm\", prefix//proc_name, err_info )",
+        "call check_nan( wpsclrp(:,:,sclr), \"wpsclrp\", prefix//proc_name, err_info )",
+        "call check_nan( sclrp2(:,:,sclr), \"sclrp2\", prefix//proc_name, err_info )",
+        "call check_nan( sclrprtp(:,:,sclr), \"sclrprtp\", prefix//proc_name, err_info )",
+        "call check_nan( sclrpthlp(:,:,sclr), \"sclrpthlp\", prefix//proc_name, err_info )",
+        "call check_nan( edsclrm_forcing(:,:,edsclr), \"edsclrm_forcing\", prefix//proc_name, err_info )",
+        "call check_nan( wpedsclrp_sfc(:,edsclr), \"wpedsclrp_sfc\", prefix//proc_name, err_info )",
+        "call check_nan( edsclrm(:,:,edsclr), \"edsclrm\", prefix//proc_name, err_info )",
+        "call check_negative( rtm, \"rtm\", prefix//proc_name, err_info )",
+        "call check_negative( p_in_Pa, \"p_in_Pa\", prefix//proc_name, err_info )",
+        "call check_negative( rho, \"rho\", prefix//proc_name, err_info )",
+        "call check_negative( rho_zm, \"rho_zm\", prefix//proc_name, err_info )",
+        "call check_negative( exner, \"exner\", prefix//proc_name, err_info )",
+        "call check_negative( rho_ds_zm, \"rho_ds_zm\", prefix//proc_name, err_info )",
+        "call check_negative( rho_ds_zt, \"rho_ds_zt\", prefix//proc_name, err_info )",
+        "call check_negative( invrs_rho_ds_zm, \"invrs_rho_ds_zm\", prefix//proc_name, err_info )",
+        "call check_negative( invrs_rho_ds_zt, \"invrs_rho_ds_zt\", prefix//proc_name, err_info )",
+        "call check_negative( thv_ds_zm, \"thv_ds_zm\", prefix//proc_name, err_info )",
+        "call check_negative( thv_ds_zt, \"thv_ds_zt\", prefix//proc_name, err_info )",
+        "call check_negative( up2, \"up2\", prefix//proc_name, err_info )",
+        "call check_negative( vp2, \"vp2\", prefix//proc_name, err_info )",
+        "call check_negative( wp2, \"wp2\", prefix//proc_name, err_info )",
+        "call check_negative( thlm, \"thlm\", prefix//proc_name, err_info )",
+        "call check_negative( rtp2, \"rtp2\", prefix//proc_name, err_info )",
+        "call check_negative( thlp2, \"thlp2\", prefix//proc_name, err_info )"
+      ],
+      "ordered_control": [
+        "do sclr = 1, sclr_dim",
+        "do edsclr = 1, edsclr_dim",
+        "if ( clubb_at_least_debug_level_api( 0 ) ) then",
+        "if ( any(err_info%err_code == clubb_fatal_error) ) then",
+        "if ( any(err_info%err_code == clubb_fatal_error) .and. prefix == \"beginning of \" ) then",
+        "do i = 1, ngrdcol",
+        "do k = 1, min( 10, nzt )",
+        "if ( thlm(i,k) < 190.0_core_rknd ) then"
+      ],
+      "comments": [
+        "",
+        "Description:",
+        "This subroutine determines what input variables may have NaN values.",
+        "In addition it checks to see if rho_zm, rho, exner, up2, vp2, rtm, thlm,",
+        "wp2, rtp2, thlp2, or tau_zm have negative values.",
+        "-------------------------------------------------------------------------------",
+        "Constant Parameters",
+        "Name of the procedure using parameterization_check",
+        "Input variables",
+        "These are prognostic or are planned to be in the future",
+        "Input/Output variables",
+        "Local Variables",
+        "-------- Input Nan Check ----------------------------------------------",
+        "---------------------------------------------------------------------",
+        "hence ignore error",
+        "Check the first levels for temperatures greater than 200K"
+      ]
+    },
+    {
+      "name": "sfc_varnce_check",
+      "module": "numerical_check",
+      "source": "src/CLUBB_core/numerical_check.F90",
+      "arguments": [
+        {
+          "name": "sclr_dim",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp2_sfc",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "up2_sfc",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "vp2_sfc",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "thlp2_sfc",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rtp2_sfc",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rtpthlp_sfc",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sclrp2_sfc",
+          "kind": "real",
+          "dims": [
+            "sclr_dim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sclrprtp_sfc",
+          "kind": "real",
+          "dims": [
+            "sclr_dim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sclrpthlp_sfc",
+          "kind": "real",
+          "dims": [
+            "sclr_dim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "err_info",
+          "kind": "err_info_type",
+          "dims": [],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "start_line": 609,
+      "end_line": 694,
+      "scope": "public",
+      "already_live": false,
+      "ordered_calls": [
+        "call check_nan( wp2_sfc, \"wp2_sfc\", proc_name, err_info )",
+        "call check_nan( up2_sfc, \"up2_sfc\", proc_name, err_info )",
+        "call check_nan( vp2_sfc, \"vp2_sfc\", proc_name, err_info )",
+        "call check_nan( thlp2_sfc, \"thlp2_sfc\", proc_name, err_info )",
+        "call check_nan( rtp2_sfc, \"rtp2_sfc\", proc_name, err_info )",
+        "call check_nan( rtpthlp_sfc, \"rtpthlp_sfc\", proc_name, err_info )",
+        "call check_nan( sclrp2_sfc, \"sclrp2_sfc\", proc_name, err_info )",
+        "call check_nan( sclrprtp_sfc, \"sclrprtp_sfc\", proc_name, err_info )",
+        "call check_nan( sclrpthlp_sfc, \"sclrpthlp_sfc\", proc_name, err_info )"
+      ],
+      "ordered_control": [
+        "if ( sclr_dim > 0 ) then"
+      ],
+      "comments": [
+        "",
+        "Description:This subroutine determines if any of the output",
+        "variables for the calc_surface_varnce subroutine carry values that",
+        "are nans.",
+        "",
+        "Joshua Fasching February 2008",
+        "",
+        "",
+        "-----------------------------------------------------------------------",
+        "Constant Parameters",
+        "Name of the subroutine calling the check",
+        "Input Variables",
+        "Input/Output variables",
+        "-----------------------------------------------------------------------",
+        "---- Begin Code ----"
+      ]
+    },
+    {
+      "name": "rad_check",
+      "module": "numerical_check",
+      "source": "src/CLUBB_core/numerical_check.F90",
+      "arguments": [
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "nzm",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "thlm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rcm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rtm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rim",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "cloud_frac",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "p_in_Pa",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "exner",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rho_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "err_info",
+          "kind": "err_info_type",
+          "dims": [],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "start_line": 697,
+      "end_line": 767,
+      "scope": "public",
+      "already_live": false,
+      "ordered_calls": [
+        "call check_negative( thlm, \"thlm\", proc_name, err_info )",
+        "call check_negative( rcm, \"rcm\", proc_name, err_info )",
+        "call check_negative( rtm, \"rtm\", proc_name, err_info )",
+        "call check_negative( rvm, \"rvm\", proc_name, err_info )",
+        "call check_negative( rim, \"rim\", proc_name, err_info )",
+        "call check_negative( cloud_frac, \"cloud_frac\", proc_name, err_info )",
+        "call check_negative( p_in_Pa, \"p_in_Pa\", proc_name, err_info )",
+        "call check_negative( exner, \"exner\", proc_name, err_info )",
+        "call check_negative( rho_zm, \"rho_zm\", proc_name, err_info )"
+      ],
+      "ordered_control": [],
+      "comments": [
+        "Description:",
+        "Checks radiation input variables. If they are < 0 it reports",
+        "to the console.",
+        "------------------------------------------------------------------------",
+        "Constant Parameters",
+        "Input/Output variables",
+        "Input/Output variables",
+        "Local variables",
+        "-------------------------------------------------------------------------"
+      ]
+    },
+    {
+      "name": "invalid_model_arrays",
+      "module": "numerical_check",
+      "source": "src/CLUBB_core/numerical_check.F90",
+      "arguments": [
+        {
+          "name": "nzm",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "hydromet_dim",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "hydromet_list",
+          "kind": "character",
+          "dims": [
+            "hydromet_dim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": "10"
+        },
+        {
+          "name": "sclr_dim",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "edsclr_dim",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "um",
+          "kind": "real",
+          "dims": [
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "vm",
+          "kind": "real",
+          "dims": [
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rtm",
+          "kind": "real",
+          "dims": [
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wprtp",
+          "kind": "real",
+          "dims": [
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "thlm",
+          "kind": "real",
+          "dims": [
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wpthlp",
+          "kind": "real",
+          "dims": [
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rtp2",
+          "kind": "real",
+          "dims": [
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "thlp2",
+          "kind": "real",
+          "dims": [
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rtpthlp",
+          "kind": "real",
+          "dims": [
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp2",
+          "kind": "real",
+          "dims": [
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp3",
+          "kind": "real",
+          "dims": [
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp2thvp",
+          "kind": "real",
+          "dims": [
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp2up",
+          "kind": "real",
+          "dims": [
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rtpthvp",
+          "kind": "real",
+          "dims": [
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "thlpthvp",
+          "kind": "real",
+          "dims": [
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "hydromet",
+          "kind": "real",
+          "dims": [
+            "nzt",
+            "hydromet_dim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sclrm",
+          "kind": "real",
+          "dims": [
+            "nzt",
+            "sclr_dim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "edsclrm",
+          "kind": "real",
+          "dims": [
+            "nzt",
+            "edsclr_dim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": {
+        "name": "invalid_model_arrays",
+        "kind": "logical",
+        "dims": [],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      "start_line": 770,
+      "end_line": 968,
+      "scope": "public",
+      "already_live": false,
+      "ordered_calls": [],
+      "ordered_control": [
+        "if ( any( .not. ieee_is_finite( um ) ) ) then",
+        "if ( any( .not. ieee_is_finite( vm ) ) ) then",
+        "if ( any( .not. ieee_is_finite( wp2 ) ) ) then",
+        "if ( any( .not. ieee_is_finite( wp3 ) ) ) then",
+        "if ( any( .not. ieee_is_finite( rtm ) ) ) then",
+        "if ( any( .not. ieee_is_finite( thlm ) ) ) then",
+        "if ( any( .not. ieee_is_finite( rtp2 ) ) ) then",
+        "if ( any( .not. ieee_is_finite( thlp2 ) ) ) then",
+        "if ( any( .not. ieee_is_finite( wprtp ) ) ) then",
+        "if ( any( .not. ieee_is_finite( wpthlp ) ) ) then",
+        "if ( any( .not. ieee_is_finite( rtpthlp ) ) ) then",
+        "if ( hydromet_dim > 0 ) then",
+        "do i = 1, hydromet_dim, 1",
+        "if ( any( .not. ieee_is_finite( hydromet(:,i) ) ) ) then",
+        "if ( any( .not. ieee_is_finite( wp2thvp ) ) ) then",
+        "if ( any( .not. ieee_is_finite( wp2up ) ) ) then",
+        "if ( any( .not. ieee_is_finite( rtpthvp ) ) ) then",
+        "if ( any( .not. ieee_is_finite( thlpthvp ) ) ) then",
+        "do sclr = 1, sclr_dim, 1",
+        "if ( any( .not. ieee_is_finite( sclrm(:,sclr) ) ) ) then",
+        "do edsclr = 1, edsclr_dim, 1",
+        "if ( any( .not. ieee_is_finite( edsclrm(:,edsclr) ) ) ) then"
+      ],
+      "comments": [
+        "Description:",
+        "Checks for invalid floating point values in select model arrays.",
+        "References:",
+        "None",
+        "------------------------------------------------------------------------",
+        "Local Variables",
+        "Check whether any variable array contains a NaN for",
+        "um, vm, thlm, rtm, rtp2, thlp2, wprtp, wpthlp, rtpthlp,",
+        "wp2, & wp3.",
+        "write(fstderr,*) \"um= \", um",
+        "write(fstderr,*) \"vm= \", vm",
+        "write(fstderr,*) \"wp2= \", wp2",
+        "write(fstderr,*) \"wp3= \", wp3",
+        "write(fstderr,*) \"rtm= \", rtm",
+        "write(fstderr,*) \"thlm= \", thlm",
+        "write(fstderr,*) \"rtp2= \", rtp2",
+        "write(fstderr,*) \"thlp2= \", thlp2",
+        "write(fstderr,*) \"wprtp= \", wprtp",
+        "write(fstderr,*) \"wpthlp= \", wpthlp",
+        "write(fstderr,*) \"rtpthlp= \", rtpthlp",
+        "write(fstderr,*) \"hydromet= \", hydromet",
+        "return",
+        "if ( any( .not. ieee_is_finite( wm_zt ) ) ) then",
+        "write(fstderr,*) \"NaN in wm_zt model array\"",
+        "write(fstderr,*) \"wm_zt= \", wm_zt",
+        "invalid_model_arrays = .true.",
+        "end if",
+        "write(fstderr,*) \"wp2thvp = \", wp2thvp",
+        "write(fstderr,*) \"wp2up = \", wp2up",
+        "write(fstderr,*) \"rtpthvp = \", rtpthvp",
+        "write(fstderr,*) \"thlpthvp = \", thlpthvp",
+        "write(fstderr,'(a6,i2,a1)') \"sclrm(\", sclr, \")\"",
+        "write(fstderr,*) sclrm(:,sclr)",
+        "write(fstderr,'(a8,i2,a1)') \"edsclrm(\", edsclr, \")\"",
+        "write(fstderr,*) edsclrm(:,edsclr)"
+      ]
+    },
+    {
+      "name": "check_negative",
+      "module": "numerical_check",
+      "source": "src/CLUBB_core/numerical_check.F90",
+      "arguments": [
+        {
+          "name": "var",
+          "kind": "real",
+          "dims": [
+            ":",
+            ":"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "varname",
+          "kind": "character",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": "*"
+        },
+        {
+          "name": "operation",
+          "kind": "character",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": "*"
+        },
+        {
+          "name": "err_info",
+          "kind": "err_info_type",
+          "dims": [],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "start_line": 971,
+      "end_line": 1023,
+      "scope": "private",
+      "already_live": true,
+      "ordered_calls": [],
+      "ordered_control": [
+        "do k = 1, size( var, dim = 2 )",
+        "do i = 1, size( var, dim = 1 )",
+        "if ( var(i,k) < 0.0_core_rknd ) then"
+      ],
+      "comments": [
+        "",
+        "Description:",
+        "Checks for negative values in the var array and reports",
+        "the column and vertical indices in which the negative values occur.",
+        "",
+        "-----------------------------------------------------------------------",
+        "Input/Output variables",
+        "Local Variable"
+      ]
+    },
+    {
+      "name": "check_nan_1d",
+      "module": "numerical_check",
+      "source": "src/CLUBB_core/numerical_check.F90",
+      "arguments": [
+        {
+          "name": "var",
+          "kind": "real",
+          "dims": [
+            ":"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "varname",
+          "kind": "character",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": "*"
+        },
+        {
+          "name": "operation",
+          "kind": "character",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": "*"
+        },
+        {
+          "name": "err_info",
+          "kind": "err_info_type",
+          "dims": [],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "start_line": 1027,
+      "end_line": 1073,
+      "scope": "private",
+      "already_live": true,
+      "ordered_calls": [],
+      "ordered_control": [
+        "if ( any( .not. ieee_is_finite( var ) ) ) then"
+      ],
+      "comments": [
+        "",
+        "Description:",
+        "Checks for a NaN in the var array and reports it.",
+        "",
+        "",
+        "------------------------------------------------------------------------",
+        "External",
+        "Input variables",
+        "Input/Output variables",
+        "Single col error, but col nr is not available"
+      ]
+    },
+    {
+      "name": "check_nan_2d",
+      "module": "numerical_check",
+      "source": "src/CLUBB_core/numerical_check.F90",
+      "arguments": [
+        {
+          "name": "var",
+          "kind": "real",
+          "dims": [
+            ":",
+            ":"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "varname",
+          "kind": "character",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": "*"
+        },
+        {
+          "name": "operation",
+          "kind": "character",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": "*"
+        },
+        {
+          "name": "err_info",
+          "kind": "err_info_type",
+          "dims": [],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "start_line": 1076,
+      "end_line": 1122,
+      "scope": "private",
+      "already_live": true,
+      "ordered_calls": [],
+      "ordered_control": [
+        "if ( any( .not. ieee_is_finite( var ) ) ) then"
+      ],
+      "comments": [
+        "",
+        "Description:",
+        "Checks for a NaN in the var array and reports it.",
+        "",
+        "",
+        "------------------------------------------------------------------------",
+        "External",
+        "Input variables",
+        "Input/Output variables",
+        "Single col error, but col nr is not available"
+      ]
+    },
+    {
+      "name": "check_nan_sclr",
+      "module": "numerical_check",
+      "source": "src/CLUBB_core/numerical_check.F90",
+      "arguments": [
+        {
+          "name": "var",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "varname",
+          "kind": "character",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": "*"
+        },
+        {
+          "name": "operation",
+          "kind": "character",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": "*"
+        },
+        {
+          "name": "err_info",
+          "kind": "err_info_type",
+          "dims": [],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "start_line": 1125,
+      "end_line": 1172,
+      "scope": "private",
+      "already_live": false,
+      "ordered_calls": [],
+      "ordered_control": [
+        "if ( .not. ieee_is_finite( var ) ) then"
+      ],
+      "comments": [
+        "",
+        "Description:",
+        "Checks for a NaN in the scalar var then reports it.",
+        "",
+        "-----------------------------------------------------------------------",
+        "External",
+        "Input Variables",
+        "Input/Output variables",
+        "--------------------------------------------------------------------",
+        "Single col error, but col nr is not available"
+      ]
+    },
+    {
+      "name": "calculate_spurious_source",
+      "module": "numerical_check",
+      "source": "src/CLUBB_core/numerical_check.F90",
+      "arguments": [
+        {
+          "name": "integral_after",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "integral_before",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "flux_top",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "flux_sfc",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "integral_forcing",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "dt",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": {
+        "name": "spurious_source",
+        "kind": "real",
+        "dims": [],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      "start_line": 1176,
+      "end_line": 1214,
+      "scope": "public",
+      "already_live": false,
+      "ordered_calls": [],
+      "ordered_control": [],
+      "comments": [
+        "",
+        "Description:",
+        "Checks whether there is conservation within the column and returns any",
+        "imbalance as spurious_source where spurious_source is defined negative",
+        "for a spurious sink.",
+        "",
+        "-----------------------------------------------------------------------",
+        "Input Variables",
+        "Return Variable",
+        "--------------------------------------------------------------------",
+        "---- Begin Code ----"
+      ]
+    },
+    {
+      "name": "check_clubb_settings_api",
+      "module": "numerical_check",
+      "source": "src/CLUBB_core/numerical_check.F90",
+      "arguments": [
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "edsclr_dim",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sclr_idx",
+          "kind": "sclr_idx_type",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "params",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nparams"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_implemented",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_input_fields",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "clubb_config_flags",
+          "kind": "clubb_config_flags_type",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "err_info",
+          "kind": "err_info_type",
+          "dims": [],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "start_line": 1218,
+      "end_line": 1887,
+      "scope": "public",
+      "already_live": false,
+      "ordered_calls": [
+        "call initialize_error_headers",
+        "call check_parameters_api( ngrdcol, params, err_info )"
+      ],
+      "ordered_control": [
+        "if ( clubb_config_flags%penta_solve_method == lapack ) then",
+        "if ( clubb_config_flags%tridiag_solve_method == lapack ) then",
+        "if ( l_input_fields ) then",
+        "if ( clubb_at_least_debug_level_api( 0 ) ) then",
+        "if ( clubb_config_flags%l_damp_wp2_using_em .and. ( any( abs(params(:,iC1) - params(:,iC14)) > abs(params(:,iC1) + params(:,iC14)) /  2 * eps ) .or. clubb_config_flags%l_stability_correct_tau_zm ) ) then",
+        "select case ( clubb_config_flags%saturation_formula )",
+        "case ( saturation_bolton )",
+        "case ( saturation_gfdl )",
+        "case ( saturation_flatau )",
+        "case ( saturation_lookup )",
+        "case default",
+        "if ( clubb_config_flags%iiPDF_type < iiPDF_ADG1 .or. clubb_config_flags%iiPDF_type > iiPDF_new_hybrid ) then",
+        "if ( clubb_config_flags%iiPDF_type == iiPDF_ADG2 ) then",
+        "if ( .not. l_input_fields ) then",
+        "if ( clubb_config_flags%iiPDF_type == iiPDF_3D_Luhar ) then",
+        "if ( .not. l_input_fields ) then",
+        "if ( clubb_config_flags%iiPDF_type == iiPDF_new ) then",
+        "if ( .not. l_input_fields ) then",
+        "if ( clubb_config_flags%iiPDF_type == iiPDF_TSDADG ) then",
+        "if ( .not. l_input_fields ) then",
+        "if ( clubb_config_flags%iiPDF_type == iiPDF_LY93 ) then",
+        "if ( .not. l_input_fields ) then",
+        "if ( clubb_config_flags%ipdf_call_placement < ipdf_pre_advance_fields .or. clubb_config_flags%ipdf_call_placement > ipdf_pre_post_advance_fields ) then",
+        "if ( clubb_config_flags%l_predict_upwp_vpwp ) then",
+        "if ( l_explicit_turbulent_adv_wpxp ) then",
+        "if ( ( clubb_config_flags%iiPDF_type /= iiPDF_ADG1 ) .and. ( clubb_config_flags%iiPDF_type /= iiPDF_new_hybrid ) ) then",
+        "if ( clubb_config_flags%l_do_expldiff_rtm_thlm .and. edsclr_dim > 1 ) then",
+        "if ( sclr_idx%iiedsclr_thl < 1 .or. sclr_idx%iiedsclr_thl > edsclr_dim .or. sclr_idx%iiedsclr_rt < 1 .or. sclr_idx%iiedsclr_rt > edsclr_dim .or. sclr_idx%iiedsclr_thl == sclr_idx%iiedsclr_rt ) then",
+        "if ( ( clubb_config_flags%l_min_xp2_from_corr_wx ) .and. ( clubb_config_flags%l_enable_relaxed_clipping ) ) then",
+        "elseif ( ( .not. clubb_config_flags%l_min_xp2_from_corr_wx ) .and. ( .not. clubb_config_flags%l_enable_relaxed_clipping ) ) then",
+        "if ( order_xm_wpxp < 1 .or. order_xm_wpxp > 4 ) then",
+        "elseif ( order_xm_wpxp == order_wp2_wp3 .or. order_xm_wpxp == order_xp2_xpyp .or. order_xm_wpxp == order_windm ) then",
+        "if ( order_wp2_wp3 < 1 .or. order_wp2_wp3 > 4 ) then",
+        "elseif ( order_wp2_wp3 == order_xm_wpxp .or. order_wp2_wp3 == order_xp2_xpyp .or. order_wp2_wp3 == order_windm ) then",
+        "if ( order_xp2_xpyp < 1 .or. order_xp2_xpyp > 4 ) then",
+        "elseif ( order_xp2_xpyp == order_wp2_wp3 .or. order_xp2_xpyp == order_xm_wpxp .or. order_xp2_xpyp == order_windm ) then",
+        "if ( order_windm < 1 .or. order_windm > 4 ) then",
+        "elseif ( order_windm == order_wp2_wp3 .or. order_windm == order_xp2_xpyp .or. order_windm == order_xm_wpxp ) then",
+        "if ( clubb_config_flags%Lscale_method == Lscale_tau ) then",
+        "if ( any(params(:,iC1) > one .or. params(:,iC1) < one) ) then",
+        "if ( any(params(:,iC1b) > one .or. params(:,iC1b) < one) ) then",
+        "if ( any(params(:,iC2rt) > one .or. params(:,iC2rt) < one) ) then",
+        "if ( any(params(:,iC2thl) > one .or. params(:,iC2thl) < one) ) then",
+        "if ( any(params(:,iC2rtthl) > one .or. params(:,iC2rtthl) < one) ) then",
+        "if ( any(params(:,iC6rt) > one .or. params(:,iC6rt) < one) ) then",
+        "if ( any(params(:,iC6rtb) > one .or. params(:,iC6rtb) < one) ) then",
+        "if ( any(params(:,iC6thl) > one .or. params(:,iC6thl) < one) ) then",
+        "if ( any(params(:,iC6thlb) > one .or. params(:,iC6thlb) < one) ) then",
+        "if ( any(params(:,iC14) > one .or. params(:,iC14) < one) ) then",
+        "if ( l_implemented ) then",
+        "if ( clubb_config_flags%l_rtm_nudge ) then",
+        "if ( clubb_config_flags%l_uv_nudge ) then",
+        "if ( thlm_sponge_damp_settings%l_sponge_damping ) then",
+        "if ( rtm_sponge_damp_settings%l_sponge_damping ) then",
+        "if ( uv_sponge_damp_settings%l_sponge_damping ) then",
+        "if ( wp2_sponge_damp_settings%l_sponge_damping ) then",
+        "if ( wp3_sponge_damp_settings%l_sponge_damping ) then",
+        "if ( up2_vp2_sponge_damp_settings%l_sponge_damping ) then"
+      ],
+      "comments": [
+        "Description:",
+        "Subroutine to set up the model for execution.",
+        "",
+        "References:",
+        "None",
+        "---------------------------------------------------------------------",
+        "---------------------- Input Variables ----------------------",
+        "Flags",
+        "---------------------- InOut Variables ----------------------",
+        "---------------------- Begin Code ----------------------",
+        "This is the complete configuration-validation entry point.  The",
+        "parameter catalog and parameter-only relations belong to",
+        "parameters_tunable; flag and mixed consistency rules remain below.",
+        "Sanity check",
+        "General error -> set all entries to clubb_fatal_error",
+        "Sanity check for the saturation formula",
+        "Using the Bolton 1980 approximations for SVP over vapor/ice",
+        "Using the Flatau, et al. polynomial approximation for SVP over vapor/ice",
+        "Using the GFDL SVP formula (Goff-Gratch)",
+        "Add new saturation formulas after this",
+        "Using the lookup table",
+        "General error -> set all entries to clubb_fatal_error",
+        "Check for the type of two component normal (double Gaussian) PDF being",
+        "used for w, rt, and theta-l (or w, chi, and eta).",
+        "General error -> set all entries to clubb_fatal_error",
+        "The ADG2 and 3D Luhar PDFs can only be used as part of input fields.",
+        "General error -> set all entries to clubb_fatal_error",
+        "General error -> set all entries to clubb_fatal_error",
+        "This also currently applies to the new PDF until it has been fully",
+        "implemented.",
+        "General error -> set all entries to clubb_fatal_error",
+        "This also currently applies to the TSDADG PDF until it has been fully",
+        "implemented.",
+        "General error -> set all entries to clubb_fatal_error",
+        "This also applies to Lewellen and Yoh (1993).",
+        "General error -> set all entries to clubb_fatal_error",
+        "Check the option for the placement of the call to CLUBB's PDF.",
+        "General error -> set all entries to clubb_fatal_error",
+        "The l_predict_upwp_vpwp flag requires that the ADG1 PDF is used",
+        "implicitly in subroutine advance_xm_wpxp.",
+        "When l_predict_upwp_vpwp is enabled, the",
+        "l_explicit_turbulent_adv_wpxp flag must be turned off.",
+        "Otherwise, explicit turbulent advection would require PDF parameters",
+        "for u and v to be calculated in PDF closure.  These would be needed",
+        "to calculate integrated fields such as wp2up, etc.",
+        "General error -> set all entries to clubb_fatal_error",
+        "When l_predict_upwp_vpwp is enabled, the PDF type must be set to",
+        "the ADG1 PDF or the new hybrid PDF.  The other PDFs are not currently",
+        "set up to calculate variables needed for implicit or semi-implicit",
+        "turbulent advection, such as coef_wp2up_implicit, etc.",
+        "General error -> set all entries to clubb_fatal_error",
+        "The l_do_expldiff_rtm_thlm flag explicitly diffuses copies of thlm and",
+        "rtm that advance_windm_edsclrm stores in the eddy scalars",
+        "sclr_idx%iiedsclr_thl and sclr_idx%iiedsclr_rt.  With fewer than two",
+        "eddy scalars there is nowhere to store the copies, so the flag has no",
+        "effect.",
+        "The copies of thlm and rtm need distinct, valid eddy-scalar slots.",
+        "General error -> set all entries to clubb_fatal_error",
+        "The flags l_min_xp2_from_corr_wx and l_enable_relaxed_clipping must",
+        "have opposite values.",
+        "General error -> set all entries to clubb_fatal_error",
+        "General error -> set all entries to clubb_fatal_error",
+        "err_info%err_code = clubb_fatal_error",
+        "return",
+        "Checking for the code that orders CLUBB's advance_ subroutines",
+        "General error -> set all entries to clubb_fatal_error",
+        "General error -> set all entries to clubb_fatal_error",
+        "General error -> set all entries to clubb_fatal_error",
+        "General error -> set all entries to clubb_fatal_error",
+        "General error -> set all entries to clubb_fatal_error",
+        "General error -> set all entries to clubb_fatal_error",
+        "General error -> set all entries to clubb_fatal_error",
+        "General error -> set all entries to clubb_fatal_error",
+        "The tau-based method tunes C_invrs_tau parameters instead of these Cx values.",
+        "relevant Cx tunable parameters are all set to a value of 1 (as",
+        "you're supposed to tune the C_invrs_tau_ parameters instead).",
+        "Note: someday when we can successfully run with all these parameters",
+        "having a value of 1, the \"Warning\" messages should be removed and the",
+        "\"Fatal error\" messages should be uncommented.",
+        "C1 must have a value of 1",
+        "write(fstderr,*) \"Fatal error in check_clubb_settings_api\"",
+        "General error -> set all entries to clubb_fatal_error",
+        "err_info%err_code = clubb_fatal_error",
+        "C1b must have a value of 1",
+        "write(fstderr,*) \"Fatal error in check_clubb_settings_api\"",
+        "General error -> set all entries to clubb_fatal_error",
+        "err_info%err_code = clubb_fatal_error",
+        "C2rt must have a value of 1",
+        "write(fstderr,*) \"Fatal error in check_clubb_settings_api\"",
+        "General error -> set all entries to clubb_fatal_error",
+        "err_info%err_code = clubb_fatal_error",
+        "C2thl must have a value of 1",
+        "write(fstderr,*) \"Fatal error in check_clubb_settings_api\"",
+        "General error -> set all entries to clubb_fatal_error",
+        "err_info%err_code = clubb_fatal_error",
+        "C2rtthl must have a value of 1",
+        "write(fstderr,*) \"Fatal error in check_clubb_settings_api\"",
+        "General error -> set all entries to clubb_fatal_error",
+        "err_info%err_code = clubb_fatal_error",
+        "C6rt must have a value of 1",
+        "write(fstderr,*) \"Fatal error in check_clubb_settings_api\"",
+        "General error -> set all entries to clubb_fatal_error",
+        "err_info%err_code = clubb_fatal_error",
+        "C6rtb must have a value of 1",
+        "write(fstderr,*) \"Fatal error in check_clubb_settings_api\"",
+        "General error -> set all entries to clubb_fatal_error",
+        "err_info%err_code = clubb_fatal_error",
+        "C6thl must have a value of 1",
+        "write(fstderr,*) \"Fatal error in check_clubb_settings_api\"",
+        "General error -> set all entries to clubb_fatal_error",
+        "err_info%err_code = clubb_fatal_error",
+        "C6thlb must have a value of 1",
+        "write(fstderr,*) \"Fatal error in check_clubb_settings_api\"",
+        "General error -> set all entries to clubb_fatal_error",
+        "err_info%err_code = clubb_fatal_error",
+        "C14 must have a value of 1",
+        "write(fstderr,*) \"Fatal error in check_clubb_settings_api\"",
+        "General error -> set all entries to clubb_fatal_error",
+        "err_info%err_code = clubb_fatal_error",
+        "General error -> set all entries to clubb_fatal_error",
+        "General error -> set all entries to clubb_fatal_error",
+        "General error -> set all entries to clubb_fatal_error",
+        "General error -> set all entries to clubb_fatal_error",
+        "General error -> set all entries to clubb_fatal_error",
+        "General error -> set all entries to clubb_fatal_error",
+        "General error -> set all entries to clubb_fatal_error",
+        "General error -> set all entries to clubb_fatal_error"
+      ]
+    }
+  ]
+}

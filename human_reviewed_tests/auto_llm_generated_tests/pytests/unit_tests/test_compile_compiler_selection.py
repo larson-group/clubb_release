@@ -25,7 +25,7 @@ def test_cmake_respects_explicit_fc_without_overriding_a_toolchain_default(expli
     monkeypatch.setattr(compiler.shutil, "which", lambda value: explicit_fc if value == explicit_fc else None)
     commands = []
     monkeypatch.setattr(compiler.subprocess, "run", lambda command, **kwargs: commands.append(command))
-    args = SimpleNamespace(precision="double", gpu="none", python=False, openacc_bfb=False,
+    args = SimpleNamespace(precision="double", gpu="none", python=False,
                            openmp=False, tuning=False, gptl=False, extra_args=[])
     compiler.configure_cmake(args, "toolchain.cmake", "/install", "Release")
     overrides = [argument for argument in commands[0] if argument.startswith("-DCMAKE_Fortran_COMPILER=")]

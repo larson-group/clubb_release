@@ -1,0 +1,14 @@
+{
+  "scope": "Separate final cleanup/source-mirror review",
+  "cpp_sha256": "0930979b51c597b3a43ed6b0d003385a0768543b3ed88dda48c69ab90b24e332",
+  "hpp_sha256": "033a95a84a4711673013559e151254d7e1cc5c40221c6c60b0689fabe97eef1f",
+  "checks": [
+    "Five Native procedure definitions, order and two required arguments each; explicit int/real return types.",
+    "All33 ordered assignments and28 predicates matched independently, including per-species member spelling.",
+    "Native result0 and1based metadata retained, without JAX active-index guards.",
+    "Existing generated metadata type and maximum-radius constants reused; no new type/helper/cache/global state.",
+    "Procedure/species comments and dividers preserved, stale module-owner statements corrected.",
+    "Header/definition names/case,100columns and whitespace checked."
+  ],
+  "runtime_status": "Uncompiled and untested."
+}

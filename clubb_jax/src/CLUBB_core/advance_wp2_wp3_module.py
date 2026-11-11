@@ -16,7 +16,7 @@ See also
   /Implict solution for the vertical velocity moments/
 
 Porting deviations:
-- Sponge damping blocks are unsupported here because clubb_case_initialization
+- Sponge damping blocks are unsupported here because clubb_case_initalization
   rejects sponge-enabled Python/JAX driver cases before this routine is called.
 - Diagnostic-only early returns remain reduced; fatal conditions mark err_info
   and the host driver owns stopping after the compiled call.
@@ -55,7 +55,7 @@ from clubb_jax.src.CLUBB_core.grid_class import (
     zm2zt2zm,
     zt2zm,
 )
-from clubb_jax.src.CLUBB_core.stats_netcdf import JaxStats
+from clubb_jax.src.CLUBB_core.jax_stats import JaxStats
 from clubb_jax.src.CLUBB_core.mean_adv import term_ma_zt_lhs, term_ma_zm_lhs
 from clubb_jax.src.CLUBB_core.matrix_solver_wrapper import band_solve
 from clubb_jax.src.CLUBB_core.constants_clubb import (
@@ -194,143 +194,7 @@ def advance_wp2_wp3(
     stats: JaxStats,
     up2, vp2, wp2, wp3, err_info: ErrInfo,
 ):
-    """Advance w'^2 and w'^3 one timestep.
-
-    References:
-    https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:wp2_wp3_eqns
-
-    Eqn. 12 & 18 on p. 3545--3546 of
-    ``A PDF-Based Model for Boundary Layer Clouds. Part I:
-      Method and Model Description'' Golaz, et al. (2002)
-    JAS, Vol. 59, pp. 3540--3551.
-
-    Returns:
-        (up2, vp2, wp2, wp3, err_info, stats)
-
-    Fortran declarations (advance_wp2_wp3 in src/CLUBB_core/advance_wp2_wp3_module.F90):
-
-        ! --------------------------- Input Variables ---------------------------
-        integer, intent(in) :: &
-          nzm, &
-          nzt, &
-          ngrdcol
-
-        type (grid), intent(in) :: &
-          gr
-
-        real( kind = core_rknd ), intent(in) :: &
-          dt                 ! Model timestep                            [s]
-
-        real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
-          sfc_elevation,   & ! Elevation of ground level                 [m AMSL]
-          fcor_y             ! Nontraditional Coriolis parameter         [s^-1]
-                             ! Meridional planetary vorticity. Proportional to cos(latitude)
-
-        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: &
-          sigma_sqd_w,       & ! sigma_sqd_w (momentum levels)             [-]
-          wm_zm,             & ! w wind component on momentum levels       [m/s]
-          wp2up2,            & ! w'^2u'^2 (momentum levels)                [m^4/s^4]
-          wp2vp2,            & ! w'^2v'^2 (momentum levels)                [m^4/s^4]
-          wp4,               & ! w'^4 (momentum levels)                    [m^4/s^4]
-          wpthvp,            & ! w'th_v' (momentum levels)                 [K m/s]
-          upwp,              & ! u'w' (momentum levels)                    [m^2/s^2]
-          vpwp,              & ! v'w' (momentum levels)                    [m^2/s^2]
-          em,                & ! Turbulence kinetic energy                 [m^2/s^2]
-          Kh_zm,             & ! Eddy diffusivity on momentum levels       [m^2/s]
-          invrs_tau_C4_zm,   & ! Inverse time-scale tau on momentum levels         [1/s]
-          invrs_tau_C1_zm,   & ! Inverse tau values used for the C1 (dp1) term in wp2 [1/s]
-          rho_ds_zm,         & ! Dry, static density on momentum levels    [kg/m^3]
-          invrs_rho_ds_zm,   & ! Inv. dry, static density @ momentum levs. [m^3/kg]
-          thv_ds_zm,         & ! Dry, base-state theta_v on momentum levs. [K]
-          wprtp,             & ! Flux of total water mixing ratio          [m/s kg/kg]
-          wpthlp,            & ! Flux of liquid water potential temp.      [m/s K]
-          rtp2,              & ! Variance of rt (overall)                  [kg^2/kg^2]
-          thlp2,             & ! Variance of thl (overall)                 [K^2]
-          Cx_fnc_Richardson, & ! Cx_fnc from Richardson_num                [-]
-          lhs_splat_wp2        ! LHS coefficient of wp2 splatting term     [1/s]
-
-        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
-          wm_zt,             & ! w wind component on thermodynamic levels  [m/s]
-          wpup2,             & ! w'u'^2 (thermodynamic levels)             [m^3/s^3]
-          wpvp2,             & ! w'v'^2 (thermodynamic levels)             [m^3/s^3]
-          wp2thvp,           & ! w'^2th_v' (thermodynamic levels)          [K m^2/s^2]
-          wp2up,             & ! w'^2u' (thermodynamic levels)             [m^3/s^3]
-          um,                & ! u wind component (thermodynamic levels)   [m/s]
-          vm,                & ! v wind component (thermodynamic levels)   [m/s]
-          Kh_zt,             & ! Eddy diffusivity on thermodynamic levels  [m^2/s]
-          invrs_tau_wp3_zt,  & ! Inverse time-scale tau on thermodynamic levels    [1/s]
-          rho_ds_zt,         & ! Dry, static density on thermo. levels     [kg/m^3]
-          invrs_rho_ds_zt,   & ! Inv. dry, static density @ thermo. levs.  [m^3/kg]
-          thv_ds_zt,         & ! Dry, base-state theta_v on thermo. levs.  [K]
-          mixt_frac,         & ! Weight of 1st normal distribution         [-]
-          lhs_splat_wp3        ! LHS coefficient of wp3 splatting term     [1/s]
-
-        type(implicit_coefs_terms), intent(in) :: &
-          pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
-
-        real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
-          clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
-
-        type(nu_vertical_res_dep), intent(in) :: &
-          nu_vert_res_dep    ! Vertical resolution dependent nu values
-
-        integer, intent(in) :: &
-          iiPDF_type,         & ! Selected option for the two-component normal (double
-                                ! Gaussian) PDF type to use for the w, rt, and theta-l (or
-                                ! w, chi, and eta) portion of CLUBB's multivariate,
-                                ! two-component PDF.
-          penta_solve_method, & ! Method to solve then penta-diagonal system
-          fill_holes_type        ! Specifier for which hole filling method to use
-
-        logical, intent(in) :: &
-          l_min_wp2_from_corr_wx,     & ! Flag to base the threshold minimum value of wp2 on keeping the
-                                        ! overall correlation of w and x (w and rt, as well as w and
-                                        ! theta-l) within the limits of -max_mag_correlation_flux to
-                                        ! max_mag_correlation_flux.
-          l_upwind_xm_ma,             & ! This flag determines whether we want to use an upwind
-                                        ! differencing approximation rather than a centered differencing
-                                        ! for turbulent or mean advection terms. It affects rtm, thlm,
-                                        ! sclrm, um and vm.
-          l_standard_term_ta,         & ! Use the standard discretization for the turbulent advection
-                                        ! terms. Setting to .false. means that a_1 and a_3 are pulled
-                                        ! outside of the derivative in advance_wp2_wp3_module.F90 and in
-                                        ! advance_xp2_xpyp_module.F90.
-          l_partial_upwind_wp3,       & ! Flag to use an "upwind" discretization rather
-                                        ! than a centered discretization for the portion
-                                        ! of the wp3 turbulent advection term for ADG1
-                                        ! that is linearized in terms of wp3<t+1>.
-                                        ! (Requires ADG1 PDF and l_standard_term_ta).
-          l_damp_wp2_using_em,        & ! intent(in) wp2 equation, use a dissipation formula of
-                                        ! -(2/3)*em/tau_zm,
-                                        ! as in Bougeault (1981)
-          l_use_C11_Richardson,       & ! Parameterize C16 based on Richardson number
-          l_damp_wp3_Skw_squared,     & ! Set damping on wp3 to use Skw^2 rather than Skw^4
-          l_lmm_stepping,             & ! Apply Linear Multistep Method (LMM) Stepping
-          l_use_tke_in_wp3_pr_turb_term, & ! Use TKE formulation for wp3 pr_turb term
-          l_use_tke_in_wp2_wp3_K_dfsn, & ! Use TKE in eddy diffusion for wp2 and wp3
-          l_use_wp3_lim_with_smth_Heaviside, & ! Flag to activate mods on wp3 limiters for conv test
-          l_wp2_fill_holes_tke,         & ! Turn on additional hole-filling for wp2
-                                          ! that takes TKE from up2 and vp2, if necessary
-          l_ho_nontrad_coriolis,        & ! Flag to implement the nontraditional Coriolis terms in the
-                                          ! prognostic equations of <w'w'>, <u'w'>, and <u'u'>.
-          l_implemented                   ! True if CLUBB is being implemented and run in a host model
-
-        ! --------------------- intent(inout) Variable ---------------------
-        type(stats_type), intent(inout) :: &
-          stats
-
-        ! --------------------------- Input/Output ---------------------------
-        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(inout) :: &
-          up2,  & ! u'^2 (momentum levels)                    [m^2/s^2]
-          vp2,  & ! v'^2 (momentum levels)                    [m^2/s^2]
-          wp2     ! w'^2 (momentum levels)                    [m^2/s^2]
-
-        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(inout) :: &
-          wp3    ! w'^3 (thermodynamic levels) [m^3/s^3]
-
-        type(err_info_type), intent(inout) :: &
-          err_info      ! err_info struct containing err_code and err_header
-    """
+    """Advance w'^2 and w'^3 one timestep."""
 
     wp2_zt = zm2zt(nzm, nzt, ngrdcol, gr, wp2, w_tol_sqd)
     wp3_zm = zt2zm(nzm, nzt, ngrdcol, gr, wp3)
@@ -346,14 +210,9 @@ def advance_wp2_wp3(
     a3_coef = jnp.maximum(a3_coef, clubb_params[:, ia3_coef_min][:, None])
     a3_coef_zt = zm2zt(nzm, nzt, ngrdcol, gr, a3_coef)
 
-    def accumulate_stats(stats):
-        """Collect this diagnostic block only on sampled timesteps."""
+    if stats.l_sample:
         stats = stats.update("a3_coef_zt", a3_coef_zt)
         stats = stats.update("a3_coef", a3_coef)
-
-        return stats
-
-    stats = stats.sampled(accumulate_stats)
 
     if l_crank_nich_diff and l_use_tke_in_wp2_wp3_K_dfsn:
         jax.debug.callback(
@@ -433,14 +292,9 @@ def advance_wp2_wp3(
         )
         err_info = err_info.set_fatal(mask=C11_bad | C16_bad)
 
-    def accumulate_stats(stats):
-        """Collect this diagnostic block only on sampled timesteps."""
+    if stats.l_sample:
         stats = stats.update("C11_Skw_fnc", C11_Skw_fnc)
         stats = stats.update("C1_Skw_fnc", C1_Skw_fnc)
-
-        return stats
-
-    stats = stats.sampled(accumulate_stats)
 
     # Define the Coefficent of Eddy Diffusivity for the wp2 and wp3.
     # Kw1 is used for wp2, which is located on momentum levels.
@@ -477,13 +331,8 @@ def advance_wp2_wp3(
             # and upper boundaries.
             coef_wp4_implicit = coef_wp4_implicit.at[:, gr.k_lb_zm].set(zero)
             coef_wp4_implicit = coef_wp4_implicit.at[:, gr.k_ub_zm].set(zero)
-            def accumulate_stats(stats):
-                """Collect this diagnostic block only on sampled timesteps."""
+            if stats.l_sample:
                 stats = stats.update("coef_wp4_implicit", coef_wp4_implicit)
-
-                return stats
-
-            stats = stats.sampled(accumulate_stats)
         elif iiPDF_type == iiPDF_ADG1:
             # Define a_1 and a_3 (both are located on momentum levels).
             # They are variables that are both functions of sigma_sqd_w (where
@@ -910,14 +759,9 @@ def advance_wp2_wp3(
             lambda _: None, operand=None,
         )
 
-    def accumulate_stats(stats):
-        """Collect this diagnostic block only on sampled timesteps."""
+    if stats.l_sample:
         stats = stats.update("wp2_zt", wp2_zt)
         stats = stats.update("wp3_zm", wp3_zm)
-
-        return stats
-
-    stats = stats.sampled(accumulate_stats)
 
     return up2, vp2, wp2, wp3, err_info, stats
 
@@ -944,113 +788,10 @@ def wp23_solve(
     stats,
     up2, vp2, wp2, wp3, wp3_zm, wp2_zt, err_info,
 ):
-    """Decompose, and back substitute the matrix for wp2/wp3
+    """Decompose, and back substitute the matrix for wp2/wp3.
 
     References:
     _Equations for CLUBB_ section 6.3
-
-    Returns:
-        (up2, vp2, wp2, wp3, wp3_zm, wp2_zt, err_info, stats)
-
-    Fortran declarations (wp23_solve in src/CLUBB_core/advance_wp2_wp3_module.F90):
-
-        ! ----------------------- Input Variables -----------------------
-        integer, intent(in) :: &
-          nzm, &
-          nzt, &
-          ngrdcol
-
-        type (grid), intent(in) :: &
-          gr
-
-        real( kind = core_rknd ), intent(in) :: &
-          dt                 ! Timestep                                  [s]
-
-        real( kind = core_rknd ), intent(inout), dimension(ndiags5,ngrdcol,2*nzm-1) :: &
-          lhs ! Implicit contributions to wp2/wp3 (band diag. matrix)
-
-        real( kind = core_rknd ), intent(inout), dimension(ngrdcol,2*nzm-1) :: &
-          rhs  ! RHS of band matrix
-
-        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: &
-          lhs_dp1_wp2, & ! wp2 "over-implicit" dissipation term
-          lhs_pr1_wp2    ! wp2 "over-implicit" pressure term 1
-
-        ! ----------------------- Input/Output Variables -----------------------
-        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
-          lhs_pr1_wp3    ! wp3 "over-implicit" pressure term 1
-
-        real( kind = core_rknd ), intent(in), dimension(ndiags2,ngrdcol,nzm) :: &
-          lhs_ta_wp2        ! Turbulent advection terms for wp2
-
-        real( kind = core_rknd ), intent(in), dimension(ndiags2,ngrdcol,nzt) :: &
-          lhs_adv_tp_wp3, & ! Turbulent production terms of w'^3 (for stats)
-          lhs_pr_tp_wp3     ! Pressure scrambling terms for turbulent production of w'^3 (for stats)
-
-        real( kind = core_rknd ), intent(in), dimension(ndiags3,ngrdcol,nzm) :: &
-          lhs_diff_zm,    & ! Completely implicit diffusion term for w'2
-          lhs_ma_zm         ! Mean advection term for w'2
-
-        real( kind = core_rknd ), intent(in), dimension(ndiags3,ngrdcol,nzt) :: &
-          lhs_diff_zt,    & ! Completely implicit diffusion term for w'3
-          lhs_ma_zt         ! Mean advection term for w'3
-
-        real( kind = core_rknd ), dimension(ndiags5,ngrdcol,nzt) :: &
-          wp3_pr3_lhs
-
-        real( kind = core_rknd ), intent(in), dimension(ndiags5,ngrdcol,nzt) :: &
-          wp3_term_ta_lhs_result
-
-        real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
-          sfc_elevation      ! Elevation of ground level                 [m AMSL]
-
-        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: &
-          wm_zm,           & ! w wind component on momentum levels       [m/s]
-          rho_ds_zm,       & ! Dry, static density on momentum levels    [kg/m^3]
-          wprtp,           & ! Flux of total water mixing ratio          [m/s kg/kg]
-          wpthlp,          & ! Flux of liquid water potential temp.      [m/s K]
-          upwp,            & ! Momentum flux of u                        [m^2/s^2]
-          vpwp,            & ! Momentum flux of v                        [m^2/s^2]
-          rtp2,            & ! Variance of rt (overall)                  [kg^2/kg^2]
-          thlp2              ! Variance of thl (overall)                 [K^2]
-
-        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
-          wm_zt,           & ! w wind component on thermodynamic levels  [m/s]
-          C11_Skw_fnc        ! C_11 parameter with Sk_w applied          [-]
-
-        real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
-          clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
-
-        integer, intent(in) :: &
-          penta_solve_method,   & ! Method to solve then penta-diagonal system
-          fill_holes_type         ! Specifier for which hole filling method to use
-
-        logical, intent(in) :: &
-          l_min_wp2_from_corr_wx,     & ! Flag to base the threshold minimum value of wp2 on keeping
-                                        ! the overall correlation of w and x (w and rt, as well as w
-                                        ! and theta-l) within the limits of -max_mag_correlation_flux
-                                        ! to max_mag_correlation_flux.
-          l_use_tke_in_wp2_wp3_K_dfsn, & ! Use TKE in eddy diffusion for wp2 and wp3
-          l_use_wp3_lim_with_smth_Heaviside, & ! Flag to activate mods on wp3 limiters for conv test
-          l_wp2_fill_holes_tke,         & ! Turn on additional hole-filling for wp2
-                                          ! that takes TKE from up2 and vp2, if necessary
-          l_implemented                   ! True if CLUBB is being implemented and run in a host model
-
-        type(stats_type), intent(inout) :: &
-          stats
-
-        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(inout) :: &
-          up2, &    ! u'^2 (momentum levels)                          [m^2/s^2]
-          vp2, &    ! v'^2 (momentum levels)                          [m^2/s^2]
-          wp2,  & ! w'^2 (momentum levels)                            [m^2/s^2]
-          wp3_zm  ! w'^3 interpolated to momentum levels              [m^3/s^3]
-
-        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(inout) :: &
-          wp3,  & ! w'^3 (thermodynamic levels)                       [m^3/s^3]
-          wp2_zt  ! w'^2 interpolated to thermodyamic levels          [m^2/s^2]
-
-        type(err_info_type), intent(inout) :: &
-          err_info      ! err_info struct containing err_code and err_header
     """
     # Save the value of rhs, which will be overwritten with the solution as
     # part of the solving routine.
@@ -1074,7 +815,7 @@ def wp23_solve(
         old_solut_solve = old_solut_solve[:, ::-1]
 
     l_need_rcond = bool(
-        stats.var_on_stats_list("wp23_matrix_condt_num")
+        stats.l_sample and stats.var_on_stats_list("wp23_matrix_condt_num")
     )
 
     # Solve the system with LAPACK
@@ -1086,18 +827,12 @@ def wp23_solve(
         l_implemented,
         lhs_solve, rhs_solve, err_info,
         old_soln=old_solut_solve,
-        l_use_rcond=stats.l_sample if l_need_rcond else False,
+        l_use_rcond=l_need_rcond,
     )
 
-    if l_need_rcond:
-        def accumulate_stats(stats):
-            """Collect this diagnostic block only on sampled timesteps."""
-            # Est. of the condition number of the w'^2/w^3 LHS matrix
-            stats = stats.update("wp23_matrix_condt_num", one / rcond)
-
-            return stats
-
-        stats = stats.sampled(accumulate_stats)
+    if l_need_rcond and stats.l_sample:
+        # Est. of the condition number of the w'^2/w^3 LHS matrix
+        stats = stats.update("wp23_matrix_condt_num", one / rcond)
 
     if l_force_descending_solves and gr.grid_dir_indx > 0:
         # Flip the back to the ascending direction if we forced the solve
@@ -1151,8 +886,7 @@ def wp23_solve(
     wp2 = solut[:, 0::2]
     wp3 = solut[:, 1::2]
 
-    def accumulate_stats(stats):
-        """Collect this diagnostic block only on sampled timesteps."""
+    if stats.l_sample:
         C_uu_shr_zeros = jnp.zeros((ngrdcol,))
         C_uu_shr_plus_one = clubb_params[:, iC_uu_shr] + one
         C11_Skw_fnc_zeros = jnp.zeros((ngrdcol, nzt))
@@ -1346,12 +1080,7 @@ def wp23_solve(
         # w'^3 term pr2 has both implicit and explicit components.
         stats = stats.finalize_budget("wp3_pr2", stats_tmp_zt)
 
-        return stats
-
-    stats = stats.sampled(accumulate_stats)
-
-    def accumulate_stats(stats):
-        """Collect this diagnostic block only on sampled timesteps."""
+    if stats.l_sample:
         # Store previous value for effect of the positive definite scheme
         # Bracket the positive-definite/hole-filling adjustments so the pd
         # budget terms report only the limiter-induced change.
@@ -1361,13 +1090,9 @@ def wp23_solve(
         stats = stats.begin_budget("up2_pd", up2 / dt)
         stats = stats.begin_budget("vp2_pd", vp2 / dt)
 
-        return stats
-
-    stats = stats.sampled(accumulate_stats)
-
     if fill_holes_type != 0:
         if clubb_at_least_debug_level(3):
-            wp2_avg_before = vertical_avg(ngrdcol, nzm, rho_ds_zm, wp2, gr.dzm)
+            wp2_avg_before = vertical_avg(nzm, rho_ds_zm, wp2, gr.dzm)
         # Use a simple hole filling algorithm
         # upper_hf_level = nzm-1 since we are filling the zm levels
         wp2 = fill_holes_vertical(
@@ -1380,7 +1105,7 @@ def wp23_solve(
         )
 
         if clubb_at_least_debug_level(3):
-            wp2_avg_after = vertical_avg(ngrdcol, nzm, rho_ds_zm, wp2, gr.dzm)
+            wp2_avg_after = vertical_avg(nzm, rho_ds_zm, wp2, gr.dzm)
             difference = wp2_avg_after - wp2_avg_before
             jax.lax.cond(
                 jnp.any(jnp.abs(difference) > jnp.finfo(wp2.dtype).eps * 1000),
@@ -1401,16 +1126,11 @@ def wp23_solve(
                 wp2, up2, vp2,
             )
 
-    def accumulate_stats(stats):
-        """Collect this diagnostic block only on sampled timesteps."""
+    if stats.l_sample:
         # Store updated value for effect of the positive definite scheme
         stats = stats.finalize_budget("wp2_pd", wp2 / dt)
         stats = stats.finalize_budget("up2_pd", up2 / dt, l_count_sample=False)
         stats = stats.finalize_budget("vp2_pd", vp2 / dt, l_count_sample=False)
-
-        return stats
-
-    stats = stats.sampled(accumulate_stats)
 
     # Clip <w'^2> at a minimum and maximum threshold.
     # We attempt to clip extreme values of wp2 to prevent a crash of the
@@ -1533,6 +1253,7 @@ def wp23_lhs(
     lhs_pr1_wp3, lhs_pr1_wp2, lhs_splat_wp2, lhs_splat_wp3,
 ):
     """Compute LHS band diagonal matrix for w'^2 and w'^3.
+
     This subroutine computes the implicit portion
     of the w'^2 and w'^3 equations.
 
@@ -1553,51 +1274,8 @@ def wp23_lhs(
         [  0.0     0.0          0.0       0.0  ]
         [  0.0     0.0          0.0       0.0  ]
 
-    Returns:
-        lhs
-
-    Fortran declarations (wp23_lhs in src/CLUBB_core/advance_wp2_wp3_module.F90):
-
-        ! ----------------------- Input Variables -----------------------
-        integer, intent(in) :: &
-          nzm, &
-          nzt, &
-          ngrdcol
-
-        real( kind = core_rknd ), intent(in) :: &
-          dt                 ! Timestep length                            [s]
-
-        real( kind = core_rknd ), intent(in), dimension(ndiags5,ngrdcol,nzt) :: &
-          wp3_term_ta_lhs_result
-
-        real( kind = core_rknd ), intent(in), dimension(ndiags3,ngrdcol,nzm) :: &
-          lhs_diff_zm, & ! Completely implicit diffusion term for w'2
-          lhs_ma_zm      ! Mean advection term for w'2
-
-        real( kind = core_rknd ), intent(in), dimension(ndiags3,ngrdcol,nzt) :: &
-          lhs_diff_zt, & ! Completely implicit diffusion term for w'3
-          lhs_ma_zt      ! Mean advection term for w'3
-
-        real( kind = core_rknd ), intent(in), dimension(ndiags2,ngrdcol,nzm) :: &
-          lhs_ta_wp2    ! Turbulent advection terms for wp2
-
-        real( kind = core_rknd ), intent(in), dimension(ndiags2,ngrdcol,nzt) :: &
-          lhs_tp_wp3    ! Turbulent production terms of w'^3
-
-        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: &
-          lhs_ac_pr2_wp2, &   ! Accumulation terms of w'^2 and w'^2 pressure term 2
-          lhs_dp1_wp2, &      ! Dissipation terms 1 for w'^2
-          lhs_pr1_wp2, &      ! Pressure term 1 for w'2
-          lhs_splat_wp2       ! LHS coefficient of wp2 splatting term  [1/s]
-
-        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
-          lhs_ac_pr2_wp3, &   ! Accumulation terms of w'^3 and w'^3 pressure term 2
-          lhs_pr1_wp3, &      ! Dissipation terms 1 for w'^3
-          lhs_splat_wp3       ! LHS coefficient of wp3 splatting term  [1/s]
-
-        ! ----------------------- Output Variable -----------------------
-        real( kind = core_rknd ), dimension(ndiags5,ngrdcol,2*nzm-1), intent(out) :: &
-          lhs ! Implicit contributions to wp2/wp3 (band diag. matrix)
+     WARNING: This subroutine has been optimized. Significant changes could
+              noticeably  impact computational efficiency. See clubb:ticket:834
     """
     del nzt
     # Calculate invrs_dt
@@ -1723,6 +1401,7 @@ def wp23_rhs(
     stats,
 ):
     """Compute RHS vector for w'^2 and w'^3.
+
     This subroutine computes the explicit portion of
     the w'^2 and w'^3 equations.
 
@@ -1743,100 +1422,8 @@ def wp23_rhs(
             RHS = 0).  A weight of greater than 1 can be applied to make
             the term more numerically stable.
 
-    Returns:
-        (rhs, stats)
-
-    Fortran declarations (wp23_rhs in src/CLUBB_core/advance_wp2_wp3_module.F90):
-
-        ! --------------------- Input Variables ---------------------
-        integer, intent(in) :: &
-          nzm, &
-          nzt, &
-          ngrdcol
-
-        type (grid), target, intent(in) :: gr
-
-        real( kind = core_rknd ), intent(in) :: &
-          dt                 ! Timestep length                           [s]
-
-        real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
-          fcor_y              ! Nontraditional Coriolis parameter         [s^-1]
-                              ! Meridional planetary vorticity. Proportional to cos(latitude)
-
-        real( kind = core_rknd ), intent(in), dimension(ndiags5,ngrdcol,nzt) :: &
-          wp3_term_ta_lhs_result
-
-        real( kind = core_rknd ), intent(in), dimension(ndiags3,ngrdcol,nzm) :: &
-          lhs_diff_zm, &
-          lhs_diff_zm_crank
-
-        real( kind = core_rknd ), intent(in), dimension(ndiags3,ngrdcol,nzt) :: &
-          lhs_diff_zt, &
-          lhs_diff_zt_crank
-
-        real( kind = core_rknd ), intent(in), dimension(ndiags2,ngrdcol,nzt) :: &
-          lhs_tp_wp3,      & ! Turbulent production terms of w'^3
-          lhs_adv_tp_wp3,  & ! Turbulent production terms of w'^3 (for stats)
-          lhs_pr_tp_wp3,   & ! Pressure scrambling terms for turbulent production of w'^3 (for stats)
-          lhs_ta_wp3         ! Turbulent advection terms for wp3
-
-        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: &
-          lhs_dp1_wp2, &          ! wp2 "over-implicit" dissipation term
-          rhs_dp1_wp2, &          ! wp2 rhs dissipation term
-          lhs_pr1_wp2, &          ! wp2 "over-implicit" pressure term 1
-          rhs_pr1_wp2, &          ! wp2 rhs pressure term 1
-          rhs_bp_pr2_wp2, &       ! wp2 bouyancy production and pressure term 2
-          rhs_pr_dfsn_wp2, &      ! wp2 pressure diffusion term
-          rhs_pr3_wp2             ! wp2 pressure term 3
-
-        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
-          lhs_pr1_wp3, &          ! wp3 "over-implicit" pressure term 1
-          rhs_pr1_wp3, &          ! wp3 rhs pressure term 1
-          rhs_bp1_pr2_wp3, &      ! wp3 bouyancy production 1 and pressure term 2
-          rhs_pr3_wp3, &          ! wp3 pressure term 3
-          rhs_ta_wp3, &           ! wp3 turbulent advection term
-          rhs_pr_turb_wp3, &      ! wp3 pressure-turbulence correlation term !--EXPERIMENTAL--!
-          rhs_pr_dfsn_wp3         ! wp3 pressure diffusion term
-
-        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
-          wp2,               & ! w'^2 (momentum levels)                    [m^2/s^2]
-          wpthvp,            & ! w'th_v' (momentum levels)                 [K m/s]
-          up2,               & ! u'^2 (momentum levels)                    [m^2/s^2]
-          vp2,               & ! v'^2 (momentum levels)                    [m^2/s^2]
-          upwp,              & ! u'w' (momentum levels)                    [m^2/s^2]
-          thv_ds_zm,         & ! Dry, base-state theta_v on momentum levs. [K]
-          lhs_splat_wp2        ! LHS coefficient of wp2 splatting term     [1/s]
-
-        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
-          wp3,               & ! w'^3 (thermodynamic levels)               [m^3/s^3]
-          wpup2,             & ! w'u'^2 (thermodynamic levels)             [m^3/s^3]
-          wpvp2,             & ! w'v'^2 (thermodynamic levels)             [m^3/s^3]
-          wp2thvp,           & ! w'^2th_v' (thermodynamic levels)        [K m^2/s^2]
-          wp2up,             & ! w'^2u' (thermodynamic levels)             [m^3/s^3]
-          C11_Skw_fnc,       & ! C_11 parameter with Sk_w applied          [-]
-          thv_ds_zt,         & ! Dry, base-state theta_v on thermo. levs.  [K]
-          lhs_splat_wp3        ! LHS coefficient of wp3 splatting term     [1/s]
-
-        real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
-          clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
-
-        integer, intent(in) :: &
-          iiPDF_type    ! Selected option for the two-component normal (double
-                        ! Gaussian) PDF type to use for the w, rt, and theta-l (or
-                        ! w, chi, and eta) portion of CLUBB's multivariate,
-                        ! two-component PDF.
-
-        logical, intent(in) :: &
-          l_use_tke_in_wp2_wp3_K_dfsn, & ! Use TKE in eddy diffusion for wp2 and wp3
-          l_ho_nontrad_coriolis          ! Flag to implement the nontraditional Coriolis terms in the
-                                         ! prognostic equations of <w'w'>, <u'w'>, and <u'u'>.
-
-        type(stats_type), intent(inout) :: &
-          stats
-
-        ! --------------------- Output Variable ---------------------
-        real( kind = core_rknd ), dimension(ngrdcol,2*nzm-1), intent(out) :: &
-          rhs   ! RHS of band matrix
+     WARNING: This subroutine has been optimized. Significant changes could
+              noticeably  impact computational efficiency. See clubb:ticket:834
     """
     # Calculate invers_dt
     invrs_dt = one / dt
@@ -2025,8 +1612,7 @@ def wp23_rhs(
         rhs = rhs.at[:, 0].set(w_tol_sqd)
 
     # --------- Statistics output ---------
-    def accumulate_stats(stats):
-        """Collect this diagnostic block only on sampled timesteps."""
+    if stats.l_sample:
         C_uu_buoy_zeros = jnp.zeros((ngrdcol,))
         C_uu_buoy_plus_one = clubb_params[:, iC_uu_buoy] + one
         C11_Skw_fnc_zeros = jnp.zeros((ngrdcol, nzt))
@@ -2235,10 +1821,6 @@ def wp23_rhs(
                     )
             stats = stats.begin_budget("wp3_dp1", stats_tmp_zt)
 
-        return stats
-
-    stats = stats.sampled(accumulate_stats)
-
     return rhs, stats
 
 
@@ -2257,55 +1839,7 @@ def wp2_term_ta_lhs(nzm, nzt, ngrdcol, gr, rho_ds_zt, invrs_rho_ds_zm):
            is reversed and the leading "-" in front of the term is changed
            to a "+".
 
-    The timestep index (t+1) means that the value of w'^3 being used is from
-    the next timestep, which is being advanced to in solving the d(w'^2)/dt
-    and d(w'^3)/dt equations.
-
-    This term is discretized as follows:
-
-    While the values of w'^2 are found on the momentum levels, the values of
-    w'^3 are found on the thermodynamic levels.  Additionally, the values of
-    rho_ds_zt are found on the thermodynamic levels, and the values of
-    invrs_rho_ds_zm are found on the momentum levels.  On the thermodynamic
-    levels, the values of rho_ds_zt are multiplied by the values of w'^3.  The
-    derivative of (rho_ds_zt * w'^3) is taken over the intermediate (central)
-    momentum level, where it is multiplied by invrs_rho_ds_zm, yielding the
-    desired results.
-
-    -----rho_ds_zt----------wp3------------------------------ t(k)
-
-    ========invrs_rho_ds_zm==========d(rho_ds*wp3)/dz======== m(k)
-
-    -----rho_ds_zt----------wp3------------------------------ t(k-1)
-
-    The vertical indices t(k), m(k), and t(k-1) correspond with altitudes
-    zt(k), zm(k), and zt(k-1), respectively.  The letter "t" is used for
-    thermodynamic levels and the letter "m" is used for momentum levels.
-
     invrs_dzm(k) = 1 / ( zt(k) - zt(k-1) )
-
-    Returns:
-        lhs_ta_wp2
-
-    Fortran declarations (wp2_term_ta_lhs in src/CLUBB_core/advance_wp2_wp3_module.F90):
-
-        ! ------------------------ Input Variables ------------------------
-        integer, intent(in) :: &
-          nzm, &
-          nzt, &
-          ngrdcol
-
-        type (grid), intent(in) :: gr
-
-        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
-          rho_ds_zt          ! Dry, static density at thermodynamic levels  [kg/m^3]
-
-        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
-          invrs_rho_ds_zm    ! Inv. dry, static density at momentum levels  [m^3/kg]
-
-        ! ------------------------ Return Variable ------------------------
-        real( kind = core_rknd ), dimension(ndiags2,ngrdcol,nzm), intent(out) :: &
-          lhs_ta_wp2    ! LHS coefficient of wp2 turbulent advection  [1/m]
     """
     del nzt
     lhs_ta_wp2 = jnp.zeros((ndiags2, ngrdcol, nzm))
@@ -2329,66 +1863,11 @@ def wp2_terms_ac_pr2_lhs(nzm, nzt, ngrdcol, gr, C_uu_shr, wm_zt):
 
     - C_5 ( -2 w'^2 dw/dz + 2 (g/th_0) w'th_v' ).
 
-    The w'^2 accumulation term is completely implicit, while w'^2 pressure
-    term 2 has both implicit and explicit components.  The accumulation term
-    and the implicit portion of pressure term 2 are combined and solved
-    together as:
-
-    + ( 1 - C_uu_shr ) ( -2 w'^2(t+1) dw/dz ).
-
     Note 1:  When the term is brought over to the left-hand side, the sign
              is reversed and the leading "-" in front of the "2" is changed
              to a "+".
     Note 2:  We have broken C5 up into C_uu_shr for this term
              and C_uu_buoy for the buoyancy term.
-
-    The timestep index (t+1) means that the value of w'^2 being used is from
-    the next timestep, which is being advanced to in solving the d(w'^2)/dt
-    equation.
-
-    The terms are discretized as follows:
-
-    The values of w'^2 are found on the momentum levels, while the values of
-    wm_zt (mean vertical velocity on thermodynamic levels) are found on the
-    thermodynamic levels.  The vertical derivative of wm_zt is taken over the
-    intermediate (central) momentum level.  It is then multiplied by w'^2
-    (implicitly calculated at timestep (t+1)) and the coefficients to yield
-    the desired results.
-
-    -------wm_zt--------------------------------------------- t(k)
-
-    ===============d(wm_zt)/dz============wp2================ m(k)
-
-    -------wm_zt--------------------------------------------- t(k-1)
-
-    The vertical indices t(k), m(k), and t(k-1) correspond with altitudes
-    zt(k), zm(k), and zt(k-1), respectively.  The letter "t" is used for
-    thermodynamic levels and the letter "m" is used for momentum levels.
-
-    invrs_dzm(k) = 1 / ( zt(k) - zt(k-1) )
-
-    Returns:
-        lhs_ac_pr2_wp2
-
-    Fortran declarations (wp2_terms_ac_pr2_lhs in src/CLUBB_core/advance_wp2_wp3_module.F90):
-
-        ! ------------------------ Input Variables ------------------------
-        integer, intent(in) :: &
-          nzm, &
-          nzt, &
-          ngrdcol
-
-        type (grid), intent(in) :: gr
-
-        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
-          wm_zt   ! w wind component at thermodynamic levels    [m/s]
-
-        real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
-          C_uu_shr    ! Model parameter C_uu_shr                       [-]
-
-        ! ------------------------ Output Variable ------------------------
-        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) :: &
-          lhs_ac_pr2_wp2    ! LHS coefficient of wp2 ac and pr2 terms [1/s]
     """
     del nzt
     lhs_ac_pr2_wp2 = jnp.zeros((ngrdcol, nzm))
@@ -2412,42 +1891,9 @@ def wp2_term_dp1_lhs(nzm, ngrdcol, gr, C1_Skw_fnc, invrs_tau1m):
 
     - ( C_1 / tau_1m ) * ( w'^2 - threshold ).
 
-    This term is broken into implicit and explicit portions.  The implicit
-    portion of this term is:
-
-    - ( C_1 / tau_1m ) w'^2(t+1).
-
     Note:  When the implicit term is brought over to the left-hand side, the
            sign is reversed and the leading "-" in front of the term is
            changed to a "+".
-
-    The timestep index (t+1) means that the value of w'^2 being used is from
-    the next timestep, which is being advanced to in solving the d(w'^2)/dt
-    equation.
-
-    The values of w'^2 are found on the momentum levels.  The values of the
-    C_1 skewness function and time-scale tau1m are also found on the momentum
-    levels.
-
-    Returns:
-        lhs_dp1_wp2
-
-    Fortran declarations (wp2_term_dp1_lhs in src/CLUBB_core/advance_wp2_wp3_module.F90):
-
-        ! ------------------ Input Variables ------------------
-        integer, intent(in) :: &
-          nzm, &
-          ngrdcol
-
-        type (grid), target, intent(in) :: gr
-
-        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
-          C1_Skw_fnc, & ! C_1 parameter with Sk_w applied    [-]
-          invrs_tau1m   ! Inverse time-scale tau at momentum levels  [1/s]
-
-        ! ------------------ Output Variable ------------------
-        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) :: &
-          lhs_dp1_wp2    ! LHS coefficient of wp2 dissipation term 1  [1/s]
     """
     del gr
     lhs_dp1_wp2 = jnp.zeros((ngrdcol, nzm))
@@ -2459,8 +1905,7 @@ def wp2_term_dp1_lhs(nzm, ngrdcol, gr, C1_Skw_fnc, invrs_tau1m):
 
 
 def wp2_term_pr1_lhs(nzm, ngrdcol, gr, C4, invrs_tau_C4_zm):
-    """Description
-    Pressure term 1 for w'^2:  implicit portion of the code.
+    """Pressure term 1 for w'^2:  implicit portion of the code.
 
     The d(w'^2)/dt equation contains pressure term 1:
 
@@ -2468,50 +1913,10 @@ def wp2_term_pr1_lhs(nzm, ngrdcol, gr, C4, invrs_tau_C4_zm):
 
     where em = (1/2) * ( w'^2 + u'^2 + v'^2 ).
 
-    This simplifies to:
-
-    - ( C_4 / tau_1m ) * (2/3) * w'^2
-       + ( C_4 / tau_1m ) * (1/3) * ( u'^2 + v'^2 ).
-
     Pressure term 1 has both implicit and explicit components.  The implicit
     portion is:
 
     - ( C_4 / tau_1m ) * (2/3) * w'^2(t+1);
-
-    and is computed in this function.
-
-    Note:  When the implicit term is brought over to the left-hand side, the
-           sign is reversed and the leading "-" in front of the term is
-           changed to a "+".
-
-    The timestep index (t+1) means that the value of w'^2 being used is from
-    the next timestep, which is being advanced to in solving the d(w'^2)/dt
-    equation.
-
-    The values of w'^2 are found on momentum levels, as are the values of
-    tau1m.
-
-    Returns:
-        lhs_pr1_wp2
-
-    Fortran declarations (wp2_term_pr1_lhs in src/CLUBB_core/advance_wp2_wp3_module.F90):
-
-        ! --------------------- Input Variables ---------------------
-        integer, intent(in) :: &
-          nzm, &
-          ngrdcol
-
-        type (grid), target, intent(in) :: gr
-
-        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
-          invrs_tau_C4_zm    ! Inverse time-scale tau at momentum levels  [1/s]
-
-        real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
-          C4    ! Model parameter C_4                [-]
-
-        ! --------------------- Output Variable ---------------------
-        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) :: &
-          lhs_pr1_wp2    ! LHS coefficient of wp2 pressure term 1  [1/s]
     """
     del gr
     lhs_pr1_wp2 = jnp.zeros((ngrdcol, nzm))
@@ -2534,38 +1939,8 @@ def wp2_terms_bp_pr2_rhs(nzm, ngrdcol, gr, C_uu_buoy, thv_ds_zm, wpthvp):
 
     - C_5 ( -2 w'^2 dw/dz + 2 (g/thv_ds) w'th_v' ).
 
-    The w'^2 buoyancy production term is completely explicit, while w'^2
-    pressure term 2 has both implicit and explicit components.  The buoyancy
-    production term and the explicit portion of pressure term 2 are combined
-    and solved together as:
-
-    + ( 1 - C_uu_buoy ) ( 2 (g/thv_ds) w'th_v' ).
-
     Note:  We have broken C5 up into C_uu_shr for the accumulation term
            and C_uu_buoy for the buoyancy term.
-
-    Returns:
-        rhs_bp_pr2_wp2
-
-    Fortran declarations (wp2_terms_bp_pr2_rhs in src/CLUBB_core/advance_wp2_wp3_module.F90):
-
-        ! ------------------ Input Variables ------------------
-        integer, intent(in) :: &
-          nzm, &
-          ngrdcol
-
-        type (grid), target, intent(in) :: gr
-
-        real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
-          C_uu_buoy    ! Model parameter C_uu_buoy                         [-]
-
-        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
-          thv_ds_zm, & ! Dry, base-state theta_v at momentum levels   [K]
-          wpthvp       ! w'th_v'                                      [K m/s]
-
-        ! ------------------ Output Variable ------------------
-        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) :: &
-          rhs_bp_pr2_wp2    ! RHS portion of wp2 from terms bp and pr2  [m^2/s^3]
     """
     del gr
     rhs_bp_pr2_wp2 = jnp.zeros((ngrdcol, nzm))
@@ -2582,54 +1957,16 @@ def wp2_term_dp1_rhs(
     invrs_tau1m, threshold, up2, vp2,
     l_damp_wp2_using_em,
 ):
-    """When l_damp_wp2_using_em == .false., then
+    """Dissipation term 1 for w'^2:  explicit portion of the code.
+
+    When l_damp_wp2_using_em == .false., then
     Dissipation term 1 for w'^2:  explicit portion of the code.
 
-    The d(w'^2)/dt equation contains dissipation term 1:
-
-    - ( C_1 / tau_1m ) w'^2.
-
-    Since w'^2 has a minimum threshold, the term should be damped only to that
-    threshold.  The term becomes:
-
-    - ( C_1 / tau_1m ) * ( w'^2 - threshold ).
-
-    This term is broken into implicit and explicit portions.  The explicit
-    portion of this term is:
-
-    + ( C_1 / tau_1m ) * threshold.
-
-    The values of the C_1 skewness function, time-scale tau1m, and the
-    threshold are found on the momentum levels.
-
-    Returns:
-        rhs_dp1_wp2
-
-    Fortran declarations (wp2_term_dp1_rhs in src/CLUBB_core/advance_wp2_wp3_module.F90):
-
-        ! -------------------- Input Variables --------------------
-        integer, intent(in) :: &
-          nzm, &
-          ngrdcol
-
-        type (grid), target, intent(in) :: gr
-
-        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
-          C1_Skw_fnc,  & ! C_1 parameter with Sk_w applied                  [-]
-          invrs_tau1m, & ! Inverse time-scale tau at momentum levels        [1/s]
-          up2,         & ! Horizontal (east-west) velocity variance, u'^2   [m^2/s^2]
-          vp2            ! Horizontal (north-south) velocity variance, v'^2 [m^2/s^2]
-
-        real( kind = core_rknd ), intent(in) :: &
-          threshold    ! Minimum allowable value of w'^2       [m^2/s^2]
-
-        logical, intent(in) :: &
-          l_damp_wp2_using_em ! intent(in) wp2 equation, use a dissipation formula of -(2/3)*em/tau_zm,
-                              ! as in Bougeault (1981)
-
-        ! -------------------- Output Variable --------------------
-        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) :: &
-          rhs_dp1_wp2    ! RHS portion of wp2 from dissipation term 1  [m^2/s^3]
+    if l_damp_wp2_using_em == .true., then
+    we damp wp2 using a more standard turbulence closure, -(2/3)*em/tau
+    This only works if C1=C14 and l_stability_correct_tau_zm =.false.
+    A factor of (1/3) is absorbed into C1.
+    The threshold is implicitly set to 0.
     """
     del gr
     rhs_dp1_wp2 = jnp.zeros((ngrdcol, nzm))
@@ -2661,59 +1998,6 @@ def wp2_term_pr3_rhs(
 
     Note that below we have broken up C5 into C_uu_shr for shear terms and
     C_uu_buoy for buoyancy terms.
-
-    This term is solved for completely explicitly and is discretized as
-    follows:
-
-    The values of w'th_v', u'w', and v'w' are found on the momentum levels,
-    whereas the values of um and vm are found on the thermodynamic levels.
-    Additionally, the values of thv_ds_zm are found on the momentum levels.
-    The derivatives of both um and vm are taken over the intermediate
-    (central) momentum level.  All the remaining mathematical operations take
-    place at the central momentum level, yielding the desired result.
-
-    -----um--------------vm---------------------------------------- t(k)
-
-    =upwp====d(um)/dz========d(vm)/dz==vpwp===thv_ds_zm==wpthvp==== m(k)
-
-    -----um--------------vm---------------------------------------- t(k-1)
-
-    The vertical indices t(k), m(k), and t(k-1) correspond with altitudes
-    zt(k), zm(k), and zt(k-1), respectively.  The letter "t" is used for
-    thermodynamic levels and the letter "m" is used for momentum levels.
-
-    invrs_dzm(k) = 1 / ( zt(k) - zt(k-1) )
-
-    Returns:
-        rhs_pr3_wp2
-
-    Fortran declarations (wp2_term_pr3_rhs in src/CLUBB_core/advance_wp2_wp3_module.F90):
-
-        ! --------------------- Input Variables ---------------------
-        integer, intent(in) :: &
-          nzm, &
-          nzt, &
-          ngrdcol
-
-        type (grid), intent(in) :: gr
-
-        real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
-          C_uu_shr,  & ! Model parameter                            [-]
-          C_uu_buoy    ! Model parameter                            [-]
-
-        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
-          thv_ds_zm, & ! Dry, base-state theta_v at momentum level (k)  [K]
-          wpthvp,    & ! w'th_v'(k)                                     [K m/s]
-          upwp,      & ! u'w'(k)                                        [m^2/s^2]
-          vpwp         ! v'w'(k)                                        [m^2/s^2]
-
-        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
-          um,        & ! um(k)                                          [m/s]
-          vm           ! vm(k)                                          [m/s]
-
-        ! --------------------- Output Variable ---------------------
-        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) :: &
-          rhs_pr3_wp2    ! RHS portion of wp2 from pressure term 3  [m^2/s^3]
     """
     del nzt
     rhs_pr3_wp2 = jnp.zeros((ngrdcol, nzm))
@@ -2744,50 +2028,12 @@ def wp2_term_pr3_rhs(
 def wp2_term_pr1_rhs(nzm, ngrdcol, gr, C4, up2, vp2, invrs_tau_C4_zm):
     """Pressure term 1 for w'^2:  explicit portion of the code.
 
-    The d(w'^2)/dt equation contains pressure term 1:
-
-    - ( C_4 / tau_1m ) * ( w'^2 - (2/3)*em );
-
-    where em = (1/2) * ( w'^2 + u'^2 + v'^2 ).
-
-    This simplifies to:
-
-    - ( C_4 / tau_1m ) * (2/3) * w'^2
-       + ( C_4 / tau_1m ) * (1/3) * ( u'^2 + v'^2 ).
-
     Pressure term 1 has both implicit and explicit components.
     The explicit portion is:
 
     + ( C_4 / tau_1m ) * (1/3) * ( u'^2 + v'^2 );
 
     and is computed in this function.
-
-    The values of u'^2 and v'^2 are found on momentum levels, as are the
-    values of tau1m.
-
-    Returns:
-        rhs_pr1_wp2
-
-    Fortran declarations (wp2_term_pr1_rhs in src/CLUBB_core/advance_wp2_wp3_module.F90):
-
-        ! ------------------------ Input Variables ------------------------
-        integer, intent(in) :: &
-          nzm, &
-          ngrdcol
-
-        type (grid), target, intent(in) :: gr
-
-        real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
-          C4    ! Model parameter C_4                      [-]
-
-        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
-          up2,        & ! u'^2(k)                               [m^2/s^2]
-          vp2,        & ! v'^2(k)                               [m^2/s^2]
-          invrs_tau_C4_zm   ! Inverse time-scale tau at momentum levels [1/s]
-
-        ! ------------------------ Output Variable ------------------------
-        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) :: &
-          rhs_pr1_wp2    ! RHS portion of wp2 from pressure term 1  [m^2/s^3]
     """
     del gr
     rhs_pr1_wp2 = jnp.zeros((ngrdcol, nzm))
@@ -2804,7 +2050,9 @@ def wp2_term_pr_dfsn_rhs(
     rho_ds_zt, invrs_rho_ds_zm,
     wpup2, wpvp2, wp3,
 ):
-    """This term is intended to represent the "diffusion" part of the wp2
+    """Pressure-diffusion RHS for w'^2.
+
+    This term is intended to represent the "diffusion" part of the wp2
     pressure correlation.  The total pressure diffusion term,
 
       -1 / rho * ( d( <u_k'p'> )/dx_i + d( <u_i'p'> )/dx_k )
@@ -2813,47 +2061,10 @@ def wp2_term_pr_dfsn_rhs(
 
       -2 / rho * d( <w'p'> )/dz
 
-    for the w'^2 equation.  The factor of 2 is replaced with a tunable
-    parameter, C_wp2_pr_dfsn, and p' is replaced with
-
-      p' ~ - rho * ( u_i*u_i - <u_i*u_i> ),
-
-    following Lumley 1978.  The wp2 pressure diffusion term becomes
-
-      + C_wp2_pr_dfsn / rho * ( d( rho*<w'u_iu_i> )/dz )
+    for the w'^2 equation.
 
     References:
-    Lumley 1978, p. 170.  See eq. 6.47 and accompanying discussion.
-
-    Returns:
-        rhs_pr_dfsn_wp2
-
-    Fortran declarations (wp2_term_pr_dfsn_rhs in src/CLUBB_core/advance_wp2_wp3_module.F90):
-
-        ! ---------------------- Input Variables ----------------------
-        integer, intent(in) :: &
-          nzm, &
-          nzt, &
-          ngrdcol
-
-        type (grid), intent(in) :: &
-          gr
-
-        real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
-          C_wp2_pr_dfsn      ! Model parameter C_wp2_pr_dfsn                [-]
-
-        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
-          invrs_rho_ds_zm    ! Inverse dry static density (thermo levels) [kg/m^3]
-
-        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
-          rho_ds_zt,       & ! Dry static density on mom. levels       [kg/m^3]
-          wpup2,           & ! w'u'^2 on thermodynamic levels          [m^4/s^4]
-          wpvp2,           & ! w'v'^2 on thermodynamic levels          [m^4/s^4]
-          wp3                ! w'^3 on thermo levels                   [m^4/s^4]
-
-        ! ---------------------- Output Variable ----------------------
-        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) :: &
-          rhs_pr_dfsn_wp2    ! RHS portion of wp2 from pressure-diffusion correlation [m^3/s^4]
+      Lumley 1978, p. 170.  See eq. 6.47 and accompanying discussion.
     """
     del nzt
     wpuip2 = wpup2 + wpvp2 + wp3
@@ -2898,90 +2109,7 @@ def wp3_term_ta_new_pdf_lhs(
 
     <w'^4> = coef_wp4_implicit * <w'^2>^2.
 
-    The calculation of coef_wp4_implicit is detailed in function
-    calc_coef_wp4_implicit, which is found in module new_pdf in new_pdf.py.
-
-    The turbulent advection term is rewritten as:
-
-    - (1/rho_ds) * d( rho_ds * coef_wp4_implicit * <w'^2>^2 )/dz.
-
-    The <w'^2>^2 term is timestep split so that it can be expressed linearly
-    in terms of <w'^2> at the (t+1) timestep, such that:
-
-    <w'^2>^2 = <w'^2>(t) * <w'^2>(t+1);
-
-    which allows the turbulent advection term to be expressed implicitly as:
-
-    - (1/rho_ds)
-      * d( rho_ds * coef_wp4_implicit * <w'^2>(t) * <w'^2>(t+1) )/dz.
-
-    Note:  When the term is brought over to the left-hand side, the sign is
-           reversed and the leading "-" in front of all d[ ] / dz terms is
-           changed to a "+".
-
-    Timestep index (t) stands for the index of the current timestep, while
-    timestep index (t+1) stands for the index of the next timestep, which is
-    being advanced to in solving the d<w'^3>/dt and d<w'^2>/dt equations.
-
-    The implicit discretization of this term is as follows:
-
-    The values of <w'^3> are found on the thermodynamic levels, while the
-    values of <w'^2> are found on the momentum levels.  The values of
-    coef_wp4_implicit_zt are originally calculated by the PDF on the
-    thermodynamic levels.  They are interpolated to the intermediate momentum
-    levels as coef_wp4_implicit.  Additionally, the values of rho_ds_zm are
-    found on the momentum levels, and the values of invrs_rho_ds_zt are found
-    on the thermodynamic levels.  At the intermediate momentum levels, the
-    values of coef_wp4_implicit are multiplied by <w'^2>(t) * <w'^2>(t+1), and
-    the resulting product is also multiplied by rho_ds_zm.  This product is
-    referred to as G below.  Then, the derivative (d/dz) of that expression is
-    taken over the central thermodynamic level, where it is multiplied by
-    -invrs_rho_ds_zt.  This yields the desired result.  In this function,
-    the values of G are as follows:
-
-    G = rho_ds_zm * coef_wp4_implicit * <w'^2>(t) * <w'^2>(t+1).
-
-    -------coef_wp4_implicit_zt---------------------------------------- t(k+1)
-
-    =======coef_wp4_implicit(interp)=======wp2=========rho_ds_zm======= m(k+1)
-
-    -------coef_wp4_implicit_zt-----dG/dz-----invrs_rho_ds_zt----wp3--- t(k)
-
-    =======coef_wp4_implicit(interp)=======wp2=========rho_ds_zm======= m(k)
-
-    -------coef_wp4_implicit_zt---------------------------------------- t(k-1)
-
-    The vertical indices t(k+1), m(k+1), t(k), m(k), and t(k-1) correspond
-    with altitudes zt(k+1), zm(k+1), zt(k), zm(k), and zt(k-1), respectively.
-    The letter "t" is used for thermodynamic levels and the letter "m" is
-    used for momentum levels.
-
     invrs_dzt(k) = 1 / ( zm(k+1) - zm(k) )
-
-    Returns:
-        lhs_ta_wp3
-
-    Fortran declarations (wp3_term_ta_new_pdf_lhs in src/CLUBB_core/advance_wp2_wp3_module.F90):
-
-        ! ------------------------ Input Variables ------------------------
-        integer, intent(in) :: &
-          nzm, &
-          nzt, &
-          ngrdcol
-
-        type (grid), intent(in) :: gr
-
-        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
-          coef_wp4_implicit, & ! <w'^4>=coef_wp4_implicit*<w'^2>^2; m-levs [-]
-          wp2,               & ! <w'^2>                                    [m^2/s^2]
-          rho_ds_zm            ! Dry, static density at momentum levels    [kg/m^3]
-
-        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
-          invrs_rho_ds_zt      ! Inv dry, static density at thermo levels  [m^3/kg]
-
-        ! ------------------------ Output Variable ------------------------
-        real( kind = core_rknd ), dimension(ndiags2,ngrdcol,nzt), intent(out) :: &
-          lhs_ta_wp3   ! LHS coefficient of wp3 turbulent advection  [m/s^2]
     """
     del nzm
     lhs_ta_wp3 = jnp.zeros((ndiags2, ngrdcol, nzt))
@@ -3029,108 +2157,6 @@ def wp3_term_ta_ADG1_lhs(
           + (1 - sigma_sqd_w)^2.
 
     https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:wp4_diagnosis
-
-    The turbulent advection term is rewritten as:
-
-    - (1/rho_ds) * d [ rho_ds * a_3 * (w'^2)^2 ] / dz
-    - (1/rho_ds) * d [ rho_ds * a_1 * ( (w'^3)^2 / w'^2 ) ] / dz.
-
-    The (w'^2)^2 and (w'^3)^2 terms are both timestep split so that they can
-    be expressed linearly in terms of w'^2 and w'^3, respectively, at the
-    (t+1) timestep, such that:
-
-    (w'^2)^2 = w'^2(t) * w'^2(t+1);
-    (w'^3)^2 = w'^3(t) * w'^3(t+1);
-
-    which allows these terms to be expressed implicitly as:
-
-    - (1/rho_ds) * d [ rho_ds * a_3 * w'^2(t) * w'^2(t+1) ] / dz
-    - (1/rho_ds) * d [ rho_ds * a_1 * w'^3(t) * w'^3(t+1) / w'^2(t) ] / dz.
-
-    Note:  When the term is brought over to the left-hand side, the sign is
-           reversed and the leading "-" in front of all d[ ] / dz terms is
-           changed to a "+".
-
-    Timestep index (t) stands for the index of the current timestep, while
-    timestep index (t+1) stands for the index of the next timestep, which is
-    being advanced to in solving the d(w'^3)/dt and d(w'^2)/dt equations.
-
-    The implicit portion of these terms is discretized as follows:
-
-    The values of w'^3 are found on the thermodynamic levels, while the values
-    of w'^2, a_1, and a_3 are found on the momentum levels.  Additionally, the
-    values of rho_ds_zm are found on the momentum levels, and the values of
-    invrs_rho_ds_zt are found on the thermodynamic levels.  The variable w'^3
-    is interpolated to the intermediate momentum levels.  The values of the
-    mathematical expressions (called F and G here) within the dF/dz and dG/dz
-    terms are computed on the momentum levels.  Then, the derivatives (d/dz)
-    of the expressions (F and G) are taken over the central thermodynamic
-    level, where dF/dz and dG/dz are multiplied by -invrs_rho_ds_zt.  This
-    yields the desired results.  In this function, the values of F and G are
-    as follows:
-
-    F = rho_ds_zm * a_3(t) * w'^2(t) * w'^2(t+1); and
-
-    G = rho_ds_zm * a_1(t) * w'^3(t) * w'^3(t+1) / w'^2(t).
-
-    ------------------------------------------------wp3---------------- t(k+1)
-
-    ===a3====wp2====rho_ds_zm====a1======================wp3(interp)=== m(k+1)
-
-    -----------dF/dz----invrs_rho_ds_zt----dG/dz----wp3---------------- t(k)
-
-    ===a3====wp2====rho_ds_zm====a1======================wp3(interp)=== m(k)
-
-    ------------------------------------------------wp3---------------- t(k-1)
-
-    The vertical indices t(k+1), m(k+1), t(k), m(k), and t(k-1) correspond
-    with altitudes zt(k+1), zm(k+1), zt(k), zm(k), and zt(k-1), respectively.
-    The letter "t" is used for thermodynamic levels and the letter "m" is
-    used for momentum levels.
-
-    invrs_dzt(k) = 1 / ( zm(k+1) - zm(k) )
-
-    Returns:
-        lhs_ta_wp3
-
-    Fortran declarations (wp3_term_ta_ADG1_lhs in src/CLUBB_core/advance_wp2_wp3_module.F90):
-
-        ! ---------------------- Input Variables ----------------------
-        integer, intent(in) :: &
-          nzm, &
-          nzt, &
-          ngrdcol
-
-        type (grid), intent(in) :: gr
-
-        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
-          wp2,             & ! w'^2                                     [m^2/s^2]
-          a1_coef,         & ! a_1                                      [-]
-          a3_coef,         & ! a_3                                      [-]
-          wp3_on_wp2,      & ! w'^3 / w'^2 at momentum levels           [m/s]
-          rho_ds_zm          ! Dry, static density at momentum levels   [kg/m^3]
-
-        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
-          a1_coef_zt,      & ! a_1 interpolated to thermodynamic levels [-]
-          a3_coef_zt,      & ! a_3 interpolated to thermodynamic levels [-]
-          rho_ds_zt,       & ! Dry, static density at thermo. levels    [kg/m^3]
-          invrs_rho_ds_zt    ! Inv dry, static density at thermo levels [m^3/kg]
-
-        logical, intent(in) :: &
-          l_standard_term_ta,   & ! Use the standard discretization for the
-                                  ! turbulent advection terms.  Setting to .false.
-                                  ! means that a_1 and a_3 are pulled outside of the
-                                  ! derivative in advance_wp2_wp3_module.F90 and in
-                                  ! advance_xp2_xpyp_module.F90.
-          l_partial_upwind_wp3    ! Flag to use an "upwind" discretization rather
-                                  ! than a centered discretization for the portion
-                                  ! of the wp3 turbulent advection term for ADG1
-                                  ! that is linearized in terms of wp3<t+1>.
-                                  ! (Requires ADG1 PDF and l_standard_term_ta).
-
-        ! ---------------------- Output Variable ----------------------
-        real( kind = core_rknd ), dimension(ndiags5,ngrdcol,nzt), intent(out) :: &
-          lhs_ta_wp3    ! LHS coefficient of wp3 turbulent advection
     """
     del nzm
     lhs_ta_wp3 = jnp.zeros((ndiags5, ngrdcol, nzt))
@@ -3289,88 +2315,10 @@ def wp3_term_tp_lhs(nzm, nzt, ngrdcol, gr, coef_wp3_tp, wp2, rho_ds_zm, invrs_rh
 
     The d(w'^3)/dt equation contains a turbulent production term:
 
-    + 3 * ( w'^2 / rho_ds ) * d( rho_ds * w'^2 )/dz.
+    + 3 w'^2 dw'^2/dz.
 
-    The turbulent production term is rewritten as:
-
-    + 3 * ( w'^2 / rho_ds ) * d[ rho_ds * w'^2 ]/dz
-    = + (3/rho_ds) * d[ rho_ds * (w'^2)^2 ]/dz - (3/2) * d[ (w'^2)^2 ]/dz.
-
-    The (w'^2)^2 terms are timestep split so that they can be expressed
-    linearly in terms of w'^2 at the (t+1) timestep, such that:
-
-    (w'^2)^2 = w'^2(t) * w'^2(t+1).
-
-    The term can now be expressed implicitly as:
-
-    + (3/rho_ds) * d [ rho_ds * w'^2(t) * w'^2(t+1) ] / dz
-    - (3/2) * d [ w'^2(t) * w'^2(t+1) ] /dz.
-
-    Note:  When the term is brought over to the left-hand side, the sign is
-           reversed and the leading "-" in front of a d[ ] / dz term is
-           changed to a "+".  Likewise, the leading "+" in front of a
-           d[ ] / dz term is changed to a "-".
-
-    Timestep index (t) stands for the index of the current timestep, while
-    timestep index (t+1) stands for the index of the next timestep, which is
-    being advanced to in solving the d(w'^3)/dt and d(w'^2)/dt equations.
-
-    The implicit portion of these terms is discretized as follows:
-
-    While the values of w'^3 are found on the thermodynamic levels, the values
-    of w'^2 are found on the momentum levels.  Additionally, the values of
-    rho_ds_zm are found on the momentum levels, and the values of
-    invrs_rho_ds_zt are found on the thermodynamic levels.  The values of the
-    mathematical expressions (called F and G below) within the dF/dz and dG/dz
-    terms are computed on the momentum levels.  Then, the derivatives (d/dz)
-    of the expressions (F and G) are taken over the central thermodynamic
-    level, where dF/dz and dG/dz are multiplied by -3 * invrs_rho_ds_zt and
-    3/2, respectively, yielding the desired results.  In this function, the
-    values of F and G are as follows:
-
-    F = rho_ds_zm * w'^2(t) * w'^2(t+1);
-
-    G = w'^2(t) * w'^2(t+1).
-
-    ====wp2=========rho_ds_zm========================================== m(k+1)
-
-    -----------dF/dz----invrs_rho_ds_zt----dG/dz----wp3---------------- t(k)
-
-    ====wp2=========rho_ds_zm========================================== m(k)
-
-    The vertical indices m(k+1), t(k), and m(k) correspond with altitudes
-    zm(k+1), zt(k), and zm(k), respectively.  The letter "t" is used for
-    thermodynamic levels and the letter "m" is used for momentum levels.
-
-    invrs_dzt(k) = 1 / ( zm(k+1) - zm(k) )
-
-    Returns:
-        lhs_tp_wp3
-
-    Fortran declarations (wp3_term_tp_lhs in src/CLUBB_core/advance_wp2_wp3_module.F90):
-
-        ! -------------------- Input Variables --------------------
-        integer, intent(in) :: &
-          nzm, &
-          nzt, &
-          ngrdcol
-
-        type (grid), intent(in) :: &
-          gr
-
-        real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
-          coef_wp3_tp      ! Coefficient for tp pressure scrambling term   [-]
-
-        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
-          wp2,             & ! w'^2                                        [m^2/s^2]
-          rho_ds_zm          ! Dry, static density at momentum levels      [kg/m^3]
-
-        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
-          invrs_rho_ds_zt    ! Inv dry, static density at thermo levels    [m^3/kg]
-
-        ! -------------------- Output Variable --------------------
-        real( kind = core_rknd ), dimension(ndiags2,ngrdcol,nzt), intent(out) :: &
-          lhs_tp_wp3    ! LHS coefficient of wp3 turbulent production  [1/s]
+    The pressure scrambling terms damp this term by the coefficient
+    coef_wp3_tp.
     """
     del nzm
     lhs_tp_wp3 = jnp.zeros((ndiags2, ngrdcol, nzt))
@@ -3397,72 +2345,8 @@ def wp3_terms_ac_pr2_lhs(nzm, nzt, ngrdcol, gr, C11_Skw_fnc, wm_zm):
     """Accumulation of w'^3 and w'^3 pressure term 2:  implicit portion of the
     code.
 
-    The d(w'^3)/dt equation contains an accumulation term:
-
-    - 3 w'^3 dw/dz;
-
-    and pressure term 2:
-
-    - C_11 ( -3 w'^3 dw/dz + 3 (g/th_0) w'^2th_v' ).
-
     The w'^3 accumulation term is completely implicit, while w'^3 pressure
-    term 2 has both implicit and explicit components.  The accumulation term
-    and the implicit portion of pressure term 2 are combined and solved
-    together as:
-
-    + ( 1 - C_11 ) ( -3 w'^3(t+1) dw/dz ).
-
-    Note:  When the term is brought over to the left-hand side, the sign
-           is reversed and the leading "-" in front of the "3" is changed
-           to a "+".
-
-    The timestep index (t+1) means that the value of w'^3 being used is from
-    the next timestep, which is being advanced to in solving the d(w'^3)/dt
-    equation.
-
-    The terms are discretized as follows:
-
-    The values of w'^3 are found on thermodynamic levels, while the values of
-    wm_zm (mean vertical velocity on momentum levels) are found on momentum
-    levels.  The vertical derivative of wm_zm is taken over the intermediate
-    (central) thermodynamic level.  It is then multiplied by w'^3 (implicitly
-    calculated at timestep (t+1)) and the coefficients to yield the desired
-    results.
-
-    =======wm_zm============================================= m(k+1)
-
-    ---------------d(wm_zm)/dz------------wp3---------------- t(k)
-
-    =======wm_zm============================================= m(k)
-
-    The vertical indices m(k+1), t(k), and m(k) correspond with altitudes
-    zm(k+1), zt(k), and zm(k), respectively.  The letter "t" is used for
-    thermodynamic levels and the letter "m" is used for momentum levels.
-
-    invrs_dzt(k) = 1 / ( zm(k+1) - zm(k) )
-
-    Returns:
-        lhs_ac_pr2_wp3
-
-    Fortran declarations (wp3_terms_ac_pr2_lhs in src/CLUBB_core/advance_wp2_wp3_module.F90):
-
-        ! ------------------------ Input Variables ------------------------
-        integer, intent(in) :: &
-          nzm, &
-          nzt, &
-          ngrdcol
-
-        type (grid), intent(in) :: gr
-
-        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
-          C11_Skw_fnc     ! C_11 parameter with Sk_w applied       [-]
-
-        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
-          wm_zm           ! w wind component at momentum levels    [m/s]
-
-        ! ------------------------ Output Variable ------------------------
-        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) :: &
-          lhs_ac_pr2_wp3     ! LHS coefficient of wp3 from terms ac and pr2 [1/s]
+    term 2 has both implicit and explicit components.
     """
     del nzm
     lhs_ac_pr2_wp3 = jnp.zeros((ngrdcol, nzt))
@@ -3489,63 +2373,8 @@ def wp3_term_pr1_lhs(
 
     where Sk_wt = w'^3 / (w'^2)^(3/2).
 
-    This term needs to be linearized, so function L(w'^3) is defined to be
-    equal to this term (pressure term 1), such that:
-
-    L(w'^3) = - (C_8/tau_w3t) * ( C_8b * (w'^3)^3 / (w'^2)^3 + w'^3 ).
-
     A Taylor Series expansion (truncated after the first derivative term) of
     L(w'^3) around w'^3 = w'^3(t) is used to linearize pressure term 1.
-    Evaluating L(w'^3) at w'^3(t+1):
-
-    L( w'^3(t+1) ) = L( w'^3(t) )
-                     + ( d L(w'^3) / d w'^3 )|_(w'^3=w'^3(t))
-                       * ( w'^3(t+1) - w'^3(t) ).
-
-    After evaluating the expression above, the term has become linearized.  It
-    is broken down into implicit (LHS) and explicit (RHS) components.
-    The implicit portion is:
-
-    - (C_8/tau_w3t) * ( 3 * C_8b * Sk_wt^2 + 1 ) * w'^3(t+1).
-
-    Note:  When the term is brought over to the left-hand side, the sign
-           is reversed and the leading "-" in front of the term is changed
-           to a "+".
-
-    Timestep index (t) stands for the index of the current timestep, while
-    timestep index (t+1) stands for the index of the next timestep, which is
-    being advanced to in solving the d(w'^3)/dt equation.
-
-    The values of w'^3 are found on the thermodynamic levels, as are the
-    values of tau_w3t and Sk_wt (in Sk_wt, w'^3 is found on thermodynamic
-    levels and w'^2 is interpolated to thermodynamic levels).
-
-    Returns:
-        lhs_pr1_wp3
-
-    Fortran declarations (wp3_term_pr1_lhs in src/CLUBB_core/advance_wp2_wp3_module.F90):
-
-        ! ---------------------- Input Variables ----------------------
-        integer, intent(in) :: &
-          nzt, &
-          ngrdcol
-
-        type (grid), target, intent(in) :: gr
-
-        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
-          invrs_tau_wp3_zt,  & ! Inverse time-scale tau at thermodynamic levels  [1/s]
-          Skw_zt               ! Skewness of w at thermodynamic levels   [-]
-
-        real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
-          C8,      & ! Model parameter C_8                     [-]
-          C8b        ! Model parameter C_8b                    [-]
-
-        logical, intent(in) :: &
-          l_damp_wp3_Skw_squared ! Set damping on wp3 to use Skw^2 rather than Skw^4
-
-        ! ---------------------- Output Variable ----------------------
-        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) :: &
-          lhs_pr1_wp3    ! LHS coefficient of wp3 from pressure term 1  [1/s]
     """
     del gr
     lhs_pr1_wp3 = jnp.zeros((ngrdcol, nzt))
@@ -3571,64 +2400,6 @@ def wp3_term_ta_explicit_rhs(nzm, nzt, ngrdcol, gr, wp4, rho_ds_zm, invrs_rho_ds
     The d<w'^3>/dt equation contains a turbulent advection term:
 
     - (1/rho_ds) * d( rho_ds * <w'^4> )/dz.
-
-    The value of <w'^4> is found by integrating over the PDF of w, as detailed
-    in function calc_wp4_pdf, which is found in module pdf_closure_module in
-    pdf_closure_module.py.
-
-    The explicit discretization of this term is as follows:
-
-    The values of <w'^3> are found on the thermodynamic levels, while the
-    values of <w'^4> are found on the momentum levels.  The values of
-    <w'^4>|_zt are originally calculated by the PDF on the thermodynamic
-    levels.  They are interpolated to the intermediate momentum levels as
-    <w'^4>.  Additionally, the values of rho_ds_zm are found on the momentum
-    levels, and the values of invrs_rho_ds_zt are found on the thermodynamic
-    levels.  At the intermediate momentum levels, the values of <w'^4> are
-    multiplied by rho_ds_zm.  Then, the derivative (d/dz) of that expression
-    is taken over the central thermodynamic level, where it is multiplied by
-    -invrs_rho_ds_zt.  This yields the desired result.
-
-    ---------wp4_zt---------------------------------------------------- t(k+1)
-
-    =========wp4(interp)===========rho_ds_zm=========================== m(k+1)
-
-    ---------wp4_zt-----d( rho_ds_zm * wp4 )/dz-----invrs_rho_ds_zt---- t(k)
-
-    =========wp4(interp)===========rho_ds_zm=========================== m(k)
-
-    ---------wp4_zt---------------------------------------------------- t(k-1)
-
-    The vertical indices t(k+1), m(k+1), t(k), m(k), and t(k-1) correspond
-    with altitudes zt(k+1), zm(k+1), zt(k), zm(k), and zt(k-1), respectively.
-    The letter "t" is used for thermodynamic levels and the letter "m" is
-    used for momentum levels.
-
-    invrs_dzt(k) = 1 / ( zm(k+1) - zm(k) )
-
-    Returns:
-        rhs_ta_wp3
-
-    Fortran declarations (wp3_term_ta_explicit_rhs in src/CLUBB_core/advance_wp2_wp3_module.F90):
-
-        ! ---------------------- Input Variables ----------------------
-        integer, intent(in) :: &
-          nzm, &
-          nzt, &
-          ngrdcol
-
-        type (grid), intent(in) :: gr
-
-        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
-          wp4,             & ! <w'^4>                                   [m^4/s^4]
-          rho_ds_zm          ! Dry, static density at momentum level    [kg/m^3]
-
-        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
-          invrs_rho_ds_zt    ! Inv dry, static density at thermo level  [m^3/kg]
-
-        ! ---------------------- Output Variable ----------------------
-        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) :: &
-          rhs_ta_wp3    ! Rate of change of wp3 from turbulent advection  [m^3/s^4]
     """
     del nzm
     rhs_ta_wp3 = jnp.zeros((ngrdcol, nzt))
@@ -3654,34 +2425,6 @@ def wp3_terms_bp1_pr2_rhs(nzt, ngrdcol, gr, C11_Skw_fnc, thv_ds_zt, wp2thvp):
     and pressure term 2:
 
     - C_11 ( -3 w'^3 dw/dz + 3 (g/thv_ds) w'^2th_v' ).
-
-    The w'^3 buoyancy production term is completely explicit, while w'^3
-    pressure term 2 has both implicit and explicit components.  The buoyancy
-    production term and the explicit portion of pressure term 2 are combined
-    and solved together as:
-
-    + ( 1 - C_ll ) ( 3 (g/thv_ds) w'^2th_v' ).
-
-    Returns:
-        rhs_bp1_pr2_wp3
-
-    Fortran declarations (wp3_terms_bp1_pr2_rhs in src/CLUBB_core/advance_wp2_wp3_module.F90):
-
-        ! -------------------- Input Variables --------------------
-        integer, intent(in) :: &
-          nzt, &
-          ngrdcol
-
-        type (grid), target, intent(in) :: gr
-
-        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
-          C11_Skw_fnc, & ! C_11 parameter with Sk_w applied         [-]
-          thv_ds_zt,   & ! Dry, base-state theta_v at thermo. levs  [K]
-          wp2thvp        ! w'^2 th_v'                               [K m^2/s^2]
-
-        ! -------------------- Output Variable --------------------
-        real( kind = core_rknd ),  dimension(ngrdcol,nzt), intent(out) :: &
-          rhs_bp1_pr2_wp3   ! RHS portion of wp3 from terms bp1 and pr2 [m^3/s^4]
     """
     del gr
     rhs_bp1_pr2_wp3 = jnp.zeros((ngrdcol, nzt))
@@ -3702,53 +2445,16 @@ def wp3_term_pr_turb_rhs(
     em, wp2,
     l_use_tke_in_wp3_pr_turb_term,
 ):
-    """Experimental term from CLUBB TRAC ticket #411. The derivative here is of
-    the form:
-    - C_15 * Kh * ∂{ grav / thv_ds * [w'th_v'(k) - w'th_v'(k-1)]
-                     -[ u'w'(k) * ∂u(k)/∂z - u'w'(k-1) * ∂u(k-1)/∂z ]
-                     -[ v'w'(k) * ∂v(k)/∂z - v'w'(k-1) * ∂v(k-1)/∂z ]  }/∂z.
+    """Pressure-turbulence correlation RHS for w'^3.
+
+    Experimental term from CLUBB TRAC ticket #411. The derivative here is of
+    the form used to match LES data.
 
     This does not appear in Andre et al. 1976 or Bougeault et al. 1981, but
     is based on experiments in matching LES data.
 
-    Returns:
-        rhs_pr_turb_wp3
-
-    Fortran declarations (wp3_term_pr_turb_rhs in src/CLUBB_core/advance_wp2_wp3_module.F90):
-
-        ! --------------------- Input Variables ---------------------
-        integer, intent(in) :: &
-          nzm, &
-          nzt, &
-          ngrdcol
-
-        type (grid), intent(in) :: &
-          gr
-
-        real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
-          C_wp3_pr_turb         ! Model parameter C_wp3_pr_turb                [-]
-
-        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
-          Kh_zt,           & ! Eddy-diffusivity on thermo. levels      [m^2/s]
-          thv_ds_zt,       & ! Dry, base-state theta_v at thermo. levs [K]
-          invrs_rho_ds_zt    ! Inverse dry static density on thermo. levs [kg/m^3]
-
-        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
-          wpthvp,          & ! w'th_v'                                 [K m/s]
-          dum_dz,          & ! derivative of u wind with respect to z  [m/s]
-          dvm_dz,          & ! derivative of v wind with respect to z  [m/s]
-          upwp,            & ! u'v'                                    [m^2/s^2]
-          vpwp,            & ! v'w'                                    [m^2/s^2]
-          rho_ds_zm,       & ! Dry static density on mom. levels       [kg/m^3]
-          wp2,             & ! w'^2                                    [m^2/s^2]
-          em                 ! Turbulence kinetic energy               [m^2/s^2]
-
-        logical, intent(in) :: &
-          l_use_tke_in_wp3_pr_turb_term  ! Use TKE formulation for wp3 pr_turb term
-
-        ! Return Variable
-        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) :: &
-          rhs_pr_turb_wp3    ! RHS portion of wp3 from pressure-turbulence correlation [m^3/s^4]
+    References:
+      None
     """
     del nzm
     rhs_pr_turb_wp3 = jnp.zeros((ngrdcol, nzt))
@@ -3786,56 +2492,19 @@ def wp3_term_pr_dfsn_rhs(
     wp2up2, wp2vp2, wp4,
     up2, vp2, wp2,
 ):
-    """This term is intended to represent the "diffusion" part of the total wp3
+    """Pressure-diffusion RHS for w'^3.
+
+    This term is intended to represent the "diffusion" part of the total wp3
     pressure correlation.  The total wp3 pressure term, -3w'^2/rho*dp'/dz, can be
     split into
 
       -3w'^2/rho*dp'/dz = + 3p'/rho*d(w'^2)/dz - 3/rho*d(w'^2p')/dz
 
     using the product rule.  The second term on the RHS we consider to be the
-    diffusion part, calculated by this subroutine.  We replace the factor of 3
-    with a tunable parameter, C_wp3_pr_dfsn, and we replace p' with
-
-      p' ~ - rho * ( u_i*u_i - <u_i*u_i> ),
-
-    following Lumley 1978.  The wp3 pressure diffusion term then becomes
-
-      + C_wp3_pr_dfsn / rho * ( d( rho*( <w'^2u_i'u_i'> - <w'^2>*<u_i'u_i'> ) )/dz )
+    diffusion part, calculated by this subroutine.
 
     References:
-    Lumley 1978, p. 170.  See eq. 6.47 and accompanying discussion.
-
-    Returns:
-        rhs_pr_dfsn_wp3
-
-    Fortran declarations (wp3_term_pr_dfsn_rhs in src/CLUBB_core/advance_wp2_wp3_module.F90):
-
-        ! ---------------------- Input Variables ----------------------
-        integer, intent(in) :: &
-          nzm, &
-          nzt, &
-          ngrdcol
-
-        type (grid), intent(in) :: gr
-
-        real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
-          C_wp3_pr_dfsn      ! Model parameter C_wp3_pr_dfsn              [-]
-
-        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
-          invrs_rho_ds_zt    ! Inverse dry static density (thermo levels) [m^3/kg]
-
-        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
-          rho_ds_zm,       & ! Dry static density on mom. levels          [kg/m^3]
-          wp2up2,          & ! w'^2u'^2 on momentum levels                [m^4/s^4]
-          wp2vp2,          & ! w'^2v'^2 on momentum levels                [m^4/s^4]
-          wp4,             & ! w'^4 on momentum levels                    [m^4/s^4]
-          up2,             & ! u'^2 on momentum levels                    [m^2/s^2]
-          vp2,             & ! v'^2 on momentum levels                    [m^2/s^2]
-          wp2                ! w'^2 on momentum levels                    [m^2/s^2]
-
-        ! ---------------------- Output Variable ----------------------
-        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) :: &
-          rhs_pr_dfsn_wp3    ! RHS portion of wp3 from pressure-diffusion correlation [m^3/s^4]
+      Lumley 1978, p. 170.  See eq. 6.47 and accompanying discussion.
     """
     del nzm
     wp2uip2 = wp2up2 + wp2vp2 + wp4
@@ -3867,60 +2536,9 @@ def wp3_term_pr1_rhs(
 
     where Sk_wt = w'^3 / (w'^2)^(3/2).
 
-    This term needs to be linearized, so function L(w'^3) is defined to be
-    equal to this term (pressure term 1), such that:
-
-    L(w'^3) = - (C_8/tau_w3t) * ( C_8b * (w'^3)^3 / (w'^2)^3 + w'^3 ).
-
-    A Taylor Series expansion (truncated after the first derivative term) of
-    L(w'^3) around w'^3 = w'^3(t) is used to linearize pressure term 1.
-    Evaluating L(w'^3) at w'^3(t+1):
-
-    L( w'^3(t+1) ) = L( w'^3(t) )
-                     + ( d L(w'^3) / d w'^3 )|_(w'^3=w'^3(t))
-                       * ( w'^3(t+1) - w'^3(t) ).
-
-    After evaluating the expression above, the term has become linearized.  It
-    is broken down into implicit (LHS) and explicit (RHS) components.
     The explicit portion is:
 
     + (C_8/tau_w3t) * ( 2 * C_8b * Sk_wt^2 + 1 ) * w'^3(t).
-
-    Timestep index (t) stands for the index of the current timestep, while
-    timestep index (t+1) stands for the index of the next timestep, which is
-    being advanced to in solving the d(w'^3)/dt equation.
-
-    The values of w'^3 are found on the thermodynamic levels, as are the
-    values of tau_w3t and Sk_wt (in Sk_wt, w'^3 is found on thermodynamic
-    levels and w'^2 is interpolated to thermodynamic levels).
-
-    Returns:
-        rhs_pr1_wp3
-
-    Fortran declarations (wp3_term_pr1_rhs in src/CLUBB_core/advance_wp2_wp3_module.F90):
-
-        ! --------------------- Input Variables ---------------------
-        integer, intent(in) :: &
-          nzt, &
-          ngrdcol
-
-        type (grid), intent(in) :: gr
-
-        real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
-          C8,  & ! Model parameter C_8                        [-]
-          C8b    ! Model parameter C_8b                       [-]
-
-        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
-          invrs_tau_wp3_zt, & ! Inverse time-scale tau at thermodynamic levels  [1/s]
-          Skw_zt,           & ! Skewness of w at thermodynamic levels      [-]
-          wp3                 ! w'^3                                       [m^3/s^3]
-
-        logical, intent(in) :: &
-          l_damp_wp3_Skw_squared ! Set damping on wp3 to use Skw^2 rather than Skw^4
-
-        ! --------------------- Output Variable ---------------------
-        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) :: &
-          rhs_pr1_wp3    ! RHS portion of wp3 from pressure term 1  [m^3/s^4]
     """
     del gr
     rhs_pr1_wp3 = jnp.zeros((ngrdcol, nzt))

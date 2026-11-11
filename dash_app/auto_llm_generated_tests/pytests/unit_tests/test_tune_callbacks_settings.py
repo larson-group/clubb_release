@@ -14,11 +14,12 @@ from dash_app.tune_tab.callbacks_settings import (
 )
 from dash_app.tune_tab.callbacks_display import (
     _runtime_best_loss_points,
+    adam_layout_summary,
     build_results_table,
+    mode_options_ready,
     rendered_config_names,
 )
 from dash_app.tune_tab.callbacks_runs import agent_request_to_tune_controls, build_request_payload
-from dash_app.tune_tab.algorithm_controls import algorithm_summary, options_ready, option_values, options_from_values
 from dash_app.tune_tab.layout import build_param_range_row, build_tuned_config_save_dialog
 
 
@@ -206,24 +207,36 @@ def test_locked_group_layout_has_members_bracket_action_and_one_shared_range():
     assert {"type": "tune-range-member-add", "index": 7} not in ordinary_ids
 
 
-def test_adam_dash_controls_use_canonical_options_and_show_derived_cost():
-    """Registry controls preserve fractional steps and derive the actual SPSA budget."""
-    options = {"max_updates": 10, "learning_rate": 0.015, "perturbation": 0.04, "spsa_pairs": 2}
+def test_adam_dash_controls_convert_percentages_and_show_derived_cost():
     request = build_request_payload(
         ["arm"], [0], [3600], [3600], [0], [1000],
         ["cloud_frac"], ["C8"], ["0.1"], ["0.2"],
         8, 5, "adam", {"mean": 1., "std": 1., "corr": 1.}, "quantile_weighted",
-        options, "default", "",
+        100, 0.1, 200, 1.0, 1.0e-12, "default", "",
+        adam_max_updates=10,
+        adam_learning_rate_percent=1.5,
+        adam_perturbation_percent=4.0,
+        adam_spsa_pairs=2,
     )
-    for key, value in options.items():
-        assert request["strategy"]["options"][key] == value
-    values = option_values("adam", options)
-    assert options_ready("adam", values, 8, 5, ["arm", "bomex"], backend="fortran")
-    assert "252 candidate evaluations" in algorithm_summary("adam", values, 8, 5, ["arm", "bomex"], [], backend="fortran")
-    assert not options_ready("adam", values, 3, 5, ["arm", "bomex"], backend="fortran")
+
+    assert request["strategy"] == {
+        "name": "adam",
+        "options": {
+            "max_updates": 10,
+            "learning_rate": 0.015,
+            "perturbation": 0.04,
+            "spsa_pairs": 2,
+        },
+    }
+    assert mode_options_ready("adam", None, None, None, None, None, 10, 1.5, 4.0, 2, 8)
+    assert "6 total chain(s)" in adam_layout_summary(8, 5, ["arm", "bomex"], 10, 2)
+    assert "252 candidate evaluations" in adam_layout_summary(8, 5, ["arm", "bomex"], 10, 2)
+    assert "4 baseline evaluation(s) separately" in adam_layout_summary(
+        8, 5, ["arm", "bomex"], 10, 2, "Lscale_method=2"
+    )
 
 
-def test_workspace_hydration_restores_locked_groups_and_adam_options():
+def test_workspace_hydration_restores_locked_groups_and_adam_percentages():
     controls = agent_request_to_tune_controls(
         {
             "config": "default",
@@ -261,9 +274,10 @@ def test_workspace_hydration_restores_locked_groups_and_adam_options():
     )
 
     assert controls["parameter_rows"][0]["targets"] == ["C2rt", "C2thl"]
-    assert options_from_values("adam", controls["strategy_options"]) == {
-        "max_updates": 12, "learning_rate": 0.025, "perturbation": 0.08, "spsa_pairs": 3,
-    }
+    assert controls["adam_max_updates"] == 12
+    assert controls["adam_learning_rate_percent"] == 2.5
+    assert controls["adam_perturbation_percent"] == 8.0
+    assert controls["adam_spsa_pairs"] == 3
 
 
 def test_locked_group_uses_one_leaderboard_column():

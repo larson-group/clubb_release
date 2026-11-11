@@ -1,0 +1,16 @@
+{
+  "scope": "Separate final source/format/ownership cleanup, not compilation or numerical validation",
+  "cpp_sha256": "1adbcf496b6b4f2027b804b2e5d4b1588b48579b4760bee2ac991521e409bed2",
+  "hpp_sha256": "e13576504daf3c634fe96caef690a16f236f0999dfcd05f6d9eda49e71f3e3c6",
+  "checks": [
+    "All10 Native arguments in both concrete and generic public contracts, with intent grouping and all4 changed arrays restored through existing array owner.",
+    "Full procedure description, both grid cartoons, Smolarkiewicz citation, Eq2/A4/10 order and Native negative-at-nz FIXME retained. Copied field_pd/limited-flux comment defects corrected.",
+    "Native signed grid bounds/step, direction-specific half/scalar indices and storage endpoints checked independently of expression parser.",
+    "Before/after column ANY scans remain distinct; nzt scan lengths and nzm/nzt output fill lengths checked. No reuse of stale mask.",
+    "All24 Native assignment trees retained after explicit array-expression/value-copy syntax adapters; ddzm public function call and materialized flux difference checked.",
+    "All9 kernels capture only needed Views/scalars, with branch-local indices assigned before use and no host IO, bridge or owning-grid capture. Scratch written before first read under valid Native grid metadata.",
+    "Existing debug query is the only f2k boundary; print uses stdout. No new lower bridge, selected constant, global storage or speculative numerical workaround.",
+    "100-column limit, no tabs/trailing whitespace, declarations before intent comments, argument/unit readability and case-sensitive API names checked."
+  ],
+  "runtime_status": "Uncompiled and untested; parent owns maintained whole-model gate."
+}

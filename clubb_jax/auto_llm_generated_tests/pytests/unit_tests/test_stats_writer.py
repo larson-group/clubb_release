@@ -10,7 +10,7 @@ import jax.numpy as jnp
 import pytest
 from netCDF4 import Dataset
 
-from clubb_jax.src.CLUBB_core.stats_netcdf import JaxStats
+from clubb_jax.src.CLUBB_core.jax_stats import JaxStats
 from clubb_jax.src.CLUBB_core.stats_netcdf import StatsWriter, _parse_registry
 
 
@@ -122,13 +122,13 @@ def test_sampling_uses_open_closed_absolute_time_window(tmp_path):
     assert writer.begin_timestep(3) == (False, False)  # after tend
 
 
-def test_complete_batches_update_every_column_and_level(tmp_path):
-    """Profile and surface batches accumulate with one sample at every supplied point."""
+def test_rank_and_selector_dispatch_updates_pointwise_counts(tmp_path):
     writer = _writer(tmp_path)
     assert writer.begin_timestep(0) == (True, False)
 
     stats = _jax_stats(writer)
-    stats = stats.update("profile", np.array([[1.0, 2.0, 3.0], [0.0, 0.0, 7.0]]))
+    stats = stats.update("profile", 7.0, icol=1, level=2)
+    stats = stats.update("profile", np.array([1.0, 2.0, 3.0]), icol=0)
     stats = stats.update("surface", np.array([4.0, 5.0]))
     stats = stats.update("moment", np.full((2, 4), 6.0))
     buffers, nsamples, _, _ = stats.to_host_banks()
@@ -142,7 +142,7 @@ def test_complete_batches_update_every_column_and_level(tmp_path):
     )
     np.testing.assert_array_equal(
         nsamples[profile_bank][profile_slot],
-        [[1, 1, 1], [1, 1, 1]],
+        [[1, 1, 1], [0, 0, 1]],
     )
     np.testing.assert_array_equal(buffers[surface_bank][surface_slot, :, 0], [4.0, 5.0])
     np.testing.assert_array_equal(nsamples[surface_bank][surface_slot, :, 0], [1, 1])
@@ -155,11 +155,12 @@ def test_budget_sequence_and_l_count_sample(tmp_path):
     writer.begin_timestep(0)
 
     stats = _jax_stats(writer)
-    stats = stats.begin_budget("profile", np.array([[10.0, 20.0, 30.0], [20.0, 30.0, 40.0]]))
-    stats = stats.update_budget("profile", np.array([[1.0, 2.0, 3.0], [2.0, 3.0, 4.0]]))
+    stats = stats.begin_budget("profile", np.array([10.0, 20.0, 30.0]), icol=0)
+    stats = stats.update_budget("profile", np.array([1.0, 2.0, 3.0]), icol=0)
     stats = stats.finalize_budget(
         "profile",
-        np.array([[14.0, 25.0, 36.0], [25.0, 36.0, 47.0]]),
+        np.array([14.0, 25.0, 36.0]),
+        icol=0,
         l_count_sample=False,
     )
 
@@ -172,15 +173,14 @@ def test_budget_sequence_and_l_count_sample(tmp_path):
     assert bool(np.asarray(stats.l_budget)[var_id])
 
 
-def test_jitted_banks_preserve_complete_batches(tmp_path):
-    """Jitted updates keep distinct column profiles and surface values."""
+def test_jitted_banks_preserve_column_and_level_selectors(tmp_path):
     writer = _writer(tmp_path)
     writer.begin_timestep(0)
     stats = _jax_stats(writer)
 
     @jax.jit
     def record(current):
-        current = current.update("profile", jnp.asarray([[1.0, 2.0, 3.0], [7.0, 8.0, 9.0]]))
+        current = current.update("profile", jnp.asarray(9.0), icol=1, level=2)
         current = current.update("surface", jnp.asarray([3.0, 4.0]))
         return current
 
@@ -194,25 +194,13 @@ def test_jitted_banks_preserve_complete_batches(tmp_path):
     np.testing.assert_array_equal(buffers[surface_bank][surface_slot, :, 0], [3.0, 4.0])
 
 
-@pytest.mark.parametrize("l_sample", (True, False))
-@pytest.mark.parametrize("grid", ("zt", "lh_zt", "rad_zt", "rad_zm"))
-def test_one_level_profiles_cannot_be_updated_as_surface_vectors(l_sample, grid):
-    """Registered profile grids reject rank-one payloads even when they have one level."""
-    stats = JaxStats.empty(l_sample=l_sample, names=("profile",), grids=(grid,), ncol=2, max_nlev=1)
-    with pytest.raises(ValueError, match="sfc/lh_sfc"):
-        stats.update("profile", jnp.ones(2))
-
-
-def test_stats_reject_partial_batches_and_scalars(tmp_path):
-    """Reject per-column profiles, scalar points and rank-two surface payloads."""
+def test_rank_one_column_selector_is_bounds_checked(tmp_path):
     writer = _writer(tmp_path)
     writer.begin_timestep(0)
     stats = _jax_stats(writer)
-    for values in (jnp.ones(3), jnp.ones((1, 3)), jnp.ones((2, 2)), jnp.asarray(1.0)):
-        with pytest.raises(ValueError):
-            stats.update("profile", values)
-    with pytest.raises(ValueError, match="profile grid"):
-        stats.update("surface", jnp.ones((2, 1)))
+
+    with pytest.raises(ValueError, match="column selector is out of bounds"):
+        stats.update("profile", np.ones(3), icol=2)
 
 
 def test_direct_banks_accumulate_across_sampled_and_unsampled_steps(tmp_path):

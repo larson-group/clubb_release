@@ -29,7 +29,7 @@ def test_f2py_oracle():
         xm, xp2, Skx, sgn, F_x, mf = _inputs(seed)
         if seed == 33:
             F_x[:, :2] = 0.0; n_zero += 1   # exercise the F_x=0 single-Gaussian branch
-        f = fortran.calc_responder_params(NZ, NG, xm, xp2, Skx, sgn, F_x, mf)
+        f = fortran.calc_responder_params(NZ, xm, xp2, Skx, sgn, F_x, mf)
         g = calc_responder_params(xm, xp2, Skx, sgn, F_x, mf)
         worst = max(worst, max_abs_diff("responder_params", tuple(g), tuple(f)))
     assert worst < 1e-11, f"calc_responder_params Fortran mismatch {worst:.2e}"

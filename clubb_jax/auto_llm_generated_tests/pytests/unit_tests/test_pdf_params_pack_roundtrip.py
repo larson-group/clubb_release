@@ -1,10 +1,19 @@
-"""Check the PDF and implicit-coefficient type fields against canonical Fortran declarations."""
+"""Round-trip validation for the kept Fortran-mirror routines pack_pdf_params_api / unpack_pdf_params_api.
+
+These mirror `pdf_parameter_module.F90:{pack,unpack}_pdf_params_api` (single-column pack/unpack of the 47-slot
+`pdf_parameter` ⇄ a flat (nz,47) array). They are retained for the name-mirror but otherwise unused in the
+JAX (which carries pdf_params as a namedtuple), so without this they had no coverage. A pack/unpack pair must be
+mutual inverses: `pack(unpack(arr)) == arr` for an arbitrary (nz,47) array. (Iter 384 — added after iter 383
+removed the dead bare pack_pdf_params/unpack_pdf_params + pack_implicit_coefs_* that had no Fortran equivalent.)
+
+Pure-Python (numpy + the derived-type module); never SKIPs.
+"""
 from utilities.output_paths import REPO_ROOT as _REPO_ROOT
 
 import os
 _ROOT = str(_REPO_ROOT)
 
-from clubb_jax.src.CLUBB_core.pdf_parameter_module import pdf_parameter, implicit_coefs_terms
+from clubb_jax.src.CLUBB_core.pdf_params import pdf_parameter, implicit_coefs_terms
 
 
 _PDF_MODULE_F90 = os.path.join(_ROOT, "src", "CLUBB_core", "pdf_parameter_module.F90")
@@ -54,7 +63,8 @@ def _check_type_mirror(type_name, jax_tuple, min_fields):
 
 def test_pdf_parameter_fields_mirror_fortran_type():
     """The JAX `pdf_parameter` NamedTuple has the SAME fields, in the SAME order, as the Fortran `pdf_parameter` type
-    (pdf_parameter_module.F90) — the PDF closure reads and writes these fields by name. Source-grounded. (iter 475)"""
+    (pdf_parameter_module.F90) — the whole PDF closure reads/writes these by name + pack/unpack indexes them by position,
+    so a missing/extra/renamed/reordered field would mis-populate the closure. Source-grounded. (iter 475)"""
     _check_type_mirror("pdf_parameter", pdf_parameter, min_fields=40)
 
 

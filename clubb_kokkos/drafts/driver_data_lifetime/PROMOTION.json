@@ -1,0 +1,7 @@
+{
+  "header": "clubb_kokkos/src/driver_data.hpp",
+  "edge_test": "clubb_kokkos/auto_llm_generated_tests/driver_data.cpp",
+  "ctest": "clubb_kokkos_driver_data",
+  "original_drafts_archived_locally": "build/validation/driver_data_lifetime/promoted_draft",
+  "shared_science_algorithms_changed": false
+}

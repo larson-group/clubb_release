@@ -1,0 +1,15 @@
+{
+  "remapping_module.cpp": {
+    "before_sha256": "6440e864e570e8956f0e44dea2a2bcabc8a79380c5e99e9ae27ed82d3f85b49c",
+    "after_sha256": "9f4ed0b84092a5d572a37cf3794709bc2f3aa087882e16d230c32a38a4d54740",
+    "science_calls_restored_to_Native_groups": 28,
+    "exact_executable_tokens_unchanged": true
+  },
+  "remapping_module.hpp": {
+    "before_sha256": "bee5cba05064ad87557ca8577ae0a411a9daf3f734e133916d546e3852aa8b37",
+    "after_sha256": "f28558c9bddc25145a48912275d0b1b36c20e5ac866df9aaf390d5f66cd15d77",
+    "science_calls_restored_to_Native_groups": 1,
+    "exact_executable_tokens_unchanged": true
+  },
+  "proof_note": "Before/after executable token sequences were compared directly; final value-only device materializations are recorded separately in device_prvalue_audit.json."
+}

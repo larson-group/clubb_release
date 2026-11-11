@@ -75,9 +75,9 @@ from dash_app.profile_tab.runtime import (
 from dash_app.plot_tab.plot_types.shared import scan_output_cases
 from dash_app.services import plots as plot_service
 from dash_app.services.plots import validate_plot_request
-from dash_app.shared.tunable_configs import available_tunable_configs
 from dash_app.tune_tab.discovery import (
     available_fields_for_cases,
+    available_tunable_configs,
     load_case_defaults,
     load_tunable_default_ranges,
     load_tunable_names,
@@ -104,10 +104,10 @@ from tuner.workspaces import (
     rename_workspace as rename_tune_workspace,
     reset_execution as reset_tune_workspace_execution,
 )
-from tuner.case_defaults import read_case_defaults
 from tuner.request import (
     apply_required_parameter_links,
     evaluate_tune_settings,
+    read_case_tuner_defaults,
 )
 from tuner.job_runtime import TunerJob
 from tuner.system_defaults import available_logical_cpu_count
@@ -119,6 +119,7 @@ from tuner.taylor_metrics import (
     DEFAULT_LOSS_WEIGHTS,
     normalize_aggregation_weights,
 )
+from tuner.tuning_strategy import VALID_STRATEGY_NAMES
 from input.scripts.create_case_namelist import (
     available_case_names, normalize_override_string, parse_override_pairs, resolve_case_model_input,
 )
@@ -856,7 +857,7 @@ def _normalize_tune_cases(raw_cases: list[Any], case_data: dict[str, Any]) -> tu
 
         overrides = {key: raw_item[key] for key in allowed - {"case_name"} if key in raw_item}
         try:
-            defaults = read_case_defaults(name, overrides=overrides)
+            defaults = read_case_tuner_defaults(name, overrides=overrides)
         except (RuntimeError, TypeError, ValueError) as exc:
             raise ValueError(f"invalid tuning window for {name}: {exc}") from exc
         config = {
@@ -937,9 +938,7 @@ def _canonical_tune_request(request: TuneRequest) -> TuneRequest:
     """
     from tuner.job_runtime import tuner_runtime_settings
 
-    runtime_request = request.model_dump()
-    runtime_request["strategy"] = {"name": request.strategy, "options": request.strategy_options}
-    tuner_runtime_settings(runtime_request)
+    tuner_runtime_settings(request.model_dump())
     config = _valid_tune_config(request.config)
     ranges = _normalize_tune_ranges(
         [item.model_dump() for item in request.parameter_ranges],
@@ -979,27 +978,77 @@ def _normalize_tune_strategy(
     strategy: str,
     ranges: list[dict[str, float | str]],
     *,
-    strategy_options: dict[str, Any] | None = None,
+    max_samples: int,
+    resolve_spacing: float,
+    simann_max_iters: int,
+    simann_initial_temp: float,
+    simann_final_temp: float,
+    adam_max_updates: int,
+    adam_learning_rate: float,
+    adam_perturbation: float,
+    adam_spsa_pairs: int,
+    batch_size: int,
+    max_workers: int,
     max_samples_limit: int | None = _TUNE_MAX_RANDOM_SAMPLES,
 ) -> dict[str, Any]:
-    """Validate catalog options and enforce the public agent workload limits."""
-    from tuner.algorithm_registry import normalize_options
-
     name = str(strategy or "random").strip().lower()
-    options = normalize_options(name, strategy_options if strategy_options is not None else {})
-    # Preserve the public agent API's existing workload limits. Native UI budgets
-    # use the same registry but deliberately omit the random-sample cap.
-    if name == "random" and (max_samples_limit is not None or options.get("max_samples") is not None):
-        _positive_int(options.get("max_samples"), "max_samples", maximum=max_samples_limit)
-    if "max_iters" in options:
-        _positive_int(options["max_iters"], "max_iters", maximum=_TUNE_MAX_SIMANN_ITERS)
-    if "max_updates" in options:
-        _positive_int(options["max_updates"], "max_updates", maximum=_TUNE_MAX_ADAM_UPDATES)
+    if name not in VALID_STRATEGY_NAMES:
+        raise ValueError("strategy must be random, resolve, simann, or adam")
+    if name == "random":
+        return {"name": name, "options": {"max_samples": _positive_int(max_samples, "max_samples", maximum=max_samples_limit)}}
     if name == "resolve":
-        from tuner.algorithm_registry import get_algorithm
-        if get_algorithm("resolve").strategy_class.sample_count(options, ranges) > _TUNE_MAX_RESOLVE_SAMPLES:
-            raise ValueError(f"the resolve grid would exceed {_TUNE_MAX_RESOLVE_SAMPLES} samples; use a coarser spacing or fewer ranges")
-    return {"name": name, "options": options}
+        spacing = _finite_float(resolve_spacing, "resolve_spacing")
+        if spacing <= 0.0:
+            raise ValueError("resolve_spacing must be > 0")
+        estimated = 1
+        for item in ranges:
+            width = float(item["max"]) - float(item["min"])
+            estimated *= int(width / spacing + 1.0 + 1.0e-12)
+            if estimated > _TUNE_MAX_RESOLVE_SAMPLES:
+                raise ValueError(
+                    f"the resolve grid would exceed {_TUNE_MAX_RESOLVE_SAMPLES} samples; use a coarser spacing or fewer ranges"
+                )
+        return {"name": name, "options": {"spacing": spacing}}
+
+    if name == "simann":
+        initial_temp = _finite_float(simann_initial_temp, "simann_initial_temp")
+        final_temp = _finite_float(simann_final_temp, "simann_final_temp")
+        if initial_temp <= 0.0 or final_temp <= 0.0:
+            raise ValueError("SimAnn temperatures must be > 0")
+        return {
+            "name": name,
+            "options": {
+                "max_iters": _positive_int(simann_max_iters, "simann_max_iters", maximum=_TUNE_MAX_SIMANN_ITERS),
+                "initial_temp": initial_temp,
+                "max_final_temp": final_temp,
+                "chain_count": max(1, max_workers * batch_size),
+            },
+        }
+
+    learning_rate = _finite_float(adam_learning_rate, "adam_learning_rate")
+    perturbation = _finite_float(adam_perturbation, "adam_perturbation")
+    spsa_pairs = _positive_int(adam_spsa_pairs, "adam_spsa_pairs")
+    columns_per_chain = 2 * spsa_pairs
+    if learning_rate <= 0.0:
+        raise ValueError("adam_learning_rate must be > 0")
+    if not 0.0 < perturbation <= 0.5:
+        raise ValueError("adam_perturbation must be in (0, 0.5]")
+    if batch_size % columns_per_chain != 0:
+        raise ValueError(
+            "Adam requires batch_size to be divisible by 2 * spsa_pairs "
+            f"({batch_size} is not divisible by {columns_per_chain})"
+        )
+    return {
+        "name": name,
+        "options": {
+            "max_updates": _positive_int(
+                adam_max_updates, "adam_max_updates", maximum=_TUNE_MAX_ADAM_UPDATES
+            ),
+            "learning_rate": learning_rate,
+            "perturbation": perturbation,
+            "spsa_pairs": spsa_pairs,
+        },
+    }
 
 
 def _typed_override_text(values: dict[str, Any]) -> str:
@@ -1934,7 +1983,15 @@ def submit_tune(request: TuneRequest) -> dict[str, Any]:
             request.fields,
             config=request.config,
             strategy=request.strategy,
-            strategy_options=request.strategy_options,
+            max_samples=request.max_samples,
+            resolve_spacing=request.resolve_spacing,
+            simann_max_iters=request.simann_max_iters,
+            simann_initial_temp=request.simann_initial_temp,
+            simann_final_temp=request.simann_final_temp,
+            adam_max_updates=request.adam_max_updates,
+            adam_learning_rate=request.adam_learning_rate,
+            adam_perturbation=request.adam_perturbation,
+            adam_spsa_pairs=request.adam_spsa_pairs,
             batch_size=request.batch_size,
             max_workers=request.max_workers,
             loss_weights=request.loss_weights or DEFAULT_LOSS_WEIGHTS,
@@ -2981,7 +3038,7 @@ def recover_active_tuning_from_disk() -> dict[str, Any] | None:
         else:
             return dict(existing)
 
-    output_roots = [REPO_ROOT / "output" / "tuner"]
+    output_roots = [REPO_ROOT / "output" / "tuner", REPO_ROOT / "output_tuner"]
     candidates: list[tuple[float, Path, dict[str, Any]]] = []
     status_paths = []
     for output_root in output_roots:
@@ -3033,7 +3090,15 @@ def launch_tuning(
     *,
     config: str = "default",
     strategy: str = "random",
-    strategy_options: dict[str, Any] | None = None,
+    max_samples: int = 12,
+    resolve_spacing: float = 0.1,
+    simann_max_iters: int = 200,
+    simann_initial_temp: float = 1.0,
+    simann_final_temp: float = 1.0e-12,
+    adam_max_updates: int = 100,
+    adam_learning_rate: float = 0.01,
+    adam_perturbation: float = 0.05,
+    adam_spsa_pairs: int = 2,
     batch_size: int = 1,
     max_workers: int = 1,
     loss_weights: dict[str, float] | None = None,
@@ -3138,12 +3203,20 @@ def launch_tuning(
         "strategy": _normalize_tune_strategy(
             strategy,
             ranges,
-            strategy_options=strategy_options,
+            max_samples=max_samples,
+            resolve_spacing=resolve_spacing,
+            simann_max_iters=simann_max_iters,
+            simann_initial_temp=simann_initial_temp,
+            simann_final_temp=simann_final_temp,
+            adam_max_updates=adam_max_updates,
+            adam_learning_rate=adam_learning_rate,
+            adam_perturbation=adam_perturbation,
+            adam_spsa_pairs=adam_spsa_pairs,
+            batch_size=requested_batch_size,
+            max_workers=requested_workers,
             max_samples_limit=_max_samples_limit,
         ),
     }
-    from tuner.algorithm_registry import prepare_strategy
-    prepare_strategy(request)
     from tuner.job_runtime import tuner_runtime_settings
 
     tuner_runtime_settings(request)
@@ -3200,7 +3273,15 @@ def launch_tuning_request(request: dict[str, Any]) -> dict[str, Any]:
         list(payload.get("selected_fields") or []),
         config=payload.get("config", "default"),
         strategy=strategy.get("name", "random"),
-        strategy_options=options,
+        max_samples=options.get("max_samples", 12),
+        resolve_spacing=options.get("spacing", 0.1),
+        simann_max_iters=options.get("max_iters", 200),
+        simann_initial_temp=options.get("initial_temp", 1.0),
+        simann_final_temp=options.get("max_final_temp", 1.0e-12),
+        adam_max_updates=options.get("max_updates", 100),
+        adam_learning_rate=options.get("learning_rate", 0.01),
+        adam_perturbation=options.get("perturbation", 0.05),
+        adam_spsa_pairs=options.get("spsa_pairs", 2),
         batch_size=payload.get("batch_size", 1),
         max_workers=payload.get("max_workers", 1),
         loss_weights=payload.get("loss_weights", DEFAULT_LOSS_WEIGHTS),
@@ -4242,7 +4323,15 @@ def _register_dashboard_operations() -> None:
                 "fields": {"type": "array"},
                 "config": {"type": "string", "default": "default"},
                 "strategy": {"type": "string", "default": "random"},
-                "strategy_options": {"type": "object", "description": "Typed options declared by tuner.algorithm_registry"},
+                "max_samples": {"type": "integer", "default": 12},
+                "resolve_spacing": {"type": "number", "default": 0.1},
+                "simann_max_iters": {"type": "integer", "default": 200},
+                "simann_initial_temp": {"type": "number", "default": 1.0},
+                "simann_final_temp": {"type": "number", "default": 1.0e-12},
+                "adam_max_updates": {"type": "integer", "default": 100},
+                "adam_learning_rate": {"type": "number", "default": 0.01},
+                "adam_perturbation": {"type": "number", "default": 0.05},
+                "adam_spsa_pairs": {"type": "integer", "default": 2},
                 "batch_size": {"type": "integer", "default": 1},
                 "max_workers": {"type": "integer", "default": 1},
                 "loss_weights": {"type": "object", "properties": {name: {"type": "number", "exclusiveMinimum": 0} for name in ("mean", "std", "corr")}, "additionalProperties": False},
@@ -4257,7 +4346,15 @@ def _register_dashboard_operations() -> None:
             arguments.get("fields"),
             config=arguments.get("config", "default"),
             strategy=arguments.get("strategy", "random"),
-            strategy_options=arguments.get("strategy_options"),
+            max_samples=arguments.get("max_samples", 12),
+            resolve_spacing=arguments.get("resolve_spacing", 0.1),
+            simann_max_iters=arguments.get("simann_max_iters", 200),
+            simann_initial_temp=arguments.get("simann_initial_temp", 1.0),
+            simann_final_temp=arguments.get("simann_final_temp", 1.0e-12),
+            adam_max_updates=arguments.get("adam_max_updates", 100),
+            adam_learning_rate=arguments.get("adam_learning_rate", 0.01),
+            adam_perturbation=arguments.get("adam_perturbation", 0.05),
+            adam_spsa_pairs=arguments.get("adam_spsa_pairs", 2),
             batch_size=arguments.get("batch_size", 1),
             max_workers=arguments.get("max_workers", 1),
             loss_weights=arguments.get("loss_weights", DEFAULT_LOSS_WEIGHTS),
@@ -4522,7 +4619,15 @@ def dispatch(action: str, payload: dict[str, Any]) -> dict[str, Any]:
             payload.get("fields"),
             config=payload.get("config", "default"),
             strategy=payload.get("strategy", "random"),
-            strategy_options=payload.get("strategy_options"),
+            max_samples=payload.get("max_samples", 12),
+            resolve_spacing=payload.get("resolve_spacing", 0.1),
+            simann_max_iters=payload.get("simann_max_iters", 200),
+            simann_initial_temp=payload.get("simann_initial_temp", 1.0),
+            simann_final_temp=payload.get("simann_final_temp", 1.0e-12),
+            adam_max_updates=payload.get("adam_max_updates", 100),
+            adam_learning_rate=payload.get("adam_learning_rate", 0.01),
+            adam_perturbation=payload.get("adam_perturbation", 0.05),
+            adam_spsa_pairs=payload.get("adam_spsa_pairs", 2),
             batch_size=payload.get("batch_size", 1),
             max_workers=payload.get("max_workers", 1),
             loss_weights=payload.get("loss_weights", DEFAULT_LOSS_WEIGHTS),

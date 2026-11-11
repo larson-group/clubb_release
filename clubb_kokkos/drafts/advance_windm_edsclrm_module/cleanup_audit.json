@@ -1,0 +1,33 @@
+{
+  "date": "2026-11-05",
+  "phase": "Separate post-implementation cleanup and source review",
+  "source_scope": "All2547Native lines; all6supported routines and JAX scope inspected before implementation",
+  "fixed_during_draft_cleanup": [
+    "Direction-dependent loop-coordinate generation now captures grid component scalars, never the owning grid UDT",
+    "Native diagnostic comma inside quoted character payload stays inside the string; all72diagnostic value tokens checked independently",
+    "Native declaration-comment continuations are attached to the actual argument, not left as dangling body text",
+    "Native inline science comments and routine dividers retained; Native call argument intents are grouped explicitly",
+    "Native forcing validation remains one serial vertical scan per independent column before scratch allocation",
+    "Source-only OpenACC host-update blocks explain the existing stats-owned staging boundary; no empty unexplained branch",
+    "Removed unreachable preparation carry-over cases from the previous variance emitter",
+    "Independent review: full Native signature/prototype groups restored; squared-friction-velocity units and diffusivity level/unit comment typos corrected; executable token stream unchanged",
+    "Independent review: ordinary science calls retain actual Native physical continuation groups; both solver mappings and all executable tokens unchanged",
+    "Target procedure comment describes the supported tridiagonal solver without falsely claiming LAPACK"
+  ],
+  "manual_source_review": [
+    "Bands-first scratch and column-first typed solver packing, both requested-rcond branches and all11C++solver slots",
+    "Mutation of lhs/rhs and unflipped solution before fatal check; final solution flip after Native return gate",
+    "Scalar wind RHS branches and Native sequencing of base/perturbed/scalar solves, nudging/LMM, clipping and stats",
+    "Exact thlm/rtm validators, pvertinterp order,20Kswitch, forcing/surface-flux semantics and fill-holes argument owner",
+    "Native/JAX scratch-definedness distinctions retained; only UVsponge excluded with confirmed existing upstream rejection",
+    "Complete Native full-array diagnostic values/order; host packing via existing owner only",
+    "No private/raw Native calls, globals, speculative arithmetic corrections or whole-routine fallback"
+  ],
+  "final_sha256": {
+    "advance_windm_edsclrm_module.cpp": "4230d735fdb96636c8310ff17268673ba878b38ba139d43c7f8685a91a9b7dd4",
+    "advance_windm_edsclrm_module.hpp": "26f57bea6ee34e94e1f5b80cf42988b78130fe5d8d8bdf635143d28fe33ed46e",
+    "f2k_dependencies.hpp": "403c9b7048537d0e9501d230dd2a1fdd5d3ec7ba9ceb15015929d09e2d53ac9c"
+  },
+  "verification": "Source audits and formatting only; no builds/tests or numerical/BFB claim",
+  "remaining": "Root-owned public lower definitions/constants, stable advance-helper promotion, CPU/CPU BFB integration gate"
+}

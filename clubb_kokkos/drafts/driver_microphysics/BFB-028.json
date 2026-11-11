@@ -1,0 +1,45 @@
+{
+  "id": "BFB-028",
+  "date": "2026-11-06",
+  "status": "Source-audited3-sibling batch and combined CPU3case20standard raw-BFB gate pass; live promotion pending",
+  "routines": [
+    "PDF_integrals_covars::quadrivar_NNLL_covar_const_x1",
+    "PDF_integrals_covars::quadrivar_NNLL_covar_const_x2",
+    "PDF_integrals_covars::quadrivar_NNLL_covar_const_x1x2"
+  ],
+  "cause": "Native contracts variance/cross group and mean pair separately, then adds before exp; ordinary CPP contracts the full written prefix. Const-x1 also requires Native fused correlation complements/differences.",
+  "source_audit": "Three Native bodies reread. Replaced only their first exp argument with explicit grouping shown by actual Native object assembly; s_cc, other exponentials, branches, pow/Dv/gamma, prefactors and final subtractions unchanged. No new approximation, library, tolerance, persistent state or GPU diagnosis.",
+  "Native_assembly": {
+    "const_x1": "native_quadrivar_constx1_assembly.txt:977/97c variance/cross FMAs,995 mean FMA,99aaddbeforeexp; fused complements/difference at8b4/908/95e",
+    "const_x2": "native_quadrivar_constx2_assembly.txt:bd4/bd9 variance/cross FMAs,bf3meanFMA,bf8additionbeforeexp",
+    "const_x1x2": "native_quadrivar_constx1x2_assembly.txt:1271/1276variance/crossFMAs,128fmeanFMA,1294additionbeforeexp"
+  },
+  "actual_input_evidence": {
+    "routine": "const_x2",
+    "unique_DO3step_inputs": 8,
+    "Cpp_reproduced": 8,
+    "Native_reproduced": 8,
+    "Cpp_dispatcher_to_primitive": 8,
+    "Native_dispatcher_to_primitive": 8,
+    "exponent_only_candidate_matches_Native": 8,
+    "siblings": "source/Native-assembly proof, followed by compatible whole-model group gate; no separate synthetic operand sweeps"
+  },
+  "model_attribution": {
+    "initial_full_gate": "remaining_driver_kk_full strictfull6 original023\u2013026 currently finishing,5completedfailures; DO/DS/RICO/LBA_KK firstwindevap path",
+    "028_only_gate": "RICO20standard rawexact; DO/DS20firstnewdiscrete hole-filling mismatch atstep6, oldcovariance errorremoved",
+    "028_and_coordinate_fix_gate": "DO/DS/RICO20stepstandard/debug2 strict raw-file exact3/3, allbackends20observedsteps"
+  },
+  "evidence_sha256": {
+    "BFB-028_candidate.patch": "a1ffbad8a13fff609a9d3cc979eed792addce6e1e9b72491fcd0ec21e45863a3",
+    "COVAR_EQ026_ACTUAL_INPUTS.json": "6730aed0c4ea28ee31453eefda847453a6b5d0688d72e23d3f632b78fe55391e",
+    "quadrivar_constx2_same_input_replay.cpp": "986b43042aa5c5e15ad73e2f2f072844909b136273ec379f65f0bbbf02256195",
+    "quadrivar_constx2_same_input_replay.o": "53c33171b0b9b5b1346b9c7540f5740df9cf21117d3179f3b56bfd06c0edf110",
+    "quadrivar_constx2_same_input_result.log": "7110615159a98e2f6a9ef1457038bbbf8c54e4cff320ebbbd3139781d3e86aac",
+    "native_quadrivar_constx1_assembly.txt": "eed01cf2e05ff86cbfb0813054ad50e97e8739a5e1dd2de9b38558c0a2842711",
+    "native_quadrivar_constx2_assembly.txt": "f29555851927f726f8865a7b87c3b2a90f8bf093bd5f8e77a994fc2c924f50f6",
+    "native_quadrivar_constx1x2_assembly.txt": "798c70609c7c94efc4dcc0c9b8f87edb92045c067e26f126d57b72b60ea1ba1b",
+    "BFB023028_20step_standard_model_gate.log": "ae9a3fc5193a11e15e2cfb5574ef32a95044a473862ab736f42897be14e89adc",
+    "BFB023028_fillfix_20step_standard_model_gate.log": "c81606de6980c8725f2b712bbdda16381d92e1f21d372d0ab57324ed242e166d"
+  },
+  "live_integration": "Exact candidate promoted with BFB029; combined CPU/CUDA builds running. Maintained full six-case KK check pending."
+}

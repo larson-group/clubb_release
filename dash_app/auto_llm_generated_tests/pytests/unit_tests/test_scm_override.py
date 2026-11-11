@@ -26,7 +26,11 @@ def test_tune_request_keeps_a_generic_scm_override():
         "random",
         DEFAULT_LOSS_WEIGHTS,
         DEFAULT_AGGREGATION_MODE,
-        {"max_samples": 1},
+        1,
+        0.1,
+        1,
+        1.0,
+        1.0e-6,
         "default",
         "-override iiPDF_type=1",
     )
@@ -42,7 +46,7 @@ def test_tune_request_migrates_a_documented_stale_parameter_name(monkeypatch):
     request = build_request_payload(
         ["arm"], [41400], [41460], [60], [20.0], [100.0], ["cloud_frac"],
         ["C_uu_shr"], ["0.1"], ["0.9"], 1, 1, "random",
-        DEFAULT_LOSS_WEIGHTS, DEFAULT_AGGREGATION_MODE, {"max_samples": 1},
+        DEFAULT_LOSS_WEIGHTS, DEFAULT_AGGREGATION_MODE, 1, 0.1, 1, 1.0, 1.0e-6,
         "default", "",
     )
 
@@ -58,7 +62,7 @@ def test_tune_request_keeps_linked_physical_targets(monkeypatch):
     request = build_request_payload(
         ["arm"], [41400], [41460], [60], [20.0], [100.0], ["cloud_frac"],
         ["C6rt"], ["0"], ["4"], 1, 1, "random", DEFAULT_LOSS_WEIGHTS,
-        DEFAULT_AGGREGATION_MODE, {"max_samples": 1}, "default", "",
+        DEFAULT_AGGREGATION_MODE, 1, 0.1, 1, 1.0, 1.0e-6, "default", "",
         range_targets=[["C6rt", "C6thl"]],
     )
     assert request["parameter_ranges"] == [

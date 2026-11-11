@@ -1,0 +1,436 @@
+{
+  "calc_Ri_zm": {
+    "module": "advance_helper_module",
+    "source": "src/CLUBB_core/advance_helper_module.F90",
+    "arguments": [
+      {
+        "name": "nzm",
+        "kind": "integer",
+        "rank": 0,
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "ngrdcol",
+        "kind": "integer",
+        "rank": 0,
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "bv_freq_sqd",
+        "kind": "real",
+        "rank": 2,
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "shear",
+        "kind": "real",
+        "rank": 2,
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "lim_bv",
+        "kind": "real",
+        "rank": 0,
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "lim_shear",
+        "kind": "real",
+        "rank": 0,
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "Ri_zm",
+        "kind": "real",
+        "rank": 2,
+        "intent": "out",
+        "optional": false
+      }
+    ],
+    "result_rank": null
+  },
+  "length_check": {
+    "module": "numerical_check",
+    "source": "src/CLUBB_core/numerical_check.F90",
+    "arguments": [
+      {
+        "name": "nzt",
+        "kind": "integer",
+        "rank": 0,
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "Lscale",
+        "kind": "real",
+        "rank": 1,
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "Lscale_up",
+        "kind": "real",
+        "rank": 1,
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "Lscale_down",
+        "kind": "real",
+        "rank": 1,
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "err_info",
+        "kind": "err_info_type",
+        "rank": 0,
+        "intent": "inout",
+        "optional": false
+      }
+    ],
+    "result_rank": null
+  },
+  "smooth_max_sclr_idx": {
+    "module": "advance_helper_module",
+    "source": "src/CLUBB_core/advance_helper_module.F90",
+    "arguments": [
+      {
+        "name": "nz",
+        "kind": "integer",
+        "rank": 0,
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "ngrdcol",
+        "kind": "integer",
+        "rank": 0,
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "input_var1",
+        "kind": "real",
+        "rank": 0,
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "input_var2",
+        "kind": "real",
+        "rank": 2,
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "smth_coef",
+        "kind": "real",
+        "rank": 0,
+        "intent": "in",
+        "optional": false
+      }
+    ],
+    "result_rank": 2
+  },
+  "smooth_max_array_scalar": {
+    "module": "advance_helper_module",
+    "source": "src/CLUBB_core/advance_helper_module.F90",
+    "arguments": [
+      {
+        "name": "nz",
+        "kind": "integer",
+        "rank": 0,
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "ngrdcol",
+        "kind": "integer",
+        "rank": 0,
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "input_var1",
+        "kind": "real",
+        "rank": 2,
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "input_var2",
+        "kind": "real",
+        "rank": 0,
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "smth_coef",
+        "kind": "real",
+        "rank": 0,
+        "intent": "in",
+        "optional": false
+      }
+    ],
+    "result_rank": 2
+  },
+  "smooth_max_array_1D_scalar": {
+    "module": "advance_helper_module",
+    "source": "src/CLUBB_core/advance_helper_module.F90",
+    "arguments": [
+      {
+        "name": "ngrdcol",
+        "kind": "integer",
+        "rank": 0,
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "input_var1",
+        "kind": "real",
+        "rank": 1,
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "input_var2",
+        "kind": "real",
+        "rank": 0,
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "smth_coef",
+        "kind": "real",
+        "rank": 0,
+        "intent": "in",
+        "optional": false
+      }
+    ],
+    "result_rank": 1
+  },
+  "smooth_min_sclr_idx": {
+    "module": "advance_helper_module",
+    "source": "src/CLUBB_core/advance_helper_module.F90",
+    "arguments": [
+      {
+        "name": "nz",
+        "kind": "integer",
+        "rank": 0,
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "ngrdcol",
+        "kind": "integer",
+        "rank": 0,
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "input_var1",
+        "kind": "real",
+        "rank": 0,
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "input_var2",
+        "kind": "real",
+        "rank": 2,
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "smth_coef",
+        "kind": "real",
+        "rank": 0,
+        "intent": "in",
+        "optional": false
+      }
+    ],
+    "result_rank": 2
+  },
+  "smooth_min_array_scalar": {
+    "module": "advance_helper_module",
+    "source": "src/CLUBB_core/advance_helper_module.F90",
+    "arguments": [
+      {
+        "name": "nz",
+        "kind": "integer",
+        "rank": 0,
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "ngrdcol",
+        "kind": "integer",
+        "rank": 0,
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "input_var1",
+        "kind": "real",
+        "rank": 2,
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "input_var2",
+        "kind": "real",
+        "rank": 0,
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "smth_coef",
+        "kind": "real",
+        "rank": 0,
+        "intent": "in",
+        "optional": false
+      }
+    ],
+    "result_rank": 2
+  },
+  "smooth_min_arrays": {
+    "module": "advance_helper_module",
+    "source": "src/CLUBB_core/advance_helper_module.F90",
+    "arguments": [
+      {
+        "name": "nz",
+        "kind": "integer",
+        "rank": 0,
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "ngrdcol",
+        "kind": "integer",
+        "rank": 0,
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "input_var1",
+        "kind": "real",
+        "rank": 2,
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "input_var2",
+        "kind": "real",
+        "rank": 2,
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "smth_coef",
+        "kind": "real",
+        "rank": 0,
+        "intent": "in",
+        "optional": false
+      }
+    ],
+    "result_rank": 2
+  },
+  "smooth_heaviside_peskin": {
+    "module": "advance_helper_module",
+    "source": "src/CLUBB_core/advance_helper_module.F90",
+    "arguments": [
+      {
+        "name": "nz",
+        "kind": "integer",
+        "rank": 0,
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "ngrdcol",
+        "kind": "integer",
+        "rank": 0,
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "input",
+        "kind": "real",
+        "rank": 2,
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "smth_range",
+        "kind": "real",
+        "rank": 0,
+        "intent": "in",
+        "optional": false
+      }
+    ],
+    "result_rank": 2
+  },
+  "sat_mixrat_liq_2D": {
+    "module": "saturation",
+    "source": "src/CLUBB_core/saturation.F90",
+    "arguments": [
+      {
+        "name": "nz",
+        "kind": "integer",
+        "rank": 0,
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "ngrdcol",
+        "kind": "integer",
+        "rank": 0,
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "gr",
+        "kind": "grid",
+        "rank": 0,
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "p_in_Pa",
+        "kind": "real",
+        "rank": 2,
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "T_in_K",
+        "kind": "real",
+        "rank": 2,
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "saturation_formula",
+        "kind": "integer",
+        "rank": 0,
+        "intent": "in",
+        "optional": false
+      },
+      {
+        "name": "start_index_in",
+        "kind": "integer",
+        "rank": 0,
+        "intent": "in",
+        "optional": true
+      }
+    ],
+    "result_rank": 2
+  }
+}

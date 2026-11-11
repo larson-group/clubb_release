@@ -1,0 +1,81 @@
+{
+  "canonical_source": "src/CLUBB_core/diagnose_correlations_module.F90",
+  "canonical_sha256": "bd9497eaeeb0dac2709205d1f0bb3d8d9b94e55da334df8ab1cce78c2d9bbce3",
+  "target_sha256": "9defa567eaf44a5a1b3b29f5281f3b38baf32c386ebc0d2c92c9638b1a2c8938",
+  "routines": [
+    {
+      "name": "diagnose_correlations",
+      "required_arguments": 5,
+      "ordered_assignment_trees": "manual array/stop/ordered-intrinsic adaptation below",
+      "ordered_calls": 3
+    },
+    {
+      "name": "diagnose_corr",
+      "required_arguments": 4,
+      "ordered_assignment_trees": 5,
+      "ordered_calls": 0
+    },
+    {
+      "name": "calc_w_corr",
+      "required_arguments": 5,
+      "ordered_assignment_trees": 3,
+      "ordered_calls": 0
+    },
+    {
+      "name": "calc_varnce",
+      "required_arguments": 6,
+      "ordered_assignment_trees": 1,
+      "ordered_calls": 0
+    },
+    {
+      "name": "calc_mean",
+      "required_arguments": 3,
+      "ordered_assignment_trees": 1,
+      "ordered_calls": 0
+    },
+    {
+      "name": "calc_cholesky_corr_mtx_approx",
+      "required_arguments": 5,
+      "ordered_assignment_trees": 1,
+      "ordered_calls": 6
+    },
+    {
+      "name": "setup_corr_cholesky_mtx",
+      "required_arguments": 3,
+      "ordered_assignment_trees": 7,
+      "ordered_calls": 0
+    },
+    {
+      "name": "cholesky_to_corr_mtx_approx",
+      "required_arguments": 3,
+      "ordered_assignment_trees": "manual array/stop/ordered-intrinsic adaptation below",
+      "ordered_calls": 0
+    },
+    {
+      "name": "corr_array_assertion_checks",
+      "required_arguments": 2,
+      "ordered_assignment_trees": "manual array/stop/ordered-intrinsic adaptation below",
+      "ordered_calls": 0
+    },
+    {
+      "name": "rearrange_corr_array",
+      "required_arguments": 4,
+      "ordered_assignment_trees": "manual array/stop/ordered-intrinsic adaptation below",
+      "ordered_calls": 0
+    }
+  ],
+  "ordered_call_trees": 9,
+  "independent_kernels": 14,
+  "manual_review": [
+    "Full1037Native and272JAX lines read before outline. Ten active routines implemented in order; four wholly commented-out routines excluded.",
+    "Exact Native1based iiPDF_w, lower/upper physical matrix slots, reversed slices and all per-call copy ownership preserved. Each Native slice assignment is a separate queue stage.",
+    "Two per-entry scalar-product recurrences keep Native ascending order; s entries are written before every read. MATMUL is an ordered explicit contraction, with compiler arithmetic equality pending.",
+    "Native square roots and conditional clamps retained; JAX gradient floors/symmetrization/boolean-only diagnostics not imported.",
+    "Supported false path only: explicit API rejection of true, whose Native working array is uninitialized. No invented initialization.",
+    "Native debug1off-diagonal then debug2diagonal fatal exceptions preserve strings/check order/tolerance; no finite test or newerr_info/stats object.",
+    "Four generic array adapters use actual existing array owner and preserve caller output allocations. All concrete kernels use default RealView execution space; no owning UDT/global cache/device bridge.",
+    "Separate cleanup reviews signature/intent groups, complete scientific comments and disabled alternative formulas, reference citations,core-kind values,case,100columns and whitespace."
+  ],
+  "remaining_dependencies": "Existing host Native debug query only. No new lower scientific routine, type, accessor or physical constant.",
+  "untested": "All runtime branches/CPU/GPU/model behavior, ordered MATMUL/compiler contraction, assertions,swapped layouts and metadata boundary callers uncompiled/untested; no BFB claim/speculative workaround."
+}

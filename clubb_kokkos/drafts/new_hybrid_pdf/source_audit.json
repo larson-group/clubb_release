@@ -1,0 +1,107 @@
+{
+  "status": "complete source-audited draft; uncompiled, unintegrated and runtime/BFB untested",
+  "source_authority": {
+    "src/CLUBB_core/new_hybrid_pdf_main.F90": "d429812fa879b00add2576638bfca8df50a930a9bd21c76e2dbd21f9552f0abc",
+    "src/CLUBB_core/new_hybrid_pdf.F90": "ef24cba7c5f888ccd02dd38474e36819e8d925df374360a35ee0fa93ee6fa546"
+  },
+  "routines": [
+    {
+      "name": "new_hybrid_pdf_driver",
+      "arguments": 56,
+      "assignments": 84,
+      "subroutine_calls": 16,
+      "contracts_assignments_call_arguments_match": true
+    },
+    {
+      "name": "calc_responder_driver",
+      "arguments": 13,
+      "assignments": 10,
+      "subroutine_calls": 1,
+      "contracts_assignments_call_arguments_match": true
+    },
+    {
+      "name": "calc_F_w_zeta_w",
+      "arguments": 18,
+      "assignments": 18,
+      "subroutine_calls": 0,
+      "contracts_assignments_call_arguments_match": true
+    },
+    {
+      "name": "calculate_mixture_fraction",
+      "arguments": 3,
+      "assignments": 3,
+      "subroutine_calls": 0,
+      "contracts_assignments_call_arguments_match": true
+    },
+    {
+      "name": "calculate_w_params",
+      "arguments": 12,
+      "assignments": 13,
+      "subroutine_calls": 0,
+      "contracts_assignments_call_arguments_match": true
+    },
+    {
+      "name": "calculate_responder_params",
+      "arguments": 13,
+      "assignments": 14,
+      "subroutine_calls": 0,
+      "contracts_assignments_call_arguments_match": true
+    },
+    {
+      "name": "calculate_coef_wp4_implicit",
+      "arguments": 4,
+      "assignments": 1,
+      "subroutine_calls": 0,
+      "contracts_assignments_call_arguments_match": true
+    },
+    {
+      "name": "calc_coef_wp2xp_implicit",
+      "arguments": 5,
+      "assignments": 2,
+      "subroutine_calls": 0,
+      "contracts_assignments_call_arguments_match": true
+    },
+    {
+      "name": "calc_coefs_wpxp2_semiimpl",
+      "arguments": 8,
+      "assignments": 4,
+      "subroutine_calls": 0,
+      "contracts_assignments_call_arguments_match": true
+    },
+    {
+      "name": "calc_coefs_wpxpyp_semiimpl",
+      "arguments": 11,
+      "assignments": 6,
+      "subroutine_calls": 0,
+      "contracts_assignments_call_arguments_match": true
+    }
+  ],
+  "native_routine_order": true,
+  "every_assignment_expression_tree": true,
+  "every_branch_predicate_in_order": true,
+  "every_subroutine_call_argument_in_order": true,
+  "all_required_no_optionals": true,
+  "format": "clang-format; all three source files <=100 columns/no trailing whitespace",
+  "manual_review": [
+    "All 2453 Native lines read before implementation",
+    "All three explicit/implicit advection options, each passive-scalar path, all 27 UDT output field mappings and the final sigma_sqd_w adjustment",
+    "Invalid mixture ANY<0 and exact two diagnostic strings before the host ERROR STOP adaptation; no added error argument",
+    "Private responder skewness bounds/sign order, source strict inequalities and clipping",
+    "Native F_w inactive blend retained; active gamma form and symmetric zeta transformation",
+    "Source-named call-owned scratch; contiguous column-first model Views; component-only UDT captures",
+    "Independent whole-array/profile phases are GPU kernels; adjacent assignments fused only within each independent cell, Native column/call/branch order retained",
+    "Native MIN/MAX second-operand ties use explicit ordered comparisons; variadic MAX folds in source operand order",
+    "Complete integer power bases and surrounding groups preserved; real powers remain ordinary Kokkos::pow",
+    "No explicit FMA, new denominator/sqrt floor or speculative compiler-specific fix"
+  ],
+  "pending_integration_dependencies": [
+    "Add l_explicit_turbulent_adv_wp3 and l_explicit_turbulent_adv_wpxp through existing model_flags generator owner; Native defaults false",
+    "Promote source/header pair and lower header; include/call in existing parent; remove final whole-driver bridge",
+    "Use maintained short multicolumn model comparisons; all runtime/BFB evidence pending"
+  ],
+  "sha256": {
+    "new_hybrid_pdf.hpp": "cd65eb221020cfb837c76362d56782db2deeb2735c4b35ad9d1e63a4afc91790",
+    "new_hybrid_pdf_main.hpp": "cf9c2d3fd809858dc2dbf81e8e3d142259cc57af9c77292726244fba7d608fb4",
+    "new_hybrid_pdf_main.cpp": "72186cc887deccb44fb6cf39525dd310453936f9a12eca46b9d40dcf8ad9d352"
+  }
+}

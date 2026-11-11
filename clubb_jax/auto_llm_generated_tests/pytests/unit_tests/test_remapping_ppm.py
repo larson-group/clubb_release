@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 """validate the JAX PPM (method 2) remapping port (remapping_module.F90)."""
 
-from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
-
 
 import numpy as np
 
@@ -23,7 +21,7 @@ def test_mass_conservation_refined():
     p_tgt[:, ::2] = p_src
     p_tgt[:, 1::2] = mids
     src = rng.uniform(0.5, 3.0, (ncol, p_src.shape[1] - 1))
-    tgt = np.asarray(call_jax(remap_vals_ppm, ncol, p_src.shape[1], p_tgt.shape[1], p_src, p_tgt, src, iv=1))
+    tgt = np.asarray(remap_vals_ppm(p_src, p_tgt, src, iv=1))
     # pressure-weighted integral (mass) preserved: sum(src*dp_src) == sum(tgt*dp_tgt)
     dp_src = np.abs(np.diff(p_src, axis=1)); dp_tgt = np.abs(np.diff(p_tgt, axis=1))
     m_src = np.sum(src * dp_src, axis=1); m_tgt = np.sum(tgt * dp_tgt, axis=1)

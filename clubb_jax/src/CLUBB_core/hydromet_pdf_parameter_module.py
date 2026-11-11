@@ -106,14 +106,7 @@ class PrecipitationFractions:
 
 
 def init_hydromet_pdf_params():
-    """Initialize the elements of hydromet_pdf_params.
-
-    Fortran declarations (init_hydromet_pdf_params in src/CLUBB_core/hydromet_pdf_parameter_module.F90):
-
-        !--------------------------- Input/Output Variables ---------------------------
-        type(hydromet_pdf_parameter), intent(inout) :: &
-          hydromet_pdf_params    ! Hydrometeor PDF parameters      [units vary]
-    """
+    """Initialize the elements of hydromet_pdf_params."""
     vec = lambda: jnp.zeros(MAX_HYDROMET_DIM)
     mat = lambda: jnp.zeros((MAX_HYDROMET_DIM, MAX_HYDROMET_DIM))
     # Initialize hydromet_pdf_params.

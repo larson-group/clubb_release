@@ -10,18 +10,17 @@ module morrison_microphys_module
   contains
 !-------------------------------------------------------------------------------
   subroutine morrison_microphys_driver( &
-               gr, ngrdcol, dt, nzt, & ! In
-               hydromet_dim, hm_metadata, & ! In
-               l_latin_hypercube, thlm, wm_zt, p_in_Pa, & ! In
-               exner, rho, cloud_frac, w_std_dev, & ! In
-               dzq, rcm, Ncm, chi, rvm, hydromet, & ! In
-               saturation_formula, & ! In
-               sample_weight, & ! In
-               stats, & ! InOut
-               hydromet_mc, hydromet_vel_zt, Ncm_mc, & ! Out
-               rcm_mc, rvm_mc, thlm_mc, & ! Out
-               rrm_auto_diag, rrm_accr_diag, rrm_evap_diag, & ! Out
-               Nrm_auto_diag, Nrm_evap_diag ) ! Out
+               gr, ngrdcol, dt, nzt, &
+               hydromet_dim, hm_metadata, &
+               l_latin_hypercube, thlm, wm_zt, p_in_Pa, &
+               exner, rho, cloud_frac, w_std_dev, &
+               dzq, rcm, Ncm, chi, rvm, hydromet, &
+               saturation_formula, &
+               sample_weight, stats, &
+               hydromet_mc, hydromet_vel_zt, Ncm_mc, &
+               rcm_mc, rvm_mc, thlm_mc, &
+               rrm_auto_diag, rrm_accr_diag, rrm_evap_diag, &
+               Nrm_auto_diag, Nrm_evap_diag )
 
     ! Description:
     ! Wrapper for the Morrison microphysics, applied to all columns.

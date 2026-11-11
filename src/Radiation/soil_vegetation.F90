@@ -202,8 +202,9 @@ module soil_vegetation
 
     if ( stats%l_sample ) then
       !$acc update host( soil_heat_flux )
-      call stats_update( "soil_heat_flux", soil_heat_flux, & ! In
-                         stats ) ! InOut
+      do i = 1, ngrdcol
+          call stats_update( "soil_heat_flux", soil_heat_flux(i), stats, i )
+      end do
     end if
 
     !$acc exit data delete( soil_heat_flux )
@@ -213,8 +214,7 @@ module soil_vegetation
   end subroutine advance_soil_veg
 
   !-----------------------------------------------------------------------------
-  subroutine initialize_soil_veg( ngrdcol, & ! In
-                                  deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K ) ! Out
+  subroutine initialize_soil_veg( ngrdcol, deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K )
   ! Description:
   !   Sets some default values for the soil scheme
   ! References:

@@ -1,0 +1,46 @@
+{
+  "status": "Complete supported source draft; not compiled, integrated or numerically validated",
+  "source": "src/CLUBB_core/advance_xp3_module.F90; all 1006 lines read",
+  "routine_order": [
+    "advance_xp3",
+    "diagnose_xp3",
+    "advance_xp3_simplified",
+    "term_tp_rhs",
+    "term_ac_rhs"
+  ],
+  "argument_counts": {
+    "advance_xp3": 38,
+    "diagnose_xp3": 28,
+    "advance_xp3_simplified": 18,
+    "term_tp_rhs": 7,
+    "term_ac_rhs": 4
+  },
+  "all_arguments_required_no_optionals": true,
+  "call_counts_including_grid_and_scalar_functions": {
+    "advance_xp3": 25,
+    "diagnose_xp3": 35,
+    "advance_xp3_simplified": 9,
+    "term_tp_rhs": 0,
+    "term_ac_rhs": 0
+  },
+  "all_call_arguments_checked": 425,
+  "explicit_formula_trees_checked": 9,
+  "kernel_bodies_checked": 9,
+  "no_owning_udt_host_reads_bridges_nested_launches_in_kernels": true,
+  "manual_audit": [
+    "Full Native predictive-equation and discretization comments retained",
+    "ADG1/non-ADG1 scalar-flux minimum difference retained",
+    "Steady-state cap and buoyancy-frequency MAX use Native operand order",
+    "Native last-storage-level boundary retained independently of grid direction",
+    "Predictive/LMM snapshots, all source stats names/gates and mean/variance minima",
+    "All scratch is per-call; only existing array owner handles scalar/subview boundaries",
+    "No vertical recurrence/matrix solve in scope; no missing lower bridge/constant owner"
+  ],
+  "missing_lower_dependencies": [],
+  "runtime": "No builds, installs, tests or numerical claims; root owns CPU/CPU zero-tolerance model gate and occasional GPU checkpoints",
+  "native_sha256": "d4487e626d0c4d70a17c37157bd382068ce7d6db5876d627eb5c53d162aa953c",
+  "sha256": {
+    "advance_xp3_module.cpp": "c76164eedba6c69a85b4795a606e768cd92216f3f66cdb6f1c5aed14e0199557",
+    "advance_xp3_module.hpp": "0bd62785def015e74d79e03f90a5dc6ec9a7c83d8fe016ad1323ae1b844554c7"
+  }
+}

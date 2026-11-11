@@ -1,0 +1,1439 @@
+{
+  "scientific_contracts": [
+    {
+      "name": "redirect_interpolated_azm_2D",
+      "module": "grid_class",
+      "source": "src/CLUBB_core/grid_class.F90",
+      "arguments": [
+        {
+          "name": "nzm",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "gr",
+          "kind": "grid",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "azt",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "zm_min",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": true,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": {
+        "name": "redirect_interpolated_azm_2D",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzm"
+        ],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      "native_owner": "grid_class",
+      "cpp_owner_status": "live",
+      "public_cpp_name": "zt2zm_api"
+    },
+    {
+      "name": "redirect_interpolated_azt_2D",
+      "module": "grid_class",
+      "source": "src/CLUBB_core/grid_class.F90",
+      "arguments": [
+        {
+          "name": "nzm",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "gr",
+          "kind": "grid",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "azm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "zt_min",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": true,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": {
+        "name": "redirect_interpolated_azt_2D",
+        "kind": "real",
+        "dims": [
+          "ngrdcol",
+          "nzt"
+        ],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      "native_owner": "grid_class",
+      "cpp_owner_status": "live",
+      "public_cpp_name": "zm2zt_api"
+    },
+    {
+      "name": "compute_mean_binormal",
+      "module": "pdf_utilities",
+      "source": "src/CLUBB_core/pdf_utilities.F90",
+      "arguments": [
+        {
+          "name": "mu_x_1",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mu_x_2",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mixt_frac",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": {
+        "name": "xm",
+        "kind": "real",
+        "dims": [],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      "native_owner": "pdf_utilities",
+      "cpp_owner_status": "live",
+      "public_cpp_name": "compute_mean_binormal"
+    },
+    {
+      "name": "compute_variance_binormal",
+      "module": "pdf_utilities",
+      "source": "src/CLUBB_core/pdf_utilities.F90",
+      "arguments": [
+        {
+          "name": "xm",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mu_x_1",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mu_x_2",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "stdev_x_1",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "stdev_x_2",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mixt_frac",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": {
+        "name": "xp2",
+        "kind": "real",
+        "dims": [],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      "native_owner": "pdf_utilities",
+      "cpp_owner_status": "live",
+      "public_cpp_name": "compute_variance_binormal"
+    },
+    {
+      "name": "stdev_L2N",
+      "module": "pdf_utilities",
+      "source": "src/CLUBB_core/pdf_utilities.F90",
+      "arguments": [
+        {
+          "name": "sigma2_on_mu2",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": {
+        "name": "sigma_x_n",
+        "kind": "real",
+        "dims": [],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      "native_owner": "pdf_utilities",
+      "cpp_owner_status": "live",
+      "public_cpp_name": "stdev_L2N"
+    },
+    {
+      "name": "mean_L2N",
+      "module": "pdf_utilities",
+      "source": "src/CLUBB_core/pdf_utilities.F90",
+      "arguments": [
+        {
+          "name": "mu_x",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma2_on_mu2",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": {
+        "name": "mu_x_n",
+        "kind": "real",
+        "dims": [],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      "native_owner": "pdf_utilities",
+      "cpp_owner_status": "live",
+      "public_cpp_name": "mean_L2N"
+    },
+    {
+      "name": "corr_NN2NL",
+      "module": "pdf_utilities",
+      "source": "src/CLUBB_core/pdf_utilities.F90",
+      "arguments": [
+        {
+          "name": "nz",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "corr_x_y_n",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma_y_n",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "y_sigma2_on_mu2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "corr_x_y",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "native_owner": "pdf_utilities",
+      "cpp_owner_status": "live",
+      "public_cpp_name": "corr_NN2NL"
+    },
+    {
+      "name": "corr_NN2LL",
+      "module": "pdf_utilities",
+      "source": "src/CLUBB_core/pdf_utilities.F90",
+      "arguments": [
+        {
+          "name": "nz",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "corr_x_y_n",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma_x_n",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma_y_n",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "x_sigma2_on_mu2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "y_sigma2_on_mu2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "corr_x_y",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "native_owner": "pdf_utilities",
+      "cpp_owner_status": "live",
+      "public_cpp_name": "corr_NN2LL"
+    },
+    {
+      "name": "clip_covar",
+      "module": "clip_explicit",
+      "source": "src/CLUBB_core/clip_explicit.F90",
+      "arguments": [
+        {
+          "name": "nzm",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "solve_type",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "xp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "yp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "xpyp",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "xpyp_chnge",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "native_owner": "clip_explicit",
+      "cpp_owner_status": "stable isolated draft",
+      "public_cpp_name": "clip_covar"
+    },
+    {
+      "name": "calc_xpwp_2D",
+      "module": "advance_helper_module",
+      "source": "src/CLUBB_core/advance_helper_module.F90",
+      "arguments": [
+        {
+          "name": "nzm",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "gr",
+          "kind": "grid",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "Km_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "xm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "xpwp",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzm"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "native_owner": "advance_helper_module",
+      "cpp_owner_status": "live",
+      "public_cpp_name": "calc_xpwp"
+    },
+    {
+      "name": "Cholesky_factor",
+      "module": "matrix_operations",
+      "source": "src/CLUBB_core/matrix_operations.F90",
+      "arguments": [
+        {
+          "name": "ndim",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "a_input",
+          "kind": "real",
+          "dims": [
+            "ndim",
+            "ndim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "a_scaling",
+          "kind": "real",
+          "dims": [
+            "ndim"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "a_Cholesky",
+          "kind": "real",
+          "dims": [
+            "ndim",
+            "ndim"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_scaled",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "native_owner": "matrix_operations",
+      "cpp_owner_status": "stable isolated draft",
+      "public_cpp_name": "Cholesky_factor"
+    },
+    {
+      "name": "mirror_lower_triangular_matrix",
+      "module": "matrix_operations",
+      "source": "src/CLUBB_core/matrix_operations.F90",
+      "arguments": [
+        {
+          "name": "nvars",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "matrix",
+          "kind": "real",
+          "dims": [
+            "nvars",
+            "nvars"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "native_owner": "matrix_operations",
+      "cpp_owner_status": "stable isolated draft",
+      "public_cpp_name": "mirror_lower_triangular_matrix"
+    },
+    {
+      "name": "diagnose_correlations",
+      "module": "diagnose_correlations_module",
+      "source": "src/CLUBB_core/diagnose_correlations_module.F90",
+      "arguments": [
+        {
+          "name": "pdf_dim",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "iiPDF_w",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "corr_array_pre",
+          "kind": "real",
+          "dims": [
+            "pdf_dim",
+            "pdf_dim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_calc_w_corr",
+          "kind": "logical",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "corr_array",
+          "kind": "real",
+          "dims": [
+            "pdf_dim",
+            "pdf_dim"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "native_owner": "diagnose_correlations_module",
+      "cpp_owner_status": "stable isolated draft",
+      "public_cpp_name": "diagnose_correlations"
+    },
+    {
+      "name": "calc_cholesky_corr_mtx_approx",
+      "module": "diagnose_correlations_module",
+      "source": "src/CLUBB_core/diagnose_correlations_module.F90",
+      "arguments": [
+        {
+          "name": "n_variables",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "iiPDF_w",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "corr_matrix",
+          "kind": "real",
+          "dims": [
+            "n_variables",
+            "n_variables"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "corr_cholesky_mtx",
+          "kind": "real",
+          "dims": [
+            "n_variables",
+            "n_variables"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "corr_mtx_approx",
+          "kind": "real",
+          "dims": [
+            "n_variables",
+            "n_variables"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "native_owner": "diagnose_correlations_module",
+      "cpp_owner_status": "stable isolated draft",
+      "public_cpp_name": "calc_cholesky_corr_mtx_approx"
+    },
+    {
+      "name": "assert_corr_symmetric",
+      "module": "corr_varnce_module",
+      "source": "src/CLUBB_core/corr_varnce_module.F90",
+      "arguments": [
+        {
+          "name": "corr_array_n",
+          "kind": "real",
+          "dims": [
+            "pdf_dim",
+            "pdf_dim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "pdf_dim",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "err_info",
+          "kind": "err_info_type",
+          "dims": [],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "native_owner": "corr_varnce_module",
+      "cpp_owner_status": "stable isolated draft",
+      "public_cpp_name": "assert_corr_symmetric"
+    },
+    {
+      "name": "pdf2hydromet_idx",
+      "module": "index_mapping",
+      "source": "src/CLUBB_core/index_mapping.F90",
+      "arguments": [
+        {
+          "name": "pdf_idx",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "hm_metadata",
+          "kind": "hm_metadata_type",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": {
+        "name": "hydromet_idx",
+        "kind": "integer",
+        "dims": [],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      "native_owner": "index_mapping",
+      "cpp_owner_status": "stable isolated draft",
+      "public_cpp_name": "pdf2hydromet_idx"
+    },
+    {
+      "name": "hydromet2pdf_idx",
+      "module": "index_mapping",
+      "source": "src/CLUBB_core/index_mapping.F90",
+      "arguments": [
+        {
+          "name": "hydromet_idx",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "hm_metadata",
+          "kind": "hm_metadata_type",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": {
+        "name": "pdf_idx",
+        "kind": "integer",
+        "dims": [],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      "native_owner": "index_mapping",
+      "cpp_owner_status": "stable isolated draft",
+      "public_cpp_name": "hydromet2pdf_idx"
+    },
+    {
+      "name": "precip_fraction",
+      "module": "precipitation_fraction",
+      "source": "src/CLUBB_core/precipitation_fraction.F90",
+      "arguments": [
+        {
+          "name": "gr",
+          "kind": "grid",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "hydromet_dim",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "hydromet",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt",
+            "hydromet_dim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "cloud_frac",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "cloud_frac_1",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_mix_rat_hm",
+          "kind": "logical",
+          "dims": [
+            "hydromet_dim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_frozen_hm",
+          "kind": "logical",
+          "dims": [
+            "hydromet_dim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "hydromet_tol",
+          "kind": "real",
+          "dims": [
+            "hydromet_dim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "cloud_frac_2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ice_supersat_frac",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ice_supersat_frac_1",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ice_supersat_frac_2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mixt_frac",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "clubb_params",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nparams"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "err_info",
+          "kind": "err_info_type",
+          "dims": [],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "precip_frac",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "precip_frac_1",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "precip_frac_2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "precip_frac_tol",
+          "kind": "real",
+          "dims": [
+            "ngrdcol"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "stats",
+          "kind": "stats_type",
+          "dims": [],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "native_owner": "precipitation_fraction",
+      "cpp_owner_status": "required transient Native contract",
+      "public_cpp_name": "precip_fraction"
+    },
+    {
+      "name": "Nc_in_cloud_to_Ncnm",
+      "module": "Nc_Ncn_eqns",
+      "source": "src/CLUBB_core/Nc_Ncn_eqns.F90",
+      "arguments": [
+        {
+          "name": "mu_chi_1",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mu_chi_2",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma_chi_1",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma_chi_2",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mixt_frac",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "Nc_in_cloud",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "cloud_frac_1",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "cloud_frac_2",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "const_Ncnp2_on_Ncnm2",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "const_corr_chi_Ncn",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": {
+        "name": "Ncnm",
+        "kind": "real",
+        "dims": [],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      "native_owner": "Nc_Ncn_eqns",
+      "cpp_owner_status": "required transient Native contract",
+      "public_cpp_name": "Nc_in_cloud_to_Ncnm"
+    }
+  ],
+  "native_stats_and_error_services": [
+    "f2k::stats_update(name,rank2_values,stats)",
+    "f2k::var_on_stats_list(stats,name)",
+    "f2k::clubb_at_least_debug_level_api(level)",
+    "any_equal(err_info.err_code,clubb_fatal_error) from existing error_code.hpp"
+  ],
+  "missing_array_owner_extension": {
+    "owner": "clubb_kokkos/src/CLUBB_core/array_types.hpp",
+    "add": "Real4D alias, rank4 branches in to_host_space and to_execution_space; no new owner"
+  },
+  "reused_types": [
+    "grid",
+    "pdf_parameter",
+    "hm_metadata_type (existing26field generated owner)",
+    "precipitation_fractions",
+    "hydromet_pdf_parameter_collection (existing18field SoA owner)",
+    "err_info_type",
+    "f2k::stats_type"
+  ],
+  "existing_constants": [
+    "one",
+    "zero",
+    "two",
+    "four",
+    "one_half",
+    "rc_tol",
+    "Ncn_tol",
+    "cloud_frac_min",
+    "zero_threshold",
+    "max_mag_correlation",
+    "w_tol",
+    "clubb_fatal_error",
+    "iiPDF_ADG1",
+    "iiPDF_ADG2",
+    "iiPDF_new_hybrid",
+    "ic_K_hm",
+    "iomicron",
+    "izeta_vrnce_rat",
+    "clip_wphydrometp (stable clip owner)"
+  ],
+  "new_native_private_constants": [
+    "l_follow_ADG1_PDF_standards=true",
+    "calc_comp_mu_sigma_hm::mu_hm_min_coef=0.01_core_rknd"
+  ],
+  "status": "Read contracts only; no bridge implementation, shared edit, build or model test."
+}

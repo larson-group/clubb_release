@@ -1,0 +1,58 @@
+{
+  "hashes": {
+    "procedure_includes.hpp.inc": "b995e57605857e8c6d3cf88e68d0083795f683110aff2aeabdd815aefafb459c",
+    "constants.hpp.inc": "9cccba232176bcdbc0217e0815e1679b3dd31b36df46ad17e9d3a8eff6f54a84",
+    "private_declarations.hpp.inc": "9dae4c3ef7f30a3c7f4361495791197912a1ebc65cd42e88867949680fc33219",
+    "procedure_definitions.hpp.inc": "2b03ceb6b55f5728085c493bde70cc49db57b6089ce5cbba1a093b8577f5fe82",
+    "clubb_api_module.hpp.inc": "4cb723601ceffa10ad8ee13d3b1dfec93a7db4e823919e11291cc0109109d06d",
+    "api_includes.hpp.inc": "06d8c72132bc23d9964854591c3e3354ddc6536518ff90556fc50fca327ea137",
+    "init_clubb_params_api.cpp.inc": "a66c062f097c4b00a5e60ad45c0ee22dbb114c8316ee5e08e12a21ae393469d7",
+    "cpp_includes.inc": "e4129099c4148263b339910ab08744b529822269cb0509419f9cc979b980dbb5",
+    "generate_driver_io.py.inc": "d359d619ed2c992183fcbf6c9cb565b4067eb0e6bbca640b9a2bb96768cb78f5",
+    "driver_io.hpp.inc": "162b39366815db49e065aee81377f7619679227331483bd2566c198ee6270d1b",
+    "driver_io.F90.inc": "cfeefb93796f9fe704df759174195853a2a7b03668a7bc196002f96df678d08c",
+    "parameter_contracts.json": "25ada1bfd913afe954c2f8481f67f2816d009946467604953e3ebcaf53dd6e34"
+  },
+  "separate_owner_cleanup": true,
+  "checks": [
+    {
+      "file": "procedure_includes.hpp.inc",
+      "exact_executable_token_equality": true,
+      "tokens": 63
+    },
+    {
+      "file": "constants.hpp.inc",
+      "exact_executable_token_equality": true,
+      "tokens": 1083
+    },
+    {
+      "file": "private_declarations.hpp.inc",
+      "exact_executable_token_equality": true,
+      "tokens": 788
+    },
+    {
+      "file": "procedure_definitions.hpp.inc",
+      "exact_executable_token_equality": true,
+      "tokens": 6709
+    },
+    {
+      "file": "clubb_api_module.hpp.inc",
+      "exact_executable_token_equality": true,
+      "tokens": 255
+    },
+    {
+      "file": "api_includes.hpp.inc",
+      "exact_executable_token_equality": true,
+      "tokens": 3
+    },
+    {
+      "file": "init_clubb_params_api.cpp.inc",
+      "exact_executable_token_equality": true,
+      "tokens": 2714
+    }
+  ],
+  "Native_continuation_groups_and_intents_retained": true,
+  "handwritten_Cpp_max_columns": 100,
+  "generated_IO_format_uses_existing_generator_owner": true,
+  "runtime_status": "Uncompiled/untested; all comparison evidence pending root."
+}

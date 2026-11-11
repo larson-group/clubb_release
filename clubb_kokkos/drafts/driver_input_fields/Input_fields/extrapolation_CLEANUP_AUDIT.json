@@ -1,0 +1,16 @@
+{
+  "date_UTC": "2026-11-06T06:53:45.193189+00:00",
+  "separate_cleanup": [
+    "sourcearguments/order/comments/units/errorstrings reread",
+    "100columns/no trailingwhitespace",
+    "real publicowners reused; allscientific lowercallspermanentCpp",
+    "call-local storage; no globals/thread_local/f2kdevicecalls",
+    "explicit returntype functions withdevicecode; namedtemplateparameters"
+  ],
+  "sha256": {
+    "src/Input_fields/extrapolation.F90": "45f238376e8525dd6a0ffff361559346a20ef33204c4f3f903f34d132049baa9",
+    "clubb_kokkos/drafts/driver_input_fields/Input_fields/extrapolation.hpp": "1ec2bcbcc70e13f0dbc8fc709bc3f433df9a3cdcb916f9b88df7748444726597"
+  },
+  "remaining_scientific_scope_defects": [],
+  "runtime": "pending"
+}

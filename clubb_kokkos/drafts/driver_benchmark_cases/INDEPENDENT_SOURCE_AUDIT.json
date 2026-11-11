@@ -1,0 +1,653 @@
+{
+  "date": "2026-11-06",
+  "reviewer": "driver_microphysics (independent of implementation owner)",
+  "native_revision": "ac37a3898",
+  "scope": "33 Benchmark modules, 74 routines; full Native and target semantic/source cleanup reread, including public storage adapters. No model/leaf-oracle execution by this reviewer.",
+  "outline_sources": [
+    "SOURCE_INVENTORY.json",
+    "SOURCE_OUTLINE.json",
+    "DRAFT_ROUTINE_INVENTORY.json",
+    "DRAFT_ARGUMENT_AUDIT.json",
+    "STORAGE_ADAPTER_AUDIT.json"
+  ],
+  "findings_fixed": [
+    {
+      "files": [
+        "Benchmark_cases/prescribe_forcings.cpp",
+        "Benchmark_cases/time_dependent_input.cpp"
+      ],
+      "defect": "C++ literal string comparison/concatenation did not match Native CHARACTER blank-padding/TRIM for padded public runtype inputs.",
+      "fix": "Normalize only trailing ASCII blanks locally at each boundary, preserving leading blanks; prescribe_forcings also applies its Native CHARACTER(len=50) bound. No scientific formula, state ownership, or Native argument prefix changes."
+    },
+    {
+      "files": [
+        "Benchmark_cases/arm_0003.hpp",
+        "Benchmark_cases/arm_3year.hpp",
+        "Benchmark_cases/arm_97.hpp",
+        "Benchmark_cases/astex_a209.hpp",
+        "Benchmark_cases/atex.hpp",
+        "Benchmark_cases/atex_long.hpp",
+        "Benchmark_cases/clex9_nov02.hpp",
+        "Benchmark_cases/clex9_oct14.hpp",
+        "Benchmark_cases/cloud_feedback.hpp",
+        "Benchmark_cases/dycoms2_rf01.hpp",
+        "Benchmark_cases/dycoms2_rf02.hpp",
+        "Benchmark_cases/gabls2.hpp",
+        "Benchmark_cases/jun25.hpp",
+        "Benchmark_cases/lba.hpp",
+        "Benchmark_cases/nov11.hpp",
+        "Benchmark_cases/prescribe_forcings.hpp",
+        "Benchmark_cases/sfc_flux.hpp",
+        "Benchmark_cases/spec_hum_to_mixing_ratio.hpp",
+        "Benchmark_cases/time_dependent_input.hpp",
+        "Benchmark_cases/twp_ice.hpp",
+        "Benchmark_cases/wangara.hpp",
+        "Benchmark_cases/prescribe_forcings.cpp",
+        "Benchmark_cases/time_dependent_input.cpp"
+      ],
+      "defect": "Several continuation lines were inconsistently indented; two public storage adapter calls lost the Native argument grouping; the long adapter template was one overlong line; five comments had joined words.",
+      "fix": "Align multiline routine prefixes, keep hanging indentation on multiline parent signatures, group adapter calls in Native order, split template parameters, restore comment spaces. No physics/helper/order changes."
+    }
+  ],
+  "conclusions": {
+    "scientific_defects_found": 0,
+    "branch_signature_state_stats_review": "No omissions or scientific semantic defects found in this independent source pass. Existing Native-only inactive/commented blocks and bounded ATEX diagnostic adaptation are explicitly accounted for.",
+    "numerical_status": "Pending Root maintained CPU Kokkos-versus-Fortran integration gate. Source review and object compilation do not establish BFB."
+  },
+  "compilation": {
+    "Serial": "Final prescribe_forcings.cpp and time_dependent_input.cpp object compilation passed with nvc++ 26.9, C++20, -O0, CLUBB_REAL_TYPE=8 and Serial Kokkos.",
+    "CUDA_sm86": "Final prescribe_forcings.cpp and time_dependent_input.cpp object compilation passed with nvcc_wrapper, C++20, -O0, CLUBB_REAL_TYPE=8 and Kokkos CUDA sm_86; no compile diagnostics.",
+    "settings": {
+      "CXX_standard": "C++20",
+      "optimization": "-O0",
+      "core_precision": "CLUBB_REAL_TYPE=8",
+      "Serial_compiler": "nvc++ 26.9",
+      "CUDA_compiler": "nvcc_wrapper, --extended-lambda --expt-relaxed-constexpr -arch=sm_86",
+      "includes": [
+        "clubb_kokkos/drafts/driver_benchmark_cases",
+        "clubb_kokkos/drafts/driver_input_fields",
+        "clubb_kokkos/src"
+      ],
+      "numerical_execution": false
+    }
+  },
+  "files": [
+    {
+      "source": "src/Benchmark_cases/arm.F90",
+      "source_sha256": "7c87612ad591823924c3d5addcced24058cd9073aa1a73f5427b1c44a74ebae4",
+      "routines": [
+        "arm_sfclyr"
+      ],
+      "complete_source_and_target_reread": true,
+      "review": "Seven-point heat interpolation, density 1.1, conversions before buoyancy and ustar; per-column assignments in source order.",
+      "targets": {
+        "Benchmark_cases/arm.hpp": "f704fbe4ef49777fe214f106d418c424f6b4e0ad845bd728a706cb2c990afde6"
+      }
+    },
+    {
+      "source": "src/Benchmark_cases/arm_0003.F90",
+      "source_sha256": "77be5e75442ce5ec931447857d61633150f1c0072dd4d95d5bfaad1ac5b61007",
+      "routines": [
+        "arm_0003_sfclyr"
+      ],
+      "complete_source_and_target_reread": true,
+      "review": "All surface times, per-column density conversions, buoyancy and ustar sequence.",
+      "targets": {
+        "Benchmark_cases/arm_0003.hpp": "14b272ad783e270808be5144bcf52e1c64b6af5b51bdaebb0f86bd2c63b4313d"
+      }
+    },
+    {
+      "source": "src/Benchmark_cases/arm_3year.F90",
+      "source_sha256": "1700e1b97a375d8c891f022782ff11fe8a5ddd871ea96d66ca53dda4f108ecc2",
+      "routines": [
+        "arm_3year_sfclyr"
+      ],
+      "complete_source_and_target_reread": true,
+      "review": "All surface times, per-column density conversions, buoyancy and ustar sequence.",
+      "targets": {
+        "Benchmark_cases/arm_3year.hpp": "c4bf86d1249763ce8ba0c0589de7893018bc18d709dbdcd14b04c088171e347e"
+      }
+    },
+    {
+      "source": "src/Benchmark_cases/arm_97.F90",
+      "source_sha256": "bb661cc7fb37e4b002fa20c46d4b355cc99746020dd758478f4cd9f2f4b78c66",
+      "routines": [
+        "arm_97_sfclyr"
+      ],
+      "complete_source_and_target_reread": true,
+      "review": "l_t_dependent guard leaves outputs unchanged when false; interpolation and flux/ustar order preserved.",
+      "targets": {
+        "Benchmark_cases/arm_97.hpp": "f07cc1dc73a3f34f6d1069a417aac2ae380fcdb4343d1e7ce774485e3b7ea7b0"
+      }
+    },
+    {
+      "source": "src/Benchmark_cases/astex_a209.F90",
+      "source_sha256": "3edf4df0aa074ff00f9e40e223d91e93c887af3f84238a725a24b964a0684cbf",
+      "routines": [
+        "astex_a209_tndcy",
+        "astex_a209_sfclyr"
+      ],
+      "complete_source_and_target_reread": true,
+      "review": "Single first-grid-column subsidence, t-to-m interpolation and both boundaries; scalar index-only guards; 41-time surface interpolation and all three coefficients/fluxes.",
+      "targets": {
+        "Benchmark_cases/astex_a209.hpp": "65af83734e6e1fbede0ed626ed76da62ef0557a48516755ef1365c5cdd18057d"
+      }
+    },
+    {
+      "source": "src/Benchmark_cases/atex.F90",
+      "source_sha256": "3a1cc74fd547a4a581d8bd3faf676687d4eaf3933fa30fb340e96de425d58ade",
+      "routines": [
+        "calc_forcings",
+        "atex_tndcy",
+        "atex_sfclyr"
+      ],
+      "complete_source_and_target_reread": true,
+      "review": "Strict inversion/zero-height intervals, 5400-s start, threshold search and debug fatal exits, both grid/remap paths, all scalar guards and surface calls. Bounded diagnostic adaptation for Native invalid top index is explicit and retained.",
+      "targets": {
+        "Benchmark_cases/atex.hpp": "0afc4f03962f9ea08448d330680c77126321ab8b7db3c843a6af8c2b253494b7"
+      }
+    },
+    {
+      "source": "src/Benchmark_cases/atex_long.F90",
+      "source_sha256": "1f8517c4ff378904343ea53ba37f917faaf61a8e63cff06baa58ce68959d2912",
+      "routines": [
+        "calc_forcings",
+        "atex_long_tndcy",
+        "atex_long_sfclyr"
+      ],
+      "complete_source_and_target_reread": true,
+      "review": "All theta/moisture/subsidence height intervals, 43200-s mixed-precision spinup, interpolation/boundaries/scalar copies, inactive 86400-s fixed-flux alternative, surface moisture adjustment.",
+      "targets": {
+        "Benchmark_cases/atex_long.hpp": "1f7b81974df7a20a4181b4f3acec71760356c7358b5b4158408f7fe80139c74f"
+      }
+    },
+    {
+      "source": "src/Benchmark_cases/bomex.F90",
+      "source_sha256": "f132c74c9d0486e41b4cc79facb25eeeb72f1be5703b208123d4051a49e98e92",
+      "routines": [
+        "bomex_tndcy",
+        "bomex_sfclyr"
+      ],
+      "complete_source_and_target_reread": true,
+      "review": "Height intervals, specific-humidity tendency/flux conversions, index and dimension scalar guards, ustar constant. Native commented IOP block remains inactive.",
+      "targets": {
+        "Benchmark_cases/bomex.hpp": "e61920acc7570de3bc489f42a0b2b75956bf4367b94e3d05c778bd21428bbf8e"
+      }
+    },
+    {
+      "source": "src/Benchmark_cases/clex9_nov02.F90",
+      "source_sha256": "23a56e0d32ce71e7289579b42c9edd54404e19dff929ab6a080b892b50f13d71",
+      "routines": [
+        "clex9_nov02_read_t_dependent"
+      ],
+      "complete_source_and_target_reread": true,
+      "review": "Time bracket indices and sensible/latent interpolation in Native order; no surface-layer routine.",
+      "targets": {
+        "Benchmark_cases/clex9_nov02.hpp": "6b2e00a8cc538734fd6c49f2a22a1654ca0ba057f064f5437ccc5b424a3a73fe"
+      }
+    },
+    {
+      "source": "src/Benchmark_cases/clex9_oct14.F90",
+      "source_sha256": "66e20abef38d19321b292e11b549da16e57cfdeca935ddef8a8554798bf760c4",
+      "routines": [
+        "clex9_oct14_read_t_dependent"
+      ],
+      "complete_source_and_target_reread": true,
+      "review": "Time bracket indices and sensible/latent interpolation in Native order; no surface-layer routine.",
+      "targets": {
+        "Benchmark_cases/clex9_oct14.hpp": "ed3f16f0ea4b562ed880e4f2c80fbd833c4f36106f7faea8bd04ead115c0a2aa"
+      }
+    },
+    {
+      "source": "src/Benchmark_cases/cloud_feedback.F90",
+      "source_sha256": "4e8ecaa451e2659834dc317009aeeeb9bdc54bdf7da1b30cdfefdee9323491c6",
+      "routines": [
+        "cloud_feedback_sfclyr"
+      ],
+      "complete_source_and_target_reread": true,
+      "review": "sfctype fatal gate; T interpolation, Exner/ustar/temperature assignment order, repeated log ratios, saturation and heat-before-moisture calls.",
+      "targets": {
+        "Benchmark_cases/cloud_feedback.hpp": "9ab55b9fd982379e259b037859986e78c8378dadbce9a39392b4b5565e7b0d10"
+      }
+    },
+    {
+      "source": "src/Benchmark_cases/cobra.F90",
+      "source_sha256": "4d7788efff0890ae4c01cde149ea5d34d03e4bfca3ae4d20277e8a0506b674c2",
+      "routines": [
+        "cobra_sfclyr"
+      ],
+      "complete_source_and_target_reread": true,
+      "review": "49-time bracket and four interpolation calls; dry-air molar-mass conversion, 1.75-m roughness, scalar copies and explicit-diffusion no-double-forcing branches.",
+      "targets": {
+        "Benchmark_cases/cobra.hpp": "142c7cb392965b73549f9cda0bde9185dc96a7d85f0d533c8e7bf38d658b333d"
+      }
+    },
+    {
+      "source": "src/Benchmark_cases/diag_ustar_module.F90",
+      "source_sha256": "7fbb636183f47ad8826f2997201e9bad26543ec28c1919656858cd899daffbde",
+      "routines": [
+        "diag_ustar"
+      ],
+      "complete_source_and_target_reread": true,
+      "review": "Buoyancy threshold, four iterations, stable/unstable Monin-Obukhov formulas, overflow guard and all log/sqrt/atan operation trees.",
+      "targets": {
+        "Benchmark_cases/diag_ustar_module.hpp": "e705960d5c4b6744d724a3569c8095b5d33b3e235c5eb0bb96a930459c151493"
+      }
+    },
+    {
+      "source": "src/Benchmark_cases/dycoms2_rf01.F90",
+      "source_sha256": "355ecdfddf3d54e1278ffde7aa4075d647d624eb896aae1986617d2746957bd1",
+      "routines": [
+        "dycoms2_rf01_tndcy",
+        "dycoms2_rf01_sfclyr"
+      ],
+      "complete_source_and_target_reread": true,
+      "review": "Zero forcing and scalar copies; all sfctype 0/1/invalid branches; sensible/latent/T interpolation order, density-dependent conversions, saturation/bulk calls.",
+      "targets": {
+        "Benchmark_cases/dycoms2_rf01.hpp": "785f47b7bb0604cb0e884b3ec9f94c6a2d3b4128d3f432892ef004d748dd6e50"
+      }
+    },
+    {
+      "source": "src/Benchmark_cases/dycoms2_rf02.F90",
+      "source_sha256": "16042c14cc267e73e2f92f79dff1a0b664f67ae9d392cb187a6f1f5cb9e329dc",
+      "routines": [
+        "dycoms2_rf02_tndcy",
+        "dycoms2_rf02_sfclyr"
+      ],
+      "complete_source_and_target_reread": true,
+      "review": "Both top subsidence zero assignments precede zero forcing; scalar guards; fixed density 1.21 and supplied surface flux interpolation/conversions.",
+      "targets": {
+        "Benchmark_cases/dycoms2_rf02.hpp": "036b271ac963b4a04120d5f144eb7be075d823a9ef5fc435b8f07a81ab426ef8"
+      }
+    },
+    {
+      "source": "src/Benchmark_cases/ekman.F90",
+      "source_sha256": "71fa00ebd044dd0f92d3f21f483512a23fbedc53df45a875ff01d95c430c1c48",
+      "routines": [
+        "ekman_sfclyr"
+      ],
+      "complete_source_and_target_reread": true,
+      "review": "Heat/water zeros and ustar 0.3 precede momentum flux helper.",
+      "targets": {
+        "Benchmark_cases/ekman.hpp": "576019bd4327df63e664e74fc6aba8b39485a1135d54f5daafc18fb62599bfa6"
+      }
+    },
+    {
+      "source": "src/Benchmark_cases/fire.F90",
+      "source_sha256": "8ed48208198a6f05c6390e760e5e49415707675775e8e72f1ac331397f76c069",
+      "routines": [
+        "fire_sfclyr"
+      ],
+      "complete_source_and_target_reread": true,
+      "review": "Surface T bracket/interpolation, coefficient 0.0013, ustar 0.3 and saturation; heat and moisture calls in order.",
+      "targets": {
+        "Benchmark_cases/fire.hpp": "1be53ced080f851d1de1826a5599cf4538a32ab12d5507c6a4552b23b957ca69"
+      }
+    },
+    {
+      "source": "src/Benchmark_cases/gabls2.F90",
+      "source_sha256": "299fd8e39828dadc8b032456e55c3c19438fbf310356177eee0df98d902ecb36",
+      "routines": [
+        "gabls2_tndcy",
+        "gabls2_sfclyr"
+      ],
+      "complete_source_and_target_reread": true,
+      "review": "26-h motion trigger, 1000-m height boundary, t-to-m interpolation and endpoints, zero forcing/scalars; double time expression cast afterward; all six temperature branches, scaling and 2.5-percent moisture adjustment.",
+      "targets": {
+        "Benchmark_cases/gabls2.hpp": "9b7645dc9fd4de552332dfd7526301ef13a3d04a4b6f6e64c596a189eba22368"
+      }
+    },
+    {
+      "source": "src/Benchmark_cases/gabls3.F90",
+      "source_sha256": "ad5f90275599cb9984d8789bbc91ee6cbe2511ee85c3f6312bd10f4b99d60412",
+      "routines": [
+        "gabls3_sfclyr"
+      ],
+      "complete_source_and_target_reread": true,
+      "review": "0.0099 moisture offset, 0.00195 exchange coefficient; heat/moisture calls then tenfold water adjustment and buoyancy/ustar.",
+      "targets": {
+        "Benchmark_cases/gabls3.hpp": "22366084fa0f4d7ac9008b8389ae3f5f1c63483df7078899ea5621354d070032"
+      }
+    },
+    {
+      "source": "src/Benchmark_cases/gabls3_night.F90",
+      "source_sha256": "b9eb8d57bb8286bb07efa72ba68355237945b382edb2140029758f203a1e7cf1",
+      "routines": [
+        "gabls3_night_sfclyr",
+        "psi_h",
+        "gm1",
+        "gh1",
+        "fm1",
+        "fh1",
+        "landflx"
+      ],
+      "complete_source_and_target_reread": true,
+      "review": "Time-dependent and supplied-momentum alternatives; helper inventory/order, stable quadratic and three explicit unstable updates, native 9.81, xsi sign floors and heat/water denominators.",
+      "targets": {
+        "Benchmark_cases/gabls3_night.hpp": "a9fa7e976a57b4195b731b03e603e08b64a670c57be2fc0999a65dc37776eac7"
+      }
+    },
+    {
+      "source": "src/Benchmark_cases/jun25.F90",
+      "source_sha256": "df58fa9e9abe06bfb59198ef4324ffe20f4c7bbaac4a9fee1d2000ad7d1f9777",
+      "routines": [
+        "jun25_altocu_read_t_dependent"
+      ],
+      "complete_source_and_target_reread": true,
+      "review": "Time bracket indices and sensible/latent interpolation in Native order; no surface-layer routine.",
+      "targets": {
+        "Benchmark_cases/jun25.hpp": "3a42e2d737109ba21a3217af7c811e39898737eb1cb6a43b3922d415122b9660"
+      }
+    },
+    {
+      "source": "src/Benchmark_cases/lba.F90",
+      "source_sha256": "b4dd24e001356f4d3b6bc0a6b028afaa7ebbe36c4d7d8da8335840bb378c81b4",
+      "routines": [
+        "lba_tndcy",
+        "lba_sfclyr"
+      ],
+      "complete_source_and_target_reread": true,
+      "review": "Zero tendencies then selected scalar copies; elapsed-time cast location, max/cos modulation, fractional powers and buoyancy/ustar.",
+      "targets": {
+        "Benchmark_cases/lba.hpp": "7e89814fc9db50f191566845b388b88f6b331d9606ec14ecc4241cad9939cdd6"
+      }
+    },
+    {
+      "source": "src/Benchmark_cases/mpace_a.F90",
+      "source_sha256": "45a8f6e0a38a67cfd027fb66195520a3a7bf27ca850e7616b41fef8941ee46b5",
+      "routines": [
+        "mpace_a_tndcy",
+        "mpace_a_sfclyr",
+        "mpace_a_init"
+      ],
+      "complete_source_and_target_reread": true,
+      "review": "Full case-state field order, 38 levels/139 times; six time interpolations then six spatial calls per column; zero motion; pressure-power and unit conversions; index-only scalar guards; all 11 raw file reads in order.",
+      "targets": {
+        "Benchmark_cases/mpace_a.hpp": "3b758315cc6200653299b1689da74f38ed3e75434b5c362327a93f539975a4f6",
+        "Benchmark_cases/mpace_a.cpp": "710355e4fb3c7cc69d05613035bd4f9e2fbdad60e27d73bdea0f3c3aacf320aa"
+      }
+    },
+    {
+      "source": "src/Benchmark_cases/mpace_b.F90",
+      "source_sha256": "3f8aefcf6485aa9520174f39a5a90d06eb600b0dd55303ff8d5d8909a1fc6500",
+      "routines": [
+        "mpace_b_tndcy",
+        "mpace_b_sfclyr"
+      ],
+      "complete_source_and_target_reread": true,
+      "review": "Capped omega formula, t-to-m interpolation/boundaries, minimum-limited temperature/moisture forcing and unit conversion order; surface bracket and density-dependent fluxes.",
+      "targets": {
+        "Benchmark_cases/mpace_b.hpp": "a6aafc25f047556c740a1475ca06c300f9c72280939ffdabcfa49a0a5cb48c19"
+      }
+    },
+    {
+      "source": "src/Benchmark_cases/neutral_case.F90",
+      "source_sha256": "b70b548e972420fbd0a26e4c681ac6c991ff7adeba41efd8531977522bb12a82",
+      "routines": [
+        "neutral_case_sfclyr"
+      ],
+      "complete_source_and_target_reread": true,
+      "review": "Actual heat cutoff 80880 s, moisture zero and ustar 0.5, then momentum call; stale Native 3000-s comment is explicitly corrected.",
+      "targets": {
+        "Benchmark_cases/neutral_case.hpp": "aa2b65c54d5d36dc50ab1d40b5dd199d7056c843920a93336a27125e4fcc0141"
+      }
+    },
+    {
+      "source": "src/Benchmark_cases/nov11.F90",
+      "source_sha256": "78eb22f552e2e3d7f73a53cf631bde4c72c0eb6d494af9e758f129caf9cd225b",
+      "routines": [
+        "nov11_altocu_rtm_adjust",
+        "nov11_altocu_read_t_dependent"
+      ],
+      "complete_source_and_target_reread": true,
+      "review": "One-step [initial+3600,initial+3600+dt) window, 2900+zm-bottom height and water factor 0.89; sensible/latent interpolation. Completely commented obsolete tendency is excluded.",
+      "targets": {
+        "Benchmark_cases/nov11.hpp": "11219275853b6b61ea3363e05ff38f35afd81bdc3fd2238ee7eefbe43c5e7b5d"
+      }
+    },
+    {
+      "source": "src/Benchmark_cases/prescribe_forcings.F90",
+      "source_sha256": "55e26ce8ed366811f70fab34b86ac44271d56a2ff02a164785faabf2d095858f",
+      "routines": [
+        "prescribe_forcings",
+        "read_surface_var_for_bc"
+      ],
+      "complete_source_and_target_reread": true,
+      "review": "Both reset blocks, time-dependent/dycore/top-zero versus every legacy case, Native fatal return, surface-input helper and all surface case flags/calls, common momentum/scalars, fixed-flux override and eight stats calls. Fixed 25-m nearest/cubic alternatives retain stencil indices, all five remap calls and nearest-density behavior.",
+      "targets": {
+        "Benchmark_cases/prescribe_forcings.hpp": "2fa8526e0440af8c5cd2395a897369bfa57c90c6180c986a8b8f63d303452250",
+        "Benchmark_cases/prescribe_forcings.cpp": "30bdc18c3f38f270e234ed4a6e954c73a0d6e0f79a5bfa49152a96ef88d0ce70"
+      }
+    },
+    {
+      "source": "src/Benchmark_cases/rico.F90",
+      "source_sha256": "41592fed31e6a073b4146d4151c4cb047d0f6b82fcb08ce197489306ace70ada",
+      "routines": [
+        "rico_tndcy",
+        "rico_sfclyr"
+      ],
+      "complete_source_and_target_reread": true,
+      "review": "All temperature/water height intervals and specific-humidity conversion; scalar copies; time/saturation/wind order, inactive ATEX and active RICO branches, three repeated coefficient ratios and momentum assignments.",
+      "targets": {
+        "Benchmark_cases/rico.hpp": "4b2c67755388ff3d0c0de67aa1a8fa00277098e5cacce01a1a98f6cee5b7ca48"
+      }
+    },
+    {
+      "source": "src/Benchmark_cases/sfc_flux.F90",
+      "source_sha256": "614c3e5b14acbaae367222a9cba949149231f23f14ef53f1d0a05fa6bcf4d789",
+      "routines": [
+        "compute_momentum_flux",
+        "compute_ubar",
+        "compute_ht_mostr_flux",
+        "compute_wpthlp_sfc",
+        "compute_wprtp_sfc",
+        "set_sclr_sfc_rtm_thlm",
+        "convert_sens_ht_to_km_s",
+        "convert_latent_ht_to_m_s"
+      ],
+      "complete_source_and_target_reread": true,
+      "review": "All eight routines, signs/multiplication trees/minimum wind, endpoint and interval heat interpolation including odd Native loop assignment, scalar guards and Native eddy zeroing order.",
+      "targets": {
+        "Benchmark_cases/sfc_flux.hpp": "55e9c36d62b82b09f594f920fc2abb00f39a877acbcaab5440ede41bacae7644"
+      }
+    },
+    {
+      "source": "src/Benchmark_cases/spec_hum_to_mixing_ratio.F90",
+      "source_sha256": "491fb11c5837773265882c908880bb6e282f87b1accdc3dfdfb280e2715fb1ab",
+      "routines": [
+        "flux_spec_hum_to_mixing_ratio",
+        "force_spec_hum_to_mixing_ratio"
+      ],
+      "complete_source_and_target_reread": true,
+      "review": "Both flux/tendency conversions retain squared (1+rtm), Native argument/output order and indexed column-first loops.",
+      "targets": {
+        "Benchmark_cases/spec_hum_to_mixing_ratio.hpp": "05cc4e055fc95b424574845eb2447f6549a41a30861437506c275782fedd5e86"
+      }
+    },
+    {
+      "source": "src/Benchmark_cases/time_dependent_input.F90",
+      "source_sha256": "58baf00fe8f16516452851e9169334bc8858546b35bd687e47d90507dd55c2c3",
+      "routines": [
+        "initialize_t_dependent_input",
+        "finalize_t_dependent_input",
+        "initialize_t_dependent_sfc",
+        "initialize_t_dependent_forcings",
+        "finalize_t_dependent_forcings",
+        "finalize_t_dependent_sfc",
+        "read_to_grid",
+        "apply_time_dependent_forcings_from_array",
+        "apply_time_dependent_forcings",
+        "apply_time_dependent_forcings_from_dycore",
+        "time_select"
+      ],
+      "complete_source_and_target_reread": true,
+      "review": "All 11 lifecycle/apply/time-selection routines; Native state order, once-only surface flag, IOP/formatted branches, raw adaptive-grid retention, pressure sign transform, per-profile blank masking, every forcing-name branch/conversion/scalar guard, ordinary/dycore time/remap order, 1-based brackets and full sortedness checks.",
+      "targets": {
+        "Benchmark_cases/time_dependent_input.hpp": "3a1b6e8f44fdd9c1f087940f8dfaf0b394f3ef442f60e1506cc29195fa02ba29",
+        "Benchmark_cases/time_dependent_input.cpp": "3615608d1d51aaab3c03f92be2d9f268ff00e9d9023f4a0d40884a7cab1ffcf1"
+      }
+    },
+    {
+      "source": "src/Benchmark_cases/twp_ice.F90",
+      "source_sha256": "5fcc240d59b2f4d1713295bc7c5d8daea0f1224596e1726ada46ac62cc51a718",
+      "routines": [
+        "twp_ice_sfclyr"
+      ],
+      "complete_source_and_target_reread": true,
+      "review": "Surface T interpolation, ustar 0.3, two repeated height-correction ratios, saturation and heat-before-water call order.",
+      "targets": {
+        "Benchmark_cases/twp_ice.hpp": "f85231f500561678ea34799da5e0c42fe4cf8588fb0028c8db71610fc64160ac"
+      }
+    },
+    {
+      "source": "src/Benchmark_cases/wangara.F90",
+      "source_sha256": "c9c9e0ae3653aa6a3aab16d857be6eb4df216c846c39faafa9253296e19a43fb",
+      "routines": [
+        "wangara_tndcy",
+        "wangara_sfclyr"
+      ],
+      "complete_source_and_target_reread": true,
+      "review": "Zero motion/forcing/scalar copies; double UTC/EST fmod and 07:30-17:30 fatal interval; core cast before cosine, water scaling and ustar.",
+      "targets": {
+        "Benchmark_cases/wangara.hpp": "34c4b676fe8a49c4987c813bb926ad7fab115829c271047db27bf8ea414c5697"
+      }
+    }
+  ],
+  "source_hashes": {
+    "Benchmark_cases/arm.hpp": "f704fbe4ef49777fe214f106d418c424f6b4e0ad845bd728a706cb2c990afde6",
+    "Benchmark_cases/arm_0003.hpp": "14b272ad783e270808be5144bcf52e1c64b6af5b51bdaebb0f86bd2c63b4313d",
+    "Benchmark_cases/arm_3year.hpp": "c4bf86d1249763ce8ba0c0589de7893018bc18d709dbdcd14b04c088171e347e",
+    "Benchmark_cases/arm_97.hpp": "f07cc1dc73a3f34f6d1069a417aac2ae380fcdb4343d1e7ce774485e3b7ea7b0",
+    "Benchmark_cases/astex_a209.hpp": "65af83734e6e1fbede0ed626ed76da62ef0557a48516755ef1365c5cdd18057d",
+    "Benchmark_cases/atex.hpp": "0afc4f03962f9ea08448d330680c77126321ab8b7db3c843a6af8c2b253494b7",
+    "Benchmark_cases/atex_long.hpp": "1f7b81974df7a20a4181b4f3acec71760356c7358b5b4158408f7fe80139c74f",
+    "Benchmark_cases/bomex.hpp": "e61920acc7570de3bc489f42a0b2b75956bf4367b94e3d05c778bd21428bbf8e",
+    "Benchmark_cases/clex9_nov02.hpp": "6b2e00a8cc538734fd6c49f2a22a1654ca0ba057f064f5437ccc5b424a3a73fe",
+    "Benchmark_cases/clex9_oct14.hpp": "ed3f16f0ea4b562ed880e4f2c80fbd833c4f36106f7faea8bd04ead115c0a2aa",
+    "Benchmark_cases/cloud_feedback.hpp": "9ab55b9fd982379e259b037859986e78c8378dadbce9a39392b4b5565e7b0d10",
+    "Benchmark_cases/cobra.hpp": "142c7cb392965b73549f9cda0bde9185dc96a7d85f0d533c8e7bf38d658b333d",
+    "Benchmark_cases/diag_ustar_module.hpp": "e705960d5c4b6744d724a3569c8095b5d33b3e235c5eb0bb96a930459c151493",
+    "Benchmark_cases/dycoms2_rf01.hpp": "785f47b7bb0604cb0e884b3ec9f94c6a2d3b4128d3f432892ef004d748dd6e50",
+    "Benchmark_cases/dycoms2_rf02.hpp": "036b271ac963b4a04120d5f144eb7be075d823a9ef5fc435b8f07a81ab426ef8",
+    "Benchmark_cases/ekman.hpp": "576019bd4327df63e664e74fc6aba8b39485a1135d54f5daafc18fb62599bfa6",
+    "Benchmark_cases/fire.hpp": "1be53ced080f851d1de1826a5599cf4538a32ab12d5507c6a4552b23b957ca69",
+    "Benchmark_cases/gabls2.hpp": "9b7645dc9fd4de552332dfd7526301ef13a3d04a4b6f6e64c596a189eba22368",
+    "Benchmark_cases/gabls3.hpp": "22366084fa0f4d7ac9008b8389ae3f5f1c63483df7078899ea5621354d070032",
+    "Benchmark_cases/gabls3_night.hpp": "a9fa7e976a57b4195b731b03e603e08b64a670c57be2fc0999a65dc37776eac7",
+    "Benchmark_cases/jun25.hpp": "3a42e2d737109ba21a3217af7c811e39898737eb1cb6a43b3922d415122b9660",
+    "Benchmark_cases/lba.hpp": "7e89814fc9db50f191566845b388b88f6b331d9606ec14ecc4241cad9939cdd6",
+    "Benchmark_cases/mpace_a.cpp": "710355e4fb3c7cc69d05613035bd4f9e2fbdad60e27d73bdea0f3c3aacf320aa",
+    "Benchmark_cases/mpace_a.hpp": "3b758315cc6200653299b1689da74f38ed3e75434b5c362327a93f539975a4f6",
+    "Benchmark_cases/mpace_b.hpp": "a6aafc25f047556c740a1475ca06c300f9c72280939ffdabcfa49a0a5cb48c19",
+    "Benchmark_cases/neutral_case.hpp": "aa2b65c54d5d36dc50ab1d40b5dd199d7056c843920a93336a27125e4fcc0141",
+    "Benchmark_cases/nov11.hpp": "11219275853b6b61ea3363e05ff38f35afd81bdc3fd2238ee7eefbe43c5e7b5d",
+    "Benchmark_cases/prescribe_forcings.cpp": "30bdc18c3f38f270e234ed4a6e954c73a0d6e0f79a5bfa49152a96ef88d0ce70",
+    "Benchmark_cases/prescribe_forcings.hpp": "2fa8526e0440af8c5cd2395a897369bfa57c90c6180c986a8b8f63d303452250",
+    "Benchmark_cases/rico.hpp": "4b2c67755388ff3d0c0de67aa1a8fa00277098e5cacce01a1a98f6cee5b7ca48",
+    "Benchmark_cases/sfc_flux.hpp": "55e9c36d62b82b09f594f920fc2abb00f39a877acbcaab5440ede41bacae7644",
+    "Benchmark_cases/spec_hum_to_mixing_ratio.hpp": "05cc4e055fc95b424574845eb2447f6549a41a30861437506c275782fedd5e86",
+    "Benchmark_cases/time_dependent_input.cpp": "3615608d1d51aaab3c03f92be2d9f268ff00e9d9023f4a0d40884a7cab1ffcf1",
+    "Benchmark_cases/time_dependent_input.hpp": "3a1b6e8f44fdd9c1f087940f8dfaf0b394f3ef442f60e1506cc29195fa02ba29",
+    "Benchmark_cases/twp_ice.hpp": "f85231f500561678ea34799da5e0c42fe4cf8588fb0028c8db71610fc64160ac",
+    "Benchmark_cases/wangara.hpp": "34c4b676fe8a49c4987c813bb926ad7fab115829c271047db27bf8ea414c5697"
+  },
+  "source_aggregate_sha256": "3ade07f620d1c92c303b30aaecde38e70d59cb1df3ef298ef8609c4c5cd5953a",
+  "changed_source_hashes": {
+    "Benchmark_cases/arm_0003.hpp": {
+      "before": "b2b620d5ec697c69c29c29c00b2f66a9bfe0b696891a71788c4e67d55d6aaa9c",
+      "after": "14b272ad783e270808be5144bcf52e1c64b6af5b51bdaebb0f86bd2c63b4313d"
+    },
+    "Benchmark_cases/arm_3year.hpp": {
+      "before": "f50943e597a7f92993adafc58f1942759c38f7cad823c9de9dc725fae1ced048",
+      "after": "c4bf86d1249763ce8ba0c0589de7893018bc18d709dbdcd14b04c088171e347e"
+    },
+    "Benchmark_cases/arm_97.hpp": {
+      "before": "2a25adc717cc6149761ae1f61579ffb37e58062bbef1bdcf2790588cbb7aad67",
+      "after": "f07cc1dc73a3f34f6d1069a417aac2ae380fcdb4343d1e7ce774485e3b7ea7b0"
+    },
+    "Benchmark_cases/astex_a209.hpp": {
+      "before": "782068405653aadfe5b9a3c1bf8e11907b45e66e83a22f5a09756249792d237d",
+      "after": "65af83734e6e1fbede0ed626ed76da62ef0557a48516755ef1365c5cdd18057d"
+    },
+    "Benchmark_cases/atex.hpp": {
+      "before": "21190db700d34f7d69db7c89ab6371f86ad7a9f7a7b9e5a6c4847f254b34bba1",
+      "after": "0afc4f03962f9ea08448d330680c77126321ab8b7db3c843a6af8c2b253494b7"
+    },
+    "Benchmark_cases/atex_long.hpp": {
+      "before": "e444d1e30ff6bdcad996b5a0c20086d988c8fafe2d77bf0521e3fffe7d330d5d",
+      "after": "1f7b81974df7a20a4181b4f3acec71760356c7358b5b4158408f7fe80139c74f"
+    },
+    "Benchmark_cases/clex9_nov02.hpp": {
+      "before": "228f0ec84949cbbc703c2bec088cf8aa76f31c63c7bfc07dedf968b43a9eaacb",
+      "after": "6b2e00a8cc538734fd6c49f2a22a1654ca0ba057f064f5437ccc5b424a3a73fe"
+    },
+    "Benchmark_cases/clex9_oct14.hpp": {
+      "before": "dc4228753aa046e69f80dba65fb414ea43e967ee81edb63e80623f551e66b5f8",
+      "after": "ed3f16f0ea4b562ed880e4f2c80fbd833c4f36106f7faea8bd04ead115c0a2aa"
+    },
+    "Benchmark_cases/cloud_feedback.hpp": {
+      "before": "01d21edab7e2f96c7c0ffd604184f2f7f8c43423698d3d45ff5d0e75fdd104cf",
+      "after": "9ab55b9fd982379e259b037859986e78c8378dadbce9a39392b4b5565e7b0d10"
+    },
+    "Benchmark_cases/dycoms2_rf01.hpp": {
+      "before": "92a19cc0bae195903c36654658fdcfdd90ed229b144803f80dbd3453631d9e60",
+      "after": "785f47b7bb0604cb0e884b3ec9f94c6a2d3b4128d3f432892ef004d748dd6e50"
+    },
+    "Benchmark_cases/dycoms2_rf02.hpp": {
+      "before": "fd10be6722d35be9920f3a540e00a7ca1a4f53b09f7af4c16b646ff4d056254e",
+      "after": "036b271ac963b4a04120d5f144eb7be075d823a9ef5fc435b8f07a81ab426ef8"
+    },
+    "Benchmark_cases/gabls2.hpp": {
+      "before": "42a9da4b532ff0539bff897733779d3b4fc3ce4ac6154d85c25f5dfe12395b9c",
+      "after": "9b7645dc9fd4de552332dfd7526301ef13a3d04a4b6f6e64c596a189eba22368"
+    },
+    "Benchmark_cases/jun25.hpp": {
+      "before": "bcc03117468f9978d2e4e9957e6e40c5d170e5a3a4e4375d47b57b51939f6ecc",
+      "after": "3a42e2d737109ba21a3217af7c811e39898737eb1cb6a43b3922d415122b9660"
+    },
+    "Benchmark_cases/lba.hpp": {
+      "before": "62005b53f9bb19ea522e7986bf5569ce8a4e3901ed1466da36413fc6ed0e8b0b",
+      "after": "7e89814fc9db50f191566845b388b88f6b331d9606ec14ecc4241cad9939cdd6"
+    },
+    "Benchmark_cases/nov11.hpp": {
+      "before": "0a879c73fbbceb4a78446e520534405ea8ad8c14aa2a7f27b175af48980ae989",
+      "after": "11219275853b6b61ea3363e05ff38f35afd81bdc3fd2238ee7eefbe43c5e7b5d"
+    },
+    "Benchmark_cases/prescribe_forcings.hpp": {
+      "before": "fa1911b265cffd53a15f1e9e061c5342221f44d9e7d290882eb685f367b8d7e6",
+      "after": "2fa8526e0440af8c5cd2395a897369bfa57c90c6180c986a8b8f63d303452250"
+    },
+    "Benchmark_cases/sfc_flux.hpp": {
+      "before": "90437f2c0feb3eb4e565320e73c48d1b68752d3348ce638402fb99b3cee30bb2",
+      "after": "55e9c36d62b82b09f594f920fc2abb00f39a877acbcaab5440ede41bacae7644"
+    },
+    "Benchmark_cases/spec_hum_to_mixing_ratio.hpp": {
+      "before": "9a271353c9c4c3f574c2a496c5d691621cce1db512ca7464302b9198c9f75d41",
+      "after": "05cc4e055fc95b424574845eb2447f6549a41a30861437506c275782fedd5e86"
+    },
+    "Benchmark_cases/time_dependent_input.hpp": {
+      "before": "de6519cdaccd3e75f25f10e5296412dabe4e20f7e9ee9ef4408552fe9d629c08",
+      "after": "3a1b6e8f44fdd9c1f087940f8dfaf0b394f3ef442f60e1506cc29195fa02ba29"
+    },
+    "Benchmark_cases/twp_ice.hpp": {
+      "before": "cb7f0fbf2e2edb0e74a1e14073f79be55d04f93639484aadca7d6d9789e74e14",
+      "after": "f85231f500561678ea34799da5e0c42fe4cf8588fb0028c8db71610fc64160ac"
+    },
+    "Benchmark_cases/wangara.hpp": {
+      "before": "45550cb1e503741b1142ea87d2b9f3a14e9468636495ebd0d225f76d2591385c",
+      "after": "34c4b676fe8a49c4987c813bb926ad7fab115829c271047db27bf8ea414c5697"
+    },
+    "Benchmark_cases/prescribe_forcings.cpp": {
+      "before": "1fa4dc2f89a84485ef310e8ab6372e59caab231e09c5a868929ae9388bd48df2",
+      "after": "30bdc18c3f38f270e234ed4a6e954c73a0d6e0f79a5bfa49152a96ef88d0ce70"
+    },
+    "Benchmark_cases/time_dependent_input.cpp": {
+      "before": "c634c93c1327522bfd9e83292d8d1bd6f0b7516f0dc9b9c788d7c029a31149d1",
+      "after": "3615608d1d51aaab3c03f92be2d9f268ff00e9d9023f4a0d40884a7cab1ffcf1"
+    }
+  },
+  "storage_adapter_native_prefix_recheck": {
+    "prescribe_forcings": "62 Native arguments followed by input/mpace; regrouped call matches mechanically.",
+    "initialize_t_dependent_input": "9 Native arguments followed by input/iop; regrouped call matches mechanically."
+  }
+}

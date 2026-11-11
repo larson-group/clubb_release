@@ -1,0 +1,1486 @@
+[
+  {
+    "name": "NNUCCD_REDUCE_COEF",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": "1.0",
+    "native": "REAL, SAVE :: NNUCCD_REDUCE_COEF = 1.0, NNUCCC_REDUCE_COEF = 1.0"
+  },
+  {
+    "name": "NNUCCC_REDUCE_COEF",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": "1.0",
+    "native": "REAL, SAVE :: NNUCCD_REDUCE_COEF = 1.0, NNUCCC_REDUCE_COEF = 1.0"
+  },
+  {
+    "name": "PI",
+    "type": "float",
+    "dims": [],
+    "parameter": true,
+    "value": "3.1415926535897932384626434",
+    "native": "REAL, PARAMETER :: PI = 3.1415926535897932384626434"
+  },
+  {
+    "name": "SQRTPI",
+    "type": "float",
+    "dims": [],
+    "parameter": true,
+    "value": "0.9189385332046727417803297",
+    "native": "REAL, PARAMETER :: SQRTPI = 0.9189385332046727417803297"
+  },
+  {
+    "name": "doicemicro",
+    "type": "bool",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "logical, public :: doicemicro, dograupel, dohail, dosb_warm_rain, dopredictNc, dosubgridw, doarcticicenucl, docloudedgeactivation, dofix_pgam"
+  },
+  {
+    "name": "dograupel",
+    "type": "bool",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "logical, public :: doicemicro, dograupel, dohail, dosb_warm_rain, dopredictNc, dosubgridw, doarcticicenucl, docloudedgeactivation, dofix_pgam"
+  },
+  {
+    "name": "dohail",
+    "type": "bool",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "logical, public :: doicemicro, dograupel, dohail, dosb_warm_rain, dopredictNc, dosubgridw, doarcticicenucl, docloudedgeactivation, dofix_pgam"
+  },
+  {
+    "name": "dosb_warm_rain",
+    "type": "bool",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "logical, public :: doicemicro, dograupel, dohail, dosb_warm_rain, dopredictNc, dosubgridw, doarcticicenucl, docloudedgeactivation, dofix_pgam"
+  },
+  {
+    "name": "dopredictNc",
+    "type": "bool",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "logical, public :: doicemicro, dograupel, dohail, dosb_warm_rain, dopredictNc, dosubgridw, doarcticicenucl, docloudedgeactivation, dofix_pgam"
+  },
+  {
+    "name": "dosubgridw",
+    "type": "bool",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "logical, public :: doicemicro, dograupel, dohail, dosb_warm_rain, dopredictNc, dosubgridw, doarcticicenucl, docloudedgeactivation, dofix_pgam"
+  },
+  {
+    "name": "doarcticicenucl",
+    "type": "bool",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "logical, public :: doicemicro, dograupel, dohail, dosb_warm_rain, dopredictNc, dosubgridw, doarcticicenucl, docloudedgeactivation, dofix_pgam"
+  },
+  {
+    "name": "docloudedgeactivation",
+    "type": "bool",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "logical, public :: doicemicro, dograupel, dohail, dosb_warm_rain, dopredictNc, dosubgridw, doarcticicenucl, docloudedgeactivation, dofix_pgam"
+  },
+  {
+    "name": "dofix_pgam",
+    "type": "bool",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "logical, public :: doicemicro, dograupel, dohail, dosb_warm_rain, dopredictNc, dosubgridw, doarcticicenucl, docloudedgeactivation, dofix_pgam"
+  },
+  {
+    "name": "aerosol_mode",
+    "type": "int",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "integer, public :: aerosol_mode"
+  },
+  {
+    "name": "Nc0",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "real, public :: Nc0, ccnconst, ccnexpnt, aer_rm1, aer_rm2, aer_n1, aer_n2, aer_sig1, aer_sig2, pgam_fixed"
+  },
+  {
+    "name": "ccnconst",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "real, public :: Nc0, ccnconst, ccnexpnt, aer_rm1, aer_rm2, aer_n1, aer_n2, aer_sig1, aer_sig2, pgam_fixed"
+  },
+  {
+    "name": "ccnexpnt",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "real, public :: Nc0, ccnconst, ccnexpnt, aer_rm1, aer_rm2, aer_n1, aer_n2, aer_sig1, aer_sig2, pgam_fixed"
+  },
+  {
+    "name": "aer_rm1",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "real, public :: Nc0, ccnconst, ccnexpnt, aer_rm1, aer_rm2, aer_n1, aer_n2, aer_sig1, aer_sig2, pgam_fixed"
+  },
+  {
+    "name": "aer_rm2",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "real, public :: Nc0, ccnconst, ccnexpnt, aer_rm1, aer_rm2, aer_n1, aer_n2, aer_sig1, aer_sig2, pgam_fixed"
+  },
+  {
+    "name": "aer_n1",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "real, public :: Nc0, ccnconst, ccnexpnt, aer_rm1, aer_rm2, aer_n1, aer_n2, aer_sig1, aer_sig2, pgam_fixed"
+  },
+  {
+    "name": "aer_n2",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "real, public :: Nc0, ccnconst, ccnexpnt, aer_rm1, aer_rm2, aer_n1, aer_n2, aer_sig1, aer_sig2, pgam_fixed"
+  },
+  {
+    "name": "aer_sig1",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "real, public :: Nc0, ccnconst, ccnexpnt, aer_rm1, aer_rm2, aer_n1, aer_n2, aer_sig1, aer_sig2, pgam_fixed"
+  },
+  {
+    "name": "aer_sig2",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "real, public :: Nc0, ccnconst, ccnexpnt, aer_rm1, aer_rm2, aer_n1, aer_n2, aer_sig1, aer_sig2, pgam_fixed"
+  },
+  {
+    "name": "pgam_fixed",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "real, public :: Nc0, ccnconst, ccnexpnt, aer_rm1, aer_rm2, aer_n1, aer_n2, aer_sig1, aer_sig2, pgam_fixed"
+  },
+  {
+    "name": "IACT",
+    "type": "int",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "INTEGER, PRIVATE ::  IACT"
+  },
+  {
+    "name": "INUM",
+    "type": "int",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "INTEGER, PRIVATE ::  INUM"
+  },
+  {
+    "name": "NDCNST",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      NDCNST"
+  },
+  {
+    "name": "ILIQ",
+    "type": "int",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "INTEGER, PRIVATE ::  ILIQ"
+  },
+  {
+    "name": "INUC",
+    "type": "int",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "INTEGER, PRIVATE ::  INUC"
+  },
+  {
+    "name": "IBASE",
+    "type": "int",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "INTEGER, PRIVATE ::  IBASE"
+  },
+  {
+    "name": "ISUB",
+    "type": "int",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "INTEGER, PRIVATE ::  ISUB"
+  },
+  {
+    "name": "IGRAUP",
+    "type": "int",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "INTEGER, PRIVATE ::  IGRAUP"
+  },
+  {
+    "name": "IHAIL",
+    "type": "int",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "INTEGER, PRIVATE ::  IHAIL"
+  },
+  {
+    "name": "IRAIN",
+    "type": "int",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "INTEGER, PRIVATE ::  IRAIN"
+  },
+  {
+    "name": "ISATADJ",
+    "type": "int",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "INTEGER, PRIVATE :: ISATADJ"
+  },
+  {
+    "name": "AI",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      AI,AC,AS,AR,AG"
+  },
+  {
+    "name": "AC",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      AI,AC,AS,AR,AG"
+  },
+  {
+    "name": "AS",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      AI,AC,AS,AR,AG"
+  },
+  {
+    "name": "AR",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      AI,AC,AS,AR,AG"
+  },
+  {
+    "name": "AG",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      AI,AC,AS,AR,AG"
+  },
+  {
+    "name": "BI",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      BI,BC,BS,BR,BG"
+  },
+  {
+    "name": "BC",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      BI,BC,BS,BR,BG"
+  },
+  {
+    "name": "BS",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      BI,BC,BS,BR,BG"
+  },
+  {
+    "name": "BR",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      BI,BC,BS,BR,BG"
+  },
+  {
+    "name": "BG",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      BI,BC,BS,BR,BG"
+  },
+  {
+    "name": "R",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      R"
+  },
+  {
+    "name": "RHOSU",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      RHOSU"
+  },
+  {
+    "name": "RHOW",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      RHOW"
+  },
+  {
+    "name": "RHOI",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      RHOI"
+  },
+  {
+    "name": "RHOSN",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      RHOSN"
+  },
+  {
+    "name": "RHOG",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      RHOG"
+  },
+  {
+    "name": "AIMM",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      AIMM"
+  },
+  {
+    "name": "BIMM",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      BIMM"
+  },
+  {
+    "name": "ECR",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      ECR"
+  },
+  {
+    "name": "DCS",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      DCS"
+  },
+  {
+    "name": "MI0",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      MI0"
+  },
+  {
+    "name": "MG0",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      MG0"
+  },
+  {
+    "name": "F1S",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      F1S"
+  },
+  {
+    "name": "F2S",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      F2S"
+  },
+  {
+    "name": "F1R",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      F1R"
+  },
+  {
+    "name": "F2R",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      F2R"
+  },
+  {
+    "name": "G",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      G"
+  },
+  {
+    "name": "QSMALL",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      QSMALL"
+  },
+  {
+    "name": "CI",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      CI,DI,CS,DS,CG,DG"
+  },
+  {
+    "name": "DI",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      CI,DI,CS,DS,CG,DG"
+  },
+  {
+    "name": "CS",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      CI,DI,CS,DS,CG,DG"
+  },
+  {
+    "name": "DS",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      CI,DI,CS,DS,CG,DG"
+  },
+  {
+    "name": "CG",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      CI,DI,CS,DS,CG,DG"
+  },
+  {
+    "name": "DG",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      CI,DI,CS,DS,CG,DG"
+  },
+  {
+    "name": "EII",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      EII"
+  },
+  {
+    "name": "ECI",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      ECI"
+  },
+  {
+    "name": "RIN",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      RIN"
+  },
+  {
+    "name": "TMELT",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      TMELT"
+  },
+  {
+    "name": "CPW",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      CPW"
+  },
+  {
+    "name": "C1",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      C1"
+  },
+  {
+    "name": "K1",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      K1"
+  },
+  {
+    "name": "MW",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      MW"
+  },
+  {
+    "name": "OSM",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      OSM"
+  },
+  {
+    "name": "VI",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      VI"
+  },
+  {
+    "name": "EPSM",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      EPSM"
+  },
+  {
+    "name": "RHOA",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      RHOA"
+  },
+  {
+    "name": "MAP",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      MAP"
+  },
+  {
+    "name": "MA",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      MA"
+  },
+  {
+    "name": "RR",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      RR"
+  },
+  {
+    "name": "BACT",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      BACT"
+  },
+  {
+    "name": "RM1",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      RM1"
+  },
+  {
+    "name": "RM2",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      RM2"
+  },
+  {
+    "name": "NANEW1",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      NANEW1"
+  },
+  {
+    "name": "NANEW2",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      NANEW2"
+  },
+  {
+    "name": "SIG1",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      SIG1"
+  },
+  {
+    "name": "SIG2",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      SIG2"
+  },
+  {
+    "name": "F11",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      F11"
+  },
+  {
+    "name": "F12",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      F12"
+  },
+  {
+    "name": "F21",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      F21"
+  },
+  {
+    "name": "F22",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      F22"
+  },
+  {
+    "name": "MMULT",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      MMULT"
+  },
+  {
+    "name": "LAMMAXI",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      LAMMAXI,LAMMINI,LAMMAXR,LAMMINR,LAMMAXS,LAMMINS,LAMMAXG,LAMMING"
+  },
+  {
+    "name": "LAMMINI",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      LAMMAXI,LAMMINI,LAMMAXR,LAMMINR,LAMMAXS,LAMMINS,LAMMAXG,LAMMING"
+  },
+  {
+    "name": "LAMMAXR",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      LAMMAXI,LAMMINI,LAMMAXR,LAMMINR,LAMMAXS,LAMMINS,LAMMAXG,LAMMING"
+  },
+  {
+    "name": "LAMMINR",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      LAMMAXI,LAMMINI,LAMMAXR,LAMMINR,LAMMAXS,LAMMINS,LAMMAXG,LAMMING"
+  },
+  {
+    "name": "LAMMAXS",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      LAMMAXI,LAMMINI,LAMMAXR,LAMMINR,LAMMAXS,LAMMINS,LAMMAXG,LAMMING"
+  },
+  {
+    "name": "LAMMINS",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      LAMMAXI,LAMMINI,LAMMAXR,LAMMINR,LAMMAXS,LAMMINS,LAMMAXG,LAMMING"
+  },
+  {
+    "name": "LAMMAXG",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      LAMMAXI,LAMMINI,LAMMAXR,LAMMINR,LAMMAXS,LAMMINS,LAMMAXG,LAMMING"
+  },
+  {
+    "name": "LAMMING",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE ::      LAMMAXI,LAMMINI,LAMMAXR,LAMMINR,LAMMAXS,LAMMINS,LAMMAXG,LAMMING"
+  },
+  {
+    "name": "CONS1",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE :: CONS1,CONS2,CONS3,CONS4,CONS5,CONS6,CONS7,CONS8,CONS9,CONS10"
+  },
+  {
+    "name": "CONS2",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE :: CONS1,CONS2,CONS3,CONS4,CONS5,CONS6,CONS7,CONS8,CONS9,CONS10"
+  },
+  {
+    "name": "CONS3",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE :: CONS1,CONS2,CONS3,CONS4,CONS5,CONS6,CONS7,CONS8,CONS9,CONS10"
+  },
+  {
+    "name": "CONS4",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE :: CONS1,CONS2,CONS3,CONS4,CONS5,CONS6,CONS7,CONS8,CONS9,CONS10"
+  },
+  {
+    "name": "CONS5",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE :: CONS1,CONS2,CONS3,CONS4,CONS5,CONS6,CONS7,CONS8,CONS9,CONS10"
+  },
+  {
+    "name": "CONS6",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE :: CONS1,CONS2,CONS3,CONS4,CONS5,CONS6,CONS7,CONS8,CONS9,CONS10"
+  },
+  {
+    "name": "CONS7",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE :: CONS1,CONS2,CONS3,CONS4,CONS5,CONS6,CONS7,CONS8,CONS9,CONS10"
+  },
+  {
+    "name": "CONS8",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE :: CONS1,CONS2,CONS3,CONS4,CONS5,CONS6,CONS7,CONS8,CONS9,CONS10"
+  },
+  {
+    "name": "CONS9",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE :: CONS1,CONS2,CONS3,CONS4,CONS5,CONS6,CONS7,CONS8,CONS9,CONS10"
+  },
+  {
+    "name": "CONS10",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE :: CONS1,CONS2,CONS3,CONS4,CONS5,CONS6,CONS7,CONS8,CONS9,CONS10"
+  },
+  {
+    "name": "CONS11",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE :: CONS11,CONS12,CONS13,CONS14,CONS15,CONS16,CONS17,CONS18,CONS19,CONS20"
+  },
+  {
+    "name": "CONS12",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE :: CONS11,CONS12,CONS13,CONS14,CONS15,CONS16,CONS17,CONS18,CONS19,CONS20"
+  },
+  {
+    "name": "CONS13",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE :: CONS11,CONS12,CONS13,CONS14,CONS15,CONS16,CONS17,CONS18,CONS19,CONS20"
+  },
+  {
+    "name": "CONS14",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE :: CONS11,CONS12,CONS13,CONS14,CONS15,CONS16,CONS17,CONS18,CONS19,CONS20"
+  },
+  {
+    "name": "CONS15",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE :: CONS11,CONS12,CONS13,CONS14,CONS15,CONS16,CONS17,CONS18,CONS19,CONS20"
+  },
+  {
+    "name": "CONS16",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE :: CONS11,CONS12,CONS13,CONS14,CONS15,CONS16,CONS17,CONS18,CONS19,CONS20"
+  },
+  {
+    "name": "CONS17",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE :: CONS11,CONS12,CONS13,CONS14,CONS15,CONS16,CONS17,CONS18,CONS19,CONS20"
+  },
+  {
+    "name": "CONS18",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE :: CONS11,CONS12,CONS13,CONS14,CONS15,CONS16,CONS17,CONS18,CONS19,CONS20"
+  },
+  {
+    "name": "CONS19",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE :: CONS11,CONS12,CONS13,CONS14,CONS15,CONS16,CONS17,CONS18,CONS19,CONS20"
+  },
+  {
+    "name": "CONS20",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE :: CONS11,CONS12,CONS13,CONS14,CONS15,CONS16,CONS17,CONS18,CONS19,CONS20"
+  },
+  {
+    "name": "CONS21",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE :: CONS21,CONS22,CONS23,CONS24,CONS25,CONS26,CONS27,CONS28,CONS29,CONS30"
+  },
+  {
+    "name": "CONS22",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE :: CONS21,CONS22,CONS23,CONS24,CONS25,CONS26,CONS27,CONS28,CONS29,CONS30"
+  },
+  {
+    "name": "CONS23",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE :: CONS21,CONS22,CONS23,CONS24,CONS25,CONS26,CONS27,CONS28,CONS29,CONS30"
+  },
+  {
+    "name": "CONS24",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE :: CONS21,CONS22,CONS23,CONS24,CONS25,CONS26,CONS27,CONS28,CONS29,CONS30"
+  },
+  {
+    "name": "CONS25",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE :: CONS21,CONS22,CONS23,CONS24,CONS25,CONS26,CONS27,CONS28,CONS29,CONS30"
+  },
+  {
+    "name": "CONS26",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE :: CONS21,CONS22,CONS23,CONS24,CONS25,CONS26,CONS27,CONS28,CONS29,CONS30"
+  },
+  {
+    "name": "CONS27",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE :: CONS21,CONS22,CONS23,CONS24,CONS25,CONS26,CONS27,CONS28,CONS29,CONS30"
+  },
+  {
+    "name": "CONS28",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE :: CONS21,CONS22,CONS23,CONS24,CONS25,CONS26,CONS27,CONS28,CONS29,CONS30"
+  },
+  {
+    "name": "CONS29",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE :: CONS21,CONS22,CONS23,CONS24,CONS25,CONS26,CONS27,CONS28,CONS29,CONS30"
+  },
+  {
+    "name": "CONS30",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE :: CONS21,CONS22,CONS23,CONS24,CONS25,CONS26,CONS27,CONS28,CONS29,CONS30"
+  },
+  {
+    "name": "CONS31",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE :: CONS31,CONS32,CONS33,CONS34,CONS35,CONS36,CONS37,CONS38,CONS39,CONS40"
+  },
+  {
+    "name": "CONS32",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE :: CONS31,CONS32,CONS33,CONS34,CONS35,CONS36,CONS37,CONS38,CONS39,CONS40"
+  },
+  {
+    "name": "CONS33",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE :: CONS31,CONS32,CONS33,CONS34,CONS35,CONS36,CONS37,CONS38,CONS39,CONS40"
+  },
+  {
+    "name": "CONS34",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE :: CONS31,CONS32,CONS33,CONS34,CONS35,CONS36,CONS37,CONS38,CONS39,CONS40"
+  },
+  {
+    "name": "CONS35",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE :: CONS31,CONS32,CONS33,CONS34,CONS35,CONS36,CONS37,CONS38,CONS39,CONS40"
+  },
+  {
+    "name": "CONS36",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE :: CONS31,CONS32,CONS33,CONS34,CONS35,CONS36,CONS37,CONS38,CONS39,CONS40"
+  },
+  {
+    "name": "CONS37",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE :: CONS31,CONS32,CONS33,CONS34,CONS35,CONS36,CONS37,CONS38,CONS39,CONS40"
+  },
+  {
+    "name": "CONS38",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE :: CONS31,CONS32,CONS33,CONS34,CONS35,CONS36,CONS37,CONS38,CONS39,CONS40"
+  },
+  {
+    "name": "CONS39",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE :: CONS31,CONS32,CONS33,CONS34,CONS35,CONS36,CONS37,CONS38,CONS39,CONS40"
+  },
+  {
+    "name": "CONS40",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE :: CONS31,CONS32,CONS33,CONS34,CONS35,CONS36,CONS37,CONS38,CONS39,CONS40"
+  },
+  {
+    "name": "CONS41",
+    "type": "float",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE :: CONS41"
+  },
+  {
+    "name": "dnu",
+    "type": "float",
+    "dims": [
+      "16"
+    ],
+    "parameter": false,
+    "value": null,
+    "native": "REAL, PRIVATE :: dnu(16)"
+  },
+  {
+    "name": "nbins",
+    "type": "int",
+    "dims": [],
+    "parameter": true,
+    "value": "100",
+    "native": "INTEGER, PARAMETER, PRIVATE:: nbins = 100"
+  },
+  {
+    "name": "nbr",
+    "type": "int",
+    "dims": [],
+    "parameter": true,
+    "value": "nbins",
+    "native": "INTEGER, PARAMETER, PRIVATE:: nbr = nbins"
+  },
+  {
+    "name": "nbs",
+    "type": "int",
+    "dims": [],
+    "parameter": true,
+    "value": "nbins",
+    "native": "INTEGER, PARAMETER, PRIVATE:: nbs = nbins"
+  },
+  {
+    "name": "nbg",
+    "type": "int",
+    "dims": [],
+    "parameter": true,
+    "value": "nbins",
+    "native": "INTEGER, PARAMETER, PRIVATE:: nbg = nbins"
+  },
+  {
+    "name": "ddx",
+    "type": "double",
+    "dims": [
+      "nbins+1"
+    ],
+    "parameter": false,
+    "value": null,
+    "native": "REAL(8), DIMENSION(nbins+1):: ddx"
+  },
+  {
+    "name": "Dr",
+    "type": "double",
+    "dims": [
+      "nbr"
+    ],
+    "parameter": false,
+    "value": null,
+    "native": "REAL(8), DIMENSION(nbr):: Dr, dtr"
+  },
+  {
+    "name": "dtr",
+    "type": "double",
+    "dims": [
+      "nbr"
+    ],
+    "parameter": false,
+    "value": null,
+    "native": "REAL(8), DIMENSION(nbr):: Dr, dtr"
+  },
+  {
+    "name": "Dds",
+    "type": "double",
+    "dims": [
+      "nbs"
+    ],
+    "parameter": false,
+    "value": null,
+    "native": "REAL(8), DIMENSION(nbs):: Dds, dts"
+  },
+  {
+    "name": "dts",
+    "type": "double",
+    "dims": [
+      "nbs"
+    ],
+    "parameter": false,
+    "value": null,
+    "native": "REAL(8), DIMENSION(nbs):: Dds, dts"
+  },
+  {
+    "name": "Ddg",
+    "type": "double",
+    "dims": [
+      "nbg"
+    ],
+    "parameter": false,
+    "value": null,
+    "native": "REAL(8), DIMENSION(nbg):: Ddg, dtg"
+  },
+  {
+    "name": "dtg",
+    "type": "double",
+    "dims": [
+      "nbg"
+    ],
+    "parameter": false,
+    "value": null,
+    "native": "REAL(8), DIMENSION(nbg):: Ddg, dtg"
+  },
+  {
+    "name": "lamda_radar",
+    "type": "double",
+    "dims": [],
+    "parameter": true,
+    "value": "0.10",
+    "native": "REAL(8), PARAMETER, PRIVATE:: lamda_radar = 0.10"
+  },
+  {
+    "name": "K_w",
+    "type": "double",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL(8), PRIVATE:: K_w, PI5, lamda4"
+  },
+  {
+    "name": "PI5",
+    "type": "double",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL(8), PRIVATE:: K_w, PI5, lamda4"
+  },
+  {
+    "name": "lamda4",
+    "type": "double",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "REAL(8), PRIVATE:: K_w, PI5, lamda4"
+  },
+  {
+    "name": "m_w_0",
+    "type": "std::complex<double>",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "COMPLEX*16, PRIVATE:: m_w_0, m_i_0"
+  },
+  {
+    "name": "m_i_0",
+    "type": "std::complex<double>",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "COMPLEX*16, PRIVATE:: m_w_0, m_i_0"
+  },
+  {
+    "name": "simpson",
+    "type": "double",
+    "dims": [
+      "nbins+1"
+    ],
+    "parameter": false,
+    "value": null,
+    "native": "REAL(8), DIMENSION(nbins+1), PRIVATE:: simpson"
+  },
+  {
+    "name": "basis",
+    "type": "double",
+    "dims": [
+      "3"
+    ],
+    "parameter": true,
+    "value": "(/1.d0/3.d0, 4.d0/3.d0, 1.d0/3.d0/)",
+    "native": "REAL(8), DIMENSION(3), PARAMETER, PRIVATE:: basis = (/1.d0/3.d0, 4.d0/3.d0, 1.d0/3.d0/)"
+  },
+  {
+    "name": "slen",
+    "type": "int",
+    "dims": [],
+    "parameter": true,
+    "value": "20",
+    "native": "INTEGER, PARAMETER, PRIVATE:: slen = 20"
+  },
+  {
+    "name": "mixingrulestring_s",
+    "type": "std::string",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "CHARACTER(len=slen), PRIVATE:: mixingrulestring_s, matrixstring_s, inclusionstring_s, hoststring_s, hostmatrixstring_s, hostinclusionstring_s, mixingrulestring_g, matrixstring_g, inclusionstring_g, hoststring_g, hostmatrixstring_g, hostinclusionstring_g"
+  },
+  {
+    "name": "matrixstring_s",
+    "type": "std::string",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "CHARACTER(len=slen), PRIVATE:: mixingrulestring_s, matrixstring_s, inclusionstring_s, hoststring_s, hostmatrixstring_s, hostinclusionstring_s, mixingrulestring_g, matrixstring_g, inclusionstring_g, hoststring_g, hostmatrixstring_g, hostinclusionstring_g"
+  },
+  {
+    "name": "inclusionstring_s",
+    "type": "std::string",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "CHARACTER(len=slen), PRIVATE:: mixingrulestring_s, matrixstring_s, inclusionstring_s, hoststring_s, hostmatrixstring_s, hostinclusionstring_s, mixingrulestring_g, matrixstring_g, inclusionstring_g, hoststring_g, hostmatrixstring_g, hostinclusionstring_g"
+  },
+  {
+    "name": "hoststring_s",
+    "type": "std::string",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "CHARACTER(len=slen), PRIVATE:: mixingrulestring_s, matrixstring_s, inclusionstring_s, hoststring_s, hostmatrixstring_s, hostinclusionstring_s, mixingrulestring_g, matrixstring_g, inclusionstring_g, hoststring_g, hostmatrixstring_g, hostinclusionstring_g"
+  },
+  {
+    "name": "hostmatrixstring_s",
+    "type": "std::string",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "CHARACTER(len=slen), PRIVATE:: mixingrulestring_s, matrixstring_s, inclusionstring_s, hoststring_s, hostmatrixstring_s, hostinclusionstring_s, mixingrulestring_g, matrixstring_g, inclusionstring_g, hoststring_g, hostmatrixstring_g, hostinclusionstring_g"
+  },
+  {
+    "name": "hostinclusionstring_s",
+    "type": "std::string",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "CHARACTER(len=slen), PRIVATE:: mixingrulestring_s, matrixstring_s, inclusionstring_s, hoststring_s, hostmatrixstring_s, hostinclusionstring_s, mixingrulestring_g, matrixstring_g, inclusionstring_g, hoststring_g, hostmatrixstring_g, hostinclusionstring_g"
+  },
+  {
+    "name": "mixingrulestring_g",
+    "type": "std::string",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "CHARACTER(len=slen), PRIVATE:: mixingrulestring_s, matrixstring_s, inclusionstring_s, hoststring_s, hostmatrixstring_s, hostinclusionstring_s, mixingrulestring_g, matrixstring_g, inclusionstring_g, hoststring_g, hostmatrixstring_g, hostinclusionstring_g"
+  },
+  {
+    "name": "matrixstring_g",
+    "type": "std::string",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "CHARACTER(len=slen), PRIVATE:: mixingrulestring_s, matrixstring_s, inclusionstring_s, hoststring_s, hostmatrixstring_s, hostinclusionstring_s, mixingrulestring_g, matrixstring_g, inclusionstring_g, hoststring_g, hostmatrixstring_g, hostinclusionstring_g"
+  },
+  {
+    "name": "inclusionstring_g",
+    "type": "std::string",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "CHARACTER(len=slen), PRIVATE:: mixingrulestring_s, matrixstring_s, inclusionstring_s, hoststring_s, hostmatrixstring_s, hostinclusionstring_s, mixingrulestring_g, matrixstring_g, inclusionstring_g, hoststring_g, hostmatrixstring_g, hostinclusionstring_g"
+  },
+  {
+    "name": "hoststring_g",
+    "type": "std::string",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "CHARACTER(len=slen), PRIVATE:: mixingrulestring_s, matrixstring_s, inclusionstring_s, hoststring_s, hostmatrixstring_s, hostinclusionstring_s, mixingrulestring_g, matrixstring_g, inclusionstring_g, hoststring_g, hostmatrixstring_g, hostinclusionstring_g"
+  },
+  {
+    "name": "hostmatrixstring_g",
+    "type": "std::string",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "CHARACTER(len=slen), PRIVATE:: mixingrulestring_s, matrixstring_s, inclusionstring_s, hoststring_s, hostmatrixstring_s, hostinclusionstring_s, mixingrulestring_g, matrixstring_g, inclusionstring_g, hoststring_g, hostmatrixstring_g, hostinclusionstring_g"
+  },
+  {
+    "name": "hostinclusionstring_g",
+    "type": "std::string",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "CHARACTER(len=slen), PRIVATE:: mixingrulestring_s, matrixstring_s, inclusionstring_s, hoststring_s, hostmatrixstring_s, hostinclusionstring_s, mixingrulestring_g, matrixstring_g, inclusionstring_g, hoststring_g, hostmatrixstring_g, hostinclusionstring_g"
+  },
+  {
+    "name": "D0r",
+    "type": "float",
+    "dims": [],
+    "parameter": true,
+    "value": "50.E-6",
+    "native": "REAL, PARAMETER, PRIVATE:: D0r = 50.E-6"
+  },
+  {
+    "name": "D0s",
+    "type": "float",
+    "dims": [],
+    "parameter": true,
+    "value": "100.E-6",
+    "native": "REAL, PARAMETER, PRIVATE:: D0s = 100.E-6"
+  },
+  {
+    "name": "D0g",
+    "type": "float",
+    "dims": [],
+    "parameter": true,
+    "value": "100.E-6",
+    "native": "REAL, PARAMETER, PRIVATE:: D0g = 100.E-6"
+  },
+  {
+    "name": "mp_debug",
+    "type": "std::string",
+    "dims": [],
+    "parameter": false,
+    "value": null,
+    "native": "CHARACTER*256:: mp_debug"
+  },
+  {
+    "name": "cloud_frac_thresh",
+    "type": "float",
+    "dims": [],
+    "parameter": true,
+    "value": "0.005",
+    "native": "REAL, PARAMETER, PUBLIC :: cloud_frac_thresh = 0.005"
+  }
+]

@@ -1,0 +1,146 @@
+{
+  "canonical_source": "src/CLUBB_core/advance_wp2_wp3_module.F90",
+  "canonical_sha256": "f58b3d0bc610faa8b9612d2a84f8afcd54c28a89e0911312fb8a75d3deb50c23",
+  "target": "clubb_kokkos/drafts/advance_wp2_wp3_module/advance_wp2_wp3_module.cpp",
+  "target_sha256": "159bb61dadfd6d087cd5a2c73b1b326136705f4ccedefe1011ffb1079653b371",
+  "routines": [
+    {
+      "name": "advance_wp2_wp3",
+      "arguments": 68,
+      "review": "Manual full parent/solver/RHS staging, call/field/error/stats review; adapters tracked separately"
+    },
+    {
+      "name": "wp23_solve",
+      "arguments": 46,
+      "review": "Manual full parent/solver/RHS staging, call/field/error/stats review; adapters tracked separately"
+    },
+    {
+      "name": "wp23_lhs",
+      "arguments": 19,
+      "ordered_science_assignment_trees": 35,
+      "ordered_branch_predicates": 5
+    },
+    {
+      "name": "wp23_rhs",
+      "arguments": 50,
+      "review": "Manual full parent/solver/RHS staging, call/field/error/stats review; adapters tracked separately"
+    },
+    {
+      "name": "wp2_term_ta_lhs",
+      "arguments": 7,
+      "ordered_science_assignment_trees": 4,
+      "ordered_branch_predicates": 0
+    },
+    {
+      "name": "wp2_terms_ac_pr2_lhs",
+      "arguments": 7,
+      "ordered_science_assignment_trees": 3,
+      "ordered_branch_predicates": 0
+    },
+    {
+      "name": "wp2_term_dp1_lhs",
+      "arguments": 6,
+      "ordered_science_assignment_trees": 3,
+      "ordered_branch_predicates": 0
+    },
+    {
+      "name": "wp2_term_pr1_lhs",
+      "arguments": 6,
+      "ordered_science_assignment_trees": 3,
+      "ordered_branch_predicates": 0
+    },
+    {
+      "name": "wp2_terms_bp_pr2_rhs",
+      "arguments": 7,
+      "ordered_science_assignment_trees": 3,
+      "ordered_branch_predicates": 0
+    },
+    {
+      "name": "wp2_term_dp1_rhs",
+      "arguments": 10,
+      "ordered_science_assignment_trees": 4,
+      "ordered_branch_predicates": 1
+    },
+    {
+      "name": "wp2_term_pr3_rhs",
+      "arguments": 13,
+      "ordered_science_assignment_trees": 4,
+      "ordered_branch_predicates": 0
+    },
+    {
+      "name": "wp2_term_pr1_rhs",
+      "arguments": 8,
+      "ordered_science_assignment_trees": 3,
+      "ordered_branch_predicates": 0
+    },
+    {
+      "name": "wp2_term_pr_dfsn_rhs",
+      "arguments": 11,
+      "ordered_science_assignment_trees": 4,
+      "ordered_branch_predicates": 0
+    },
+    {
+      "name": "wp3_term_ta_new_pdf_lhs",
+      "arguments": 9,
+      "ordered_science_assignment_trees": 4,
+      "ordered_branch_predicates": 0
+    },
+    {
+      "name": "wp3_term_ta_ADG1_lhs",
+      "arguments": 16,
+      "ordered_science_assignment_trees": 17,
+      "ordered_branch_predicates": 2
+    },
+    {
+      "name": "wp3_term_tp_lhs",
+      "arguments": 9,
+      "ordered_science_assignment_trees": 4,
+      "ordered_branch_predicates": 0
+    },
+    {
+      "name": "wp3_terms_ac_pr2_lhs",
+      "arguments": 7,
+      "ordered_science_assignment_trees": 3,
+      "ordered_branch_predicates": 0
+    },
+    {
+      "name": "wp3_term_pr1_lhs",
+      "arguments": 9,
+      "ordered_science_assignment_trees": 4,
+      "ordered_branch_predicates": 1
+    },
+    {
+      "name": "wp3_term_ta_explicit_rhs",
+      "arguments": 8,
+      "ordered_science_assignment_trees": 3,
+      "ordered_branch_predicates": 0
+    },
+    {
+      "name": "wp3_terms_bp1_pr2_rhs",
+      "arguments": 7,
+      "ordered_science_assignment_trees": 3,
+      "ordered_branch_predicates": 0
+    },
+    {
+      "name": "wp3_term_pr_turb_rhs",
+      "arguments": 18,
+      "ordered_science_assignment_trees": 4,
+      "ordered_branch_predicates": 1
+    },
+    {
+      "name": "wp3_term_pr_dfsn_rhs",
+      "arguments": 14,
+      "ordered_science_assignment_trees": 5,
+      "ordered_branch_predicates": 0
+    },
+    {
+      "name": "wp3_term_pr1_rhs",
+      "arguments": 10,
+      "ordered_science_assignment_trees": 4,
+      "ordered_branch_predicates": 1
+    }
+  ],
+  "kernels_without_owning_udt_or_f2k_capture": 171,
+  "kernel_local_first_use_and_exact_internal_symbol_case_checked": true,
+  "status": "Source audit only. Compilation and maintained CPU-vs-CPU model comparison pending."
+}

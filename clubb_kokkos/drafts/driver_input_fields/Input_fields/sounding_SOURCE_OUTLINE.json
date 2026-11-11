@@ -1,0 +1,56 @@
+{
+  "Native_source": "src/Input_fields/sounding.F90",
+  "full_Native_read_lines": 1205,
+  "full_actual_JAX_read_lines": 457,
+  "routines_in_source_order": [
+    "read_sounding",
+    "read_sounding_file",
+    "read_sclr_sounding_file",
+    "read_edsclr_sounding_file",
+    "read_profile",
+    "convert_snd2extended_atm",
+    "load_extended_std_atm"
+  ],
+  "public": [
+    "read_sounding",
+    "read_profile"
+  ],
+  "case_state_boundary": "Retain27Native read_sounding arguments then constparameters_radiation_state&,extended_atmosphere_state&,readiopdata_state&; only actualNative module globals become explicitcase contexts. Privateextendedhelpers receive onlyextendedstate; allordinaryhelpers stateless.",
+  "main_order": [
+    "defaults/checkfiles/debugpaths",
+    "IOP sounding or SAM-like read with blankfill/interpretation",
+    "optional passive+eddy files,Native10000x1000zerostorage",
+    "nlevels/bottom-heightchecks,disablednear-groundcheck",
+    "baseline first-value/modelscalarfirstlevelinitialization",
+    "complete inputprofiledebugdump",
+    "percolumn/perlevel ascendingbracketwhile with optionalcubic and DYCOMSspeciallinearphysics INSIDE sourcewhile",
+    "surfacevalues linearinterp ornegativeunset",
+    "BUGSrad-onlyextendedpreparationhelpers preserved althoughengineexcluded",
+    "allprofilecleanup"
+  ],
+  "helper_orders": [
+    "read_sounding_file:read1,fill1,zinterpret,thetainterpret,rt/u/v/ug/vg lookup,subsinterpret,nlevels",
+    "scalarfiles:read1,exactNativecolumn-indexvalidation,prefixcopy; blankfilling intentionallynotcalled",
+    "read_profile:purelocalprofileNamelistI/O,checks,firstcollinearinterpolationinsidewhile",
+    "convert_extended:dimension/allocate,zinterpret/unsupportedheightfatal,pressuremb,thetainterpret/exner/T,specifichumidity,ozoneread,cleanup",
+    "load_std:fixed50levels/5columns,readfile,allocate/fivefieldlookups,cleanup"
+  ],
+  "source_semantics_not_repaired": [
+    "Maininterpolationassignments are inside every bracket-advance iteration, notaftersearch; k_above1branchremains asSource",
+    "DYCOMS main scalar/eddy writesuse iisclr indices exactly asNative, notiiedsclr",
+    "Genericread_profile leaves exactlowestpoint outputunwritten whenwhilefalse",
+    "read_sounding heightcheck usesfirstcolumn/storagethermodynamicindex1, notphysicalboundarymetadata",
+    "scalarinputprefixes zero-pad onlybecauseparentexplicitlyzeros fullbuffers; no artificialmissingvaluefill",
+    "Nativeambiguousheader behavior stays in interpreter",
+    "IOP branch remains supported evenwhereJAXdriveromits; entireIOP4+core1519port nowassigned"
+  ],
+  "dependencies": [
+    "existingCppinterpolation/grid/arrayIndex/constants",
+    "stagedreader/interpreter",
+    "stagedRadiationconfig+extendedstate",
+    "stagedIOPstate+futureactualCppsnd",
+    "sharedNative debugservice only",
+    "newpureprofileNamelistprimitiveI/Oservice"
+  ],
+  "runtime_status": "UNCOMPILED/UNTESTED; source outline beforeimplementation; RootownsCPUwholemodelBFB"
+}

@@ -1,0 +1,9 @@
+{
+  "status": "Source reviewed and promoted; this folder holds historical review records only. Live model acceptance is recorded in DRIVER_CONVERSION_PLAN.md.",
+  "live_sources": {
+    "clubb_kokkos/src/CLUBB_core/stats_netcdf.hpp": "f84addefda5ee9413df8baf6939b36fe3eaa9587f8a59a9ea8a1c924568678eb",
+    "clubb_kokkos/src/CLUBB_core/stats_netcdf.cpp": "684f192efa158653498a8da60bcf521ed6e1fe8a81b95b88d8b5e7a57e6fdbb0"
+  },
+  "draft_archive": "build/validation/stats_cpp/promoted_draft/stats_netcdf",
+  "runtime_owner": "clubb_kokkos/src/CLUBB_core/"
+}

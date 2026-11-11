@@ -1,0 +1,18 @@
+{
+  "scope": "Separate final source/format/ownership cleanup",
+  "target_sha256": "9defa567eaf44a5a1b3b29f5281f3b38baf32c386ebc0d2c92c9638b1a2c8938",
+  "checks": [
+    "All10 active Native definitions in order,40required args and7public routines; four wholly commented-out routines explicitly excluded.",
+    "18scientific assignment trees plus4scalarized reversed-slice assignments match; all9ordered Native call/argument trees checked. Native MATMUL/array-copy mappings reviewed separately.",
+    "Two product recurrences retain ascending Native loop order within each output entry.14independent kernels use local Views/scalars; no host API, nested launch, owning UDT or global state in captures.",
+    "Source one-based iiPDF_w, physical matrix slots, zero/one stages, scalar core-kind literal association and ordinary square roots/clamps retained.",
+    "Exact Native array-assignment/saved-column ownership and ordered swap stages checked; no full-permutation substitute.",
+    "Native assertion check/stop-string/threshold order retained through fatal exceptions, without JAX boolean-only diagnostics.",
+    "Supportedfalse path and explicittrue API guard documented with actual Native undefined read/upstream driver gate locations; no invented initialization.",
+    "Four existing-owner array adapters retain caller sections/allocations; all functions enclosing extended lambdas have explicit void returns.",
+    "Full scientific descriptions/citations/disabled formulas and actual argument intents/units retained; misleading Native upper/lower wording clarified.",
+    "100columns, whitespace, named private namespace, public inventory/case and no speculative BFB workaround checked."
+  ],
+  "remaining_dependencies": "Existing host debug-level API only; no new lower science contract/type/constant.",
+  "runtime_status": "Uncompiled/untested; MATMUL compiler arithmetic and allmodelbranches remain pending."
+}

@@ -10,15 +10,13 @@ storage, which can corrupt the heap and crash a later, unrelated check.
 
 import numpy as np
 
-# Import the JAX modules first: stats_netcdf imports netCDF4, which segfaults if
-# it loads after clubb_python has loaded the system NetCDF-C library globally.
-from clubb_jax.src.CLUBB_core.grid_class import setup_grid as jax_setup_grid
-from clubb_jax.src.CLUBB_core.stats_netcdf import JaxStats
-
 from clubb_python.CLUBB_core.err_info_type_module import init_err_info
 from clubb_python.CLUBB_core.grid_class import setup_grid as fortran_setup_grid
 from clubb_python.CLUBB_core.model_flags import get_default_config_flags, init_config_flags
 from clubb_python.derived_types.err_info import ErrInfo
+
+from clubb_jax.src.CLUBB_core.grid_class import setup_grid as jax_setup_grid
+from clubb_jax.src.CLUBB_core.jax_stats import JaxStats
 
 
 def init_fortran_state(ngrdcol):

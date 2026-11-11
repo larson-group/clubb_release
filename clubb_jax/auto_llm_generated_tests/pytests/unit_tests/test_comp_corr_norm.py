@@ -9,8 +9,6 @@ PDF correlation arrays from the component_corr_* routines + calc_corr_w_hm_n. Or
   3. A finite jax.grad through the assembled array.
 """
 
-from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
-
 
 import numpy as np
 import jax
@@ -56,7 +54,7 @@ def _inputs(seed):
 
 
 def _call(inp, iiPDF_type, l_calc_w_corr, l_fix):
-    return call_jax(comp_corr_norm, iiPDF_type=iiPDF_type, l_calc_w_corr=l_calc_w_corr,
+    return comp_corr_norm(iiPDF_type=iiPDF_type, l_calc_w_corr=l_calc_w_corr,
                           l_fix_w_chi_eta_correlations=l_fix, **inp)
 
 
@@ -80,12 +78,12 @@ def test_assembly_rules():
     rc_1, rc_2 = inp['rc_1'], inp['rc_2']
 
     # (eta, chi): component_corr_chi_eta with l_limit=True
-    e1, e2 = call_jax(component_corr_chi_eta, rc_1, rc_2, cc[ETA, CHI], cb[ETA, CHI], True)
+    e1, e2 = component_corr_chi_eta(rc_1, rc_2, cc[ETA, CHI], cb[ETA, CHI], True)
     assert np.max(np.abs(A1[:, :, ETA, CHI] - np.asarray(e1))) < 1e-14
     assert np.max(np.abs(A2[:, :, ETA, CHI] - np.asarray(e2))) < 1e-14
 
     # (w, chi): component_corr_w_x (non-ADG -> cloud/below)
-    w1, w2 = call_jax(component_corr_w_x, rc_1, rc_2, cc[W, CHI], cb[W, CHI], 6, True)
+    w1, w2 = component_corr_w_x(rc_1, rc_2, cc[W, CHI], cb[W, CHI], 6, True)
     assert np.max(np.abs(A1[:, :, W, CHI] - np.asarray(w1))) < 1e-14
     assert np.max(np.abs(A2[:, :, W, CHI] - np.asarray(w2))) < 1e-14
 
@@ -104,7 +102,7 @@ def test_assembly_rules():
         inp['mu_x_1'][:, :, NCN], inp['mu_x_2'][:, :, NCN], inp['sigma_x_1'][:, :, W], inp['sigma_x_2'][:, :, W],
         inp['sigma_x_1'][:, :, NCN], inp['sigma_x_2'][:, :, NCN], inp['sigma_x_1_n'][:, :, NCN],
         inp['sigma_x_2_n'][:, :, NCN], inp['mixt_frac'], np.ones((NG, NZT)), np.ones((NG, NZT)), NCN_TOL)
-    p1, p2 = call_jax(component_corr_w_hm_n_ip, cwn1, rc_1, cwn2, rc_2, cc[NCN, W], cb[NCN, W], True)
+    p1, p2 = component_corr_w_hm_n_ip(cwn1, rc_1, cwn2, rc_2, cc[NCN, W], cb[NCN, W], True)
     assert np.max(np.abs(A1[:, :, NCN, W] - np.asarray(p1))) < 1e-13, "(Ncn,w) mismatch"
     assert np.max(np.abs(A2[:, :, NCN, W] - np.asarray(p2))) < 1e-13
     print("  assembly rules: chi_eta / w_x / Ncn-chi-twice / eta_hm product / w_hm from calc_corr_w_hm_n  PASS")

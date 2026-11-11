@@ -20,7 +20,7 @@ import sys
 
 from clubb_jax.view_profile import print_profile_commands
 
-from clubb_jax.src.clubb_case_initialization import (
+from clubb_jax.src.clubb_case_initalization import (
     init_clubb_case,
     set_case_initial_conditions,
     clean_up_clubb,

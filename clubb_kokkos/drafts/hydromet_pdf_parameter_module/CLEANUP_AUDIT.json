@@ -1,0 +1,72 @@
+{
+  "review": "Separate owner cleanup after full Native/JAX reads, outline, implementation and source contract/field/order review. Independent review, compilation and runtime evidence remain pending.",
+  "formatting_pass": {
+    "hydromet_pdf_parameter_module.cpp": {
+      "before_sha256": "b7afb8e3da27e73747f575ec7941ace9e3fa07fe3105bdee63d33776dd6c6d52",
+      "after_format_sha256": "3db1635a5c20e4d548e212d47626f58ec1dd843bf75c14f0270f42ea9091bda6",
+      "signature_groups_restored": 3,
+      "ordinary_calls_formatted": 1,
+      "argument_comments_corrected": 5,
+      "executable_tokens_unchanged": true,
+      "token_count": 1215
+    },
+    "procedure_declarations.hpp.inc": {
+      "before_sha256": "206c07f6de26e9ac7a6c1995e7d139b2d31749d6c0103712aa3c1f39ceb01a72",
+      "after_format_sha256": "b5b4cf6063a3f9b2dd70b9a3c90304f531300a1d33a1a4cf0bb5d95a12ad66fd",
+      "signature_groups_restored": 4,
+      "ordinary_calls_formatted": 0,
+      "argument_comments_corrected": 0,
+      "executable_tokens_unchanged": true,
+      "token_count": 46
+    }
+  },
+  "final_files": {
+    "hydromet_pdf_parameter_module.cpp": {
+      "sha256": "a13a7b739b1deb1fb00dcb4e20fba4962cf2951918f61df7a4ff58efb735e87d",
+      "lines": 228,
+      "max_columns": 96
+    },
+    "procedure_declarations.hpp.inc": {
+      "sha256": "6e6f53022400bae55504b5bdcceba337fac7337621c8492e4fc585a78040292b",
+      "lines": 18,
+      "max_columns": 77
+    },
+    "procedure_includes.hpp.inc": {
+      "sha256": "abf7176198fc96357c6140aa84dba335abe81b2cf426c6b830a57627a7b296bd",
+      "lines": 4,
+      "max_columns": 72
+    }
+  },
+  "subsequent_executable_cleanup": [
+    {
+      "kind": "Remove unused standard-library includes only",
+      "removed": [
+        "#include <iomanip>",
+        "#include <iostream>",
+        "#include <limits>",
+        "#include <optional>",
+        "#include <sstream>"
+      ]
+    }
+  ],
+  "reviewed": [
+    "Native source inventory, signatures, ordered component operations and optional branches",
+    "Native continuation groups and precise In/Out/InOut/Optional In comments in core interfaces and calls",
+    "Factual argument notes/units, purpose-first file headers, Native formatting/allocation restrictions",
+    "Per-case ownership; individual View captures; no owning UDT/device bridge/global mutable state",
+    "100 columns, two-space indentation, no tabs/trailing whitespace; no deliberate FMA/association adaptation"
+  ],
+  "numerical_status": "No builds/tests. All initialization/reset/packing/printer/error branches await group integration and CPU zero-tolerance comparison. No BFB claim.",
+  "final_token_proof": {
+    "hydromet_pdf_parameter_module.cpp": {
+      "tokens": 1190,
+      "final_sha256": "a13a7b739b1deb1fb00dcb4e20fba4962cf2951918f61df7a4ff58efb735e87d",
+      "equality_after_listed_unused_include_removal": true
+    },
+    "procedure_declarations.hpp.inc": {
+      "tokens": 46,
+      "final_sha256": "6e6f53022400bae55504b5bdcceba337fac7337621c8492e4fc585a78040292b",
+      "equality_after_listed_unused_include_removal": true
+    }
+  }
+}

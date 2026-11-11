@@ -8,11 +8,12 @@ Porting deviations:
 - OpenACC host/device synchronization comments are omitted because JAX handles
   device placement through array tracing rather than explicit ``!$acc update``
   directives.
+- Small per-column stats reductions remain Python loops over static grid
+  columns; field math is expressed with JAX arrays.
 """
 
 from __future__ import annotations
 
-import jax
 import jax.numpy as jnp
 
 from clubb_jax.src.CLUBB_core.T_in_K_module import thlm2T_in_K
@@ -33,7 +34,17 @@ from clubb_jax.src.CLUBB_core.grid_class import zt2zm
 from clubb_jax.src.CLUBB_core.saturation import sat_mixrat_ice
 
 
-from clubb_jax.src.CLUBB_core.numerical_check import calculate_spurious_source
+def _calculate_spurious_source(
+    integral_after,
+    integral_before,
+    flux_top,
+    flux_sfc,
+    integral_forcing,
+    dt,
+):
+    """JAX equivalent of ``calculate_spurious_source`` from numerical_check."""
+    spurious_source = (integral_after - integral_before) / dt + flux_top - flux_sfc - integral_forcing
+    return spurious_source
 
 
 def stats_accumulate(
@@ -104,340 +115,323 @@ def stats_accumulate(
     saturation_formula,
     stats,
 ):
-    """Accumulate model fields and column diagnostics, including batched
-    vertical averages, water paths and eligible spurious-source estimates.
-
-    Returns:
-        stats
-
-    Fortran declarations (stats_accumulate in src/CLUBB_core/stats_clubb_utilities.F90):
-
-        !--------------------------- Input Variables ---------------------------
-        integer, intent(in) :: &
-          nzm, nzt, ngrdcol, sclr_dim, edsclr_dim
-
-        type(grid), intent(in) :: &
-          gr
-
-        real( kind = core_rknd ), intent(in) :: &
-          dt
-
-        logical, intent(in) :: &
-          l_implemented, &
-          l_host_applies_sfc_fluxes, &
-          l_stability_correct_tau_zm
-
-        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nparams) :: &
-          clubb_params
-
-        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
-          um, vm, thlm, rtm, thlm_before, rtm_before, thlm_forcing, rtm_forcing, &
-          wp3, rtp3, thlp3
-
-        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: &
-          upwp, vpwp, up2, vp2, wprtp, wpthlp, wp2, rtp2, thlp2, rtpthlp
-
-        real( kind = core_rknd ), intent(in), dimension(ngrdcol) :: &
-          wpthlp_sfc, &
-          wprtp_sfc
-
-        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
-          p_in_Pa, exner, rho, rho_ds_zt, thv_ds_zt, wm_zt
-
-        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: &
-          rho_zm, rho_ds_zm, thv_ds_zm, wm_zm
-
-        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
-          rcm, cloud_frac
-
-        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
-          thvm, ug, vg, Kh_zt, rsat
-
-        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: &
-          ddzt_umvm_sqd, stability_correction, Kh_zm, em
-
-        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt,sclr_dim) :: &
-          sclrm, sclrm_forcing
-
-        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm,sclr_dim) :: &
-          sclrp2, sclrprtp, sclrpthlp, wpsclrp
-
-        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt,edsclr_dim) :: &
-          edsclrm, edsclrm_forcing
-
-        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm,edsclr_dim) :: &
-          wpedsclrp
-
-        integer, intent(in) :: &
-          saturation_formula
-
-        !--------------------------- Input/Output Variables ---------------------------
-        type(stats_type), intent(inout) :: &
-          stats
-    """
+    """Accumulate per-timestep CLUBB statistics into ``JaxStats`` banks."""
     # ---- Begin Code ----
 
     # Sample fields
-    def accumulate_stats(stats):
-        """Collect diagnostics only on sampled timesteps."""
-        dzm = gr.grid_dir * gr.dzm
-        dzt = gr.grid_dir * gr.dzt
-
-        wp3_on_wp2, wp3_on_wp2_zt = calc_wp3_on_wp2(
-            nzm, nzt, ngrdcol, gr, wp2, wp3,
-        )
-
-        if stats.var_on_stats_list("T_in_K") or stats.var_on_stats_list("rsati"):
-            T_in_K = thlm2T_in_K(thlm, exner, rcm)
-            stats = stats.update("T_in_K", T_in_K)
-        if stats.var_on_stats_list("rsati"):
-            rsati = sat_mixrat_ice(p_in_Pa, T_in_K)
-            stats = stats.update("rsati", rsati)
-
-        if stats.var_on_stats_list("rcm_in_cloud"):
-            cloud_frac_safe = jnp.where(cloud_frac > cloud_frac_min, cloud_frac, 1.0)
-            rcm_in_cloud = jnp.where(
-                cloud_frac > cloud_frac_min,
-                rcm / cloud_frac_safe,
-                rcm,
-            )
-            stats = stats.update("rcm_in_cloud", rcm_in_cloud)
-
-        if stats.var_on_stats_list("shear"):
-            shear = jnp.zeros((ngrdcol, nzm))
-            shear_int = (
-                -upwp[:, 1:nzm - 1]
-                * (um[:, 1:nzm - 1] - um[:, :nzm - 2])
-                * gr.invrs_dzm[:, 1:nzm - 1]
-                - vpwp[:, 1:nzm - 1]
-                * (vm[:, 1:nzm - 1] - vm[:, :nzm - 2])
-                * gr.invrs_dzm[:, 1:nzm - 1]
-            )
-            shear = shear.at[:, 1:nzm - 1].set(shear_int)
-            stats = stats.update("shear", shear)
-
-        for name, value in (
-            # stats_zt variables
-            ("thlm", thlm),
-            ("thvm", thvm),
-            ("rtm", rtm),
-            ("rcm", rcm),
-            ("um", um),
-            ("vm", vm),
-            ("wm_zt", wm_zt),
-            ("ug", ug),
-            ("vg", vg),
-            ("p_in_Pa", p_in_Pa),
-            ("exner", exner),
-            ("rho_ds_zt", rho_ds_zt),
-            ("thv_ds_zt", thv_ds_zt),
-            ("wp3", wp3),
-            ("Kh_zt", Kh_zt),
-            ("rho", rho),
-            ("rsat", rsat),
-            ("thlp3", thlp3),
-            ("rtp3", rtp3),
-            ("wp3_on_wp2_zt", wp3_on_wp2_zt),
-        ):
-            stats = stats.update(name, value)
-
-        if sclr_dim > 0:
-            for sclr in range(sclr_dim):
-                sclr_idx = sclr + 1
-                stats = stats.update(f"sclr{sclr_idx}m", sclrm[:, :, sclr])
-                stats = stats.update(f"sclr{sclr_idx}m_f", sclrm_forcing[:, :, sclr])
-
-        if edsclr_dim > 0:
-            for edsclr in range(edsclr_dim):
-                edsclr_idx = edsclr + 1
-                stats = stats.update(f"edsclr{edsclr_idx}m", edsclrm[:, :, edsclr])
-                stats = stats.update(
-                    f"edsclr{edsclr_idx}m_f", edsclrm_forcing[:, :, edsclr],
-                )
-
-        for name, value in (
-            # stats_zm variables
-            ("wm_zm", wm_zm),
-            ("ddzt_umvm_sqd", ddzt_umvm_sqd),
-            ("wp2", wp2),
-            ("rtp2", rtp2),
-            ("thlp2", thlp2),
-            ("rtpthlp", rtpthlp),
-            ("wprtp", wprtp),
-            ("wpthlp", wpthlp),
-        ):
-            stats = stats.update(name, value)
-        if l_stability_correct_tau_zm:
-            stats = stats.update("stability_correction", stability_correction)
-        for name, value in (
-            ("Kh_zm", Kh_zm),
-            ("upwp", upwp),
-            ("vpwp", vpwp),
-            ("vp2", vp2),
-            ("up2", up2),
-            ("rho_zm", rho_zm),
-            ("rho_ds_zm", rho_ds_zm),
-            ("thv_ds_zm", thv_ds_zm),
-            ("em", em),
-            ("wp3_on_wp2", wp3_on_wp2),
-            ("wp3_on_wp2_cfl_num", wp3_on_wp2 * dt / dzm),
-        ):
-            stats = stats.update(name, value)
-
-        if stats.var_on_stats_list("gamma_Skw_fnc"):
-            wp3_zm = zt2zm(nzm, nzt, ngrdcol, gr, wp3)
-            Skw_zm = Skx_func(nzm, ngrdcol, wp2, wp3_zm, w_tol, clubb_params)
-            gamma_Skw_fnc = compute_gamma_Skw(
-                nzm, ngrdcol, Skw_zm, clubb_params, l_gamma_Skw,
-            )
-            stats = stats.update("gamma_Skw_fnc", gamma_Skw_fnc)
-
-        if sclr_dim > 0:
-            for sclr in range(sclr_dim):
-                sclr_idx = sclr + 1
-                stats = stats.update(f"sclr{sclr_idx}p2", sclrp2[:, :, sclr])
-                stats = stats.update(f"sclr{sclr_idx}prtp", sclrprtp[:, :, sclr])
-                stats = stats.update(f"sclr{sclr_idx}pthlp", sclrpthlp[:, :, sclr])
-                stats = stats.update(f"wpsclr{sclr_idx}p", wpsclrp[:, :, sclr])
-
-        if edsclr_dim > 0:
-            for edsclr in range(edsclr_dim):
-                edsclr_idx = edsclr + 1
-                stats = stats.update(f"wpedsclr{edsclr_idx}p", wpedsclrp[:, :, edsclr])
-
-        # Surface diagnostics contain one value per column.
-        stats = stats.update("cc", jnp.max(cloud_frac, axis=1))
-
-        if stats.var_on_stats_list("z_cloud_base"):
-            cloudy = rcm >= rc_tol
-            k = jnp.where(jnp.any(cloudy, axis=1), jnp.argmax(cloudy, axis=1), nzt - 1)
-            k_prev = jnp.maximum(k - 1, 0)
-            columns = jnp.arange(ngrdcol)
-            rcm_k = rcm[columns, k]
-            rcm_km1 = rcm[columns, k_prev]
-            zt_k = gr.zt[columns, k]
-            zt_km1 = gr.zt[columns, k_prev]
-            denom = jnp.where((k > 0) & (k < nzt - 1), rcm_k - rcm_km1, 1.0)
-            z_cloud_base = ((rc_tol - rcm_km1) / denom) * (zt_k - zt_km1) + zt_km1
-            z_cloud_base = jnp.where(k == 0, gr.zt[:, 0], jnp.where(k < nzt - 1, z_cloud_base, -10.0))
-            stats = stats.update("z_cloud_base", z_cloud_base)
-
-        if stats.var_on_stats_list("lwp"):
-            stats = stats.update("lwp", vertical_integral(ngrdcol, nzt, rho_ds_zt, rcm, dzt))
-
-        if stats.var_on_stats_list("vwp"):
-            stats = stats.update("vwp", vertical_integral(ngrdcol, nzt, rho_ds_zt, rtm - rcm, dzt))
-
-        stats = stats.update(
-            "thlm_vert_avg", vertical_avg(ngrdcol, nzt, rho_ds_zt, thlm, dzt),
-        )
-        stats = stats.update(
-            "rtm_vert_avg", vertical_avg(ngrdcol, nzt, rho_ds_zt, rtm, dzt),
-        )
-        stats = stats.update(
-            "um_vert_avg", vertical_avg(ngrdcol, nzt, rho_ds_zt, um, dzt),
-        )
-        stats = stats.update(
-            "vm_vert_avg", vertical_avg(ngrdcol, nzt, rho_ds_zt, vm, dzt),
-        )
-        stats = stats.update(
-            "wp2_vert_avg", vertical_avg(ngrdcol, nzm, rho_ds_zm, wp2, dzm),
-        )
-        stats = stats.update(
-            "up2_vert_avg", vertical_avg(ngrdcol, nzm, rho_ds_zm, up2, dzm),
-        )
-        stats = stats.update(
-            "vp2_vert_avg", vertical_avg(ngrdcol, nzm, rho_ds_zm, vp2, dzm),
-        )
-        stats = stats.update(
-            "rtp2_vert_avg", vertical_avg(ngrdcol, nzm, rho_ds_zm, rtp2, dzm),
-        )
-        stats = stats.update(
-            "thlp2_vert_avg", vertical_avg(ngrdcol, nzm, rho_ds_zm, thlp2, dzm),
-        )
-
-        if stats.var_on_stats_list("tot_vartn_normlzd_rtm"):
-            span = jnp.abs(rtm[:, nzt - 1] - rtm[:, 0])
-            denominator = jnp.where(span < eps, 1.0, span)
-            xtmp = jax.lax.fori_loop(
-                1, nzt,
-                lambda k, total: total + jnp.abs(rtm[:, k] - rtm[:, k - 1]) / denominator,
-                jnp.zeros((ngrdcol,), dtype=rtm.dtype),
-            )
-            stats = stats.update("tot_vartn_normlzd_rtm", jnp.where(span < eps, -999.0, xtmp))
-
-        if stats.var_on_stats_list("tot_vartn_normlzd_thlm"):
-            span = jnp.abs(thlm[:, nzt - 1] - thlm[:, 0])
-            denominator = jnp.where(span < eps, 1.0, span)
-            xtmp = jax.lax.fori_loop(
-                1, nzt,
-                lambda k, total: total + jnp.abs(thlm[:, k] - thlm[:, k - 1]) / denominator,
-                jnp.zeros((ngrdcol,), dtype=thlm.dtype),
-            )
-            stats = stats.update("tot_vartn_normlzd_thlm", jnp.where(span < eps, -999.0, xtmp))
-
-        if stats.var_on_stats_list("tot_vartn_normlzd_wprtp"):
-            span = jnp.abs(wprtp[:, nzm - 1] - wprtp[:, 0])
-            denominator = jnp.where(span < eps, 1.0, span)
-            xtmp = jax.lax.fori_loop(
-                1, nzm,
-                lambda k, total: total + jnp.abs(wprtp[:, k] - wprtp[:, k - 1]) / denominator,
-                jnp.zeros((ngrdcol,), dtype=wprtp.dtype),
-            )
-            stats = stats.update("tot_vartn_normlzd_wprtp", jnp.where(span < eps, -999.0, xtmp))
-
-        # Skip columns with imposed mean advection, as in the Fortran diagnostics.
-        l_calc_spur_src = l_implemented | (
-            jnp.all(jnp.abs(wm_zt) < eps, axis=1) & jnp.all(jnp.abs(wm_zm) < eps, axis=1)
-        )
-        rtm_integral_before = vertical_integral(
-            ngrdcol, nzt, rho_ds_zt, rtm_before, dzt, l_calc_spur_src,
-        )
-        rtm_integral_after = vertical_integral(
-            ngrdcol, nzt, rho_ds_zt, rtm, dzt, l_calc_spur_src,
-        )
-        rtm_integral_forcing = vertical_integral(
-            ngrdcol, nzt, rho_ds_zt, rtm_forcing, dzt, l_calc_spur_src,
-        )
-        rtm_flux_top = jnp.where(
-            l_calc_spur_src, rho_ds_zm[:, gr.k_ub_zm], 0.0,
-        ) * jnp.where(l_calc_spur_src, wprtp[:, gr.k_ub_zm], 0.0)
-        rtm_flux_sfc = jnp.where(
-            l_calc_spur_src & ~jnp.asarray(l_host_applies_sfc_fluxes), rho_ds_zm[:, gr.k_lb_zm], 0.0,
-        ) * jnp.where(l_calc_spur_src & ~jnp.asarray(l_host_applies_sfc_fluxes), wprtp_sfc, 0.0)
-        rtm_spur_src = calculate_spurious_source(
-            rtm_integral_after, rtm_integral_before,
-            rtm_flux_top, rtm_flux_sfc, rtm_integral_forcing, dt,
-        )
-        thlm_integral_before = vertical_integral(
-            ngrdcol, nzt, rho_ds_zt, thlm_before, dzt, l_calc_spur_src,
-        )
-        thlm_integral_after = vertical_integral(
-            ngrdcol, nzt, rho_ds_zt, thlm, dzt, l_calc_spur_src,
-        )
-        thlm_integral_forcing = vertical_integral(
-            ngrdcol, nzt, rho_ds_zt, thlm_forcing, dzt, l_calc_spur_src,
-        )
-        thlm_flux_top = jnp.where(
-            l_calc_spur_src, rho_ds_zm[:, gr.k_ub_zm], 0.0,
-        ) * jnp.where(l_calc_spur_src, wpthlp[:, gr.k_ub_zm], 0.0)
-        thlm_flux_sfc = jnp.where(
-            l_calc_spur_src & ~jnp.asarray(l_host_applies_sfc_fluxes), rho_ds_zm[:, gr.k_lb_zm], 0.0,
-        ) * jnp.where(l_calc_spur_src & ~jnp.asarray(l_host_applies_sfc_fluxes), wpthlp_sfc, 0.0)
-        thlm_spur_src = calculate_spurious_source(
-            thlm_integral_after, thlm_integral_before,
-            thlm_flux_top, thlm_flux_sfc, thlm_integral_forcing, dt,
-        )
-        stats = stats.update(
-            "rtm_spur_src", jnp.where(l_calc_spur_src, rtm_spur_src, -9999.0),
-        )
-        stats = stats.update(
-            "thlm_spur_src", jnp.where(l_calc_spur_src, thlm_spur_src, -9999.0),
-        )
-
+    if not stats.l_sample:
         return stats
 
-    return stats.sampled(accumulate_stats)
+    dzm = gr.grid_dir * gr.dzm
+    dzt = gr.grid_dir * gr.dzt
+
+    wp3_on_wp2, wp3_on_wp2_zt = calc_wp3_on_wp2(
+        nzm, nzt, ngrdcol, gr, wp2, wp3,
+    )
+
+    if stats.var_on_stats_list("T_in_K") or stats.var_on_stats_list("rsati"):
+        T_in_K = thlm2T_in_K(thlm, exner, rcm)
+        stats = stats.update("T_in_K", T_in_K)
+    if stats.var_on_stats_list("rsati"):
+        rsati = sat_mixrat_ice(p_in_Pa, T_in_K)
+        stats = stats.update("rsati", rsati)
+
+    if stats.var_on_stats_list("rcm_in_cloud"):
+        cloud_frac_safe = jnp.where(cloud_frac > cloud_frac_min, cloud_frac, 1.0)
+        rcm_in_cloud = jnp.where(
+            cloud_frac > cloud_frac_min,
+            rcm / cloud_frac_safe,
+            rcm,
+        )
+        stats = stats.update("rcm_in_cloud", rcm_in_cloud)
+
+    if stats.var_on_stats_list("shear"):
+        shear = jnp.zeros((ngrdcol, nzm))
+        shear_int = (
+            -upwp[:, 1:nzm - 1]
+            * (um[:, 1:nzm - 1] - um[:, :nzm - 2])
+            * gr.invrs_dzm[:, 1:nzm - 1]
+            - vpwp[:, 1:nzm - 1]
+            * (vm[:, 1:nzm - 1] - vm[:, :nzm - 2])
+            * gr.invrs_dzm[:, 1:nzm - 1]
+        )
+        shear = shear.at[:, 1:nzm - 1].set(shear_int)
+        stats = stats.update("shear", shear)
+
+    for name, value in (
+        # stats_zt variables
+        ("thlm", thlm),
+        ("thvm", thvm),
+        ("rtm", rtm),
+        ("rcm", rcm),
+        ("um", um),
+        ("vm", vm),
+        ("wm_zt", wm_zt),
+        ("ug", ug),
+        ("vg", vg),
+        ("p_in_Pa", p_in_Pa),
+        ("exner", exner),
+        ("rho_ds_zt", rho_ds_zt),
+        ("thv_ds_zt", thv_ds_zt),
+        ("wp3", wp3),
+        ("Kh_zt", Kh_zt),
+        ("rho", rho),
+        ("rsat", rsat),
+        ("thlp3", thlp3),
+        ("rtp3", rtp3),
+        ("wp3_on_wp2_zt", wp3_on_wp2_zt),
+    ):
+        stats = stats.update(name, value)
+
+    if sclr_dim > 0:
+        for sclr in range(sclr_dim):
+            sclr_idx = sclr + 1
+            stats = stats.update(f"sclr{sclr_idx}m", sclrm[:, :, sclr])
+            stats = stats.update(f"sclr{sclr_idx}m_f", sclrm_forcing[:, :, sclr])
+
+    if edsclr_dim > 0:
+        for edsclr in range(edsclr_dim):
+            edsclr_idx = edsclr + 1
+            stats = stats.update(f"edsclr{edsclr_idx}m", edsclrm[:, :, edsclr])
+            stats = stats.update(
+                f"edsclr{edsclr_idx}m_f", edsclrm_forcing[:, :, edsclr],
+            )
+
+    for name, value in (
+        # stats_zm variables
+        ("wm_zm", wm_zm),
+        ("ddzt_umvm_sqd", ddzt_umvm_sqd),
+        ("wp2", wp2),
+        ("rtp2", rtp2),
+        ("thlp2", thlp2),
+        ("rtpthlp", rtpthlp),
+        ("wprtp", wprtp),
+        ("wpthlp", wpthlp),
+    ):
+        stats = stats.update(name, value)
+    if l_stability_correct_tau_zm:
+        stats = stats.update("stability_correction", stability_correction)
+    for name, value in (
+        ("Kh_zm", Kh_zm),
+        ("upwp", upwp),
+        ("vpwp", vpwp),
+        ("vp2", vp2),
+        ("up2", up2),
+        ("rho_zm", rho_zm),
+        ("rho_ds_zm", rho_ds_zm),
+        ("thv_ds_zm", thv_ds_zm),
+        ("em", em),
+        ("wp3_on_wp2", wp3_on_wp2),
+        ("wp3_on_wp2_cfl_num", wp3_on_wp2 * dt / dzm),
+    ):
+        stats = stats.update(name, value)
+
+    if stats.var_on_stats_list("gamma_Skw_fnc"):
+        wp3_zm = zt2zm(nzm, nzt, ngrdcol, gr, wp3)
+        Skw_zm = Skx_func(nzm, ngrdcol, wp2, wp3_zm, w_tol, clubb_params)
+        gamma_Skw_fnc = compute_gamma_Skw(
+            nzm, ngrdcol, Skw_zm, clubb_params, l_gamma_Skw,
+        )
+        stats = stats.update("gamma_Skw_fnc", gamma_Skw_fnc)
+
+    if sclr_dim > 0:
+        for sclr in range(sclr_dim):
+            sclr_idx = sclr + 1
+            stats = stats.update(f"sclr{sclr_idx}p2", sclrp2[:, :, sclr])
+            stats = stats.update(f"sclr{sclr_idx}prtp", sclrprtp[:, :, sclr])
+            stats = stats.update(f"sclr{sclr_idx}pthlp", sclrpthlp[:, :, sclr])
+            stats = stats.update(f"wpsclr{sclr_idx}p", wpsclrp[:, :, sclr])
+
+    if edsclr_dim > 0:
+        for edsclr in range(edsclr_dim):
+            edsclr_idx = edsclr + 1
+            stats = stats.update(f"wpedsclr{edsclr_idx}p", wpedsclrp[:, :, edsclr])
+
+    # stats_sfc variables
+    for i in range(ngrdcol):
+        stats = stats.update("cc", jnp.max(cloud_frac[i, :]), icol=i)
+
+    if stats.var_on_stats_list("z_cloud_base"):
+        for i in range(ngrdcol):
+            cloudy = rcm[i, :] >= rc_tol
+            k = jnp.argmax(cloudy)
+            k_prev = jnp.maximum(k - 1, 0)
+            rcm_k = rcm[i, k]
+            rcm_km1 = rcm[i, k_prev]
+            zt_k = gr.zt[i, k]
+            zt_km1 = gr.zt[i, k_prev]
+            denom = jnp.where(jnp.abs(rcm_k - rcm_km1) > eps, rcm_k - rcm_km1, 1.0)
+            z_cloud_base = zt_km1 + (rc_tol - rcm_km1) * (zt_k - zt_km1) / denom
+            z_cloud_base = jnp.where(k == 0, gr.zt[i, 0], z_cloud_base)
+            z_cloud_base = jnp.where((jnp.any(cloudy)) & (k < nzt - 1), z_cloud_base, -10.0)
+            z_cloud_base = jnp.where((jnp.any(cloudy)) & (k == 0), gr.zt[i, 0], z_cloud_base)
+            stats = stats.update("z_cloud_base", z_cloud_base, icol=i)
+
+    if stats.var_on_stats_list("lwp"):
+        for i in range(ngrdcol):
+            stats = stats.update(
+                "lwp",
+                vertical_integral(nzt, rho_ds_zt[i, :], rcm[i, :], dzt[i, :]),
+                icol=i,
+            )
+
+    if stats.var_on_stats_list("vwp"):
+        for i in range(ngrdcol):
+            stats = stats.update(
+                "vwp",
+                vertical_integral(nzt, rho_ds_zt[i, :], rtm[i, :] - rcm[i, :], dzt[i, :]),
+                icol=i,
+            )
+
+    for i in range(ngrdcol):
+        stats = stats.update(
+            "thlm_vert_avg",
+            vertical_avg(nzt, rho_ds_zt[i, :], thlm[i, :], dzt[i, :]),
+            icol=i,
+        )
+        stats = stats.update(
+            "rtm_vert_avg",
+            vertical_avg(nzt, rho_ds_zt[i, :], rtm[i, :], dzt[i, :]),
+            icol=i,
+        )
+        stats = stats.update(
+            "um_vert_avg",
+            vertical_avg(nzt, rho_ds_zt[i, :], um[i, :], dzt[i, :]),
+            icol=i,
+        )
+        stats = stats.update(
+            "vm_vert_avg",
+            vertical_avg(nzt, rho_ds_zt[i, :], vm[i, :], dzt[i, :]),
+            icol=i,
+        )
+        stats = stats.update(
+            "wp2_vert_avg",
+            vertical_avg(nzm, rho_ds_zm[i, :], wp2[i, :], dzm[i, :]),
+            icol=i,
+        )
+        stats = stats.update(
+            "up2_vert_avg",
+            vertical_avg(nzm, rho_ds_zm[i, :], up2[i, :], dzm[i, :]),
+            icol=i,
+        )
+        stats = stats.update(
+            "vp2_vert_avg",
+            vertical_avg(nzm, rho_ds_zm[i, :], vp2[i, :], dzm[i, :]),
+            icol=i,
+        )
+        stats = stats.update(
+            "rtp2_vert_avg",
+            vertical_avg(nzm, rho_ds_zm[i, :], rtp2[i, :], dzm[i, :]),
+            icol=i,
+        )
+        stats = stats.update(
+            "thlp2_vert_avg",
+            vertical_avg(nzm, rho_ds_zm[i, :], thlp2[i, :], dzm[i, :]),
+            icol=i,
+        )
+
+    if stats.var_on_stats_list("tot_vartn_normlzd_rtm"):
+        for i in range(ngrdcol):
+            span = jnp.abs(rtm[i, nzt - 1] - rtm[i, 0])
+            val = jnp.where(
+                span < eps,
+                -999.0,
+                jnp.sum(jnp.abs(rtm[i, 1:nzt] - rtm[i, :nzt - 1])) / span,
+            )
+            stats = stats.update("tot_vartn_normlzd_rtm", val, icol=i)
+
+    if stats.var_on_stats_list("tot_vartn_normlzd_thlm"):
+        for i in range(ngrdcol):
+            span = jnp.abs(thlm[i, nzt - 1] - thlm[i, 0])
+            val = jnp.where(
+                span < eps,
+                -999.0,
+                jnp.sum(jnp.abs(thlm[i, 1:nzt] - thlm[i, :nzt - 1])) / span,
+            )
+            stats = stats.update("tot_vartn_normlzd_thlm", val, icol=i)
+
+    if stats.var_on_stats_list("tot_vartn_normlzd_wprtp"):
+        for i in range(ngrdcol):
+            span = jnp.abs(wprtp[i, nzm - 1] - wprtp[i, 0])
+            val = jnp.where(
+                span < eps,
+                -999.0,
+                jnp.sum(jnp.abs(wprtp[i, 1:nzm] - wprtp[i, :nzm - 1])) / span,
+            )
+            stats = stats.update("tot_vartn_normlzd_wprtp", val, icol=i)
+
+    for i in range(ngrdcol):
+        rtm_flux_top = rho_ds_zm[i, gr.k_ub_zm] * wprtp[i, gr.k_ub_zm]
+        rtm_flux_sfc = jnp.where(
+            l_host_applies_sfc_fluxes,
+            0.0,
+            rho_ds_zm[i, gr.k_lb_zm] * wprtp_sfc[i],
+        )
+        # Get the vertical integral of rtm before this function begins
+        # so that spurious source can be calculated.
+        rtm_integral_before = vertical_integral(
+            nzt, rho_ds_zt[i, :], rtm_before[i, :], dzt[i, :],
+        )
+        rtm_integral_after = vertical_integral(
+            nzt, rho_ds_zt[i, :], rtm[i, :], dzt[i, :],
+        )
+        rtm_integral_forcing = vertical_integral(
+            nzt, rho_ds_zt[i, :], rtm_forcing[i, :], dzt[i, :],
+        )
+        # Calculate the spurious source for rtm.
+        rtm_spur_src = _calculate_spurious_source(
+            rtm_integral_after,
+            rtm_integral_before,
+            rtm_flux_top,
+            rtm_flux_sfc,
+            rtm_integral_forcing,
+            dt,
+        )
+
+        thlm_flux_top = rho_ds_zm[i, gr.k_ub_zm] * wpthlp[i, gr.k_ub_zm]
+        thlm_flux_sfc = jnp.where(
+            l_host_applies_sfc_fluxes,
+            0.0,
+            rho_ds_zm[i, gr.k_lb_zm] * wpthlp_sfc[i],
+        )
+        # Get the vertical integral of thlm before this function begins
+        # so that spurious source can be calculated.
+        thlm_integral_before = vertical_integral(
+            nzt, rho_ds_zt[i, :], thlm_before[i, :], dzt[i, :],
+        )
+        thlm_integral_after = vertical_integral(
+            nzt, rho_ds_zt[i, :], thlm[i, :], dzt[i, :],
+        )
+        thlm_integral_forcing = vertical_integral(
+            nzt, rho_ds_zt[i, :], thlm_forcing[i, :], dzt[i, :],
+        )
+        # Calculate the spurious source for thlm.
+        thlm_spur_src = _calculate_spurious_source(
+            thlm_integral_after,
+            thlm_integral_before,
+            thlm_flux_top,
+            thlm_flux_sfc,
+            thlm_integral_forcing,
+            dt,
+        )
+
+        l_compute_spurious_source = jnp.asarray(l_implemented) | (
+            jnp.all(jnp.abs(wm_zt[i, :]) < eps) & jnp.all(jnp.abs(wm_zm[i, :]) < eps)
+        )
+        # Spurious source will only be calculated if rtm_ma and thlm_ma are zero.
+        # Therefore, wm must be zero or l_implemented must be true.
+        stats = stats.update(
+            "rtm_spur_src",
+            jnp.where(l_compute_spurious_source, rtm_spur_src, -9999.0),
+            icol=i,
+        )
+        stats = stats.update(
+            "thlm_spur_src",
+            jnp.where(l_compute_spurious_source, thlm_spur_src, -9999.0),
+            icol=i,
+        )
+
+    return stats
 
 
 def stats_accumulate_hydromet_api(
@@ -446,33 +440,16 @@ def stats_accumulate_hydromet_api(
     rho_ds_zt,                  # In
     stats,                      # InOut
 ):
-    """Compute hydrometeor statistics for all model columns.
+    """Compute hydrometeor statistics; columns are batched in JAX.
 
-    Returns:
-        stats
-
-    Fortran declarations (stats_accumulate_hydromet_api in src/CLUBB_core/stats_clubb_utilities.F90):
-
-        !--------------------------- Input Variables ---------------------------
-        type(grid), intent(in) :: &
-          gr
-
-        integer, intent(in) :: &
-          ngrdcol, &    ! Number of model columns
-          hydromet_dim  ! Number of hydrometeor species
-
-        type(hm_metadata_type), intent(in) :: &
-          hm_metadata
-
-        real(kind=core_rknd), dimension(ngrdcol,gr%nzt,hydromet_dim), intent(in) :: &
-          hydromet             ! All hydrometeors except for rcm        [units vary]
-
-        real(kind=core_rknd), dimension(ngrdcol,gr%nzt), intent(in) :: &
-          rho_ds_zt            ! Dry, static density (thermo. levs.)      [kg/m^3]
-
-        !--------------------------- Input/Output Variables ---------------------------
-        type(stats_type), intent(inout) :: &
-          stats
+    Arguments:
+        gr: Grid coordinates, interpolation weights and vertical metrics.
+        ngrdcol: Number of grid columns.
+        hydromet_dim: Number of precipitating hydrometeor fields.
+        hm_metadata: Hydrometeor/PDF names, zero-based species indices and tolerances.
+        hydromet: All hydrometeors except for rcm [units vary]
+        rho_ds_zt: Dry, static density (thermo. levs.) [kg/m^3]
+        stats: Immutable statistics state; return its updated value.
     """
     # Mean species profiles, omitting fields absent from the selected scheme.
     for name, idx in [
@@ -496,7 +473,12 @@ def stats_accumulate_hydromet_api(
         ("rwp", hm_metadata.iirr),
     ]:
         if idx >= 0 and stats.var_on_stats_list(name):
-            xtmp = vertical_integral(ngrdcol, gr.nzt, rho_ds_zt, hydromet[:, :, idx], gr.dzt)
+            xtmp = jnp.stack(
+                [
+                    vertical_integral(gr.nzt, rho_ds_zt[i], hydromet[i, :, idx], gr.dzt[i])
+                    for i in range(gr.ngrdcol)
+                ]
+            )
             stats = stats.update(name, xtmp)
     return stats
 
@@ -509,49 +491,30 @@ def stats_accumulate_lh_tend(
     lh_rcm_avg, AKm_rcm, AKm_rcc,            # In
     stats,                                   # InOut
 ):
-    """Compute full-field stats for the tendency of latin hypercube sample points.
+    """Sampled tendencies from stats_accumulate_lh_tend in the Fortran module.
 
-    Returns:
-        stats
-
-    Fortran declarations (stats_accumulate_lh_tend in src/CLUBB_core/stats_clubb_utilities.F90):
-
-        !----------------------- Input Variables -----------------------
-        type (grid), intent(in) :: &
-          gr
-
-        integer, intent(in) :: &
-          ngrdcol, &      ! Number of model columns [-]
-          hydromet_dim    ! Number of hydrometeor species [-]
-
-        type (hm_metadata_type), intent(in) :: &
-          hm_metadata
-
-        real( kind = core_rknd ), dimension(ngrdcol,gr%nzt,hydromet_dim), intent(in) :: &
-          lh_hydromet_mc ! Tendency of hydrometeors except for rvm/rcm  [units vary]
-
-        real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(in) :: &
-          lh_Ncm_mc,  & ! Tendency of cloud droplet concentration  [num/kg/s]
-          lh_thlm_mc, & ! Tendency of liquid potential temperature [kg/kg/s]
-          lh_rcm_mc,  & ! Tendency of cloud water                  [kg/kg/s]
-          lh_rvm_mc     ! Tendency of vapor                        [kg/kg/s]
-
-        real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(in) :: &
-          lh_AKm,     & ! Kessler ac estimate                 [kg/kg/s]
-          AKm,        & ! Exact Kessler ac                    [kg/kg/s]
-          AKstd,      & ! St dev of exact Kessler ac          [kg/kg/s]
-          AKstd_cld,  & ! Stdev of exact w/in cloud ac        [kg/kg/s]
-          lh_rcm_avg, & ! Monte Carlo rcm estimate            [kg/kg]
-          AKm_rcm,    & ! Kessler ac based on rcm             [kg/kg/s]
-          AKm_rcc       ! Kessler ac based on rcm/cloud_frac  [kg/kg/s]
-
-        type(stats_type), intent(inout) :: &
-          stats
+    Arguments:
+        gr: Grid coordinates, interpolation weights and vertical metrics.
+        ngrdcol: Number of grid columns.
+        hydromet_dim: Number of precipitating hydrometeor fields.
+        hm_metadata: Hydrometeor/PDF names, zero-based species indices and tolerances.
+        lh_hydromet_mc: Tendency of hydrometeors except for rvm/rcm [units vary]
+        lh_Ncm_mc: Tendency of cloud droplet concentration [num/kg/s]
+        lh_thlm_mc: Tendency of liquid potential temperature [kg/kg/s]
+        lh_rvm_mc: Tendency of vapor [kg/kg/s]
+        lh_rcm_mc: Tendency of cloud water [kg/kg/s]
+        lh_AKm: Kessler ac estimate [kg/kg/s]
+        AKm: Exact Kessler ac [kg/kg/s]
+        AKstd: St dev of exact Kessler ac [kg/kg/s]
+        AKstd_cld: Stdev of exact w/in cloud ac [kg/kg/s]
+        lh_rcm_avg: Monte Carlo rcm estimate [kg/kg]
+        AKm_rcm: Kessler ac based on rcm [kg/kg/s]
+        AKm_rcc: Kessler ac based on rcm/cloud_frac [kg/kg/s]
+        stats: Immutable statistics state; return its updated value.
     """
     # Accumulate mean sampled tendencies, followed by available hydrometeors
     # and Kessler sampling/analytic diagnostics, in the source update order.
-    def accumulate_stats(stats):
-        """Collect this diagnostic block only on sampled timesteps."""
+    if stats.l_sample:
         stats = stats.update("lh_thlm_mc", lh_thlm_mc)
         stats = stats.update("lh_rcm_mc", lh_rcm_mc)
         stats = stats.update("lh_rvm_mc", lh_rvm_mc)
@@ -578,8 +541,4 @@ def stats_accumulate_lh_tend(
             ("AKm_rcc", AKm_rcc),
         ):
             stats = stats.update(name, value)
-
-        return stats
-
-    stats = stats.sampled(accumulate_stats)
     return stats

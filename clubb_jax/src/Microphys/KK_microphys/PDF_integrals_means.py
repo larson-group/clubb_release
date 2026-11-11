@@ -18,13 +18,13 @@ References (per the Fortran): Larson & Griffin 2013 (QJRMS, Eqs 33-44); Griffin 
 (PhD thesis, Eqs C4-C17); Griffin & Larson 2016 (GMD supplements).
 
 The only transcendental in the general/const_x2 forms is the parabolic cylinder function
-D_v, supplied by Parabolic.dv_parabolic_cylinder.
+D_v, supplied by parabolic_cylinder.dv_parabolic_cylinder.
 """
 import math
 
 import jax.numpy as jnp
 
-from clubb_jax.src.Microphys.KK_microphys.Parabolic import (
+from clubb_jax.src.Microphys.KK_microphys.parabolic_cylinder import (
     _gamma_real,
     _dvc,          # clamped parabolic-cylinder D_v (its home, next to dv_parabolic_cylinder)
 )

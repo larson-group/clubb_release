@@ -15,8 +15,3 @@ set(SILHS_SOURCES
 
 add_library(silhs_lib ${SILHS_SOURCES})
 target_link_libraries(silhs_lib PRIVATE clubb_core_lib KK_microphys_lib)
-
-# CUDA SILHS calls cuRAND directly. Carry its link requirement to consumers.
-if ("CUDA" IN_LIST GPU_DEFINITIONS)
-    target_link_options(silhs_lib PUBLIC "-cudalib=curand")
-endif()

@@ -1,0 +1,38 @@
+{
+  "status": "Source audit/cleanup complete for isolated draft. Uncompiled and numerically unverified.",
+  "supported_definitions": 10,
+  "public_procedures": 8,
+  "excluded_native_private_methods": [
+    "fill_holes_widening_windows",
+    "fill_holes_smart_window",
+    "fill_holes_smart_window_smooth",
+    "fill_holes_parallel"
+  ],
+  "signature_name_orders_match": true,
+  "public_header_signatures_and_prototype_terminators_match": true,
+  "optional_stats_name_outputs": 5,
+  "device_lambda_bodies": 12,
+  "device_f2k_calls": [],
+  "owning_udt_captures": [],
+  "manual_source_reviews": [
+    "Global: source-order numerator/denominator/clipped numerator, original any-hole gate and eps/2 guard, ordered MIN/MAX operands, normalization and descending-range bounds reread.",
+    "Sliding: all-field entry/fallback ANY, original start/stop and denominator j bounds, Native direction-dependent overlapping k recurrence, exact average->clip->average->scale sequence reread.",
+    "TKE: early ANY return, exact Native sufficient/insufficient/no-donor predicates and assignments, source epsilon kind and debug7warning conditions/payloads reread. Device science emitted from Native; host diagnostics use pre-update snapshots.",
+    "One-level frozen fill: strict negative-vs-else totals in species order, epsilon no-material return, insufficient/complete formulas, warning multiplicity and conservation/negative-result checks reread.",
+    "Frozen parent: same exact compact species subset in Native order, call only when a level has negative frozen mixing ratios, correct packed/unpacked output and unchanged nonfrozen fields.",
+    "Vapor: partial vapor mutation before unknown-species ERROR STOP retained, unknown/no-hole path returns; strict hole threshold, rain/frozen heat expressions and assignment order reread.",
+    "Driver:8 Native ordered budget sites mapped through local name/species/phase adapter; sampling/any-hole/mix-ratio flags, species and column loops, conditional vertical/vapor calls, small-mass vapor/heat compensation, final concentration copy reread.",
+    "Concentration: per-species public metadata functions at host boundary, Native1based indices, ((radius*radius)*radius), distinct liquid/ice densities, strict positive mixing-ratio branch and unchanged mass fields reread.",
+    "Stats names:9 exact named species cases, fixed-width trailing-blank semantics, optional5outputs/default absence, reset speeds/blank names and same velocities reread.",
+    "Ownership/format:8public+2private definitions in Native order, interfaces/intents/optionals, ordinary groups, Native descriptions, field/axis units, per-call storage, read/write loops, source-only math adaptations, and complete unsupported scope reread."
+  ],
+  "hashes": {
+    "src/CLUBB_core/fill_holes.F90": "f5b0897ad0000115a8a4a9662e9f564767dcfb28d7b18f3a3e95438e5e3d6140",
+    "clubb_jax/src/CLUBB_core/fill_holes.py": "17a125436027352eb42b97e6b8b7e21506e94386337d0e36427fe92798719ea1",
+    "clubb_kokkos/drafts/fill_holes/fill_holes.cpp": "d61edf89c389781938c6e85bf54b320ef7ef40b11419f6a57148b08338cea18d",
+    "clubb_kokkos/drafts/fill_holes/fill_holes.hpp": "fed093d18e70a7ccbee51b6ee28268a307f05cd78d0e15a582188bc2f11dd670",
+    "clubb_kokkos/drafts/fill_holes/f2k_dependencies.hpp": "c4fd8bb50d14dd05de9496bfec12c7162076f34257d57f822412c0caafa783d4"
+  },
+  "builds_tests_or_numerical_claims": false,
+  "remaining": "Root integration/public lower bridge generation/constants and CPU whole-model BFB; performance of per-column microphysics API packing is unmeasured."
+}

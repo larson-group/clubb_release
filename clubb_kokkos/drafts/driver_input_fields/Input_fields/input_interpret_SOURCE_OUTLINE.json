@@ -1,0 +1,17 @@
+{
+  "full_Native_read": 377,
+  "actual_JAX_scope": "sounding.py convert_pressure_sounding_to_z plus metadata selection, read in full relevant bodies; Native remains authority.",
+  "routines": [
+    "read_z_profile(nvar,nsize,retVars,p_sfc,zm_init,saturation_formula,z,p_in_Pa,altitude_type)",
+    "read_theta_profile(nvar,nsize,retVars,temperature_type,theta)",
+    "read_subs_profile(nvar,nsize,retVars,subs_type,subs)"
+  ],
+  "branches": [
+    "uniquealtitudeheader:heightvs pressurevs none; multipleheadersleaveoutputsundefined asNative",
+    "pressure:absoluteT vs theta vs thetal, cloudwater/saturationadjustment/meanvirtualtemp/inversehydrostatic",
+    "temperatureandverticalvelocity metadata selection preserveNativeprecedence and ambiguousheaderguard"
+  ],
+  "order": "readprofile/readtheta/rt/exner, thermodynamictemperature-specificconversion, calculate_thvm, inverse_hydrostatic",
+  "extra_source_supported_lower": "allrequiredpressure/grid/saturation/interp owners alreadyexist",
+  "runtime": "pending; no builds/modeltests"
+}

@@ -53,42 +53,42 @@ def setup_grid(
 def zm2zt2zm(nzm: int, nzt: int, ngrdcol: int, gr: Grid, azm, zm_min: float = 0.0):
     """Smooth a momentum-level field by mapping zm->zt->zm."""
     set_fortran_grid(gr)
-    return clubb_f2py.f2py_zm2zt2zm(
+    return clubb_f2py.f2py_zm2zt2zm_2d(
         int(nzt), f_arr(azm), zm_min, nzm=int(nzm), ngrdcol=int(ngrdcol))
 
 
 def zt2zm(nzm: int, nzt: int, ngrdcol: int, gr: Grid, azt):
     """Interpolate a 2D field from zt (thermo) to zm (momentum) levels."""
     set_fortran_grid(gr)
-    return clubb_f2py.f2py_zt2zm(
+    return clubb_f2py.f2py_zt2zm_2d(
         int(nzm), f_arr(azt), nzt=int(nzt), ngrdcol=int(ngrdcol))
 
 
 def zm2zt(nzm: int, nzt: int, ngrdcol: int, gr: Grid, azm):
     """Interpolate a 2D field from zm (momentum) to zt (thermo) levels."""
     set_fortran_grid(gr)
-    return clubb_f2py.f2py_zm2zt(
+    return clubb_f2py.f2py_zm2zt_2d(
         int(nzt), f_arr(azm), nzm=int(nzm), ngrdcol=int(ngrdcol))
 
 
 def zt2zm2zt(nzm: int, nzt: int, ngrdcol: int, gr: Grid, azt, zt_min: float = 0.0):
     """Smooth a thermo-level field by mapping zt->zm->zt."""
     set_fortran_grid(gr)
-    return clubb_f2py.f2py_zt2zm2zt(
+    return clubb_f2py.f2py_zt2zm2zt_2d(
         int(nzm), f_arr(azt), zt_min, nzt=int(nzt), ngrdcol=int(ngrdcol))
 
 
 def ddzm(nzm: int, nzt: int, ngrdcol: int, gr: Grid, azm):
     """Differentiate a zm-grid field across zt levels, returning a zt-grid field."""
     set_fortran_grid(gr)
-    return clubb_f2py.f2py_ddzm(
+    return clubb_f2py.f2py_ddzm_2d(
         int(nzt), f_arr(azm), nzm=int(nzm), ngrdcol=int(ngrdcol))
 
 
 def ddzt(nzm: int, nzt: int, ngrdcol: int, gr: Grid, azt):
     """Differentiate a zt-grid field across zm levels, returning a zm-grid field."""
     set_fortran_grid(gr)
-    return clubb_f2py.f2py_ddzt(
+    return clubb_f2py.f2py_ddzt_2d(
         int(nzm), f_arr(azt), nzt=int(nzt), ngrdcol=int(ngrdcol))
 
 

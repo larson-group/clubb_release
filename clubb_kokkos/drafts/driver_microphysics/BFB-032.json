@@ -1,0 +1,286 @@
+{
+  "id": "BFB-032",
+  "date": "2026-11-06",
+  "status": "Actual joint operands/original object/source proof and508point View replay pass; maintained100step standard CPU strict-file BFB pass; Root promotion/full-duration acceptance separate",
+  "owner": "morrison_microphys_module.hpp::morrison_microphys_driver hl_before/hl_after first pair only",
+  "configuration": "NVHPC26.9 nvc++/nvfortran O0 g core8 C++20, Serial Kokkos; original current Native source/objects unchanged",
+  "observed_first_saved_difference": {
+    "case": "LBA Morrison LHdisabled arcticnucleationfalse",
+    "step_1_based": 77,
+    "variable": "hl_on_Cp_residual",
+    "level_1_based": 3,
+    "column_1_based": 1,
+    "cpp": 4.903013311299139e-06,
+    "Native": 4.903013253362045e-06,
+    "absolute_difference": 5.793709424977561e-14
+  },
+  "actual_operand_control": {
+    "joint_trace_owner": "/root/pdf_parent_outline",
+    "trace_snapshot": "diagnosis/residual77 wrapper77 from controlled165step run",
+    "header": [
+      77,
+      4,
+      127,
+      21
+    ],
+    "constant_order": [
+      "dt",
+      "Cp",
+      "Lv",
+      "Ls",
+      "grav"
+    ],
+    "constant_hex": [
+      "0x1.e000000000000p+5",
+      "0x1.f655c28f5c28fp+9",
+      "0x1.312d000000000p+21",
+      "0x1.59f2800000000p+21",
+      "0x1.39eb851eb851fp+3"
+    ],
+    "all18_scientific_operand_fields_bit_exact": true,
+    "before_energy_differences": 103,
+    "after_energy_differences": 104,
+    "residual_differences": 1,
+    "target_scalar_fields": {
+      "gr_zt": {
+        "cpp_hex": "0x1.a50d7801995d3p+6",
+        "native_hex": "0x1.a50d7801995d3p+6"
+      },
+      "T_in_K_core": {
+        "cpp_hex": "0x1.29127432dc3f9p+8",
+        "native_hex": "0x1.29127432dc3f9p+8"
+      },
+      "T_in_K": {
+        "cpp_hex": "0x1.2912720000000p+8",
+        "native_hex": "0x1.2912720000000p+8"
+      },
+      "rcm": {
+        "cpp_hex": "0x1.e917203d40dffp-27",
+        "native_hex": "0x1.e917203d40dffp-27"
+      },
+      "rrm": {
+        "cpp_hex": "0x0.0p+0",
+        "native_hex": "0x0.0p+0"
+      },
+      "rim": {
+        "cpp_hex": "0x0.0p+0",
+        "native_hex": "0x0.0p+0"
+      },
+      "rsm": {
+        "cpp_hex": "0x0.0p+0",
+        "native_hex": "0x0.0p+0"
+      },
+      "rgm": {
+        "cpp_hex": "0x0.0p+0",
+        "native_hex": "0x0.0p+0"
+      },
+      "rcm_r4": {
+        "cpp_hex": "0x0.0p+0",
+        "native_hex": "0x0.0p+0"
+      },
+      "rrm_r4": {
+        "cpp_hex": "0x0.0p+0",
+        "native_hex": "0x0.0p+0"
+      },
+      "rim_r4": {
+        "cpp_hex": "0x0.0p+0",
+        "native_hex": "0x0.0p+0"
+      },
+      "rsm_r4": {
+        "cpp_hex": "0x0.0p+0",
+        "native_hex": "0x0.0p+0"
+      },
+      "rgm_r4": {
+        "cpp_hex": "0x0.0p+0",
+        "native_hex": "0x0.0p+0"
+      },
+      "rcm_sten": {
+        "cpp_hex": "0x0.0p+0",
+        "native_hex": "0x0.0p+0"
+      },
+      "rrm_sten": {
+        "cpp_hex": "0x0.0p+0",
+        "native_hex": "0x0.0p+0"
+      },
+      "rim_sten": {
+        "cpp_hex": "0x0.0p+0",
+        "native_hex": "0x0.0p+0"
+      },
+      "rsm_sten": {
+        "cpp_hex": "0x0.0p+0",
+        "native_hex": "0x0.0p+0"
+      },
+      "rgm_sten": {
+        "cpp_hex": "0x0.0p+0",
+        "native_hex": "0x0.0p+0"
+      },
+      "hl_before": {
+        "cpp_hex": "0x1.2479005368600p+18",
+        "native_hex": "0x1.2479005368600p+18"
+      },
+      "hl_after": {
+        "cpp_hex": "0x1.247900a41d240p+18",
+        "native_hex": "0x1.247900a41d23fp+18"
+      },
+      "hl_on_Cp_residual": {
+        "cpp_hex": "0x1.490920967099cp-18",
+        "native_hex": "0x1.49092055355ecp-18"
+      }
+    },
+    "trace_hashes": {
+      "cpp_wrapper77.bin": "40f9cb8c7c51fe59f1abcbfa433e3fc29e06b234730d5703e30d39939ed8ada3",
+      "native_wrapper77.bin": "9be22b8857869d911ee97408fe976c113628581f0b36c21058b3f7bbeae74739"
+    },
+    "trace_observability_control": "build/parallel_cpu_lanes/remaining_driver_morrison_full_valid/diagnosis/residual77/OBSERVABILITY_CONTROL.json"
+  },
+  "cause": {
+    "expression": "Cp*real(T_in_K,core_rknd)+grav*gr%zt before unchanged latent-heat subtractions",
+    "Native": "round grav*z, then fma(Cp,T,rounded_grav_z)",
+    "ordinary_CPP": "round Cp*T, then fma(grav,z,rounded_Cp_T)",
+    "Native_binary_before_addresses": [
+      "fdbb vmulsd grav*z",
+      "fdc9 vfmadd213sd Cp*T+roundedgravz"
+    ],
+    "Native_binary_after_addresses": [
+      "2d8e3 vmulsd grav*z",
+      "2d8f1 vfmadd213sd Cp*T+roundedgravz"
+    ],
+    "CPP_binary_after_addresses": [
+      "259fae vmulsd Cp*T",
+      "259fba vfmadd213sd grav*z+roundedCpT"
+    ],
+    "constant_bytes_proof": "Native .text0x28=9.81,0x20=1004.67; CPP .text0x2456c8=1004.67,0x2456d0=9.81. Exact decoded values/bytes retained. The other instantiated CPPwrapper has same four values at .text0x207d48,0x207d50,0x207d58,0x207d60.",
+    "downstream": "All latent-heat subtractions and residual arithmetic already match; most before/after energy rounding cancels, one saved77 residual does not.",
+    "CPP_binary_before_addresses": [
+      "218218 vmulsd Cp*T",
+      "218224 vfmadd213sd grav*z+roundedCpT"
+    ]
+  },
+  "candidate": {
+    "patch": "build/parallel_cpu_lanes/driver_morrison_wrapper_numeric/BFB-032_candidate.patch",
+    "method": "Explicit Kokkos::fma(Cp,real(T),grav*z) at two source sites; same original terms/kinds/indices; no residual change",
+    "header_sha256": "4250902414976f4beefd474d7c671c8ca5cd8a2d78da4b98a89241151db00b1c",
+    "source_audit": "build/parallel_cpu_lanes/driver_morrison_wrapper_numeric/BFB-032_SOURCE_AUDIT.json"
+  },
+  "actual_View_replay": {
+    "points": 508,
+    "baseline_reproduces_all_CPP_energy_and_residual": true,
+    "baseline_vs_Native_difference_counts": {
+      "hl_before": 103,
+      "hl_after": 104,
+      "residual": 1
+    },
+    "candidate_vs_Native_difference_counts": {
+      "hl_before": 0,
+      "hl_after": 0,
+      "residual": 0
+    },
+    "log": "build/parallel_cpu_lanes/driver_morrison_wrapper_numeric/ACTUAL_VIEW_REPLAY.log",
+    "source": "Original and candidate exact energy assignment tokens extracted from their headers, preserving KokkosHostReal/HostFloat Views, Native mixed-kind boundaries and full actual4x127profiles. Constant bytes checked against live CPPowner."
+  },
+  "primary_model_gate": {
+    "command": [
+      "/home/guntherhuebler/Code/clubb/.venv-python/bin/python",
+      "/home/guntherhuebler/Code/clubb/build/parallel_cpu_lanes/driver_morrison_wrapper_numeric/runrepo/clubb_kokkos/auto_llm_generated_tests/integration_tests/run_kokkos_vs_fortran_cases.py",
+      "-build_dir",
+      "/home/guntherhuebler/Code/clubb/build/parallel_cpu_lanes/driver_morrison_wrapper_numeric/runrepo/checkpoint",
+      "-cases",
+      "lba",
+      "-stats",
+      "standard",
+      "-override",
+      "debug_level=2",
+      "-override",
+      "microphysics_setting.microphys_scheme=\"morrison\",microphysics_setting.lh_microphys_type=\"disabled\",microphysics_setting.l_arctic_nucl=.false.,debug_level=2",
+      "-max_iters",
+      "100",
+      "-workers",
+      "1"
+    ],
+    "binary_sha256": "306b68820a56fc835cd5cc3a4a10e5a0d417e8813868e0d0afc37eaa425b19da",
+    "Native_binary_sha256": "d6be11ae22ad99fbbaff77a7d865c5a5ce588e6f87a521e878554e793f6948bc",
+    "returncode": 0,
+    "elapsed_seconds": 107.49982523918152,
+    "results": "/home/guntherhuebler/Code/clubb/build/parallel_cpu_lanes/driver_morrison_wrapper_numeric/candidate032_100standard_results"
+  },
+  "primary_model_gate_case": {
+    "case": "lba",
+    "flag_data": {
+      "flag_name": "default",
+      "flag_dict": null,
+      "flag_file": null
+    },
+    "status": "match",
+    "kokkos_rc": 0,
+    "fortran_rc": 0,
+    "bindiff_rc": 0,
+    "kokkos_elapsed_s": 90.95802760124207,
+    "fortran_elapsed_s": 15.371915102005005,
+    "elapsed_s": 106.79703044891357,
+    "note": "Bindiff report: /home/guntherhuebler/Code/clubb/build/parallel_cpu_lanes/driver_morrison_wrapper_numeric/runrepo/output/tests/kokkos_driver_test_results/logs/default/lba_bindiff.json",
+    "first_failing_timestep": null,
+    "kokkos_timesteps": 100,
+    "fortran_timesteps": 100,
+    "max_iters": 100,
+    "dt_main": null,
+    "namelist_overrides": null,
+    "input_case": null,
+    "bindiff_threshold": 0.0,
+    "bindiff_percent_threshold": 0.0,
+    "byte_identical": true
+  },
+  "Native_prefix_invariance": {
+    "short": "build/parallel_cpu_lanes/driver_morrison_wrapper_numeric/candidate032_100standard_results/fortran_output/default/lba_stats.nc",
+    "long": "build/parallel_cpu_lanes/remaining_driver_morrison_full_valid/diagnosis/results/clean360/fortran_output/default/lba_stats.nc",
+    "short_sha256": "7c484dd73d5885f699262210fa8b35aaeab065f6946bb67dae85940ee194a45d",
+    "long_sha256": "65a8f1c1816caa7adfe76a4a70e2cd40927b286ba15eecf5d844b5ed50bab289",
+    "different_variables": [],
+    "compared_variables": 641
+  },
+  "candidate_saved_change_scope": {
+    "short": "build/parallel_cpu_lanes/driver_morrison_wrapper_numeric/candidate032_100standard_results/kokkos_output/default/lba_stats.nc",
+    "long": "build/parallel_cpu_lanes/remaining_driver_morrison_full_valid/diagnosis/results/clean360/kokkos_output/default/lba_stats.nc",
+    "short_sha256": "7c484dd73d5885f699262210fa8b35aaeab065f6946bb67dae85940ee194a45d",
+    "long_sha256": "61a35d9547733dfa5cb6eb0278626c3db84555fff6ff4b4201bb2eb5a64304f3",
+    "different_variables": [
+      {
+        "name": "hl_on_Cp_residual",
+        "count": 23,
+        "first_zero_based_index": [
+          76,
+          2,
+          0
+        ],
+        "short_hex": "0x1.49092055355ecp-18",
+        "long_hex": "0x1.490920967099cp-18"
+      }
+    ],
+    "compared_variables": 641
+  },
+  "source_binary_evidence_sha256": {
+    "build/parallel_cpu_lanes/driver_morrison_wrapper_numeric/src/Microphys/morrison_microphys_module.hpp": "4250902414976f4beefd474d7c671c8ca5cd8a2d78da4b98a89241151db00b1c",
+    "build/parallel_cpu_lanes/driver_morrison_wrapper_numeric/wrapper_before_032.hpp": "4c2cea3a7f61024479c27aa28726fa126b40efc7ee0a5c5ee2a87c99e90ef96c",
+    "build/parallel_cpu_lanes/driver_morrison_wrapper_numeric/BFB-032_candidate.patch": "6ffed61c2cf31deb58db86832297b3230e923ecdea4cdb8a7b7ab7c12e7c4775",
+    "build/parallel_cpu_lanes/driver_morrison_wrapper_numeric/wrapper_actual_view_replay.cpp": "a273cff6e3c17a867d4a5c8f5b76fc6e70527d8a634bd8484b3e1bcfbc4f522e",
+    "build/parallel_cpu_lanes/driver_morrison_wrapper_numeric/wrapper_actual_view_replay": "77a5000896cae8b2532cc5768a5b18cbab3ace6f0152a8117683f39bc43ce1e0",
+    "build/parallel_cpu_lanes/driver_morrison_wrapper_numeric/ACTUAL_VIEW_REPLAY.log": "fcabad21a253c6d8945fda23a18c0a344bafdc368ef1ab22fc1d30274ed48903",
+    "build/parallel_cpu_lanes/driver_morrison_wrapper_numeric/original_native_wrapper.o": "3c5c47931f7d4d1d48a1f46317a629f4c69c3f8975becc0861ff0f36c4f2d588",
+    "build/parallel_cpu_lanes/driver_morrison_wrapper_numeric/original_native_wrapper_assembly.txt": "c52752a8125b99a4eaac79aea29555e095583d07af2992ba63f5737192e10390",
+    "build/parallel_cpu_lanes/driver_morrison_wrapper_numeric/original_cpp_wrapper_assembly0.txt": "6e41ed043e24de92d51dd6ff950589f5c4f95e255b6678630aabe94ce064b480",
+    "build/parallel_cpu_lanes/driver_morrison_wrapper_numeric/original_cpp_wrapper_assembly1.txt": "48d8a744ea3b37d4e5e8414491017f2d9b03f01a1a1d378d5e137013ed40c1f0",
+    "build/parallel_cpu_lanes/driver_morrison_wrapper_numeric/native_energy_constant_bytes.json": "f2a1197b045783f9e8b4e6a0eb7eec975c4fe05083d4105ff96e7063f9f57633",
+    "build/parallel_cpu_lanes/driver_morrison_wrapper_numeric/cpp_energy_constant_bytes.json": "95d149db7dbe53ae713c595fcb475d71656827d96e8eaa3b8e71c4d3b9424603",
+    "build/parallel_cpu_lanes/driver_morrison_wrapper_numeric/candidate032_driver.cpp.o": "00c1ce4e7b2c499426d1ba8c718d5226c053eed304b44356a1f22b17420f8af8",
+    "build/parallel_cpu_lanes/driver_morrison_wrapper_numeric/candidate032_clubb_standalone": "306b68820a56fc835cd5cc3a4a10e5a0d417e8813868e0d0afc37eaa425b19da",
+    "build/parallel_cpu_lanes/driver_morrison_wrapper_numeric/MODEL_GATE_RESULT.json": "69cffec5ff80a84e93b8e357a9326cd2aad4cabe7995ae11f83b4d788f9e0799",
+    "build/parallel_cpu_lanes/driver_morrison_wrapper_numeric/candidate032_100standard_results/case_compare_summary.json": "5ac455c91007e60e4f8c656a42c1136fa2ab9b0c853f09adde4d4fd06757192d",
+    "src/Microphys/morrison_microphys_module.F90": "6c6e5f18e8378085259d6d2713c99ade4a4b8dd35a5be32e0634931772906b36"
+  },
+  "scope_limits": [
+    "100step window intentionally diagnoses wrapper77 and does not claim full360agreement. Separate engine PRE/rrm_evap165 cause remains PDFowner task.",
+    "No live source changes by this lane, Native source edits, globalstate, tolerance/stat/physics changes, GPU numerical or performance investigation.",
+    "Initial isolated runner attempt rejected missing copied backend metadata before either model ran; setup-only log retained, metadata restored before accepted gate.",
+    "Root owns final combined builds/full gates and central BFBlog update."
+  ],
+  "live_integration": "Exact candidate promoted; live full360 Morrison LBA gate passes byte-identically. Source hashes and final records are under remaining_driver_cpu and the final Morrison lane."
+}

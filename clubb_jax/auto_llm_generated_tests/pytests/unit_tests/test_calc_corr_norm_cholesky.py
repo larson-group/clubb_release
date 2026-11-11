@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 """validate the JAX calc_corr_norm_and_cholesky_factor orchestration."""
 
-from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
-
 
 import numpy as np
 
@@ -51,7 +49,7 @@ def _inputs(seed):
 
 def test_reconstruction_and_structure():
     cc, cb, rc_1, rc_2 = _inputs(1)
-    corr_1, corr_2, chol_1, chol_2 = call_jax(calc_corr_norm_and_cholesky_factor,
+    corr_1, corr_2, chol_1, chol_2 = calc_corr_norm_and_cholesky_factor(
         cc, cb, rc_1, rc_2, 6, CHI, ETA, W, NCN, True)
     for corr, chol in ((np.asarray(corr_1), np.asarray(chol_1)), (np.asarray(corr_2), np.asarray(chol_2))):
         assert np.max(np.abs(corr - np.swapaxes(corr, -1, -2))) < 1e-14, "corr not symmetric"
@@ -67,7 +65,7 @@ def test_reconstruction_and_structure():
 def test_adjustments_and_selection():
     cc, cb, rc_1, rc_2 = _inputs(2)
     iiPDF_type, l_adg = 1, True   # ADG1 -> w-chi/w-eta zeroed
-    corr_1, corr_2, _, _ = call_jax(calc_corr_norm_and_cholesky_factor,
+    corr_1, corr_2, _, _ = calc_corr_norm_and_cholesky_factor(
         cc, cb, rc_1, rc_2, iiPDF_type, CHI, ETA, W, NCN, l_adg)
     cc_s, cb_s = _ref_adjust(cc, cb, iiPDF_type, l_adg)
     # Selection: rc>rc_tol -> cloud, else below.

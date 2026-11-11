@@ -1,0 +1,148 @@
+{
+  "date": "2026-11-05",
+  "source": {
+    "path": "src/CLUBB_core/remapping_module.F90",
+    "sha256": "09131e11129d771f41dda1522ead13e517da55c6a46af7b5a2eeadb7499cb6f5"
+  },
+  "targets": {
+    "remapping_module.cpp": "f6a961233fcbec94c6428d689bda2803d4735e7d794b6ed278921b603e3f14b2",
+    "remapping_module.hpp": "f28558c9bddc25145a48912275d0b1b36c20e5ac866df9aaf390d5f66cd15d77"
+  },
+  "provenance": "Owner complete source/cleanup audit plus distinct independent full-body review; three requested corrections completed, final independent hash recheck recorded separately.",
+  "native_procedures": 18,
+  "public_procedures": 2,
+  "native_arguments": 118,
+  "extra_overloads": [
+    "Scalar-cell kmppm: device/coefficient-shape adaptation.",
+    "Generic public remap_vals_to_target: const/strided memory-space boundary."
+  ],
+  "science_formula_index_trees_checked": 108,
+  "maintained_model_tests_run_for_this_draft": 0,
+  "runtime_BFB_GPU_and_performance": "Runtime/CPU BFB/GPU execution/performance pending; Serial and CUDA TU/interface compilation passed.",
+  "new_physics_bridges": [],
+  "new_type_schemas": [],
+  "new_model_flag_selectors": {
+    "cons_ullrich_remap": 1,
+    "ppm_remap": 2
+  },
+  "compile": {
+    "compiler": "NVHPC nvc++26.9",
+    "Kokkos_backend": "Serial",
+    "Kokkos_install": "/home/guntherhuebler/Code/clubb/build/kokkos_serial_nvhpc26_debug/install",
+    "flags": "-O0 -g -std=gnu++20",
+    "precision": "double (CLUBB_REAL_TYPE=8)",
+    "command": "cmake --build build/parallel_cpu_lanes/mixing/build --target clubb_kokkos_core_lib -j2",
+    "final_cpp_recompile_and_archive": "passed",
+    "log": "final_compile.log",
+    "object_sha256": "603bd098a2ef6d387a8b039faf0983f5cfb3297842c212e554c13cbab8d4c570",
+    "generic_interface_edge": "compile_interfaces.cpp const/strided HostSpace inputs; static assertions require owned HostSpace result",
+    "generic_interface_result": "passed; not executed",
+    "generic_interface_log": "interface_compile.log"
+  },
+  "BFB_adaptations": [],
+  "remaining_known_source_definedness": [
+    "Native failed-search diagnostic can read pe2 beyond kn+1 if kn<km.",
+    "map1_ppm failure returns without writing q2; wrapper reuses prior target scratch.",
+    "Diagnostic native SUM compiler association unverified; explicit ascending fold used.",
+    "At km3, Native AL3 is unwritten when the top cubic reads it; document minimum4 defined source cells without a new guard."
+  ],
+  "promotion_delta": "integration.patch; two selected model constants plus one CMake source entry, applied only to current owners.",
+  "CUDA_compile": {
+    "compile_only": true,
+    "GPU_runtime_executed": false,
+    "records": [
+      {
+        "name": "remapping_module",
+        "source": "/home/guntherhuebler/Code/clubb/build/parallel_cpu_lanes/mixing/source/clubb_kokkos/src/CLUBB_core/remapping_module.cpp",
+        "source_sha256": "f6a961233fcbec94c6428d689bda2803d4735e7d794b6ed278921b603e3f14b2",
+        "command": [
+          "/home/guntherhuebler/larson-spack-work/nvhpc26-cuda13/opt/spack/__spack_path_placeholder__/__spack_path_placeholder__/__spack_path_placeholder__/__spack_path_placeholder__/__spack_path_placeholder__/__spack_path_placeholder__/__spack_path_placeholder__/__s/linux-zen3/kokkos-5.2.2-vh2lg45vfa6acp46k3ly7iksmsocrhq3/bin/nvcc_wrapper",
+          "-DCLUBB",
+          "-DCLUBB_REAL_TYPE=8",
+          "-DCOAMPS_MICRO",
+          "-DKOKKOS_DEPENDENCE",
+          "-DUWM_MISC",
+          "-Dnooverlap",
+          "-Dradoffline",
+          "-I/home/guntherhuebler/Code/clubb/build/clubb_kokkos_nvhpc26_debug/MOD",
+          "-I/home/guntherhuebler/Code/clubb/build/parallel_cpu_lanes/mixing/source/clubb_kokkos/src",
+          "-isystem",
+          "/home/guntherhuebler/larson-spack-work/nvhpc26-cuda13/opt/spack/__spack_path_placeholder__/__spack_path_placeholder__/__spack_path_placeholder__/__spack_path_placeholder__/__spack_path_placeholder__/__spack_path_placeholder__/__spack_path_placeholder__/__s/linux-zen3/kokkos-5.2.2-vh2lg45vfa6acp46k3ly7iksmsocrhq3/include",
+          "-isystem",
+          "/home/guntherhuebler/larson-spack-work/nvhpc26-cuda13/opt/spack/__spack_path_placeholder__/__spack_path_placeholder__/__spack_path_placeholder__/__spack_path_placeholder__/__spack_path_placeholder__/__spack_path_placeholder__/__spack_path_placeholder__/__s/linux-zen3/nvhpc-26.9-d74p2pulrc5r26i6dsddjluhbgejsaid/Linux_x86_64/26.9/cuda/13.3/targets/x86_64-linux/include",
+          "-isystem",
+          "/home/guntherhuebler/larson-spack-work/nvhpc26-cuda13/opt/spack/__spack_path_placeholder__/__spack_path_placeholder__/__spack_path_placeholder__/__spack_path_placeholder__/__spack_path_placeholder__/__spack_path_placeholder__/__spack_path_placeholder__/__s/linux-zen3/nvhpc-26.9-d74p2pulrc5r26i6dsddjluhbgejsaid/Linux_x86_64/26.9/cuda/13.3/targets/x86_64-linux/include/cccl",
+          "-isystem",
+          "/home/guntherhuebler/larson-spack-work/nvhpc26-cuda13/opt/spack/__spack_path_placeholder__/__spack_path_placeholder__/__spack_path_placeholder__/__spack_path_placeholder__/__spack_path_placeholder__/__spack_path_placeholder__/__spack_path_placeholder__/__s/linux-zen3/nvhpc-26.9-d74p2pulrc5r26i6dsddjluhbgejsaid/Linux_x86_64/26.9/math_libs/13.3/include",
+          "-g",
+          "-O0",
+          "-std=c++20",
+          "-tp=zen3",
+          "-extended-lambda",
+          "-Wext-lambda-captures-this",
+          "-arch=sm_86",
+          "-I/home/guntherhuebler/Code/clubb/build/parallel_cpu_lanes/mixing/source/clubb_kokkos/src/CLUBB_core",
+          "-c",
+          "/home/guntherhuebler/Code/clubb/build/parallel_cpu_lanes/mixing/source/clubb_kokkos/src/CLUBB_core/remapping_module.cpp",
+          "-o",
+          "/home/guntherhuebler/Code/clubb/build/parallel_cpu_lanes/mixing/remapping_cuda_compile/remapping_module.o"
+        ],
+        "exit_code": 0,
+        "log": "cuda_remapping_module.log",
+        "object": "/home/guntherhuebler/Code/clubb/build/parallel_cpu_lanes/mixing/remapping_cuda_compile/remapping_module.o",
+        "object_sha256": "4dbb5e40c8d7abb9955bc602b19957dde00d65db058257e3a54453d2b493b8e9"
+      },
+      {
+        "name": "compile_interfaces",
+        "source": "/home/guntherhuebler/Code/clubb/clubb_kokkos/drafts/remapping_module/compile_interfaces.cpp",
+        "source_sha256": "17dc63b993c3c146fa4e372b35076bced697642f6589b65a62eb38b087fc7cab",
+        "command": [
+          "/home/guntherhuebler/larson-spack-work/nvhpc26-cuda13/opt/spack/__spack_path_placeholder__/__spack_path_placeholder__/__spack_path_placeholder__/__spack_path_placeholder__/__spack_path_placeholder__/__spack_path_placeholder__/__spack_path_placeholder__/__s/linux-zen3/kokkos-5.2.2-vh2lg45vfa6acp46k3ly7iksmsocrhq3/bin/nvcc_wrapper",
+          "-DCLUBB",
+          "-DCLUBB_REAL_TYPE=8",
+          "-DCOAMPS_MICRO",
+          "-DKOKKOS_DEPENDENCE",
+          "-DUWM_MISC",
+          "-Dnooverlap",
+          "-Dradoffline",
+          "-I/home/guntherhuebler/Code/clubb/build/clubb_kokkos_nvhpc26_debug/MOD",
+          "-I/home/guntherhuebler/Code/clubb/build/parallel_cpu_lanes/mixing/source/clubb_kokkos/src",
+          "-isystem",
+          "/home/guntherhuebler/larson-spack-work/nvhpc26-cuda13/opt/spack/__spack_path_placeholder__/__spack_path_placeholder__/__spack_path_placeholder__/__spack_path_placeholder__/__spack_path_placeholder__/__spack_path_placeholder__/__spack_path_placeholder__/__s/linux-zen3/kokkos-5.2.2-vh2lg45vfa6acp46k3ly7iksmsocrhq3/include",
+          "-isystem",
+          "/home/guntherhuebler/larson-spack-work/nvhpc26-cuda13/opt/spack/__spack_path_placeholder__/__spack_path_placeholder__/__spack_path_placeholder__/__spack_path_placeholder__/__spack_path_placeholder__/__spack_path_placeholder__/__spack_path_placeholder__/__s/linux-zen3/nvhpc-26.9-d74p2pulrc5r26i6dsddjluhbgejsaid/Linux_x86_64/26.9/cuda/13.3/targets/x86_64-linux/include",
+          "-isystem",
+          "/home/guntherhuebler/larson-spack-work/nvhpc26-cuda13/opt/spack/__spack_path_placeholder__/__spack_path_placeholder__/__spack_path_placeholder__/__spack_path_placeholder__/__spack_path_placeholder__/__spack_path_placeholder__/__spack_path_placeholder__/__s/linux-zen3/nvhpc-26.9-d74p2pulrc5r26i6dsddjluhbgejsaid/Linux_x86_64/26.9/cuda/13.3/targets/x86_64-linux/include/cccl",
+          "-isystem",
+          "/home/guntherhuebler/larson-spack-work/nvhpc26-cuda13/opt/spack/__spack_path_placeholder__/__spack_path_placeholder__/__spack_path_placeholder__/__spack_path_placeholder__/__spack_path_placeholder__/__spack_path_placeholder__/__spack_path_placeholder__/__s/linux-zen3/nvhpc-26.9-d74p2pulrc5r26i6dsddjluhbgejsaid/Linux_x86_64/26.9/math_libs/13.3/include",
+          "-g",
+          "-O0",
+          "-std=c++20",
+          "-tp=zen3",
+          "-extended-lambda",
+          "-Wext-lambda-captures-this",
+          "-arch=sm_86",
+          "-I/home/guntherhuebler/Code/clubb/build/parallel_cpu_lanes/mixing/source/clubb_kokkos/src/CLUBB_core",
+          "-c",
+          "/home/guntherhuebler/Code/clubb/clubb_kokkos/drafts/remapping_module/compile_interfaces.cpp",
+          "-o",
+          "/home/guntherhuebler/Code/clubb/build/parallel_cpu_lanes/mixing/remapping_cuda_compile/compile_interfaces.o"
+        ],
+        "exit_code": 0,
+        "log": "cuda_compile_interfaces.log",
+        "object": "/home/guntherhuebler/Code/clubb/build/parallel_cpu_lanes/mixing/remapping_cuda_compile/compile_interfaces.o",
+        "object_sha256": "c3e95947b24124a0ae3a19cfa6def84a1085f2f3849328d99cab1384a7ad5ee2"
+      }
+    ]
+  },
+  "independent_review_artifact": "/tmp/clubb_remapping_independent_source_audit.json",
+  "review_cleanup": {
+    "Native_science_calls_regrouped_Cpp": 28,
+    "generic_header_science_calls_regrouped": 1,
+    "pure_formatting_token_proof": "review_call_format_audit.json",
+    "minimum_defined_PPM_source_cells": 4,
+    "new_input_guard_added": false,
+    "same_kind_device_constant_materializations": 5,
+    "value_association_proof": "device_prvalue_audit.json"
+  }
+}

@@ -48,11 +48,11 @@ def test_sponge_damp_xm_simple_midpoint_case(gr):
     xm_ref = np.full((gr.ngrdcol, gr.nzt), 10.0, dtype=np.float64)
     xm = np.full((gr.ngrdcol, gr.nzt), 2.0, dtype=np.float64)
     tau = np.ones((gr.ngrdcol, gr.nzt), dtype=np.float64)
-    depth = np.full(gr.ngrdcol, 1.0e9)
+    depth = np.full(gr.ngrdcol, 1.0e9, dtype=np.float64)
     damping_profile = SimpleNamespace(tau_sponge_damp=tau, sponge_layer_depth=depth)
 
     damped = clubb_api.sponge_damp_xm(
-        ngrdcol=gr.ngrdcol, gr=gr, nzm=gr.nzm, nzt=gr.nzt,
+        gr=gr, nzm=gr.nzm, nzt=gr.nzt,
         dt=1.0, zt=gr.zt, zm=gr.zm, xm_ref=xm_ref, xm=xm,
         damping_profile=damping_profile,
     )
@@ -63,12 +63,12 @@ def test_sponge_damp_xp2_respects_floor(gr):
     """With dt=tau and full-depth sponge, xp2 should clip to x_tol_sqd floor."""
     xp2 = np.full((gr.ngrdcol, gr.nzm), 9.0, dtype=np.float64)
     tau = np.ones((gr.ngrdcol, gr.nzm), dtype=np.float64)
-    depth = np.full(gr.ngrdcol, 1.0e9)
+    depth = np.full(gr.ngrdcol, 1.0e9, dtype=np.float64)
     damping_profile = SimpleNamespace(tau_sponge_damp=tau, sponge_layer_depth=depth)
-    x_tol_sqd = 0.04
+    x_tol_sqd = np.full(gr.ngrdcol, 0.04, dtype=np.float64)
 
     damped = clubb_api.sponge_damp_xp2(
-        ngrdcol=gr.ngrdcol, gr=gr, nzm=gr.nzm,
+        gr, nzm=gr.nzm,
         dt=1.0, zm=gr.zm, xp2=xp2, x_tol_sqd=x_tol_sqd,
         damping_profile=damping_profile,
     )
@@ -79,11 +79,11 @@ def test_sponge_damp_xp3_full_damping_to_zero(gr):
     """With dt=tau and full-depth sponge, xp3 damping factor should be zero."""
     xp3 = np.full((gr.ngrdcol, gr.nzt), 5.0, dtype=np.float64)
     tau = np.ones((gr.ngrdcol, gr.nzt), dtype=np.float64)
-    depth = np.full(gr.ngrdcol, 1.0e9)
+    depth = np.full(gr.ngrdcol, 1.0e9, dtype=np.float64)
     damping_profile = SimpleNamespace(tau_sponge_damp=tau, sponge_layer_depth=depth)
 
     damped = clubb_api.sponge_damp_xp3(
-        ngrdcol=gr.ngrdcol, gr=gr, nzm=gr.nzm, nzt=gr.nzt,
+        gr, nzm=gr.nzm, nzt=gr.nzt,
         dt=1.0, z=gr.zt, zm=gr.zm, xp3=xp3,
         damping_profile=damping_profile,
     )

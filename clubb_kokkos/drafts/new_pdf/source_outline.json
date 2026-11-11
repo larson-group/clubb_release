@@ -1,0 +1,2047 @@
+{
+  "status": "Full canonical source read and outlined before implementation; draft uncompiled/untested",
+  "sources": {
+    "src/CLUBB_core/new_pdf_main.F90": "538ec6d95d3d1854ba04ea0c91036af7f08b9322560df4b4840c062df7207f38",
+    "src/CLUBB_core/new_pdf.F90": "03f81f9d04755974603d60e7a77718a2af033f80bc926630e645d2dd5cf59e64"
+  },
+  "native_lines_read": {
+    "new_pdf_main": "1-776",
+    "new_pdf": "1-2310"
+  },
+  "routines": [
+    {
+      "module": "new_pdf_main",
+      "name": "new_pdf_driver",
+      "line": 26,
+      "end_line": 415,
+      "kind": "subroutine",
+      "elemental": false,
+      "arguments": [
+        {
+          "name": "nz",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rtm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "thlm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rtp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "thlp2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "Skw",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wprtp",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wpthlp",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rtpthlp",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "clubb_params",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nparams"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "Skrt",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "Skthl",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mu_w_1",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mu_w_2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mu_rt_1",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mu_rt_2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mu_thl_1",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mu_thl_2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma_w_1_sqd",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma_w_2_sqd",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma_rt_1_sqd",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma_rt_2_sqd",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma_thl_1_sqd",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma_thl_2_sqd",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mixt_frac",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "pdf_implicit_coefs_terms",
+          "kind": "implicit_coefs_terms",
+          "dims": [],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "branches": [
+        "do  i = 1, ngrdcol",
+        "where ( wprtp(i,:) >= zero )",
+        "elsewhere",
+        "where ( wpthlp(i,:) >= zero )",
+        "elsewhere",
+        "where ( rtp2(i,:) >= rt_tol**2 .and. thlp2(i,:) >= thl_tol**2 )",
+        "elsewhere",
+        "if ( .not. l_explicit_turbulent_adv_wp3 ) then",
+        "else",
+        "if ( .not. l_explicit_turbulent_adv_xpyp ) then",
+        "else",
+        "if ( .not. l_explicit_turbulent_adv_wpxp ) then",
+        "else"
+      ],
+      "calls": [
+        "call calc_F_x_zeta_x_setter( nz, Skw(i,:), clubb_params(i,islope_coef_spread_DG_means_w), clubb_params(i,ipdf_component_stdev_factor_w), lambda_w, F_w(i,:), zeta_w, min_F_w(i,:), max_F_w(i,:)              )",
+        "call calc_setter_var_params( nz, wm(i,:), wp2(i,:), Skw(i,:), sgn_wp2, F_w(i,:), zeta_w, mu_w_1(i,:), mu_w_2(i,:), sigma_w_1, sigma_w_2, mixt_frac(i,:), coef_sigma_w_1_sqd, coef_sigma_w_2_sqd         )",
+        "call calc_responder_var( nz, rtm(i,:), rtp2(i,:), sgn_wprtp, mixt_frac(i,:), clubb_params(i,icoef_spread_DG_means_rt), exp_factor_rt, max_Skx2_pos_Skx_sgn_wpxp, max_Skx2_neg_Skx_sgn_wpxp, Skrt(i,:), mu_rt_1(i,:), mu_rt_2(i,:), sigma_rt_1_sqd(i,:), sigma_rt_2_sqd(i,:), coef_sigma_rt_1_sqd, coef_sigma_rt_2_sqd, F_rt(i,:), min_F_rt(i,:), max_F_rt(i,:)         )",
+        "call calc_responder_var( nz, thlm(i,:), thlp2(i,:), sgn_wpthlp, mixt_frac(i,:), clubb_params(i,icoef_spread_DG_means_thl), exp_factor_thl, max_Skx2_pos_Skx_sgn_wpxp, max_Skx2_neg_Skx_sgn_wpxp, Skthl(i,:), mu_thl_1(i,:), mu_thl_2(i,:), sigma_thl_1_sqd(i,:), sigma_thl_2_sqd(i,:), coef_sigma_thl_1_sqd, coef_sigma_thl_2_sqd, F_thl(i,:), min_F_thl(i,:), max_F_thl(i,:)         )",
+        "call calc_coefs_wpxpyp_semiimpl( nz, wp2(i,:), rtp2(i,:), thlp2(i,:), wprtp(i,:), wpthlp(i,:), sgn_wprtp, sgn_wpthlp, mixt_frac(i,:), F_w(i,:), F_rt(i,:), F_thl(i,:), coef_sigma_w_1_sqd  , coef_sigma_w_2_sqd, coef_sigma_rt_1_sqd, coef_sigma_rt_2_sqd, coef_sigma_thl_1_sqd, coef_sigma_thl_2_sqd, coef_wprtpthlp_implicit, term_wprtpthlp_explicit        )",
+        "call calc_coefs_wp2xp_semiimpl( nz, wp2(i,:), rtp2(i,:), sgn_wprtp, mixt_frac(i,:), F_w(i,:), F_rt(i,:), coef_sigma_w_1_sqd, coef_sigma_w_2_sqd, coef_sigma_rt_1_sqd, coef_sigma_rt_2_sqd, coef_wp2rtp_implicit, term_wp2rtp_explicit  )",
+        "call calc_coefs_wp2xp_semiimpl( nz, wp2(i,:), thlp2(i,:), sgn_wpthlp, mixt_frac(i,:), F_w(i,:), F_thl(i,:), coef_sigma_w_1_sqd, coef_sigma_w_2_sqd, coef_sigma_thl_1_sqd, coef_sigma_thl_2_sqd, coef_wp2thlp_implicit, term_wp2thlp_explicit   )"
+      ],
+      "function_dependencies": [
+        "calc_setter_var_params",
+        "calc_responder_var",
+        "calc_responder_var",
+        "calc_coef_wp4_implicit",
+        "calc_coef_wpxp2_implicit",
+        "calc_coef_wpxp2_implicit",
+        "calc_coefs_wpxpyp_semiimpl",
+        "calc_coefs_wp2xp_semiimpl",
+        "calc_coefs_wp2xp_semiimpl"
+      ],
+      "stats": "No statistics backend calls; F_x/min/max diagnostics remain required outputs where Native declares them."
+    },
+    {
+      "module": "new_pdf_main",
+      "name": "calc_responder_var",
+      "line": 418,
+      "end_line": 530,
+      "kind": "subroutine",
+      "elemental": false,
+      "arguments": [
+        {
+          "name": "nz",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "xm",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "xp2",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sgn_wpxp",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mixt_frac",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "coef_spread_DG_means_x",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "exp_factor_x",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "max_Skx2_pos_Skx_sgn_wpxp",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "max_Skx2_neg_Skx_sgn_wpxp",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "Skx",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mu_x_1",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mu_x_2",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma_x_1_sqd",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma_x_2_sqd",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "coef_sigma_x_1_sqd",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "coef_sigma_x_2_sqd",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "F_x",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "min_F_x",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "max_F_x",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "branches": [
+        "where ( Skx * sgn_wpxp >= zero )",
+        "where ( Skx**2 >= max_Skx2_pos_Skx_sgn_wpxp )",
+        "where ( Skx >= zero )",
+        "elsewhere",
+        "elsewhere",
+        "where ( Skx**2 >= max_Skx2_neg_Skx_sgn_wpxp )",
+        "where ( Skx >= zero )",
+        "elsewhere"
+      ],
+      "calls": [
+        "call calc_limits_F_x_responder( nz, mixt_frac, Skx, sgn_wpxp, max_Skx2_pos_Skx_sgn_wpxp, max_Skx2_neg_Skx_sgn_wpxp, min_F_x, max_F_x )",
+        "call calc_responder_params( nz, xm, xp2, Skx, sgn_wpxp, F_x, mixt_frac, mu_x_1, mu_x_2, sigma_x_1_sqd, sigma_x_2_sqd, coef_sigma_x_1_sqd, coef_sigma_x_2_sqd            )"
+      ],
+      "function_dependencies": [
+        "calc_limits_F_x_responder",
+        "calc_F_x_responder",
+        "calc_responder_params"
+      ],
+      "stats": "No statistics backend calls; F_x/min/max diagnostics remain required outputs where Native declares them."
+    },
+    {
+      "module": "new_pdf_main",
+      "name": "calc_F_x_zeta_x_setter",
+      "line": 533,
+      "end_line": 647,
+      "kind": "subroutine",
+      "elemental": false,
+      "arguments": [
+        {
+          "name": "nz",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "Skx",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "slope_coef_spread_DG_means_x",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "pdf_component_stdev_factor_x",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "lambda",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "F_x",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "zeta_x",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "min_F_x",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "max_F_x",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "branches": [
+        "where ( abs( Skx ) > zero )",
+        "elsewhere"
+      ],
+      "calls": [],
+      "function_dependencies": [],
+      "stats": "No statistics backend calls; F_x/min/max diagnostics remain required outputs where Native declares them."
+    },
+    {
+      "module": "new_pdf_main",
+      "name": "calc_F_x_responder",
+      "line": 650,
+      "end_line": 772,
+      "kind": "function",
+      "elemental": false,
+      "arguments": [
+        {
+          "name": "nz",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "coef_spread_DG_means_x",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "exp_factor_x",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "min_F_x",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "max_F_x",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": {
+        "name": "F_x",
+        "kind": "real",
+        "dims": [
+          "nz"
+        ],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      "branches": [],
+      "calls": [],
+      "function_dependencies": [],
+      "stats": "No statistics backend calls; F_x/min/max diagnostics remain required outputs where Native declares them."
+    },
+    {
+      "module": "new_pdf",
+      "name": "calc_mixture_fraction",
+      "line": 348,
+      "end_line": 441,
+      "kind": "function",
+      "elemental": false,
+      "arguments": [
+        {
+          "name": "nz",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "Skx",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "F_x",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "zeta_x",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sgn_wpxp",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": {
+        "name": "mixt_frac",
+        "kind": "real",
+        "dims": [
+          "nz"
+        ],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      "branches": [
+        "where ( F_x > zero )",
+        "elsewhere",
+        "where ( abs( Skx ) > zero )",
+        "elsewhere",
+        "if ( any( .not. l_calc_mixt_frac ) ) then"
+      ],
+      "calls": [],
+      "function_dependencies": [],
+      "stats": "No statistics backend calls; F_x/min/max diagnostics remain required outputs where Native declares them."
+    },
+    {
+      "module": "new_pdf",
+      "name": "calc_setter_var_params",
+      "line": 444,
+      "end_line": 524,
+      "kind": "subroutine",
+      "elemental": false,
+      "arguments": [
+        {
+          "name": "nz",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "xm",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "xp2",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "Skx",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sgn_wpxp",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "F_x",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "zeta_x",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mu_x_1",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mu_x_2",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma_x_1",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma_x_2",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mixt_frac",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "coef_sigma_x_1_sqd",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "coef_sigma_x_2_sqd",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "branches": [],
+      "calls": [],
+      "function_dependencies": [
+        "calc_mixture_fraction"
+      ],
+      "stats": "No statistics backend calls; F_x/min/max diagnostics remain required outputs where Native declares them."
+    },
+    {
+      "module": "new_pdf",
+      "name": "calc_responder_params",
+      "line": 810,
+      "end_line": 919,
+      "kind": "subroutine",
+      "elemental": false,
+      "arguments": [
+        {
+          "name": "nz",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "xm",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "xp2",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "Skx",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sgn_wpxp",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "F_x",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mixt_frac",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mu_x_1",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mu_x_2",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma_x_1_sqd",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma_x_2_sqd",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "coef_sigma_x_1_sqd",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "coef_sigma_x_2_sqd",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "branches": [
+        "where ( F_x > zero )",
+        "elsewhere"
+      ],
+      "calls": [],
+      "function_dependencies": [],
+      "stats": "No statistics backend calls; F_x/min/max diagnostics remain required outputs where Native declares them."
+    },
+    {
+      "module": "new_pdf",
+      "name": "calc_limits_F_x_responder",
+      "line": 922,
+      "end_line": 1080,
+      "kind": "subroutine",
+      "elemental": false,
+      "arguments": [
+        {
+          "name": "nz",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mixt_frac",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "Skx",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sgn_wpxp",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "max_Skx2_pos_Skx_sgn_wpxp",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "max_Skx2_neg_Skx_sgn_wpxp",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "min_F_x",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "max_F_x",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "branches": [
+        "where ( Skx * sgn_wpxp >= zero )",
+        "where ( Skx**2 > max_Skx2_neg_Skx_sgn_wpxp )",
+        "elsewhere",
+        "elsewhere",
+        "where ( Skx**2 > max_Skx2_pos_Skx_sgn_wpxp )",
+        "elsewhere"
+      ],
+      "calls": [],
+      "function_dependencies": [
+        "cubic_solve",
+        "sort_roots",
+        "cubic_solve",
+        "sort_roots"
+      ],
+      "stats": "No statistics backend calls; F_x/min/max diagnostics remain required outputs where Native declares them."
+    },
+    {
+      "module": "new_pdf",
+      "name": "sort_roots",
+      "line": 1083,
+      "end_line": 1177,
+      "kind": "function",
+      "elemental": false,
+      "arguments": [
+        {
+          "name": "nz",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "roots",
+          "kind": "real",
+          "dims": [
+            "nz",
+            "3"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": {
+        "name": "roots_sorted",
+        "kind": "real",
+        "dims": [
+          "nz",
+          "3"
+        ],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      "branches": [
+        "where ( roots(:,1) <= roots(:,2) .and. roots(:,1) <= roots(:,3) )",
+        "where ( roots(:,2) <= roots(:,3) )",
+        "elsewhere",
+        "elsewhere ( roots(:,2) < roots(:,1) .and. roots(:,2) <= roots(:,3) )",
+        "where ( roots(:,1) <= roots(:,3) )",
+        "elsewhere",
+        "elsewhere",
+        "where ( roots(:,1) <= roots(:,2) )",
+        "elsewhere"
+      ],
+      "calls": [],
+      "function_dependencies": [],
+      "stats": "No statistics backend calls; F_x/min/max diagnostics remain required outputs where Native declares them."
+    },
+    {
+      "module": "new_pdf",
+      "name": "calc_coef_wp4_implicit",
+      "line": 1180,
+      "end_line": 1298,
+      "kind": "function",
+      "elemental": false,
+      "arguments": [
+        {
+          "name": "nz",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mixt_frac",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "F_w",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "coef_sigma_w_1_sqd",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "coef_sigma_w_2_sqd",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": {
+        "name": "coef_wp4_implicit",
+        "kind": "real",
+        "dims": [
+          "nz"
+        ],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      "branches": [],
+      "calls": [],
+      "function_dependencies": [],
+      "stats": "No statistics backend calls; F_x/min/max diagnostics remain required outputs where Native declares them."
+    },
+    {
+      "module": "new_pdf",
+      "name": "calc_coef_wpxp2_implicit",
+      "line": 1301,
+      "end_line": 1563,
+      "kind": "function",
+      "elemental": false,
+      "arguments": [
+        {
+          "name": "nz",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp2",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "xp2",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wpxp",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sgn_wpxp",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mixt_frac",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "F_w",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "F_x",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "coef_sigma_w_1_sqd",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "coef_sigma_w_2_sqd",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "coef_sigma_x_1_sqd",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "coef_sigma_x_2_sqd",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": {
+        "name": "coef_wpxp2_implicit",
+        "kind": "real",
+        "dims": [
+          "nz"
+        ],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      "branches": [
+        "where ( ( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd > zero .or. coef_sigma_w_2_sqd * coef_sigma_x_2_sqd > zero ) .and. ( wp2 * xp2 > zero ) )",
+        "elsewhere"
+      ],
+      "calls": [],
+      "function_dependencies": [],
+      "stats": "No statistics backend calls; F_x/min/max diagnostics remain required outputs where Native declares them."
+    },
+    {
+      "module": "new_pdf",
+      "name": "calc_coefs_wp2xp_semiimpl",
+      "line": 1566,
+      "end_line": 1860,
+      "kind": "subroutine",
+      "elemental": false,
+      "arguments": [
+        {
+          "name": "nz",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp2",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "xp2",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sgn_wpxp",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mixt_frac",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "F_w",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "F_x",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "coef_sigma_w_1_sqd",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "coef_sigma_w_2_sqd",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "coef_sigma_x_1_sqd",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "coef_sigma_x_2_sqd",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "coef_wp2xp_implicit",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "term_wp2xp_explicit",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "branches": [
+        "where ( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd > zero .or. coef_sigma_w_2_sqd * coef_sigma_x_2_sqd > zero )",
+        "elsewhere"
+      ],
+      "calls": [],
+      "function_dependencies": [],
+      "stats": "No statistics backend calls; F_x/min/max diagnostics remain required outputs where Native declares them."
+    },
+    {
+      "module": "new_pdf",
+      "name": "calc_coefs_wpxpyp_semiimpl",
+      "line": 1863,
+      "end_line": 2306,
+      "kind": "subroutine",
+      "elemental": false,
+      "arguments": [
+        {
+          "name": "nz",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp2",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "xp2",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "yp2",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wpxp",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wpyp",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sgn_wpxp",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sgn_wpyp",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mixt_frac",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "F_w",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "F_x",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "F_y",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "coef_sigma_w_1_sqd",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "coef_sigma_w_2_sqd",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "coef_sigma_x_1_sqd",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "coef_sigma_x_2_sqd",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "coef_sigma_y_1_sqd",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "coef_sigma_y_2_sqd",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "coef_wpxpyp_implicit",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "term_wpxpyp_explicit",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "branches": [
+        "where ( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd > zero .or. coef_sigma_w_2_sqd * coef_sigma_x_2_sqd > zero )",
+        "elsewhere",
+        "where ( coef_sigma_w_1_sqd * coef_sigma_y_1_sqd > zero .or. coef_sigma_w_2_sqd * coef_sigma_y_2_sqd > zero )",
+        "elsewhere",
+        "where ( coef_sigma_x_1_sqd * coef_sigma_y_1_sqd > zero .or. coef_sigma_x_2_sqd * coef_sigma_y_2_sqd > zero )",
+        "elsewhere",
+        "where ( coef_sigma_x_1_sqd * coef_sigma_y_1_sqd > zero .or. coef_sigma_x_2_sqd * coef_sigma_y_2_sqd > zero )",
+        "elsewhere"
+      ],
+      "calls": [],
+      "function_dependencies": [],
+      "stats": "No statistics backend calls; F_x/min/max diagnostics remain required outputs where Native declares them."
+    }
+  ],
+  "scope": {
+    "all_thirteen_native_routines": "All supported, including private helpers and all three explicit/implicit advection flags. No optionals.",
+    "jax_scope_only": "Same 13 routines. Do not copy JAX guarded denominators/clipped gradients, general sort, nonfatal invalid-state callback, repeated-term algebra or reordered helpers.",
+    "external_dependency": "calc_roots::cubic_solve(nz,a_coef,b_coef,c_coef,d_coef) -> complex(nz,3), two calls in calc_limits_F_x_responder; current dependency remains explicit until root promotes a port/bridge.",
+    "ownership": "Column-first LayoutLeft caller fields and call-local scratch; no global storage. Device scalar lower forms for independent cell expressions; profile interfaces retain Native nz and full argument order.",
+    "errors": "Invalid F_x<=0 with abs(Skx)>0 emits both exact Native lines and fatal stop after vector validity evaluation. Preserve original unsorted first root in one-real-root branches.",
+    "bfb": "No speculative FMA/reassociation/transcendental changes. Required CPU Native vs CPU Kokkos zero-tolerance model comparisons remain root integration work; GPU milestone results documented separately."
+  }
+}

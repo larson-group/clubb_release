@@ -285,13 +285,13 @@ module new_hybrid_pdf
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
+    ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
       Skw,    & ! Skewness of w                                            [-]
       F_w,    & ! Parameter for the spread of the PDF component means of w [-]
       zeta_w    ! Parameter for the PDF component variances of w           [-]
 
-    !--------------------------- Output Variables ---------------------------
+    ! Return Variable
     real( kind = core_rknd ) :: &
       mixt_frac    ! Mixture fraction    [-]
 
@@ -363,7 +363,7 @@ module new_hybrid_pdf
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
+    ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
       wm,     & ! Mean of w (overall)                                     [m/s]
       wp2,    & ! Variance of w (overall)                             [m^2/s^2]
@@ -371,7 +371,7 @@ module new_hybrid_pdf
       F_w,    & ! Parameter for the spread of the PDF component means of w  [-]
       zeta_w    ! Parameter for the PDF component variances of w            [-]
 
-    !--------------------------- Output Variables ---------------------------
+    ! Output Variables
     real( kind = core_rknd ), intent(out) :: &
       mu_w_1,    & ! Mean of w (1st PDF component)                  [m/s]
       mu_w_2,    & ! Mean of w (2nd PDF component)                  [m/s]
@@ -622,7 +622,7 @@ module new_hybrid_pdf
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
+    ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
       xm,       & ! Mean of x (overall)                             [units vary]
       xp2,      & ! Variance of x (overall)                     [(units vary)^2]
@@ -632,7 +632,7 @@ module new_hybrid_pdf
       F_w,      & ! Parameter for the spread of the PDF component means of w [-]
       mixt_frac   ! Mixture fraction                                         [-]
 
-    !--------------------------- Output Variables ---------------------------
+    ! Output Variables
     real( kind = core_rknd ), intent(out) :: &
       mu_x_1,        & ! Mean of x (1st PDF component)              [units vary]
       mu_x_2,        & ! Mean of x (2nd PDF component)              [units vary]
@@ -799,14 +799,14 @@ module new_hybrid_pdf
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
+    ! Input Variables
     real ( kind = core_rknd ), intent(in) :: &
       mixt_frac,          & ! Mixture fraction                               [-]
       F_w,                & ! Parameter: spread of the PDF comp. means of w  [-]
       coef_sigma_w_1_sqd, & ! sigma_w_1^2 = coef_sigma_w_1_sqd * <w'^2>      [-]
       coef_sigma_w_2_sqd    ! sigma_w_2^2 = coef_sigma_w_2_sqd * <w'^2>      [-]
 
-    !--------------------------- Output Variables ---------------------------
+    ! Return Variable
     real ( kind = core_rknd ) :: &
       coef_wp4_implicit    ! Coef.: <w'^4> = coef_wp4_implicit * <w'^2>^2    [-]
 
@@ -940,7 +940,7 @@ module new_hybrid_pdf
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
+    ! Input Variables
     real ( kind = core_rknd ), intent(in) :: &
       wp2,                & ! Variance of w (overall)                  [m^2/s^2]
       mixt_frac,          & ! Mixture fraction                               [-]
@@ -948,7 +948,7 @@ module new_hybrid_pdf
       coef_sigma_w_1_sqd, & ! sigma_w_1^2 = coef_sigma_w_1_sqd * <w'^2>      [-]
       coef_sigma_w_2_sqd    ! sigma_w_2^2 = coef_sigma_w_2_sqd * <w'^2>      [-]
 
-    !--------------------------- Output Variables ---------------------------
+    ! Return Variable
     ! Coefficient: <w'^2 x'> = coef_wp2xp_implicit * <w'x'>
     real ( kind = core_rknd ) :: &
       coef_wp2xp_implicit    ! Coefficient that is multiplied by <w'x'>    [m/s]
@@ -1088,7 +1088,7 @@ module new_hybrid_pdf
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
+    ! Input Variables
     real ( kind = core_rknd ), intent(in) :: &
       wp2,                & ! Variance of w (overall)                  [m^2/s^2]
       wpxp,               & ! Covariance of w and x           [m/s (units vary)]
@@ -1097,7 +1097,7 @@ module new_hybrid_pdf
       coef_sigma_x_1_sqd, & ! sigma_x_1^2 = coef_sigma_x_1_sqd * <x'^2>      [-]
       coef_sigma_x_2_sqd    ! sigma_x_2^2 = coef_sigma_x_2_sqd * <x'^2>      [-]
 
-    !--------------------------- Output Variables ---------------------------
+    ! Output Variables
     ! Coefs.: <w'x'^2> = coef_wpxp2_implicit * <x'^2> + term_wpxp2_explicit
     real ( kind = core_rknd ), intent(out) :: &
       coef_wpxp2_implicit, & ! Coefficient that is multiplied by <x'^2>  [m/s]
@@ -1316,7 +1316,7 @@ module new_hybrid_pdf
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
+    ! Input Variables
     real ( kind = core_rknd ), intent(in) :: &
       wp2,                & ! Variance of w (overall)                  [m^2/s^2]
       wpxp,               & ! Covariance of w and x (overall)     [m/s(x units)]
@@ -1328,7 +1328,7 @@ module new_hybrid_pdf
       coef_sigma_y_1_sqd, & ! sigma_y_1^2 = coef_sigma_y_1_sqd * <y'^2>      [-]
       coef_sigma_y_2_sqd    ! sigma_y_2^2 = coef_sigma_y_2_sqd * <y'^2>      [-]
 
-    !--------------------------- Output Variables ---------------------------
+    ! Output Variables
     ! Coefs.: <w'x'y'> = coef_wpxpyp_implicit * <x'y'> + term_wpxpyp_explicit
     real ( kind = core_rknd ), intent(out) :: &
       coef_wpxpyp_implicit, & ! Coefficient that is multiplied by <x'y'>   [m/s]

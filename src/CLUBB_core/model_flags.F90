@@ -953,7 +953,7 @@ module model_flags
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
+    ! Input variables
     integer, intent(in) :: &
       iunit ! The file to write to
 

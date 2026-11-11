@@ -1,0 +1,83 @@
+{
+  "review_kind": "Owner full supported-source/contract/formula audit, not an independent review. Separate cleanup record.",
+  "canonical_sha256": "4803d760a53a60c0c11b79abecdb9d56e91077df6e001296366246feb2dd90eb",
+  "hashes": {
+    "procedure_includes.hpp.inc": "b995e57605857e8c6d3cf88e68d0083795f683110aff2aeabdd815aefafb459c",
+    "constants.hpp.inc": "9cccba232176bcdbc0217e0815e1679b3dd31b36df46ad17e9d3a8eff6f54a84",
+    "private_declarations.hpp.inc": "9dae4c3ef7f30a3c7f4361495791197912a1ebc65cd42e88867949680fc33219",
+    "procedure_definitions.hpp.inc": "2b03ceb6b55f5728085c493bde70cc49db57b6089ce5cbba1a093b8577f5fe82",
+    "clubb_api_module.hpp.inc": "4cb723601ceffa10ad8ee13d3b1dfec93a7db4e823919e11291cc0109109d06d",
+    "api_includes.hpp.inc": "06d8c72132bc23d9964854591c3e3354ddc6536518ff90556fc50fca327ea137",
+    "init_clubb_params_api.cpp.inc": "a66c062f097c4b00a5e60ad45c0ee22dbb114c8316ee5e08e12a21ae393469d7",
+    "cpp_includes.inc": "e4129099c4148263b339910ab08744b529822269cb0509419f9cc979b980dbb5",
+    "generate_driver_io.py.inc": "d359d619ed2c992183fcbf6c9cb565b4067eb0e6bbca640b9a2bb96768cb78f5",
+    "driver_io.hpp.inc": "162b39366815db49e065aee81377f7619679227331483bd2566c198ee6270d1b",
+    "driver_io.F90.inc": "cfeefb93796f9fe704df759174195853a2a7b03668a7bc196002f96df678d08c",
+    "parameter_contracts.json": "25ada1bfd913afe954c2f8481f67f2816d009946467604953e3ebcaf53dd6e34"
+  },
+  "Native_supported_order": [
+    "set_default_parameters",
+    "check_parameters_api",
+    "get_parameter_hard_bounds_api",
+    "check_parameter_hard_bounds",
+    "calc_derived_params",
+    "init_clubb_params_api",
+    "pack_parameters",
+    "unpack_parameters"
+  ],
+  "exact_signatures": 8,
+  "default_assignment_ASTs": 105,
+  "pack_assignment_ASTs": 105,
+  "unpack_assignment_ASTs": 105,
+  "derived_assignment_ASTs": 24,
+  "catalog_names_with_exact32padding": 105,
+  "exact_Fortran_flat_hard_bound_values": 210,
+  "paired_equality_predicates": 4,
+  "View_only_kernels": 4,
+  "API_wrapper_contracts": 2,
+  "namelist_members_in_exact_source_order": 105,
+  "temporary_IO_contract_required_args": 109,
+  "reviews": [
+    {
+      "name": "set_default_parameters",
+      "arguments": 106,
+      "ordered_assignment_expression_trees": 105
+    },
+    {
+      "name": "pack_parameters",
+      "arguments": 107,
+      "ordered_assignment_expression_trees": 105
+    },
+    {
+      "name": "unpack_parameters",
+      "arguments": 106,
+      "ordered_assignment_expression_trees": 105
+    },
+    {
+      "name": "calc_derived_params",
+      "arguments": 9,
+      "ordered_science_assignment_expression_trees": 24,
+      "seven_allocations_only_if_nu1_absent": true,
+      "lmin_write_fatal_before_further_math": true,
+      "invalid_grid_type_Native_undefinedness_retained": true
+    }
+  ],
+  "manual_review": [
+    "all column-major hard-bound validation branches, messages, NaN behavior and per-column fatal updates",
+    "four ordered C6 equality diagnostics after hard-bound check without resetting errors or early return",
+    "all7 diffusivity mappings and allocation guard; no repair of malformed partial existing state",
+    "lmin write/fatal ordering, prescribed/type3/type1/type2 average spacing, signed physical endpoints",
+    "Native invalid grid_type undefined avg_deltaz retained behind existing setup gate",
+    "Native integer exponent2/3 expanded mechanically without reassociation, FMA or speculative BFB workaround",
+    "empty filename skips I/O; required iunit retained at call-local NEWUNIT service boundary",
+    "single-column Native sequence association represented as one-column packed View",
+    "same-named out-of-line HostSpace initializer keeps driver_io after complete schema declaration, avoiding a generated conversion include cycle; generic output adapter retains caller ownership",
+    "all data case/call owned; generated nu schema reused; immutable catalogs only at module scope"
+  ],
+  "limits": [
+    "No shared production/generator/CMake edits, build, syntax compilation or model execution. All CPU/GPU branches and BFB remain pending root integration.",
+    "Native tuner-only read_param_minmax/read_param_constraints omitted per actual JAX/root scope.",
+    "Native OPEN/READ failure termination becomes existing I/O-owner read_status followed by C++ fatal exception; compiler-specific diagnostics/spacing are not claimed identical.",
+    "set_default_parameters and private pack accept homogeneous column View types/accessibility; actual initializer uses one HostSpace owner. No claim of mixed-space arguments in a single kernel."
+  ]
+}

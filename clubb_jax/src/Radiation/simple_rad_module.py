@@ -157,7 +157,7 @@ import numpy as np
 from clubb_jax.src.CLUBB_core.constants_clubb import Cp, eps
 from clubb_jax.src.CLUBB_core.interpolation import (
     lin_interpolate_two_points,
-    zlinterp,
+    zlinterp_fnc,
 )
 
 # These variables are for the LBA radiation
@@ -247,14 +247,9 @@ def simple_rad(
                + z_i[:, None] * dz_positive ** (1.0 / 3.0))
         )
 
-        def accumulate_stats(stats):
-            """Collect this diagnostic block only on sampled timesteps."""
+        if stats.l_sample:
             # Update inversion-height statistics used by surface-radiation diagnostics.
             stats = stats.update("z_inversion", z_i)
-
-            return stats
-
-        stats = stats.sampled(accumulate_stats)
 
     # Compute the radiative heating rate.
     # The radiative heating rate is defined on thermodynamic levels.
@@ -326,11 +321,9 @@ def simple_rad_lba(
     radhtz = lba_radhtz(time, radiation_parameters.lba_krad)
 
     # Radiative theta-l tendency
-    return zlinterp(
-        ngrdcol, gr.nzt, radiation_parameters.lba_zrad.shape[0], gr.zt,
-        jnp.broadcast_to(radiation_parameters.lba_zrad, (ngrdcol, radiation_parameters.lba_zrad.shape[0])),
-        jnp.broadcast_to(radhtz, (ngrdcol, radhtz.shape[0])),
-    )
+    return jax.vmap(
+        lambda zt: zlinterp_fnc(zt, radiation_parameters.lba_zrad, radhtz)
+    )(gr.zt)
 
 
 # JAX adaptation: source ``iunit`` is a Fortran file-unit argument; direct host

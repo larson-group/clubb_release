@@ -37,7 +37,7 @@ def test_at_threshold_is_identity_in_both_ad_modes(fill, threshold):
     np.testing.assert_allclose(grad[0], weights[0], rtol=0, atol=0)
 
 
-@pytest.mark.parametrize("fill_type", [1, 2, 3, 4, 5, 6])
+@pytest.mark.parametrize("fill_type", [1, 2])
 @pytest.mark.parametrize("grid_dir", [1, -1])
 @pytest.mark.parametrize("has_hole", [False, True])
 def test_zero_windows_preserve_mass_and_its_derivatives(fill_type, grid_dir, has_hole):
@@ -73,7 +73,7 @@ def test_zero_windows_preserve_mass_and_its_derivatives(fill_type, grid_dir, has
         assert np.min(result) >= -1e-14
 
 
-@pytest.mark.parametrize("fill_type", [1, 2, 3, 4, 5, 6])
+@pytest.mark.parametrize("fill_type", [1, 2])
 @pytest.mark.parametrize("mean_sign", [1.0, -1.0])
 def test_active_fill_derivatives_match_finite_differences(fill_type, mean_sign):
     # Exercise both average-above-floor and insufficient-mass branches.

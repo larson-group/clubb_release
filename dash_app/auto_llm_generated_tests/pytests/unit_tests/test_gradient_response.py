@@ -42,69 +42,18 @@ def test_page_submits_and_displays_only_the_current_request(monkeypatch):
     monkeypatch.setattr(multi_callbacks, 'perform_action', lambda name, payload, **kwargs: calls.append((name, payload)))
     min_ids = [{'type': 'gradient-range-min', 'index': p} for p in ('C8', 'C7')]
     max_ids = [{'type': 'gradient-range-max', 'index': p} for p in ('C8', 'C7')]
-    result, status, error, disabled, polling_disabled, request = update(1, 0, 'bomex', 0, 600, ['wp2', 'thlm'], ['C8', 'C7'], ['0.3', '0.2'], ['0.7', '0.8'], 'auto', 'metrics', 1., 1., 1., min_ids, max_ids, 'browser1', None)
+    result, status, disabled, polling_disabled, request = update(1, 0, 'bomex', 0, 600, ['wp2', 'thlm'], ['C8', 'C7'], ['0.3', '0.2'], ['0.7', '0.8'], 'auto', 1., 1., 1., min_ids, max_ids, 'browser1', None)
     assert calls[0][0] == 'plot_task_submit'
     assert calls[0][1]['args'] == ['bomex', 0, 600, ['wp2', 'thlm'], [{'name': 'C8', 'min': .3, 'max': .7}, {'name': 'C7', 'min': .2, 'max': .8}]]
-    assert result is None and disabled and not polling_disabled and 'Queued' in status and not error
+    assert result is None and disabled and not polling_disabled and 'Queued' in status
     context.triggered_id = 'gradient-multi-poll'
     changed = update(1, 1, 'bomex', 0, 600, ['wp2', 'thlm'], ['C8', 'C7'], ['0.3', '0.2'],
-                     ['0.7', '0.8'], 'reverse', 'metrics', 1., 1., 1., min_ids, max_ids, 'browser1', request)
-    assert changed[0] is None and 'Inputs changed' in changed[1] and changed[4] and not changed[2]
+                     ['0.7', '0.8'], 'reverse', 1., 1., 1., min_ids, max_ids, 'browser1', request)
+    assert changed[0] is None and 'Inputs changed' in changed[1] and changed[3]
     assert len(calls) == 1
     context.triggered_id = 'gradient-multi-fields'
-    result, _, error, disabled, polling_disabled, _ = update(1, 1, 'bomex', 0, 600, ['thlm'], ['C8', 'C7'], ['0.3', '0.2'], ['0.7', '0.8'], 'auto', 'metrics', 1., 1., 1., min_ids, max_ids, 'browser1', request)
+    result, _, disabled, polling_disabled, _ = update(1, 1, 'bomex', 0, 600, ['thlm'], ['C8', 'C7'], ['0.3', '0.2'], ['0.7', '0.8'], 'auto', 1., 1., 1., min_ids, max_ids, 'browser1', request)
     assert result is None and not disabled and polling_disabled
-    assert not error
-    context.triggered_id = 'gradient-multi-go'
-    invalid = update(2, 1, 'bomex', 0, 600, ['wp2'], ['C8'], ['bad'], ['0.7'],
-                     'auto', 'loss', 1., 1., 1., min_ids[:1], max_ids[:1], 'browser1', request)
-    assert invalid[2] == invalid[1] and 'finite numbers' in invalid[2]
-    monkeypatch.setattr(multi_callbacks, 'perform_action', lambda *args, **kwargs: {'state': 'error', 'error': 'Model failed'})
-    context.triggered_id = 'gradient-multi-poll'
-    failed = update(2, 2, 'bomex', 0, 600, ['wp2', 'thlm'], ['C8', 'C7'], ['0.3', '0.2'],
-                    ['0.7', '0.8'], 'auto', 'metrics', 1., 1., 1., min_ids, max_ids, 'browser1', request)
-    assert failed[2] == 'Model failed' and not failed[3] and failed[4]
-
-
-def test_combined_loss_target_keeps_field_values_without_metric_gradients(monkeypatch):
-    """The scalar target returns one gradient per parameter and all field diagnostics."""
-    import numpy as np
-    from dash_app.services import gradient_matrix
-    from utilities.loss_metrics import LOSS_METRIC_NAMES
-
-    calls = []
-    def evaluate(*args, **kwargs):
-        """Supply a two-field scalar loss with distinguishable metric values."""
-        calls.append(kwargs)
-        return {
-            'metrics': {name: np.array([[[i + 1.], [i + 2.]]]) for i, name in enumerate(LOSS_METRIC_NAMES)},
-            'loss': np.array([3.]), 'gradient': {'loss': np.array([[2., -4.]])},
-            'loss_weights': {'mean': 1., 'std': 1., 'corr': 1.},
-            'timings': {'evaluation': .5, 'total': .6}, 'runtime': {'reused': True},
-            'gradient_mode': 'reverse',
-        }
-
-    monkeypatch.setattr(gradient_matrix, 'evaluate_experiment', evaluate)
-    ranges = [{'name': 'C8', 'min': .3, 'max': .7}, {'name': 'beta', 'min': 1., 'max': 2.}]
-    data = gradient_matrix.calculate_matrix('bomex', 0, 600, ['wp2', 'thlm'], ranges,
-                                            gradient_mode='reverse', gradient_target='loss')
-    assert calls[0]['gradient_target'] == 'loss'
-    assert calls[0]['gradient_parameters'] == ['C8', 'beta']
-    assert data['loss_gradients'] == [2., -4.]
-    assert data['loss'] == 3.
-    assert data['metrics']['rmse']['values'] == [1., 2.]
-    assert all('gradients' not in item for item in data['metrics'].values())
-    figure = multi_callbacks.combined_loss_figure(data)
-    assert list(figure.data[0].z[0]) == pytest.approx([.08, -.4])
-    values = multi_callbacks.matrix_figure(data, 'correlation')
-    assert [list(row) for row in values.data[0].z] == [[2., 2.], [3., 3.]]
-    app = Dash(__name__)
-    multi_callbacks.register_callbacks(app)
-    functions = {entry['callback'].__wrapped__.__name__: entry['callback'].__wrapped__
-                 for entry in app.callback_map.values()}
-    mapping = dict(data, map_revision=1)
-    detail = {'map_revision': 1, 'sweep_revision': 1}
-    assert functions['show_point_controls'](mapping, detail, True) == (True, {'display': 'none'})
 
 
 def test_gradient_work_has_its_own_bounded_broker_lane():

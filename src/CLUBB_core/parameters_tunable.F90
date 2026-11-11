@@ -628,18 +628,15 @@ module parameters_tunable
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       ngrdcol ! Number of grid columns [#]
 
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nparams) :: &
       clubb_params ! Tunable model parameters [-]
 
-    !--------------------------- Input/Output Variables ---------------------------
     type(err_info_type), intent(inout) :: &
       err_info ! Shared CLUBB error state
 
-    !--------------------------- Local Variables ---------------------------
     integer :: &
       i, k ! Grid-column and parameter indices
 

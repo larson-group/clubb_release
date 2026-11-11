@@ -1,0 +1,255 @@
+{
+  "preimplementation_outline": true,
+  "canonical_source": "src/CLUBB_core/calc_pressure.F90",
+  "native_lines": 265,
+  "secondary_jax": "clubb_jax/src/CLUBB_core/calc_pressure.py",
+  "supported_scope": "Both Native public routines; actual JAX implements both. No options/exclusions/stats/errors or private scientific helpers.",
+  "native_inventory_and_order": [
+    "init_pressure",
+    "calculate_thvm"
+  ],
+  "routines": [
+    {
+      "name": "init_pressure",
+      "module": "calc_pressure",
+      "source": "src/CLUBB_core/calc_pressure.F90",
+      "arguments": [
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "gr",
+          "kind": "grid",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "thvm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "gr%nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "p_sfc",
+          "kind": "real",
+          "dims": [
+            "ngrdcol"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "p_in_Pa",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "gr%nzt"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "exner",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "gr%nzt"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "p_in_Pa_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "gr%nzm"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "exner_zm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "gr%nzm"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "ordered_branches": [
+        "do i = 1, ngrdcol",
+        "do i = 1, ngrdcol",
+        "if ( abs( thvm(i,1) - thvm_zm(i,1) ) > epsilon( thvm ) * thvm(i,1) ) then",
+        "else",
+        "do i = 1, ngrdcol",
+        "do k = 2, gr%nzt, 1",
+        "do i = 1, ngrdcol",
+        "if ( abs( thvm(i,k) - thvm(i,k-1) ) > epsilon( thvm ) * thvm(i,k) ) then",
+        "else",
+        "do k = 2, gr%nzm, 1",
+        "do i = 1, ngrdcol",
+        "if ( abs( thvm(i,k-1) - thvm_zm(i,k) ) > epsilon( thvm ) * thvm(i,k-1) ) then",
+        "else"
+      ],
+      "lower_calls": [
+        "zt2zm_api(gr%nzm,gr%nzt,ngrdcol,gr,thvm,zero_threshold)"
+      ]
+    },
+    {
+      "name": "calculate_thvm",
+      "module": "calc_pressure",
+      "source": "src/CLUBB_core/calc_pressure.F90",
+      "arguments": [
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "thlm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rtm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rcm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "exner",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "thv_ds_zt",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "thvm",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "ordered_branches": [
+        "do k = 1, nzt",
+        "do i = 1, ngrdcol"
+      ],
+      "lower_calls": []
+    }
+  ],
+  "ordered_behavior": [
+    "Initialize momentum storagelevel1 surface pressure and power-law Exner.",
+    "Interpolate mean theta_v to momentum levels through existing C++zt2zm_api with zero_threshold floor.",
+    "First thermo Exner branch/log-or-constant formula, then first thermo pressure.",
+    "Ascending storage-level thermo recurrence with per-level pressure after Exner. Preserve k dependency within each column.",
+    "Momentum2:nzm independent updates use thermo(k-1), not momentum recurrence.",
+    "calculate_thvm cell formula preserves Native three-term association, liquid loading and all five input fields."
+  ],
+  "critical_contracts": [
+    "All fields column-first LayoutLeft; gr metadata remains Native but this source explicitly uses storagelevel1 and increasing storage k, not physical grid_dir bounds.",
+    "First and recursive thermo thresholds use epsilon(core real)*thvm(current thermo); momentum threshold uses epsilon*thvm(previous thermo). Do not import JAX helper second-input threshold or safe branches.",
+    "Real powers/logs use ordinary target math; no clipping/floor beyond existing zt2zm input floor.",
+    "g_ov_Cp is Native parameter grav/Cp; all constants already live. No speculative FMA."
+  ],
+  "callers_reviewed": [
+    "Live advance_clubb_core_module.cpp:479 mirrors Native.F90:897, eight required args, Real2D core storage.",
+    "Driver.cpp:2618 and4586 mirror Native advance_clubb_to_end3548/init_variables5947; host/strided arrays and materialized reference expression.",
+    "Input_fields/hydrostatic_module.F90:130 passes all eight init args; dimensions(gr%nzt)/(gr%nzm), all four caller outputs.",
+    "Input_fields/input_interpret.F90:259 and readiopdata_module.F90:181 use Native legacy single-column sequenceassociation; retain explicit rank2Cpp interface rather than adding a scalar-only alias.",
+    "Excluded grid_adaptation owner also calls init_pressure; this does not require adding adaptive-grid support."
+  ],
+  "owner_plan": "Header-only concrete execution-space init_pressure with existing shared generic adapter for host/strided Views; calculate_thvm direct rank2 generic kernel follows output memory/execution space. Grid component aliases only, per-call interpolation scratch.",
+  "remaining_dependencies": "Existing C++zt2zm_api+grid/array owner/constants only; no new bridge, type, accessor or selected constant.",
+  "runtime_status": "No builds/tests/model/BFB evidence; root owns top-down whole-model integration gate."
+}

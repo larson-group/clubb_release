@@ -10,8 +10,8 @@ module interpolation
 
   private ! Default Scope
 
-  public :: lin_interpolate_two_points, binary_search, zlinterp, &
-    lin_interpolate_on_grid_api, linear_interp_factor, mono_cubic_interp, &
+  public :: lin_interpolate_two_points, binary_search, zlinterp_fnc, &
+    lin_interpolate_on_grid_api, linear_interp_factor, mono_cubic_interp, plinterp_fnc, &
     lin_interp_between_grids
 
   contains
@@ -62,7 +62,7 @@ module interpolation
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
+    ! Input Variables
 
     real( kind = core_rknd ), intent(in) :: &
       height_int,  & ! Height to be interpolated to     [m]
@@ -71,7 +71,7 @@ module interpolation
       var_high,    & ! Variable above the interpolation [units vary]
       var_low        ! Variable below the interpolation [units vary]
 
-    !--------------------------- Output Variables ---------------------------
+    ! Output Variables
     real( kind = core_rknd ) :: lin_interpolate_two_points
     
     ! Check for valid input
@@ -105,7 +105,6 @@ module interpolation
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
     real( kind = core_rknd ), intent(in) :: &
       factor,   & ! Factor                           [units vary]  
       var_high, & ! Variable above the interpolation [units vary]
@@ -151,7 +150,7 @@ module interpolation
     ! External
     intrinsic :: sign, abs, min
 
-    !--------------------------- Input Variables ---------------------------
+    ! Input Variables
     real( kind = core_rknd ), intent(in) :: & 
       z_in ! The altitude to be interpolated to [m]
 
@@ -163,7 +162,7 @@ module interpolation
       zm1, z00, zp1, zp2, & ! The altitudes for km1, k00, kp1, kp2      [m]
       fm1, f00, fp1, fp2    ! The field at km1, k00, kp1, and kp2       [units vary]
 
-    !--------------------------- Output Variables ---------------------------
+    ! Output Variables
     real( kind = core_rknd ) :: f_out ! The interpolated field
    
     ! Local Variables 
@@ -363,17 +362,53 @@ module interpolation
 
   end function binary_search
 
-
 !-------------------------------------------------------------------------------
-  function zlinterp( ngrdcol, dim_out, & ! In
-                     dim_src, grid_out, & ! In
-                     grid_src, var_src, & ! In
-                     nout ) result( var_out ) ! Optional In
+  function plinterp_fnc( dim_out, dim_src, grid_out,  & 
+                       grid_src, var_src )  & 
+  result( var_out )
+! Description:
+!   Do a linear interpolation in the vertical with pressures.  Assumes
+!   values that are less than lowest source point are zero and above the
+!   highest source point are zero. Also assumes altitude increases linearly.
+!   This function just calls zlinterp_fnc, but negates grid_out and grid_src.
+
+! References:
+!   function LIN_INT from WRF-HOC
+!-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
+    implicit none
+
+    ! Input variables
+    integer, intent(in) :: dim_out, dim_src
+
+    real( kind = core_rknd ), dimension(dim_src), intent(in) ::  & 
+      grid_src,  & ! [m]
+      var_src      ! [units vary]
+
+    real( kind = core_rknd ), dimension(dim_out), intent(in) :: &
+      grid_out ! [m]
+
+    ! Output variable
+    real( kind = core_rknd ), dimension(dim_out) :: &
+      var_out ! [units vary]
+
+    ! ---- Begin Code ----
+
+    var_out = zlinterp_fnc( dim_out, dim_src, -grid_out, &
+                            -grid_src, var_src )
+
+    return
+  end function plinterp_fnc
+!-------------------------------------------------------------------------------
+  function zlinterp_fnc( dim_out, dim_src, grid_out,  & 
+                       grid_src, var_src )  & 
+  result( var_out )
   !$acc routine seq
 ! Description:
-!   Interpolate every column independently in the vertical. Optional nout
-!   limits the active output levels when merged grids have different sizes.
-!   Assumes values that
+!   Do a linear interpolation in the vertical.  Assumes values that
 !   are less than lowest source point are zero and above the highest
 !   source point are zero. Also assumes altitude increases linearly.
 
@@ -386,58 +421,82 @@ module interpolation
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
-    integer, intent(in) :: ngrdcol ! Number of grid columns
+    ! Input variables
     integer, intent(in) :: dim_out, dim_src
 
-    real( kind = core_rknd ), dimension(ngrdcol,dim_src), intent(in) ::  &
+    real( kind = core_rknd ), dimension(dim_src), intent(in) ::  & 
       grid_src,  & ! [m]
       var_src      ! [units vary]
 
-    real( kind = core_rknd ), dimension(ngrdcol,dim_out), intent(in) :: &
+    real( kind = core_rknd ), dimension(dim_out), intent(in) :: &
       grid_out ! [m]
 
-    !--------------------------- Output Variables ---------------------------
-    real( kind = core_rknd ), dimension(ngrdcol,dim_out) :: &
+    ! Output variable
+    real( kind = core_rknd ), dimension(dim_out) :: &
       var_out ! [units vary]
 
-    !--------------------------- Optional Input Variables ---------------------------
-    integer, intent(in), optional :: nout(ngrdcol) ! Active output levels in each column
+    ! Local variables
+    integer :: k, kint, km1
 
-    !--------------------------- Local Variables ---------------------------
-    integer :: i, k, kint, km1 ! Column, source bracket and output level indices [-]
-    integer :: last_out(ngrdcol) ! Last active output level in each column [-]
+!   integer :: tst, kp1
 
-    !--------------------------- Begin Code ---------------------------
-    var_out = 0.0_core_rknd
-    last_out = dim_out
-    if ( present(nout) ) last_out = nout
+    ! ---- Begin Code ----
 
-    do kint = 1, dim_out
-      do i = 1, ngrdcol
-        if ( kint > last_out(i) ) cycle
+    k = 1
 
-        ! Values below the source grid remain zero.
-        if ( grid_out(i,kint) < grid_src(i,1) ) cycle
+    do kint = 1, dim_out, 1
 
-        k = binary_search( dim_src, grid_src(i,:), grid_out(i,kint) )
+      ! Set to 0 if we're below the input data's lowest point
+      if ( grid_out(kint) < grid_src(1) ) then
+        var_out(kint) = 0.0_core_rknd
+        cycle
+      end if
 
-        ! Preserve the first above-source exit, even for a nonmonotone output grid.
-        if ( k == -1 ) then
-          last_out(i) = kint - 1
-          cycle
-        end if
+      ! Increment k until the level is correct
+!          do while ( grid_out(kint) > grid_src(k)
+!     .                .and. k < dim_src )
+!            k = k + 1
+!          end do
 
-        km1 = max( 1, k-1 )
-        var_out(i,kint) = lin_interpolate_two_points( grid_out(i,kint), grid_src(i,k), &
-          grid_src(i,km1), var_src(i,k), var_src(i,km1) )
+      ! Changed so a binary search is used instead of a sequential search
+!          tst = binary_search(dim_src, grid_src, grid_out(kint))
+      k = binary_search(dim_src, grid_src, grid_out(kint))
+      ! Joshua Fasching April 2008
 
-      end do ! i
-    end do ! kint
+!          print *, "k = ", k
+!          print *, "tst = ", tst
+!          print *, "dim_src = ", dim_src
+!          print *,"------------------------------"
+
+      ! If the increment leads to a level above the data, set this
+      ! point and all those above it to zero
+      !if( k > dim_src ) then
+      if ( k == -1 ) then
+        var_out(kint:dim_out) = 0.0_core_rknd
+        exit
+      end if
+
+      km1 = max( 1, k-1 )
+      !kp1 = min( k+1, dim_src )
+
+      ! Interpolate
+      var_out(kint) = lin_interpolate_two_points( grid_out(kint), grid_src(k),  & 
+        grid_src(km1), var_src(k), var_src(km1) )
+
+!          ( var_src(k) - var_src(km1) ) / &
+!          ( grid_src(k) - grid_src(km1) ) &
+!            * ( grid_out(kint) - grid_src(km1) ) + var_src(km1) &
+!            Changed to use a standard function for interpolation
+
+      !! Note this ends up changing the results slightly because
+      !the placement of variables has been changed.
+
+!            Joshua Fasching April 2008
+
+    end do ! kint = 1..dim_out
 
     return
-  end function zlinterp
-
+  end function zlinterp_fnc
 
 !-------------------------------------------------------------------------------
   subroutine lin_interpolate_on_grid_api &
@@ -545,12 +604,11 @@ module interpolation
     return
   end subroutine lin_interpolate_on_grid_api
 
-  function lin_interp_between_grids( ngrdcol, size_interpolate, size_current, &
+  function lin_interp_between_grids( size_interpolate, size_current, &
                                      interpolate_altitudes, current_altitudes, &
                                      current_values )
-    ! Description:
-    !   Interpolate all columns to the target grids, using the nearest source
-    !   value outside each source grid and preserving the near-level tolerance.
+    ! interpolates from the values (gr_current_values) on the current grid (gr_current) to the
+    ! gr_interpolate grid
 
     use constants_clubb, only: fstderr ! Constant
 
@@ -560,106 +618,92 @@ module interpolation
     implicit none
     !--------------------- Input Variables ---------------------
     integer, intent(in) :: &
-        ngrdcol, & ! Number of grid columns [-]
-        size_interpolate, & ! Number of target levels [-]
-        size_current ! Number of source levels [-]
+        size_interpolate, &
+        size_current
 
-    real( kind = core_rknd ), dimension(ngrdcol,size_interpolate), intent(in) :: &
-      interpolate_altitudes ! Target heights [m]
+    real( kind = core_rknd ), dimension(size_interpolate) :: &
+      interpolate_altitudes ! altitudes where the values should be interpolated to
 
-    real( kind = core_rknd ), dimension(ngrdcol,size_current), intent(in) :: &
-      current_altitudes ! Source heights [m]
+    real( kind = core_rknd ), dimension(size_current) :: &
+      current_altitudes ! altitudes where the given values are currently on
 
-    real( kind = core_rknd ), dimension(ngrdcol,size_current), intent(in) :: &
+    real( kind = core_rknd ), dimension(size_current) :: &
       current_values ! given values on the current_altitudes altitudes that should be interpolated 
                      ! to the interpolate_altitudes altitudes
 
-    !--------------------- Return Variable ---------------------
-    real( kind = core_rknd ), dimension(ngrdcol,size_interpolate) :: &
-      lin_interp_between_grids ! Field on target heights [units vary]
-
     !--------------------- Local Variables ---------------------
+    real( kind = core_rknd ), dimension(size_interpolate) :: &
+      lin_interp_between_grids ! interpolated values with the dimension of gr_interpolate
     
-    integer :: i, j, k ! Output level, column and search indices [-]
+    integer :: i, k
     
-    logical :: calc_done ! Whether a source bracket has been found [-]
+    logical :: calc_done
 
-    real( kind = core_rknd ) :: tol ! Tolerance for coincident grid levels [m]
+    real( kind = core_rknd ) :: tol
 
     !--------------------- Begin Code ---------------------
     tol = 1.0e-6_core_rknd
 
 
-    do j = 1, ngrdcol
+    !-------------------------------------------------------------------------------
+    !
+    ! Assure that the elements are in order so that the interpolation is between 
+    ! the two closest points to the point in question.
+    !
+    !-------------------------------------------------------------------------------
 
-      !-------------------------------------------------------------------------------
-      !
-      ! Assure that the elements are in order so that the interpolation is between
-      ! the two closest points to the point in question.
-      !
-      !-------------------------------------------------------------------------------
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
+      do i=2,size_current
+        if ( current_altitudes(i) <= current_altitudes(i-1) ) then
+          write(fstderr,*) "current_altitudes must be sorted for lin_interp_between_grids."
+          error stop
+        end if
+      end do
+    end if
 
-      if ( clubb_at_least_debug_level_api( 0 ) ) then
-        do i=2,size_current
-          if ( current_altitudes(j,i) <= current_altitudes(j,i-1) ) then
-            write(fstderr,*) "current_altitudes must be sorted for lin_interp_between_grids."
-            error stop
-          end if
-        end do
-      end if
+    !-------------------------------------------------------------------------------
+    !
+    ! If the point in question is larger than the largest x-value or
+    ! smaller than the smallest x-value, give a warning.
+    !
+    !-------------------------------------------------------------------------------
 
-      !-------------------------------------------------------------------------------
-      !
-      ! If the point in question is larger than the largest x-value or
-      ! smaller than the smallest x-value, give a warning.
-      !
-      !-------------------------------------------------------------------------------
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
+        if ( (minval(interpolate_altitudes) < current_altitudes(1)) &
+              .or. (maxval(interpolate_altitudes) > current_altitudes(size_current)) ) then
+          write(fstderr,*) "lin_interp_between_grids: Value is out of range. Extrapolating..."
+        end if
+    end if
 
-      if ( clubb_at_least_debug_level_api( 0 ) ) then
-          if ( (minval(interpolate_altitudes(j,:)) < current_altitudes(j,1)) &
-                .or. (maxval(interpolate_altitudes(j,:)) > current_altitudes(j,size_current)) ) then
-            write(fstderr,*) "lin_interp_between_grids: Value is out of range. Extrapolating..."
-          end if
-      end if
-
-
-    end do
 
     do i = 1, size_interpolate
-      do j = 1, ngrdcol
-
-        calc_done = .false.
-        ! Use a nearby source level, or interpolate between its neighbors.
-        k = 1
-        do while ( (.not. calc_done) .and. (k <= size_current) )
-
-          if ( abs(interpolate_altitudes(j,i) - current_altitudes(j,k)) < tol ) then
-            lin_interp_between_grids(j,i) = current_values(j,k)
-            calc_done = .true.
-          else if ( interpolate_altitudes(j,i) < current_altitudes(j,k) ) then
-
-            if ( k > 1 ) then
-              lin_interp_between_grids(j,i) = lin_interpolate_two_points( & ! In
-                interpolate_altitudes(j,i), current_altitudes(j,k), & ! In
-                current_altitudes(j,k-1), current_values(j,k), current_values(j,k-1) ) ! In
-            else
-              lin_interp_between_grids(j,i) = current_values(j,1)
-            end if
-
-            calc_done = .true.
-
-          end if
-
-          k = k + 1
-
-        end do
-
-        if ( (.not. calc_done) .and. (k > size_current) ) then
-          lin_interp_between_grids(j,i) = current_values(j,size_current)
+      calc_done = .false.
+      ! find nearest zt level of gr_current for zt(i) of gr_interpolate grid
+      ! if there is no gr_current zt level above or below the gr_interpolate grid level, 
+      ! then the gr_current value of the closest level is taken
+      k = 1
+      do while ((.not. calc_done) .and. (k <= size_current))
+        if (abs(interpolate_altitudes(i) - current_altitudes(k)) < tol) then
+          lin_interp_between_grids(i) = current_values(k)
           calc_done = .true.
-        end if
-
+        else if (interpolate_altitudes(i) < current_altitudes(k)) then
+          if (k > 1) then
+            lin_interp_between_grids(i) = lin_interpolate_two_points( interpolate_altitudes(i), &
+                                                                      current_altitudes(k), &
+                                                                      current_altitudes(k-1), &
+                                                                      current_values(k), &
+                                                                      current_values(k-1) )
+          else ! k=1
+            lin_interp_between_grids(i) = current_values(1)
+          endif
+          calc_done = .true.
+        endif
+        k = k + 1
       end do
+      if ((.not. calc_done) .and. (k > size_current)) then
+        lin_interp_between_grids(i) = current_values(size_current)
+        calc_done = .true.
+      endif
     end do
 
   end function lin_interp_between_grids

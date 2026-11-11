@@ -1,0 +1,295 @@
+{
+  "status": "owner complete source reread and separate cleanup; independent review and whole-model numerical evidence pending",
+  "Native_files": 11,
+  "Native_lines": 8662,
+  "Native_specifics": 116,
+  "coverage": "all55non-MT95 routines plus61MT95 specifics; 42identical rank1..7 wrappers represented by six ordered generic View adapters",
+  "manual_review": {
+    "parameters_silhs": "13defaults,13field assignments,13print labels and byte-identical generated flag schema; settings case owned",
+    "math_utilities": "source ordered sample folds,N denominator,signed RNG MOD bias",
+    "latin_hypercube_arrays": "permutation release only; prior_iter set on next allocation",
+    "mt95": "all scalar/array/state seed branches and precedence,twist/tempering,6signed/conversion streams,base62 serialization,Native signed UIDIV/UIMOD branches and restart assignment operators",
+    "generate_uniform_sample_module": "allocation/prior iteration diagnostics,refresh modulo,deterministic offsets,first-num_samples rows and ordered double-precision Fisher-Yates draws",
+    "silhs_importance_sample_module": "all19routines/8categories/3cluster strategies,weight limits/normalization,threshold redistribution order,variance fractions,old cloud branch,full diagnostics",
+    "transform_to_pdf_module": "all5routines,default-real coefficient kinds/Horner order,Native special scratch layout,ordered triangular sum,lognormal/precip/extreme-chi branches,Native ltqnorm/Halley and thl deviation clipping",
+    "latin_hypercube_driver_module": "all13routines,27argparent,presence/earlyreturns,allstartheight/LH/MC/all-level branches,Native draw/traversal,2vertical recurrences,error/stat/diagnostic order,8species index priorities,inactive clipping/output branches",
+    "lh_microphys_var_covar_module": "analytic component means,8ordered mean/cov calls,5outputs and3finite-dt corrections",
+    "est_kessler_microphys_module": "parent/private arguments,forcedCF1,bounds/floors/conditional formulas,source-ordered host fatal precheck,13variable assignment ASTcheck",
+    "silhs_api_module": "27-/15Native leadingargs,explicitoptional stats branch,C++actualparents; noNative scientific forwarding"
+  },
+  "kernel_capture_review": {
+    "kernels": 44,
+    "records": [
+      {
+        "file": "est_kessler_microphys_module.cpp",
+        "line": 83,
+        "owner_capture_scan": "pass"
+      },
+      {
+        "file": "est_kessler_microphys_module.cpp",
+        "line": 90,
+        "owner_capture_scan": "pass"
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 198,
+        "owner_capture_scan": "pass"
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 210,
+        "owner_capture_scan": "pass"
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 219,
+        "owner_capture_scan": "pass"
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 229,
+        "owner_capture_scan": "pass"
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 276,
+        "owner_capture_scan": "pass"
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 406,
+        "owner_capture_scan": "pass"
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 429,
+        "owner_capture_scan": "pass"
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 520,
+        "owner_capture_scan": "pass"
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 612,
+        "owner_capture_scan": "pass"
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 730,
+        "owner_capture_scan": "pass"
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 735,
+        "owner_capture_scan": "pass"
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 752,
+        "owner_capture_scan": "pass"
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 847,
+        "owner_capture_scan": "pass"
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 875,
+        "owner_capture_scan": "pass"
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 883,
+        "owner_capture_scan": "pass"
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 1166,
+        "owner_capture_scan": "pass"
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 1185,
+        "owner_capture_scan": "pass"
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 1256,
+        "owner_capture_scan": "pass"
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 1266,
+        "owner_capture_scan": "pass"
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 1317,
+        "owner_capture_scan": "pass"
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 1327,
+        "owner_capture_scan": "pass"
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 1368,
+        "owner_capture_scan": "pass"
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 1473,
+        "owner_capture_scan": "pass"
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 1492,
+        "owner_capture_scan": "pass"
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 1512,
+        "owner_capture_scan": "pass"
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 1519,
+        "owner_capture_scan": "pass"
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 1594,
+        "owner_capture_scan": "pass"
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 1602,
+        "owner_capture_scan": "pass"
+      },
+      {
+        "file": "latin_hypercube_driver_module.cpp",
+        "line": 1614,
+        "owner_capture_scan": "pass"
+      },
+      {
+        "file": "lh_microphys_var_covar_module.cpp",
+        "line": 55,
+        "owner_capture_scan": "pass"
+      },
+      {
+        "file": "lh_microphys_var_covar_module.cpp",
+        "line": 63,
+        "owner_capture_scan": "pass"
+      },
+      {
+        "file": "lh_microphys_var_covar_module.cpp",
+        "line": 107,
+        "owner_capture_scan": "pass"
+      },
+      {
+        "file": "lh_microphys_var_covar_module.cpp",
+        "line": 133,
+        "owner_capture_scan": "pass"
+      },
+      {
+        "file": "math_utilities.cpp",
+        "line": 23,
+        "owner_capture_scan": "pass"
+      },
+      {
+        "file": "math_utilities.cpp",
+        "line": 47,
+        "owner_capture_scan": "pass"
+      },
+      {
+        "file": "math_utilities.cpp",
+        "line": 77,
+        "owner_capture_scan": "pass"
+      },
+      {
+        "file": "transform_to_pdf_module.cpp",
+        "line": 58,
+        "owner_capture_scan": "pass"
+      },
+      {
+        "file": "transform_to_pdf_module.cpp",
+        "line": 67,
+        "owner_capture_scan": "pass"
+      },
+      {
+        "file": "transform_to_pdf_module.cpp",
+        "line": 79,
+        "owner_capture_scan": "pass"
+      },
+      {
+        "file": "transform_to_pdf_module.cpp",
+        "line": 116,
+        "owner_capture_scan": "pass"
+      },
+      {
+        "file": "transform_to_pdf_module.cpp",
+        "line": 169,
+        "owner_capture_scan": "pass"
+      },
+      {
+        "file": "transform_to_pdf_module.cpp",
+        "line": 225,
+        "owner_capture_scan": "pass"
+      }
+    ]
+  },
+  "cleanup": {
+    "interfaces": 123,
+    "science_call_groups": 103,
+    "declaration_explanations": 555,
+    "token_proofs": [
+      "INTERFACE_CLEANUP_AUDIT.json",
+      "COMMENT_CALL_CLEANUP_AUDIT.json"
+    ],
+    "corrected_source_defects": [
+      "Kessler AKstd second-component grouping",
+      "first old-cloud branch staged-output restoration",
+      "shared restoration API name",
+      "private Native UIDIV/UIMOD signed partitions",
+      "two generic argument names"
+    ],
+    "style": "Native continuation/intent groups,complete named declaration prose,readable comments,clang-format; source/header naming retained"
+  },
+  "untested": [
+    "all model runtime/BFB",
+    "CUDA compilation at this checkpoint",
+    "nondefault active sampling options",
+    "compile-time false branches",
+    "MT95 unused rank and serialization runtime",
+    "SUM/contraction equality"
+  ],
+  "deliberate_BFB_workarounds": "none added; source semantics/adaptations are in BFB_NOTES.md",
+  "hashes": {
+    "clubb_kokkos/drafts/driver_radiation_silhs/SILHS/est_kessler_microphys_module.cpp": "344263e65d268f886e8378a7809f01239d7aa0d8b75d0185d42db674f5a6e116",
+    "clubb_kokkos/drafts/driver_radiation_silhs/SILHS/est_kessler_microphys_module.hpp": "187354b3cf0a2631a7ecaf31910a1deed57b9135ca8b5b00dceb8573f137616d",
+    "clubb_kokkos/drafts/driver_radiation_silhs/SILHS/generate_uniform_sample_module.cpp": "e291cf9babfcbb8af4b2581cf19b7c89b1e8b14a1e01149b4577d2c69776c93d",
+    "clubb_kokkos/drafts/driver_radiation_silhs/SILHS/generate_uniform_sample_module.hpp": "579e8334b3dc23ef9f869ffe2661b37b2f2ed774c195d7102da6fe069a0607bc",
+    "clubb_kokkos/drafts/driver_radiation_silhs/SILHS/latin_hypercube_arrays.cpp": "6605388792b4a17795870be2c0c3a88947c553b45858c0c9cc922cb1c8b0d8a8",
+    "clubb_kokkos/drafts/driver_radiation_silhs/SILHS/latin_hypercube_arrays.hpp": "53156f5b13f64a045fa7e620b8c760fb28f244986c09f443107791f7eb6c9de4",
+    "clubb_kokkos/drafts/driver_radiation_silhs/SILHS/latin_hypercube_driver_module.cpp": "541ccc827236c99856ff5fd699c50d0a37dd814a59cbd62e3511a8801616a995",
+    "clubb_kokkos/drafts/driver_radiation_silhs/SILHS/latin_hypercube_driver_module.hpp": "dedd5d7e3c6e1bffd4d58690ef8b7d8bff5e1ee44621d7697e88b94c4859890d",
+    "clubb_kokkos/drafts/driver_radiation_silhs/SILHS/lh_microphys_var_covar_module.cpp": "f1ce2f9fd32f4fb26efc84d1e576872c5aa380d4a4ce2595906f5ef76d489d3c",
+    "clubb_kokkos/drafts/driver_radiation_silhs/SILHS/lh_microphys_var_covar_module.hpp": "95987ae7cf9a0b3e38410bafbdbb52bcbddbe3b407ab6d69bb6469985139c3a8",
+    "clubb_kokkos/drafts/driver_radiation_silhs/SILHS/math_utilities.cpp": "fe30498188d7422a8ff9e3b39dfc8d4f5db3497b65bd1c91fb10a574a23d7c51",
+    "clubb_kokkos/drafts/driver_radiation_silhs/SILHS/math_utilities.hpp": "460f90c12228d1308913be8eea5f2fc438c2dad3b3a72acdcfb482b2895b72de",
+    "clubb_kokkos/drafts/driver_radiation_silhs/SILHS/mt95.cpp": "4c7ed19ba7e05606ad80e2e68a696cdd9fdf8b9f3dde1467cb8697af17914c44",
+    "clubb_kokkos/drafts/driver_radiation_silhs/SILHS/mt95.hpp": "eaed48bbec0dea571483eb3f1c41ef5733d532ebf8638c512d2be7768ddf5774",
+    "clubb_kokkos/drafts/driver_radiation_silhs/SILHS/parameters_silhs.cpp": "30a1d0e6230534db0d48c141744b906f13d8d363de9d60bd72713fa58d97e119",
+    "clubb_kokkos/drafts/driver_radiation_silhs/SILHS/parameters_silhs.hpp": "80f7e025643b541b8e2d2e3a95283868a6055ce44824e392cb1d2dd419ec90ba",
+    "clubb_kokkos/drafts/driver_radiation_silhs/SILHS/silhs_api_module.cpp": "db7546129742e857b4732ded8b9093f5dc340e75c824fef68a37e1f464ab4b83",
+    "clubb_kokkos/drafts/driver_radiation_silhs/SILHS/silhs_api_module.hpp": "cc99e7a43e5c0e71ec0915913f5523efd10491f9a9a62ebd2569e281ea5684a8",
+    "clubb_kokkos/drafts/driver_radiation_silhs/SILHS/silhs_importance_sample_module.cpp": "436a1f68c277dcd4fbb86b13a3e71d18aa34b4c027469f37581e670c24f30de3",
+    "clubb_kokkos/drafts/driver_radiation_silhs/SILHS/silhs_importance_sample_module.hpp": "1a0ab456d3421939bedfbf40d4eeaf4208c674b05534c83d20f5cfca334aedc7",
+    "clubb_kokkos/drafts/driver_radiation_silhs/SILHS/transform_to_pdf_module.cpp": "10cf74b0b46101a07ad734288a9472133f4954dee8415f1e4ca4b413290ec22e",
+    "clubb_kokkos/drafts/driver_radiation_silhs/SILHS/transform_to_pdf_module.hpp": "232c094457f19c12297768c1f9b81ca3e74203fedf781f03f0a5542e315b4d77"
+  }
+}

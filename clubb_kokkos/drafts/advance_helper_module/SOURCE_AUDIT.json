@@ -1,0 +1,55 @@
+{
+  "scope": "All26 Native procedures and complete three generics; full canonical2326line source read before implementation",
+  "native_source": "src/CLUBB_core/advance_helper_module.F90",
+  "native_sha256": "56879d6527a62625bfd5c2f2cc2247700ac312bb533ba5f69ae3636b2c39cc41",
+  "target": "clubb_kokkos/drafts/advance_helper_module/advance_helper_module.hpp",
+  "target_sha256": "8f5141fa06e7962083927070191439c1095dfa66e36fb1565794fa0a271887af",
+  "source_outline": "SOURCE_OUTLINE.json",
+  "expression_review": "expression_audit.json",
+  "review_results": {
+    "definition_order_and_argument_names": "26/26 exact Native order/contracts",
+    "direct_translations": "22 routines:105 ordered scientific assignment expression trees,24 branch predicates and7 CALLs matched by owner parser; distinct-agent full review currently in progress.",
+    "manual_boundaries": [
+      "LHS optional validation, exact error message, Native1-based indices and lower1/upper1/lower2/upper2 assignment order; per-row independent writes preserve overlaps",
+      "RHS optional validation, exact error message and all overlapping index/value update order in one work item",
+      "vertical_avg: Native numerator rho*dz*field and denominator rho*dz in ascending profile order; no denominator guard or boundary omission",
+      "vertical_integral: field*rho*dz argument/product order; explicit ascending loop replaces SUM, compiled SUM arithmetic evidence pending"
+    ],
+    "generic_dispatch": "11 overloads exactly map Native2 calc_xpwp +4 smooth_min +5 smooth_max variants without extra flags",
+    "generic_array_adapters": "11 thin public host/strided overloads reuse to_execution_space/from_execution_space and restore input memory space/caller allocation",
+    "private_required_helpers": "All9 smooth min/max variants present in Native order; exact scalar max body copied from stable PDF utility partial owner",
+    "loop_order": [
+      "Independent cells flattened column-first",
+      "Lscale upper/lower searches preserve signed grid direction, early EXIT and Fortran post-DO indices; below-ground initialization before ordered above-ground accumulation",
+      "calc_xpwp Native interior bounds retained including zero-iteration rank1 small-grid case",
+      "pvertinterp first matching bracket and k_upper=1 fallback exact; unused error flag column-private"
+    ],
+    "stats": "Five Brunt-Vaisala names/fields in source order behind optional present+sampled gate; splat statistic at Native location",
+    "comments_and_format": "Native scientific descriptions/references/comments retained; argument units preserved; corrected Native energy/array-rank comment labels;100-column clang-format, two-space indentation and left pointer alignment",
+    "device_ownership": {
+      "device_bodies": 41,
+      "owning_udt_captures": 0,
+      "f2k_in_device_bodies": 0,
+      "scratch": "Per-call execution-space Views; component aliases only"
+    },
+    "BFB_specific_adaptations": [
+      "No new explicit FMA/rounding/emulation",
+      "MIN/MAX explicit second-tie choices follow established BFB-003, numerical evidence for this module pending",
+      "Native inverse multiplication retained exactly; explicit integer powers retain arithmetic grouping"
+    ]
+  },
+  "known_native_dormant_issue": "Cx width-average false-constant branch overwrites result from uninitialized Cx_fnc_Richardson_avg; retained, documented and reported to root. No Native repair.",
+  "compilation": "Pending; saturation.hpp must be promoted from its complete draft first. No builds performed.",
+  "numerical_validation": "Pending root promotion and maintained CPU Kokkos/CPU Fortran zero-tolerance model comparison. No physics tests or BFB claim. GPU milestone evidence also pending.",
+  "shared_changes": "None: no production/CMake/generator/PDF utility draft edits. Root owns shared worklog/backlog.",
+  "source_format_cleanup": {
+    "status": "Native continuation/intent groups restored without executable-token changes",
+    "signatures_and_prototypes": 50,
+    "matching_thin_boundary_adapters": 2,
+    "ordinary_calls": 7,
+    "actual_stats_generic_intents": "name/valueIn,statsInOut",
+    "doc_corrections": "Corrected Native copied calc_xpwp_2D stencil/coefficient and radiative grid-count/input-level comments; removed orphan Lscale fragment.",
+    "token_evidence": "/tmp/clubb_advance_helper_format_token_audit.json",
+    "runtime_status": "No builds or tests."
+  }
+}

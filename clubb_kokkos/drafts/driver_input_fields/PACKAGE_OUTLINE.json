@@ -1,0 +1,331 @@
+{
+  "scope": "Input_fields11 top-level files, same-JAX supported driver scope with Native authority. Pure I/O may retain explicit primitive services; all science/interpretation/interpolation must become C++.",
+  "rows": [
+    {
+      "Native_file": "src/Input_fields/corr_varnce_input_reader.F90",
+      "sha256": "928175bbfe977a9893de16693e5464991ee9e6edbac1a8753a71b7216ca9f33c",
+      "lines": 111,
+      "procedures_in_source_order": [
+        {
+          "name": "read_correlation_matrix",
+          "kind": "subroutine",
+          "line": 18
+        }
+      ],
+      "full_read_status": "inventory only; full read required before implementation"
+    },
+    {
+      "Native_file": "src/Input_fields/extrapolation.F90",
+      "sha256": "45f238376e8525dd6a0ffff361559346a20ef33204c4f3f903f34d132049baa9",
+      "lines": 92,
+      "procedures_in_source_order": [
+        {
+          "name": "lin_ext_zm_bottom",
+          "kind": "function",
+          "line": 14
+        },
+        {
+          "name": "lin_ext_zt_bottom",
+          "kind": "function",
+          "line": 54
+        }
+      ],
+      "full_read_status": "inventory only; full read required before implementation"
+    },
+    {
+      "Native_file": "src/Input_fields/hydrostatic_module.F90",
+      "sha256": "1b406593e3b75ed2e6e50040860cb2e1d273480d05a67db8bd3befb37a834d8f",
+      "lines": 523,
+      "procedures_in_source_order": [
+        {
+          "name": "hydrostatic",
+          "kind": "subroutine",
+          "line": 19
+        },
+        {
+          "name": "inverse_hydrostatic",
+          "kind": "subroutine",
+          "line": 158
+        },
+        {
+          "name": "calc_ref_z_linear_thvm",
+          "kind": "function",
+          "line": 327
+        },
+        {
+          "name": "calc_ref_z_sfc_linear_thvm",
+          "kind": "function",
+          "line": 418
+        }
+      ],
+      "full_read_status": "complete Native523+JAX114"
+    },
+    {
+      "Native_file": "src/Input_fields/input_fields.F90",
+      "sha256": "5a45102b7765fcbacb29c502df280ae07948d6fbe02baa9a9a22c35a49b8cfd9",
+      "lines": 3240,
+      "procedures_in_source_order": [
+        {
+          "name": "set_filenames",
+          "kind": "subroutine",
+          "line": 143
+        },
+        {
+          "name": "stat_fields_reader",
+          "kind": "subroutine",
+          "line": 227
+        },
+        {
+          "name": "compute_timestep",
+          "kind": "subroutine",
+          "line": 2603
+        },
+        {
+          "name": "get_input_variables_interp",
+          "kind": "subroutine",
+          "line": 2797
+        },
+        {
+          "name": "inputfields_interp_and_adjust",
+          "kind": "subroutine",
+          "line": 2954
+        },
+        {
+          "name": "inputfields_init",
+          "kind": "subroutine",
+          "line": 3070
+        },
+        {
+          "name": "cleanup_input_fields",
+          "kind": "subroutine",
+          "line": 3220
+        }
+      ],
+      "full_read_status": "inventory only; full read required before implementation"
+    },
+    {
+      "Native_file": "src/Input_fields/input_interpret.F90",
+      "sha256": "4ae21ccc9380e6eafed2d89dbda9a154d82a6a040cf6d9862b426e0c5db8d866",
+      "lines": 377,
+      "procedures_in_source_order": [
+        {
+          "name": "read_z_profile",
+          "kind": "subroutine",
+          "line": 15
+        },
+        {
+          "name": "read_theta_profile",
+          "kind": "subroutine",
+          "line": 280
+        },
+        {
+          "name": "read_subs_profile",
+          "kind": "subroutine",
+          "line": 330
+        }
+      ],
+      "full_read_status": "inventory only; full read required before implementation"
+    },
+    {
+      "Native_file": "src/Input_fields/input_names.F90",
+      "sha256": "0d580fa298adf746eb61d3fa1c6e18aa0eefdd8a3201efb860016c9f33008af8",
+      "lines": 83,
+      "procedures_in_source_order": [],
+      "full_read_status": "inventory only; full read required before implementation"
+    },
+    {
+      "Native_file": "src/Input_fields/input_netcdf.F90",
+      "sha256": "ab126cba1e34ccf00cbca900109c407a26dda4bea9cb7bd9201e616aab5c6e4c",
+      "lines": 600,
+      "procedures_in_source_order": [
+        {
+          "name": "open_netcdf_read",
+          "kind": "subroutine",
+          "line": 27
+        },
+        {
+          "name": "get_netcdf_var",
+          "kind": "subroutine",
+          "line": 353
+        },
+        {
+          "name": "close_netcdf_read",
+          "kind": "subroutine",
+          "line": 566
+        }
+      ],
+      "full_read_status": "inventory only; full read required before implementation"
+    },
+    {
+      "Native_file": "src/Input_fields/input_reader.F90",
+      "sha256": "7fa79bd77c26fdc6078e9bdd96b06392fc5ee60c71bfc4c3804f8aed9efbab1c",
+      "lines": 868,
+      "procedures_in_source_order": [
+        {
+          "name": "read_two_dim_file",
+          "kind": "subroutine",
+          "line": 72
+        },
+        {
+          "name": "read_one_dim_file",
+          "kind": "subroutine",
+          "line": 216
+        },
+        {
+          "name": "fill_blanks_one_dim_vars",
+          "kind": "subroutine",
+          "line": 326
+        },
+        {
+          "name": "fill_blanks_two_dim_vars",
+          "kind": "subroutine",
+          "line": 368
+        },
+        {
+          "name": "linear_fill_blanks",
+          "kind": "function",
+          "line": 437
+        },
+        {
+          "name": "deallocate_one_dim_vars",
+          "kind": "subroutine",
+          "line": 520
+        },
+        {
+          "name": "deallocate_two_dim_vars",
+          "kind": "subroutine",
+          "line": 558
+        },
+        {
+          "name": "read_x_table",
+          "kind": "function",
+          "line": 605
+        },
+        {
+          "name": "read_x_profile",
+          "kind": "function",
+          "line": 681
+        },
+        {
+          "name": "get_target_index",
+          "kind": "function",
+          "line": 746
+        },
+        {
+          "name": "count_columns",
+          "kind": "function",
+          "line": 792
+        }
+      ],
+      "full_read_status": "inventory only; full read required before implementation"
+    },
+    {
+      "Native_file": "src/Input_fields/sounding.F90",
+      "sha256": "1cc6582274d8e8c152e1afab9591d64a55bd1ec5cec519f4a2fcea9f86c51268",
+      "lines": 1205,
+      "procedures_in_source_order": [
+        {
+          "name": "read_sounding",
+          "kind": "subroutine",
+          "line": 24
+        },
+        {
+          "name": "read_sounding_file",
+          "kind": "subroutine",
+          "line": 603
+        },
+        {
+          "name": "read_sclr_sounding_file",
+          "kind": "subroutine",
+          "line": 707
+        },
+        {
+          "name": "read_edsclr_sounding_file",
+          "kind": "subroutine",
+          "line": 791
+        },
+        {
+          "name": "read_profile",
+          "kind": "subroutine",
+          "line": 872
+        },
+        {
+          "name": "convert_snd2extended_atm",
+          "kind": "subroutine",
+          "line": 971
+        },
+        {
+          "name": "load_extended_std_atm",
+          "kind": "subroutine",
+          "line": 1119
+        }
+      ],
+      "full_read_status": "inventory only; full read required before implementation"
+    },
+    {
+      "Native_file": "src/Input_fields/stat_file_module.F90",
+      "sha256": "450c4e6de0f1729237989207b52eaf3b0b8397afb8dccdcd6090c9140371b80b",
+      "lines": 131,
+      "procedures_in_source_order": [],
+      "full_read_status": "inventory only; full read required before implementation"
+    },
+    {
+      "Native_file": "src/Input_fields/stat_file_utils.F90",
+      "sha256": "8ed4c0295d6bcb576e4ad3b7b6822d7fa324410fca143df76869dad223e99126",
+      "lines": 675,
+      "procedures_in_source_order": [
+        {
+          "name": "stat_file_average",
+          "kind": "function",
+          "line": 15
+        },
+        {
+          "name": "stat_file_num_vertical_levels",
+          "kind": "function",
+          "line": 342
+        },
+        {
+          "name": "stat_file_vertical_levels",
+          "kind": "function",
+          "line": 388
+        },
+        {
+          "name": "l_netcdf_file",
+          "kind": "function",
+          "line": 436
+        },
+        {
+          "name": "CLUBB_levels_within_LES_domain",
+          "kind": "subroutine",
+          "line": 468
+        },
+        {
+          "name": "LES_grid_to_CLUBB_grid",
+          "kind": "subroutine",
+          "line": 579
+        }
+      ],
+      "full_read_status": "inventory only; full read required before implementation"
+    }
+  ],
+  "state_contract": "Root accepted one case-owned inputfields_state with exact Native stat_files/input_type/stats_input_type/input flags and NetCDF date3; no globals/thread_local. Root owns driver member and shared integration.",
+  "runtime_status": "No builds/tests/model verification; draft only.",
+  "Input_fields_current_status": {
+    "date_UTC": "2026-11-06T08:44:16.072583+00:00",
+    "Native_bodies_source_audited": 46,
+    "Native_top_level_files": 11,
+    "schema_and_constant_owners": "3stat_file types,1case inputfields_state and35input_names constants",
+    "runtime_status": "Only hydrostatic4 accepted live; other draft bodies source/cleanup complete and pending Root group compilation/model validation.",
+    "IOP_next": "Source and separate cleanup complete for4wrappers+8corepublic+privateisLeapYear+externaltask_abort. All4Cpp/headerfiles stable; Root integration/compile/model validation pending. Nativeundefinedbranches explicit in IOP audit.",
+    "raw_NetCDF_IO_owner": "Root now owns staged/live input_netcdf_io_bridge.hpp/.F90 union; do not overwrite those2files from older draft hashes."
+  },
+  "IOP_current_status": {
+    "date_UTC": "2026-11-06T09:09:11.270624+00:00",
+    "Native_source_lines": 1817,
+    "Native_procedures_source_audited": 14,
+    "runtime_status": "UNCOMPILED/UNTESTED by lane; Root-owned13operationrawshim has separate Native compile evidence, not C++/numerical evidence.",
+    "missing_lower_science": [],
+    "state": "Accepted case-owned readiopdata_state unchanged; only actualNativefloat/time/settings/loading fields +coreloggingflag.",
+    "source_undefinedness": "See readiopdata_SOURCE_AUDIT.json; retained, no sourcefix or fabricatedstate/values."
+  }
+}

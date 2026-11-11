@@ -35,12 +35,12 @@ def test_sfc_varnce_check_sets_error_for_nan(run_quiet_python):
     clubb_api.reset_err_code()
 
     clubb_api.sfc_varnce_check(
-        ngrdcol=ngrdcol, sclr_dim=1,
-        wp2_sfc=np.array([0.1]), up2_sfc=np.array([0.2]), vp2_sfc=np.array([0.3]), thlp2_sfc=np.array([0.4]),
-        rtp2_sfc=np.array([0.5]), rtpthlp_sfc=np.array([0.6]),
-        sclrp2_sfc=np.array([[0.7]], dtype=np.float64),
-        sclrprtp_sfc=np.array([[0.8]], dtype=np.float64),
-        sclrpthlp_sfc=np.array([[0.9]], dtype=np.float64),
+        sclr_dim=1,
+        wp2_sfc=0.1, up2_sfc=0.2, vp2_sfc=0.3, thlp2_sfc=0.4,
+        rtp2_sfc=0.5, rtpthlp_sfc=0.6,
+        sclrp2_sfc=np.array([0.7], dtype=np.float64),
+        sclrprtp_sfc=np.array([0.8], dtype=np.float64),
+        sclrpthlp_sfc=np.array([0.9], dtype=np.float64),
         err_info=err_info,
     )
     assert int(clubb_api.get_err_code(ngrdcol)[0]) == 0
@@ -57,12 +57,12 @@ clubb_api.init_err_info(ngrdcol)
 err_info = ErrInfo(ngrdcol=ngrdcol)
 clubb_api.reset_err_code()
 clubb_api.sfc_varnce_check(
-    ngrdcol=ngrdcol, sclr_dim=1,
-    wp2_sfc=np.array([np.nan]), up2_sfc=np.array([0.2]), vp2_sfc=np.array([0.3]), thlp2_sfc=np.array([0.4]),
-    rtp2_sfc=np.array([0.5]), rtpthlp_sfc=np.array([0.6]),
-    sclrp2_sfc=np.array([[0.7]], dtype=np.float64),
-    sclrprtp_sfc=np.array([[0.8]], dtype=np.float64),
-    sclrpthlp_sfc=np.array([[0.9]], dtype=np.float64),
+    sclr_dim=1,
+    wp2_sfc=np.nan, up2_sfc=0.2, vp2_sfc=0.3, thlp2_sfc=0.4,
+    rtp2_sfc=0.5, rtpthlp_sfc=0.6,
+    sclrp2_sfc=np.array([0.7], dtype=np.float64),
+    sclrprtp_sfc=np.array([0.8], dtype=np.float64),
+    sclrpthlp_sfc=np.array([0.9], dtype=np.float64),
     err_info=err_info,
 )
 print(json.dumps({"err_code": int(clubb_api.get_err_code(ngrdcol)[0])}))
@@ -228,12 +228,12 @@ def test_pdf_closure_check_sets_error_for_nan(run_quiet_python):
     err_info = ErrInfo(ngrdcol=ngrdcol)
     pdf_params = clubb_api.init_pdf_params(nz, ngrdcol)
 
-    base = np.full((ngrdcol, nz), 0.1, dtype=np.float64)
-    sclr_base = np.full((ngrdcol, nz, sclr_dim), 0.01, dtype=np.float64)
+    base = np.full(nz, 0.1, dtype=np.float64)
+    sclr_base = np.full((nz, sclr_dim), 0.01, dtype=np.float64)
 
     clubb_api.reset_err_code()
     clubb_api.pdf_closure_check(
-        nz, ngrdcol, sclr_dim,
+        nz, sclr_dim,
         base, base, base, base, base, base, base, base, base, base,
         base, base, base, base, base, base, base, base, base, base,
         cthl_1=base, cthl_2=base, pdf_params=pdf_params,
@@ -257,14 +257,14 @@ clubb_api.init_err_info(ngrdcol)
 err_info = ErrInfo(ngrdcol=ngrdcol)
 pdf_params = clubb_api.init_pdf_params(nz, ngrdcol)
 
-base = np.full((ngrdcol, nz), 0.1, dtype=np.float64)
-sclr_base = np.full((ngrdcol, nz, sclr_dim), 0.01, dtype=np.float64)
+base = np.full(nz, 0.1, dtype=np.float64)
+sclr_base = np.full((nz, sclr_dim), 0.01, dtype=np.float64)
 bad_wp2rtp = base.copy()
-bad_wp2rtp[0, 0] = np.nan
+bad_wp2rtp[0] = np.nan
 
 clubb_api.reset_err_code()
 clubb_api.pdf_closure_check(
-    nz, ngrdcol, sclr_dim,
+    nz, sclr_dim,
     base, base, bad_wp2rtp, base, base, base, base, base, base, base,
     base, base, base, base, base, base, base, base, base, base,
     cthl_1=base, cthl_2=base, pdf_params=pdf_params,
@@ -287,10 +287,10 @@ def test_length_check_sets_error_for_nan(run_quiet_python):
 
     clubb_api.reset_err_code()
     clubb_api.length_check(
-        nzt=4, ngrdcol=ngrdcol,
-        lscale=np.array([[1.0, 2.0, 3.0, 4.0]], dtype=np.float64),
-        lscale_up=np.array([[1.0, 2.0, 3.0, 4.0]], dtype=np.float64),
-        lscale_down=np.array([[1.0, 2.0, 3.0, 4.0]], dtype=np.float64),
+        nzt=4,
+        lscale=np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float64),
+        lscale_up=np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float64),
+        lscale_down=np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float64),
         err_info=err_info,
     )
     assert int(clubb_api.get_err_code(ngrdcol)[0]) == 0
@@ -307,10 +307,10 @@ clubb_api.init_err_info(ngrdcol)
 err_info = ErrInfo(ngrdcol=ngrdcol)
 clubb_api.reset_err_code()
 clubb_api.length_check(
-    nzt=4, ngrdcol=ngrdcol,
-    lscale=np.array([[1.0, np.nan, 3.0, 4.0]], dtype=np.float64),
-    lscale_up=np.array([[1.0, 2.0, 3.0, 4.0]], dtype=np.float64),
-    lscale_down=np.array([[1.0, 2.0, 3.0, 4.0]], dtype=np.float64),
+    nzt=4,
+    lscale=np.array([1.0, np.nan, 3.0, 4.0], dtype=np.float64),
+    lscale_up=np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float64),
+    lscale_down=np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float64),
     err_info=err_info,
 )
 print(json.dumps({"err_code": int(clubb_api.get_err_code(ngrdcol)[0])}))

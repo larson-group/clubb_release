@@ -1,0 +1,57 @@
+{
+  "canonical_source": "src/CLUBB_core/pdf_parameter_module.F90",
+  "canonical_sha256": "89b257f0846adc29a40fded75f67196a6cc15b6223b64c8966adc22725b7e0fa",
+  "hashes": {
+    "pdf_parameter_module.cpp": "c95c1fd6916ee1919891c56cd6e762f036d71227a5ab13fe04131948d8308247",
+    "procedure_declarations.hpp.inc": "bf15184fd5022c4839f80eb9e2ea070b016f5e2069414683445835e67d0c5de0",
+    "procedure_includes.hpp.inc": "abf7176198fc96357c6140aa84dba335abe81b2cf426c6b830a57627a7b296bd",
+    "clubb_api_module.hpp.inc": "435c3b61cd0f5616dcd1e47f17c1180d68e4e906ba9de87af1dc941a76cf84bb"
+  },
+  "routines": [
+    {
+      "name": "init_pdf_params",
+      "allocation_field_order": 47,
+      "metadata_and_nested_reset": true
+    },
+    {
+      "name": "init_pdf_implicit_coefs_terms_api",
+      "allocation_field_order": 27,
+      "metadata_and_nested_reset": true
+    },
+    {
+      "name": "zero_pdf_params_api",
+      "ordered_zero_field_assignments": 47,
+      "allocation_preserved": true
+    },
+    {
+      "name": "zero_pdf_implicit_coefs_terms_api",
+      "ordered_zero_field_assignments": 27,
+      "allocation_preserved": true
+    },
+    {
+      "name": "print_pdf_params",
+      "ordered_field_labels_and_values": 47,
+      "per_column_output_order": true
+    },
+    {
+      "name": "pack_pdf_params_api",
+      "ordered_slot_mappings": 47,
+      "Native_first_column_and_optional_range": true
+    },
+    {
+      "name": "unpack_pdf_params_api",
+      "ordered_slot_mappings": 47,
+      "Native_first_column_and_optional_range": true
+    }
+  ],
+  "kernels_reviewed": 5,
+  "manual_review": [
+    "All 47 PDF allocation/zero/packing/printing field orders and19+8 implicit-coefficient fields independently read from Native and matched against target statements.",
+    "Native first-column47slot mapping and both-present optional range retained; target explicitly rejects nonconformable slice length outside the defined Native array-assignment contract.",
+    "Unpack changes neither other columns nor metadata and does not import JAX zeroed reconstruction. Scalar implicit fields remain unallocated/untouched when sclr_dim<=0.",
+    "Existing Native API forwarder init_pdf_params_api staged separately for its actual two driver callers; no duplicate mirror schema or copy helper added.",
+    "The two unused Native copy helpers have no current repository CALL sites/JAX bodies; their Native exports remain unchanged. C++ printing has complete labels/values/order but unverified list-directed spacing."
+  ],
+  "review_kind": "Owner full Native/JAXread, source contract/field/order review; separate cleanup and independent reviewer tracked separately.",
+  "runtime_status": "Uncompiled and untested. No CPU/GPU/BFB claim. All lifecycle, optional bounds, errors, printer and formatting backend behavior remain pending integration."
+}

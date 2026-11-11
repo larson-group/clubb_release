@@ -1,0 +1,51 @@
+{
+  "reason": "Installed Kokkos min/max accept scalar const references; same-kind prvalues avoid binding namespace-scope host constexpr objects in device code.",
+  "before_sha256": "9f4ed0b84092a5d572a37cf3794709bc2f3aa087882e16d230c32a38a4d54740",
+  "after_sha256": "f6a961233fcbec94c6428d689bda2803d4735e7d794b6ed278921b603e3f14b2",
+  "operand_count": 5,
+  "global_constant_kinds": {
+    "zero": "inline constexpr real_t",
+    "one_half": "inline constexpr real_t"
+  },
+  "sites": [
+    {
+      "line_before": 938,
+      "constant": "zero",
+      "before": "Kokkos::max(zero,",
+      "after": "Kokkos::max(real_t(zero),"
+    },
+    {
+      "line_before": 938,
+      "constant": "one_half",
+      "before": "Kokkos::min(one_half,",
+      "after": "Kokkos::min(real_t(one_half),"
+    },
+    {
+      "line_before": 1047,
+      "constant": "zero",
+      "before": "Kokkos::max(zero,",
+      "after": "Kokkos::max(real_t(zero),"
+    },
+    {
+      "line_before": 1048,
+      "constant": "zero",
+      "before": "Kokkos::max(zero,",
+      "after": "Kokkos::max(real_t(zero),"
+    },
+    {
+      "line_before": 1092,
+      "constant": "zero",
+      "before": "Kokkos::max(zero,",
+      "after": "Kokkos::max(real_t(zero),"
+    }
+  ],
+  "same_kind_value_preserved": true,
+  "arithmetic_operator_and_association_changes": false,
+  "speculative_BFB_adaptation": false,
+  "source_API_evidence": "build/kokkos_serial_nvhpc26_debug/install/include/Kokkos_MinMax.hpp",
+  "source_API_sha256": "1dc3e816605ee666b63ed220dad3889ae6aa0171fb0fc9507ee3f39a8fb89dc5",
+  "constants_owner_sha256": "baff1a73c383dc944fd2f2098ec554dd8161882f960daad18cb0df384d7b860a",
+  "proof": "Removing exactly the five real_t(zero/one_half) wrappers restores the entire pre-adaptation executable-token stream; comments/whitespace are excluded.",
+  "before_math_token_sha256": "fe470421c5390760697bad777482b0500eceef3d724b649f0506fb4e7e99204e",
+  "normalized_final_math_token_sha256": "fe470421c5390760697bad777482b0500eceef3d724b649f0506fb4e7e99204e"
+}

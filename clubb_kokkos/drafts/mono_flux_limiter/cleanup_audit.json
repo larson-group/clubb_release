@@ -1,0 +1,32 @@
+{
+  "separate_cleanup": true,
+  "native_authority": "src/CLUBB_core/mono_flux_limiter.F90",
+  "source_and_jax_outline_precedes_implementation": true,
+  "findings_corrected": [
+    "Source-comment-only gr references initially generated invalid aliases in routines without a grid argument; aliases now derive from executable statements only.",
+    "Kernel loop extents originally repeated std::max inside device lambdas; host materialization now captures only integer values.",
+    "Private solver local solve_type_str was accidentally declared twice; retained exactly one Native local.",
+    "Argument comments initially searched body call-site intent tags; extraction now ends at Begin Code and attaches full named declaration descriptions.",
+    "Preserved Native physical ordinary call continuation groups and correct stats InOut declarations.",
+    "Copied sigma_w_i_zm variance/squared-unit typo corrected to standard deviation[m/s] in target only.",
+    "Adjacent private anonymous namespaces merged while preserving source public/private routine interleaving.",
+    "Removed duplicated orphan argument-description continuation fragments; full descriptions remain attached to named interfaces."
+  ],
+  "max_line_width": {
+    "cpp": 100,
+    "hpp": 99
+  },
+  "trailing_whitespace": false,
+  "no_builds_tests_or_numerical_claims": true,
+  "remaining": "Root independent review/promotion/build and CPU model BFB; selected model flag and mean_adv owner registration pending.",
+  "final_comment_cleanup_token_proof": {
+    "mono_flux_limiter.cpp": {
+      "tokens_identical": true,
+      "token_count": 10567
+    },
+    "mono_flux_limiter.hpp": {
+      "tokens_identical": true,
+      "token_count": 209
+    }
+  }
+}

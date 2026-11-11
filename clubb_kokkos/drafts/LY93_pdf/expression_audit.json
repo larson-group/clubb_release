@@ -1,0 +1,25 @@
+{
+  "canonical_source": "src/CLUBB_core/LY93_pdf.F90",
+  "canonical_sha256": "572b41115b5c90ccfa031a55f9d9eb9921374fde66f4a686cb287cf412b10d2b",
+  "target_sha256": "9f9c86c92d26f5b23917cf42cbda2ad89488750c0111fbb5c7b8926cb9a1625d",
+  "routines": [
+    {
+      "name": "LY93_driver",
+      "arguments": 23,
+      "ordered_assignment_trees": 2
+    },
+    {
+      "name": "calc_mixt_frac_LY93",
+      "arguments": 2,
+      "ordered_assignment_trees": 7
+    },
+    {
+      "name": "calc_params_LY93",
+      "arguments": 9,
+      "ordered_assignment_trees": 7
+    }
+  ],
+  "ordered_parameter_calls": 3,
+  "manual_review": "Bisection bounds/uncapped termination/tolerance, WHERE sign branch inclsignedzero, profile0-based execution mapping, Nativearray scratch lowered to work-item scalars, return ownership/memoryspace, Nativegrouping/comments/citations/units; no scopes/options omitted.",
+  "runtime": "No builds/tests/numerical evidence."
+}

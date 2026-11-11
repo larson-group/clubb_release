@@ -1,0 +1,49 @@
+{
+  "date": "2026-11-06",
+  "objective": "Honor logical View indices when detecting holes in padded/strided column windows",
+  "cause": "LayoutLeft views may retain parent leading stride4 while logicalfirstextent1. The existing to_execution_space correctly aliases compatible storage; flat field.data()[cell] wrongly assumes contiguous stride.",
+  "proof": "Actual public C++andNative fill_holes_vertical_api,1x12windowin4x12parent:rowstrides1,4,span_is_contiguousfalse,parentaliastrue. OldCppdonor3/hole-1 vsNative2/0 (10/12levels equal);fixed12/12exact.",
+  "fix": "Rank1/2/3 logical coordinate traversal, same strict< comparison, same integer reduction and boolean result; no new allocations, packing, copies, API or float arithmetic.",
+  "all_uses_audited": [
+    {
+      "location": "vertical dispatch and optional diagnostics",
+      "rank": 2
+    },
+    {
+      "location": "sliding-window first check and globalfallback",
+      "rank": 2
+    },
+    {
+      "location": "wp2 horizontal TKE dispatch",
+      "rank": 2
+    },
+    {
+      "location": "hydrometeor samephase guard",
+      "rank": 3
+    },
+    {
+      "location": "whole species and padded onecolumn vertical guards",
+      "rank": 2
+    },
+    {
+      "location": "vapor fallback strided profile",
+      "rank": 1
+    }
+  ],
+  "source_cleanup": "One private helper body/comment only; rankstaticassert makes supported internal contracts explicit. All inputs retain owner allocations. Public signatures and Native field order unchanged.",
+  "regression": "Prepared core_array_transfer_padded_fill.patch adds one public API high-level hole case with exact2/0 expected and all3guardcolumns checked; oldcore exits1 with targeteddiagnostic,fixedcore exits0. Reuses existingVerifyF90 only for existing constant tests; no newF90ororacle.",
+  "CMake_integration": "Existing clubb_kokkos_core_array_transfer target links only clubb_f2k_lib; Root must change that one link to clubb_kokkos_core_lib to access publicfillAPI.",
+  "primary_model": "Combined BFB028+coordinatefix DO/DS/RICO20standard/debug2 strict raw-file equality3/3.",
+  "evidence_sha256": {
+    "fill_holes_logical_any.patch": "3e8222330f6fc19c7422d13034c153b75a59da6741de5d78b4dfe02ba1974a83",
+    "padded_fill_holes_public_replay.cpp": "74c2c2a240633fbad47a37ee6c003f48b2c7f4dda4adcc43ee5b5c4356329e85",
+    "padded_fill_holes_public_replay_baseline.log": "638956686b568bdba05d267610a8d7ad42d6714f2a2fb1dd3ef1229960384a4b",
+    "padded_fill_holes_public_replay_fixed.log": "978aa9d66f67c9a18823cd03f759419efa04a24d2ea9f42a7febbd00b740c551",
+    "core_array_transfer_padded_fill.patch": "f53f8064d7e27f968fa8eb5a168d7e67306ddba5367f6a73c2cf4dc6a95fa0dc",
+    "core_array_transfer_padded_fill.cpp": "75ab1cc43ba8c3b6c21ae24f3010edb77da1aff03f3d49e1646588c0489e67f0",
+    "core_array_transfer_padded_fill_baseline_run.log": "5c6dc4c73cf3c85ea49a106f4e53732f02b5c716006c4efa09cbe48f5fe485b0",
+    "core_array_transfer_padded_fill_fixed_run.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "BFB023028_fillfix_20step_standard_model_gate.log": "c81606de6980c8725f2b712bbdda16381d92e1f21d372d0ab57324ed242e166d"
+  },
+  "live_integration": "Exact candidate promoted with BFB029; combined CPU/CUDA builds running. Maintained full six-case KK check pending."
+}

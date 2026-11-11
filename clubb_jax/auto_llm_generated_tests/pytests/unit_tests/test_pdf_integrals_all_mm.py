@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 """Check mixed-moment PDF probability limits and normal central moments."""
-
-from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
 import math
 import pytest
-from clubb_jax.src.Microphys.KK_microphys import Parabolic
+from clubb_jax.src.Microphys.KK_microphys import parabolic_cylinder
 
 
 from clubb_jax.src.Microphys.KK_microphys.PDF_integrals_all_MM import trivar_NNL_MM, quadrivar_NNLL_MM
@@ -21,10 +19,10 @@ def test_base_case_probability_mass(monkeypatch, high_accuracy, tolerance):
     # The series stopping accuracy is selected globally and captured when JIT traces.
     try:
         with monkeypatch.context() as context:
-            context.setattr(Parabolic, 'l_high_accuracy_parab_cyl_fnc', high_accuracy)
-            Parabolic.dv_parabolic_cylinder.clear_cache()
+            context.setattr(parabolic_cylinder, 'l_high_accuracy_parab_cyl_fnc', high_accuracy)
+            parabolic_cylinder.dv_parabolic_cylinder.clear_cache()
             for mu_x2, sigma_x2 in ((0.3, 0.5), (-0.2, 0.8), (1.0, 0.4), (0.0, 1.0)):
-                got = float(call_jax(trivar_NNL_MM,
+                got = float(trivar_NNL_MM(
                     mu_x1=0.5, mu_x2=mu_x2, mu_x3_n=-0.4, sigma_x1=0.6, sigma_x2=sigma_x2, sigma_x3_n=0.5,
                     rho_x1x2=0.3, rho_x1x3_n=0.2, rho_x2x3_n=-0.1, x1_mean=0.4, x2_alpha_x3_beta_mean=1.3,
                     alpha_exp=1.5, beta_exp=0.5, a_exp=0, b_exp=0))
@@ -33,7 +31,7 @@ def test_base_case_probability_mass(monkeypatch, high_accuracy, tolerance):
                 assert rel < tolerance, f"base case mu_x2={mu_x2}: rel {rel:.2e} (got {got}, Phi {ref})"
             print(f"  probability mass: high_accuracy={high_accuracy}, tolerance={tolerance:g}  PASS")
     finally:
-        Parabolic.dv_parabolic_cylinder.clear_cache()
+        parabolic_cylinder.dv_parabolic_cylinder.clear_cache()
 
 
 def _normal_central(mu, sigma, c, n):
@@ -50,7 +48,7 @@ def _Q():
 
 def _call_quad(q, a, b, **over):
     p = {**q, **over}
-    return float(call_jax(quadrivar_NNLL_MM,
+    return float(quadrivar_NNLL_MM(
         p['mu_x1'], p['mu_x2'], p['mu_x3_n'], p['mu_x4_n'], p['s_x1'], p['s_x2'], p['s_x3n'], p['s_x4n'],
         p['r12'], p['r13n'], p['r14n'], p['r23n'], p['r24n'], p['r34n'], p['x1_mean'], p['M'],
         p['alpha'], p['beta'], p['gamma'], a, b))

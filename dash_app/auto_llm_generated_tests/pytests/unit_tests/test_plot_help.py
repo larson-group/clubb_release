@@ -52,21 +52,6 @@ def test_plot_card_uses_full_size_question_button():
     assert help_button.title == "Legacy concise tooltip"
 
 
-def test_plot_load_indicator_is_inside_the_graph_shell():
-    """The shared card keeps status alongside the live graph in its fixed-height overlay parent."""
-    graph_id = {"type": "profile-graph", "index": 4}
-    card = shared.make_plot_card(controls="control", graph_id=graph_id,
-                                 graph_shell_id="shell", card_id="card")
-    shell = next(item for item in _walk(card) if getattr(item, "id", None) == "shell")
-    indicator = next(item for item in shell.children
-                     if getattr(item, "id", None) == {"type": "plots-load-message", "index": 4})
-    assert indicator.role == "status"
-    assert indicator.to_plotly_json()["props"]["aria-live"] == "polite"
-    assert any(getattr(item, "id", None) == graph_id for item in shell.children)
-    assert indicator not in card.children
-    assert shell.style == shared.plot_graph_shell_style("normal")
-
-
 def test_plot_help_open_close_and_mount_events():
     state = {"7": {"plot_type": "budget"}}
 

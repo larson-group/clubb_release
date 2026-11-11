@@ -8,19 +8,18 @@ from pathlib import Path
 from utilities.loss_metrics import normalize_loss_weights
 from dash import ALL, Input, Output, Patch, State, callback_context, html, no_update
 
-from dash_app.shared.tunable_configs import available_tunable_configs, tunable_config_names
-
 from .discovery import (
+    available_tunable_configs,
     available_fields_for_cases,
     load_tunable_default_ranges,
     load_tunable_names,
+    tunable_config_names,
 )
 from .layout import (
     DEFAULT_AVERAGE_TIME_SECONDS,
     build_case_config_row,
     build_config_buttons,
     build_param_range_row,
-    settings_help_notecard,
 )
 from .runtime import empty_status_payload
 from .state import REPO_ROOT
@@ -80,7 +79,7 @@ def tune_request_for_save(status, *, output_roots=None):
         Path(root).resolve()
         for root in (
             output_roots
-            or [Path(REPO_ROOT) / "output" / "tuner"]
+            or [Path(REPO_ROOT) / "output" / "tuner", Path(REPO_ROOT) / "output_tuner"]
         )
     ]
     if not any(job_dir.is_relative_to(root) for root in roots):
@@ -338,24 +337,6 @@ def register_settings_callbacks(app):
     """Register callbacks that manage case defaults and range-row state."""
 
     @app.callback(
-        Output("tune-settings-help-modal", "children"),
-        Input({"type": "tune-settings-help-open", "section": ALL}, "n_clicks"),
-        Input({"type": "tune-settings-help-close", "section": ALL}, "n_clicks"),
-        prevent_initial_call=True,
-    )
-    def show_settings_help(_open_clicks, _close_clicks):
-        """Open the selected help notecard, ignoring initial dynamic mount events."""
-        trigger = callback_context.triggered_id
-        value = callback_context.triggered[0].get("value") if callback_context.triggered else None
-        if not isinstance(value, (int, float)) or value <= 0 or not isinstance(trigger, dict):
-            return no_update
-        if trigger.get("type") == "tune-settings-help-close":
-            return ""
-        if trigger.get("section") not in {"algorithms", "gradient", "loss", "aggregation"}:
-            return no_update
-        return settings_help_notecard(trigger["section"])
-
-    @app.callback(
         Output("tune-config-save-modal", "className"),
         Output("tune-config-save-result", "options"),
         Output("tune-config-save-result", "value"),
@@ -518,17 +499,26 @@ def register_settings_callbacks(app):
 
     @app.callback(
         Output("tune-strategy-mode", "data"),
-        Input({"type": "tune-algorithm-button", "name": ALL}, "n_clicks"),
+        Input("tune-mode-random", "n_clicks"),
+        Input("tune-mode-resolve", "n_clicks"),
+        Input("tune-mode-simann", "n_clicks"),
+        Input("tune-mode-adam", "n_clicks"),
         State("tune-active-job", "data"),
         prevent_initial_call=True,
     )
-    def select_strategy_mode(_clicks, active_job):
-        """Select the registered algorithm whose button was clicked."""
+    def select_strategy_mode(_random_clicks, _resolve_clicks, _simann_clicks, _adam_clicks, active_job):
+        """Persist the selected tuning strategy mode."""
         if active_job:
             return no_update
         trigger_id = callback_context.triggered_id
-        if isinstance(trigger_id, dict) and any(_clicks or []):
-            return trigger_id["name"]
+        if trigger_id == "tune-mode-random":
+            return "random"
+        if trigger_id == "tune-mode-resolve":
+            return "resolve"
+        if trigger_id == "tune-mode-simann":
+            return "simann"
+        if trigger_id == "tune-mode-adam":
+            return "adam"
         return no_update
 
     @app.callback(
@@ -1028,7 +1018,12 @@ def register_settings_callbacks(app):
         Input("tune-aggregation-weight-3", "value"),
         Input("tune-aggregation-weight-4", "value"),
         Input("tune-selected-config", "data"),
-        Input({"type": "tune-algorithm-option", "algorithm": ALL, "name": ALL}, "value"),
+        Input("tune-random-max-samples", "value"),
+        Input("tune-resolve-spacing", "value"),
+        Input("tune-adam-max-updates", "value"),
+        Input("tune-adam-learning-rate-percent", "value"),
+        Input("tune-adam-perturbation-percent", "value"),
+        Input("tune-adam-spsa-pairs", "value"),
         State("tune-active-job", "data"),
         State("tune-workspace-selection", "data"),
         prevent_initial_call=True,
@@ -1060,7 +1055,12 @@ def register_settings_callbacks(app):
         _aggregation_weight_3,
         _aggregation_weight_4,
         _selected_config,
-        _strategy_options,
+        _random_max_samples,
+        _resolve_spacing,
+        _adam_max_updates,
+        _adam_learning_rate_percent,
+        _adam_perturbation_percent,
+        _adam_spsa_pairs,
         active_job,
         workspace_selection,
     ):

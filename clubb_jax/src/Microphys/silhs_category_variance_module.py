@@ -44,14 +44,9 @@ def silhs_category_variance_driver(
         lh_sample_point_weights, pdf_params, precip_fracs,  # In
         hm_metadata,                                        # In
     )
-    def accumulate_stats(stats):
-        """Collect this diagnostic block only on sampled timesteps."""
+    if stats.l_sample:
         for icat in range(8):
             stats = stats.update(f"silhs_var_cat_{icat+1}", root_weight_mean_sq_cat[..., icat])
-
-        return stats
-
-    stats = stats.sampled(accumulate_stats)
     return stats
 
 

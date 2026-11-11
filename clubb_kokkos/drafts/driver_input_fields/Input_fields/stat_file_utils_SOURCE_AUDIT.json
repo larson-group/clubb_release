@@ -1,0 +1,37 @@
+{
+  "date_UTC": "2026-11-06T08:21:28.552216+00:00",
+  "attribution": "Owner source audit; no independent reviewer claim.",
+  "routines_in_source_order": [
+    "stat_file_average",
+    "stat_file_average_interval",
+    "stat_file_num_vertical_levels",
+    "stat_file_vertical_levels",
+    "l_netcdf_file",
+    "CLUBB_levels_within_LES_domain",
+    "LES_grid_to_CLUBB_grid"
+  ],
+  "checks": [
+    "Complete Native source and relevant actual JAX bodies read before outline/implementation; final complete target reread separate from initial translation.",
+    "All scoped public definitions, source order, original formal names/order/intents and source branch/call order checked.",
+    "Only actual Native date globals become accepted const case-context arguments; ncf/arrays/IDs remain caller-owned.",
+    "No shared schema duplicate/global/thread_local storage or persistent Native UDT/registry; explicit close placement and Native early-error returns retained.",
+    "All GPU captures are component Views/scalars; only primitive raw NetCDF operations cross f2k on host; existing array owner handles host/strided profiles.",
+    "Inclusive time iteration and ordered field accumulation, same-grid eps predicate, exact/linear interpolation and power branch preserved; no floating-point parallel time reduction.",
+    "Both grid helpers retain Native directional searches,1basedia/iz/brackets,1e-6exactthreshold,break/fatal order and initialized outputindices0.",
+    "Lower descending domain assignment and optional k1ghostvalue,upperoutofdomain +Inf retained; Native comment calling actual +Inf NaN corrected to numeric behavior.",
+    "Interval zerosentinel/firstpairerror/laterpairlackoferrorcheck/divisor sequence retained; invalid odd intervals not silently repaired.",
+    "All public function return types explicit where Kokkos lambdas occur; generic input profiles stage once through existing array owner.",
+    "Source public suffix and count/height query error/close behavior retained; no invented file fallback."
+  ],
+  "sha256": {
+    "src/Input_fields/stat_file_utils.F90": "8ed4c0295d6bcb576e4ad3b7b6822d7fa324410fca143df76869dad223e99126",
+    "clubb_kokkos/drafts/driver_input_fields/Input_fields/stat_file_utils.cpp": "d3238f0856d48fe05c799e79a83d27ca0a3c03b758c3aeb9e2b8d7eac4cbc5ae",
+    "clubb_kokkos/drafts/driver_input_fields/Input_fields/stat_file_utils.hpp": "15b0b4367f351662a00c0491132426678a008f688fc83b2bf643a9caf10c9573",
+    "clubb_kokkos/drafts/driver_input_fields/f2k/input_netcdf_io_bridge.hpp": "f3be148276f52f3f08b069d13afbb344349745c498fe934fb5ccafca58c8bae6",
+    "clubb_kokkos/drafts/driver_input_fields/f2k/input_netcdf_io_bridge.F90": "d7f7cb2c36f6574f9886dc176b1490ac33384226f059ce85d2f23a536485220b",
+    "clubb_kokkos/drafts/driver_input_fields/Input_fields/stat_file_module.hpp": "0a0b001e649591b5bc17c244e5a16bd80df3237980fc94f2b2ce3edab1ca1e99",
+    "clubb_kokkos/drafts/driver_input_fields/Input_fields/inputfields_state.hpp": "f40f74853977cfc35d6cce2f3533ffbb07e2514b0582cae89afe0de0b24dbfc9"
+  },
+  "BFB_specific_adaptations": [],
+  "runtime_status": "UNCOMPILED/UNTESTED; CPU/CUDA/model/BFB evidence pending Root compatible-group integration."
+}

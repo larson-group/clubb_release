@@ -1,0 +1,72 @@
+{
+  "status": "Complete supported3-routine draft; separate final source audit/cleanup complete; compilation and numerical evidence pending.",
+  "canonical_source": "src/CLUBB_core/LY93_pdf.F90",
+  "canonical_sha256": "572b41115b5c90ccfa031a55f9d9eb9921374fde66f4a686cb287cf412b10d2b",
+  "read_full_native_before_code": true,
+  "source_order_public_routines": [
+    "LY93_driver",
+    "calc_mixt_frac_LY93",
+    "calc_params_LY93"
+  ],
+  "signatures": [
+    {
+      "name": "LY93_driver",
+      "arguments": 23
+    },
+    {
+      "name": "calc_mixt_frac_LY93",
+      "arguments": 2
+    },
+    {
+      "name": "calc_params_LY93",
+      "arguments": 9
+    }
+  ],
+  "source_checks": {
+    "all_native_argument_names_order_kinds_ranks_required_status": true,
+    "ordered_assignment_expression_trees": 16,
+    "ordered_field_specific_calls": 3,
+    "kernels": 3,
+    "uncapped_bisection_bounds_tolerance_update_and_exit": true,
+    "Skx_sign_branch_including_zero": true,
+    "body_comments_references_groups_and_units": true,
+    "profile_memoryspace_and_result_ownership": true,
+    "explicit_owning_UDT_or_f2k_device_capture": false,
+    "maximum_columns": 100,
+    "tabs_or_trailing_whitespace": false
+  },
+  "language_execution_adaptations": [
+    "Native 1-based independent profile loop becomes zero-based RangePolicy(0,nz); source current-level expression trees retained.",
+    "Sk_max remains call-localLayoutLeft scratch; returned mixt_frac ownedLayoutLeft retains input memoryspace; defaultExecution of that memoryspace selected.",
+    "Native level-local sgn_Skx/B_x arrays become distinct scalar locals in one params kernel, retaining statements/formulas in order.",
+    "Native initialized LY_mixt_frac_tol is immutable; expressed as function-localconstexpr without mutable saved storage.",
+    "Native incorrect component-variance unit comments corrected in target documentation only."
+  ],
+  "lower_dependencies": "Only existing array_types/constants/Kokkos math; no missing public lower procedure or constant.",
+  "JAX_differences_not_imported": [
+    "60step capped scan",
+    "gradient-safe sqrt/cube-root helper",
+    "broadcasted API/routine reordering"
+  ],
+  "BFB": "No speculative FMA/forced rounding/mismatch-driven adaptation; no runtime evidence. Direct sixth-power Kokkos expression is not yet compared against Native integer-power lowering.",
+  "runtime": {
+    "compiled": false,
+    "tested": false,
+    "CPU_BFB": false,
+    "GPU_tested": false,
+    "performance_measured": false,
+    "untested_paths": [
+      "Sk_max threshold/bisection/default branches and signed-zero sign choice",
+      "zero/negative variance, large/nonfinite skewness and Native nonconvergence behavior",
+      "HostSpace and execution-space strided profiles",
+      "all supported model cases with LY93 selected"
+    ]
+  },
+  "file_sha256": {
+    "SOURCE_OUTLINE.json": "63c16a0aa45bd943f4d73dacecc4fdbce54b9cb6e9e7d27e8297ccca32651e6a",
+    "LY93_pdf.hpp": "9f9c86c92d26f5b23917cf42cbda2ad89488750c0111fbb5c7b8926cb9a1625d",
+    "source_audit.py": "d8146b98319c5da6ef068c6212e5255fb3cd95eb030867df9ce067c5c092d99d",
+    "expression_audit.json": "0714f5c0c8a4ebd0522591510484fa7504501ce81ca260ab1cd42dbce549a655",
+    "INTEGRATION.md": "cb3d29960cea343cd89a173b935d9f1f1c037152fcc26c720a4ff0aab8645851"
+  }
+}

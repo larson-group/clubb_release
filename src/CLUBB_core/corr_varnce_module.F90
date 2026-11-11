@@ -222,11 +222,11 @@ module corr_varnce_module
     ii_rg = 11, &
     ii_Ng = 12
 
-    !--------------------------- Input Variables ---------------------------
+    ! Input Variables
 
     integer, intent(in) :: iiPDF_x
 
-    !--------------------------- Output Variables ---------------------------
+    ! Return Variable
 
     integer :: ii_def_corr
 
@@ -348,13 +348,12 @@ module corr_varnce_module
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
     character(len=*), intent(in) :: var_name ! The name of the variable
 
     type (hm_metadata_type), intent(in) :: &
       hm_metadata
 
-    !--------------------------- Output Variables ---------------------------
+    ! Output variable
     integer :: i
 
     !------------------ BEGIN CODE -----------------------------
@@ -855,14 +854,14 @@ module corr_varnce_module
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
+    ! Input Variables
     integer, intent(in) :: &
       pdf_dim   ! Number of variables in the correlation array
 
     real( kind = core_rknd ), dimension(pdf_dim, pdf_dim), &
       intent(in) :: corr_array_n ! Normal space correlation array to be checked
 
-    !--------------------------- Input/Output Variables ---------------------------
+    ! Input/Output Variables
     type(err_info_type), intent(inout) :: &
       err_info        ! err_info struct containing err_code and err_header
 
@@ -915,7 +914,7 @@ module corr_varnce_module
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
+    ! Input Variables
     integer, intent(in) :: &
       pdf_dim   ! Number of variables in the correlation array
 

@@ -1,0 +1,68 @@
+{
+  "id": "BFB-023",
+  "status": "actual-input replay and combined CPU primary gate pass; live integration pending",
+  "routine": "PDF_integrals_means::bivar_LL_mean",
+  "Native_revision": "ac37a3898; scientific Native source unchanged",
+  "configuration": "NVHPC 26.9, Debug -O0 -g, core8; CPU Native versus Serial Kokkos",
+  "saved_error_provenance": "Original new microphysics19short17/19 raw-file exact, DO/DS strongly diverged. Five corrected zero-based parameter references remove the large error; isolated DO/DS5stepMC still differ at record4/240s with normal5step completion. The index-only failure is preserved separately in index_fix_model_gate.log and runrepo outputs.",
+  "first_actual_input": "MVR_FIRST_INPUT.json records all22 Native MVR scalar arguments as exact hexadecimal double values. Actual same-input Native function comes from frozen original libKK_microphys_lib.a.",
+  "replay_counts": {
+    "Native_component_dispatch_to_primitive_reproduced": 2,
+    "Cxx_component_dispatch_to_primitive_reproduced": 2,
+    "candidate_matches_Native_components": 2,
+    "total_components": 2,
+    "original_weighted_model_mvr_reproduced": 1,
+    "candidate_weighted_matches_Native_model_mvr": 1,
+    "total_weighted_values": 1
+  },
+  "values": {
+    "component1_cpp": "0x1.a9e64b94259b2p-12",
+    "component1_native_and_candidate": "0x1.a9e64b94259abp-12",
+    "component2_cpp": "0x1.a9e64b94259bfp-12",
+    "component2_native_and_candidate": "0x1.a9e64b94259b8p-12",
+    "weighted_cpp": "0x1.a6bb3209f9f0bp-16",
+    "weighted_native_and_candidate": "0x1.a6bb3209f9f05p-16"
+  },
+  "assembly": {
+    "Native": "native_bivar_LL_assembly.txt:1130 rounds first variance product;1134 fuses second variance product into it;1139 fuses final cross-term beta product into that pair;1152 separately fuses second mean product with rounded first;1157 adds these groups before exp.",
+    "Cxx": "cpp_bivar_LL_assembly.txt:5f24 mean-pair FMA then5f29/5f2e/5f33 fuse each variance/cross product into the full running prefix."
+  },
+  "candidate": "BFB-023_candidate.patch uses explicit Kokkos::fma for Native variance pair, variance-plus-cross, and independent mean pair, then exp of their sum. Ordinary exp implementation unchanged.",
+  "not_changed": "No tolerance, compiler flags, physics option, Native source, global model state, GPU implementation or math library was changed.",
+  "evidence_sha256": {
+    "MVR_FIRST_INPUT.json": "52440a59e1d790e868d33f5b70322763b2c0e9c7dac32ff77511c440ce855b60",
+    "mvr_same_input_replay.cpp": "726869e110647115db330ff9fbb6ef7f41e9f06d8b6d945c84a9a06beb135fac",
+    "mvr_same_input_replay.o": "267fce60b6b0326af53fc906e9e496a1481fe01fee99e640f4267c8d88da40c5",
+    "mvr_same_input_result.log": "3e649f1c7525fb0534dd821055c44689831a9906226c15f388bc95159a59179c",
+    "native_bivar_LL_assembly.txt": "7ab8415d2ab477acbbbb8f9f54ebbc89b4f0347ff29b48398ef05934f343b255",
+    "cpp_bivar_LL_assembly.txt": "cbee3e1dc334b731522cb8859d606d9278fa2db540013c420223d59ba85d787f",
+    "BFB-023_candidate.patch": "36e3748b6f8a721d3a3e340527c5f605ddbbb7a0fa45ab82a0c9c41955b56c79",
+    "parameter_index_fix.patch": "68d67fb3c6dc02c2dc12426d7a3f1f28ffffd2193a30d1f209c17b28516c4daf",
+    "PARAMETER_INDEX_CAUSE.json": "5074c8723628394493e584b23a14f42cc2ae5f38f20122ff61253da83fd3ee4c"
+  },
+  "model_boundary_evidence": "The five-step ALLstats model candidate removes its early step2 mvrr/sedimentation differences; independent covariance and later-step differences remain. BFB023_only_allstats_results preserves this failing intermediate.",
+  "combined_primary_model_gate": {
+    "result": "passed strict raw-file equality 2/2",
+    "cases": [
+      "dycoms2_rf02_do",
+      "dycoms2_rf02_ds"
+    ],
+    "observed_steps_each_backend": 5,
+    "stats": "multi_col_stats",
+    "override": "debug_level=2",
+    "source": "isolated frozen microphysics batch plus five-index fix and BFB023\u2013026",
+    "log": "BFB023026_MC_model_gate.log",
+    "results_archive": "BFB023026_MC_results",
+    "no_tolerance_changes": true,
+    "repeat_retained_log": "BFB023026_MC_retain_model_gate.log"
+  },
+  "supplemental_ALL_gate": {
+    "result": "diff2/2 at180s",
+    "archive": "BFB023026_ALL_results",
+    "scope": "only w_KK_evap_covar_zt and its wprtp/wpthlp_mc and later forcing statistics; main state/means/variances/sedimentation fields exact for5steps",
+    "max_abs_moisture": 4.1359030627651384e-25,
+    "max_abs_heat": 1.6940658945086007e-21,
+    "no_acceptance_relaxation": true
+  },
+  "live_integration": "Promoted exact candidate patches in order; final combined live model acceptance pending. Detailed replay/assembly objects remain in the recorded local diagnosis lane."
+}

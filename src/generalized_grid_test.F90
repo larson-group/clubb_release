@@ -959,49 +959,49 @@ module generalized_grid_test
 
 
       ! Call advance_clubb_core_api for the ascending grid direction
-      call advance_clubb_core_api &
-            ( gr, nzm, nzt, ngrdcol, & ! In
-              l_implemented, dt, fcor, fcor_y, sfc_elevation, & ! In
-              hydromet_dim, & ! In
-              sclr_dim, sclr_tol, edsclr_dim, sclr_idx, & ! In
-              thlm_forcing, rtm_forcing, um_forcing, vm_forcing, & ! In
-              sclrm_forcing, edsclrm_forcing, wprtp_forcing, & ! In
-              wpthlp_forcing, rtp2_forcing, thlp2_forcing, & ! In
-              rtpthlp_forcing, wm_zm, wm_zt, & ! In
-              wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, p_sfc, & ! In
-              wpsclrp_sfc, wpedsclrp_sfc, & ! In
-              upwp_sfc_pert, vpwp_sfc_pert, & ! In
-              rtm_ref, thlm_ref, um_ref, vm_ref, ug, vg, & ! In
-              p_in_Pa, rho_zm, rho, exner, & ! In
-              rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, & ! In
-              invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, & ! In
-              l_mix_rat_hm, & ! In
-              rfrzm, wphydrometp, & ! In
-              wp2hmp, rtphmp_zt, thlphmp_zt, & ! In
-              host_dx, host_dy, & ! In
-              clubb_params, nu_vert_res_dep, lmin, & ! In
-              mixt_frac_max_mag, T0, ts_nudge, & ! In
-              rtm_min, rtm_nudge_max_altitude, & ! In
-              clubb_config_flags, & ! In
-              stats, & ! InOut
-              um, vm, upwp, vpwp, up2, vp2, up3, vp3, & ! InOut
-              thlm, rtm, wprtp, wpthlp, & ! InOut
-              wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, & ! InOut
-              sclrm, sclrp2, sclrp3, sclrprtp, sclrpthlp, & ! InOut
-              wpsclrp, edsclrm, err_info, & ! InOut
-              rcm, cloud_frac, & ! InOut
-              wpthvp, wp2thvp, wp2up, rtpthvp, thlpthvp, & ! InOut
-              sclrpthvp, & ! InOut
-              wp2rtp, wp2thlp, uprcp, vprcp, rc_coef_zm, wp4, & ! InOut
-              wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac, & ! InOut
-              um_pert, vm_pert, upwp_pert, vpwp_pert, & ! InOut
-              pdf_params, pdf_params_zm, & ! InOut
-              pdf_implicit_coefs_terms, & ! InOut
-              Kh_zm, Kh_zt, & ! Out
-              thlprcp, wprcp, w_up_in_cloud, w_down_in_cloud, & ! Out
-              cloudy_updraft_frac, cloudy_downdraft_frac, & ! Out
-              rcm_in_layer, cloud_cover, invrs_tau_zm, & ! Out
-              Lscale ) ! Out
+      call advance_clubb_core_api( &
+              gr, nzm, nzt, ngrdcol, &                             ! Intent(in)
+              l_implemented, dt, fcor, fcor_y, sfc_elevation, &    ! Intent(in)
+              hydromet_dim, &                                      ! intent(in)
+              sclr_dim, sclr_tol, edsclr_dim, sclr_idx, &          ! intent(in)
+              thlm_forcing, rtm_forcing, um_forcing, vm_forcing, & ! Intent(in)
+              sclrm_forcing, edsclrm_forcing, wprtp_forcing, &     ! Intent(in)
+              wpthlp_forcing, rtp2_forcing, thlp2_forcing, &       ! Intent(in)
+              rtpthlp_forcing, wm_zm, wm_zt, &                     ! Intent(in)
+              wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, p_sfc, &  ! Intent(in)
+              wpsclrp_sfc, wpedsclrp_sfc,  &                       ! Intent(in)
+              upwp_sfc_pert, vpwp_sfc_pert, &                      ! intent(in)
+              rtm_ref, thlm_ref, um_ref, vm_ref, ug, vg, &         ! Intent(in)
+              p_in_Pa, rho_zm, rho, exner, &                       ! Intent(in)
+              rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &             ! Intent(in)
+              invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, &             ! Intent(in) 
+              l_mix_rat_hm, &                                      ! Intent(in)
+              rfrzm, wphydrometp, &                                ! Intent(in)
+              wp2hmp, rtphmp_zt, thlphmp_zt, &                     ! Intent(in)
+              host_dx, host_dy, &                                  ! Intent(in)
+              clubb_params, nu_vert_res_dep, lmin, &               ! Intent(in)
+              mixt_frac_max_mag, T0, ts_nudge, &                   ! Intent(in)
+              rtm_min, rtm_nudge_max_altitude, &                   ! Intent(in)
+              clubb_config_flags, &                                ! Intent(in)
+              stats,         &                                     ! intent(inout)
+              um, vm, upwp, vpwp, up2, vp2, up3, vp3, &            ! Intent(inout)
+              thlm, rtm, wprtp, wpthlp, &                          ! Intent(inout)
+              wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, &       ! Intent(inout)
+              sclrm, sclrp2, sclrp3, sclrprtp, sclrpthlp, &        ! Intent(inout)
+              wpsclrp, edsclrm, err_info, &                        ! Intent(inout)
+              rcm, cloud_frac, &                                   ! Intent(inout)
+              wpthvp, wp2thvp, wp2up, rtpthvp, thlpthvp, &         ! Intent(inout)
+              sclrpthvp, &                                         ! Intent(inout)
+              wp2rtp, wp2thlp, uprcp, vprcp, rc_coef_zm, wp4, &    ! intent(inout)
+              wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac, &   ! intent(inout)
+              um_pert, vm_pert, upwp_pert, vpwp_pert, &            ! intent(inout)
+              pdf_params, pdf_params_zm, &                         ! Intent(inout)
+              pdf_implicit_coefs_terms, &                          ! intent(inout)
+              Kh_zm, Kh_zt, &                                      ! intent(out)
+              thlprcp, wprcp, w_up_in_cloud, w_down_in_cloud, &    ! Intent(out)
+              cloudy_updraft_frac, cloudy_downdraft_frac, &        ! Intent(out)
+              rcm_in_layer, cloud_cover, invrs_tau_zm, &           ! Intent(out)
+              Lscale )
 
 
       ! In the case of a fatal error during the 1st call (ascending grid) to 
@@ -1036,49 +1036,54 @@ module generalized_grid_test
       ! Call advance_clubb_core_api for the descending grid direction
       ! All variables with a vertical dimension should be "flip" variables
       ! in this call.
-      call advance_clubb_core_api &
-            ( gr_desc, nzm, nzt, ngrdcol, & ! In
-              l_implemented, dt, fcor, fcor_y, sfc_elevation, & ! In
-              hydromet_dim, & ! In
-              sclr_dim, sclr_tol, edsclr_dim, sclr_idx, & ! In
-              thlm_forcing_flip, rtm_forcing_flip, um_forcing_flip, vm_forcing_flip, & ! In
-              sclrm_forcing_flip, edsclrm_forcing_flip, wprtp_forcing_flip, & ! In
-              wpthlp_forcing_flip, rtp2_forcing_flip, thlp2_forcing_flip, & ! In
-              rtpthlp_forcing_flip, wm_zm_flip, wm_zt_flip, & ! In
-              wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, p_sfc, & ! In
-              wpsclrp_sfc, wpedsclrp_sfc, & ! In
-              upwp_sfc_pert, vpwp_sfc_pert, & ! In
-              rtm_ref_flip, thlm_ref_flip, um_ref_flip, vm_ref_flip, ug_flip, vg_flip, & ! In
-              p_in_Pa_flip, rho_zm_flip, rho_flip, exner_flip, & ! In
-              rho_ds_zm_flip, rho_ds_zt_flip, invrs_rho_ds_zm_flip, & ! In
-              invrs_rho_ds_zt_flip, thv_ds_zm_flip, thv_ds_zt_flip, & ! In
-              l_mix_rat_hm, & ! In
-              rfrzm_flip, wphydrometp_flip, & ! In
-              wp2hmp_flip, rtphmp_zt_flip, thlphmp_zt_flip, & ! In
-              host_dx, host_dy, & ! In
-              clubb_params, nu_vert_res_dep, lmin, & ! In
-              mixt_frac_max_mag, T0, ts_nudge, & ! In
-              rtm_min, rtm_nudge_max_altitude, & ! In
-              clubb_config_flags, & ! In
-              stats, & ! InOut
-              um_flip, vm_flip, upwp_flip, vpwp_flip, up2_flip, vp2_flip, up3_flip, vp3_flip, & ! InOut
-              thlm_flip, rtm_flip, wprtp_flip, wpthlp_flip, & ! InOut
-              wp2_flip, wp3_flip, rtp2_flip, rtp3_flip, thlp2_flip, thlp3_flip, rtpthlp_flip, & ! InOut
-              sclrm_flip, sclrp2_flip, sclrp3_flip, sclrprtp_flip, sclrpthlp_flip, & ! InOut
-              wpsclrp_flip, edsclrm_flip, err_info, & ! InOut
-              rcm_flip, cloud_frac_flip, & ! InOut
-              wpthvp_flip, wp2thvp_flip, wp2up_flip, rtpthvp_flip, thlpthvp_flip, & ! InOut
-              sclrpthvp_flip, & ! InOut
-              wp2rtp_flip, wp2thlp_flip, uprcp_flip, vprcp_flip, rc_coef_zm_flip, wp4_flip, & ! InOut
-              wpup2_flip, wpvp2_flip, wp2up2_flip, wp2vp2_flip, ice_supersat_frac_flip, & ! InOut
-              um_pert, vm_pert, upwp_pert, vpwp_pert, & ! InOut
-              pdf_params_flip, pdf_params_zm_flip, & ! InOut
-              pdf_implicit_coefs_terms_flip, & ! InOut
-              Kh_zm_flip, Kh_zt_flip, & ! Out
-              thlprcp_flip, wprcp_flip, w_up_in_cloud_flip, w_down_in_cloud_flip, & ! Out
-              cloudy_updraft_frac_flip, cloudy_downdraft_frac_flip, & ! Out
-              rcm_in_layer_flip, cloud_cover_flip, invrs_tau_zm_flip, & ! Out
-              Lscale_flip ) ! Out
+      call advance_clubb_core_api( &
+              gr_desc, nzm, nzt, ngrdcol, &                                         ! Intent(in)
+              l_implemented, dt, fcor, fcor_y, sfc_elevation, &                     ! Intent(in)
+              hydromet_dim, &                                                       ! intent(in)
+              sclr_dim, sclr_tol, edsclr_dim, sclr_idx, &                           ! intent(in)
+              thlm_forcing_flip, rtm_forcing_flip, um_forcing_flip, vm_forcing_flip, & ! Intent(in)
+              sclrm_forcing_flip, edsclrm_forcing_flip, wprtp_forcing_flip, &       ! Intent(in)
+              wpthlp_forcing_flip, rtp2_forcing_flip, thlp2_forcing_flip, &         ! Intent(in)
+              rtpthlp_forcing_flip, wm_zm_flip, wm_zt_flip, &                       ! Intent(in)
+              wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, p_sfc, &                   ! Intent(in)
+              wpsclrp_sfc, wpedsclrp_sfc,  &                                        ! Intent(in)
+              upwp_sfc_pert, vpwp_sfc_pert, &                                       ! intent(in)
+              rtm_ref_flip, thlm_ref_flip, um_ref_flip, vm_ref_flip,    &           ! Intent(in)
+              ug_flip, vg_flip,                                         &           ! Intent(in)
+              p_in_Pa_flip, rho_zm_flip, rho_flip, exner_flip, &                    ! Intent(in)
+              rho_ds_zm_flip, rho_ds_zt_flip, invrs_rho_ds_zm_flip, &               ! Intent(in)
+              invrs_rho_ds_zt_flip, thv_ds_zm_flip, thv_ds_zt_flip, &               ! Intent(in) 
+              l_mix_rat_hm, &                                                       ! Intent(in)
+              rfrzm_flip, wphydrometp_flip, &                                       ! Intent(in)
+              wp2hmp_flip, rtphmp_zt_flip, thlphmp_zt_flip, &                       ! Intent(in)
+              host_dx, host_dy, &                                                   ! Intent(in)
+              clubb_params, nu_vert_res_dep, lmin, &                                ! Intent(in)
+              mixt_frac_max_mag, T0, ts_nudge, &                                    ! Intent(in)
+              rtm_min, rtm_nudge_max_altitude, &                                    ! Intent(in)
+              clubb_config_flags, &                                                 ! Intent(in)
+              stats, &                                                              ! intent(inout)
+              um_flip, vm_flip, upwp_flip, vpwp_flip,                   &           ! Intent(inout)
+              up2_flip, vp2_flip, up3_flip, vp3_flip,                   &           ! Intent(inout)
+              thlm_flip, rtm_flip, wprtp_flip, wpthlp_flip, &                       ! Intent(inout)
+              wp2_flip, wp3_flip, rtp2_flip, rtp3_flip,                &            ! Intent(inout)
+              thlp2_flip, thlp3_flip, rtpthlp_flip,                    &            ! Intent(inout)
+              sclrm_flip, sclrp2_flip, sclrp3_flip, sclrprtp_flip, sclrpthlp_flip, &! Intent(inout)
+              wpsclrp_flip, edsclrm_flip, err_info, &                               ! Intent(inout)
+              rcm_flip, cloud_frac_flip, &                                          ! Intent(inout)
+              wpthvp_flip, wp2thvp_flip, wp2up_flip, rtpthvp_flip, thlpthvp_flip, & ! Intent(inout)
+              sclrpthvp_flip, &                                                     ! Intent(inout)
+              wp2rtp_flip, wp2thlp_flip, uprcp_flip, vprcp_flip,                  & ! intent(inout)
+              rc_coef_zm_flip, wp4_flip,                                          & ! intent(inout)
+              wpup2_flip, wpvp2_flip, wp2up2_flip, wp2vp2_flip,                   & ! intent(inout)
+              ice_supersat_frac_flip,                                             & ! intent(inout)
+              um_pert, vm_pert, upwp_pert, vpwp_pert, &                             ! intent(inout)
+              pdf_params_flip, pdf_params_zm_flip, &                                ! Intent(inout)
+              pdf_implicit_coefs_terms_flip, &                                      ! intent(inout)
+              Kh_zm_flip, Kh_zt_flip, &                                             ! intent(out)
+              thlprcp_flip, wprcp_flip, w_up_in_cloud_flip, w_down_in_cloud_flip, & ! Intent(out)
+              cloudy_updraft_frac_flip, cloudy_downdraft_frac_flip, &               ! Intent(out)
+              rcm_in_layer_flip, cloud_cover_flip, invrs_tau_zm_flip, &             ! Intent(out)
+              Lscale_flip )
 
       ! Restore stats l_sample state
       stats%l_sample = l_stats_sample_save

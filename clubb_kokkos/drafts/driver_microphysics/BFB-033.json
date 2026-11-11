@@ -1,0 +1,150 @@
+{
+  "status": "Promoted by Root; actual-input/source/object proof, combined165 and full360 strict-file CPU gates pass.",
+  "before_sha256": "8bc321bd3de6b7bf7a3e3e373f294c00762b6f01afacaa95affb412af996520e",
+  "after_sha256": "1b0c2fc1583ab1a9eb4547e5d78dd7f20a62a5e19b7a86f558fc28209e9ce5be",
+  "single_expression_only_inverse_restores_before_bytes": true,
+  "Native_routine": "M2005MICRO_GRAUPEL",
+  "Native_source_line": 2368,
+  "Native_original_object_sha256": "84664c225af21215f9a9571b0f76bbdd357088508e67e81f20da45cab91f34b2",
+  "Native_DWARF_argument_offsets_rbp": {
+    "prc": -2032,
+    "pra": -2040,
+    "psmlt": -2048,
+    "pracs": -2064,
+    "pracg": -2080,
+    "pre": -2088,
+    "pgmlt": -2096
+  },
+  "Native_original_instruction_range": "23e3f\u201323efb (see Native_warm_qr_limiter_assembly.txt)",
+  "Native_grouping": "((PRC+(PRACG+PRA))+((QR3D/DT)+PRACS))-PSMLT-PGMLT",
+  "old_cpp_grouping": "((((QR3D/DT+PRACS)+PRACG)+PRA)+PRC)-PSMLT-PGMLT",
+  "actual_point": {
+    "call": 657,
+    "step": 165,
+    "column": 1,
+    "level": 18,
+    "actual_input_profile": {
+      "QNI3D": 0.0,
+      "QG3D": 0.0,
+      "T3D": 289.913330078125,
+      "QR3D": 1.4327349084908292e-08
+    },
+    "EPSR_and22relatedoperands_identical": true,
+    "PREraw_32bits": "b013ca79",
+    "source_proved_zeros": [
+      "PRACS=PRACG=0 (Native successful warm ASSERT)",
+      "PSMLT=PGMLT=0 (Native warm initialization; QNI3D/QG3D input zero skip guarded melting)"
+    ],
+    "PRA_PRC": "Native saved outputs represent exactfloat32, LHdisabled andCF3D<0.005 means no subsequent sample weighting/cloud scaling; values inQR_LIMIT_INPUTS.json"
+  },
+  "replay": {
+    "old_cpp": [
+      "DUM=330a86e4",
+      "NUM=2f835560",
+      "RATIO=3ee37e2b",
+      "PRE=af835560"
+    ],
+    "Native": [
+      "DUM=330A86E4",
+      "NUM=2F83555F",
+      "RATIO=3EE37E2A",
+      "PRE=AF83555F"
+    ],
+    "candidate": [
+      "DUM=330a86e4",
+      "NUM=2f83555f",
+      "RATIO=3ee37e2a",
+      "PRE=af83555f"
+    ]
+  },
+  "runtime_pending": true,
+  "no_Native_science_change": true,
+  "no_GPU_work": true,
+  "id": "BFB-033",
+  "source_audit": {
+    "routine_and_location": "M2005MICRO_GRAUPEL warm-temperature rain conservation, Native2368.",
+    "only_one_identical_Native_expression": true,
+    "different_cold_expression_retained": "Native3894 numerator QR3D/DT+PRC+PRA differs; no speculative rewrite.",
+    "changed_only": "RATIO numerator arithmetic association to original Native object tree, with one BFB-033 comment.",
+    "unchanged": [
+      "RATIO denominator(-PRE)",
+      "DUM guard andQSMALL test",
+      "PRE*=RATIO",
+      "all other formulas/branches/call order",
+      "types/shapes/storage",
+      "Native source",
+      "statistics/errors/diagnostics"
+    ],
+    "inverse_whole_header_bytes_match_accepted030": true,
+    "kind": "All existing default REAL/float; no added casts, FMA, guards or constants.",
+    "format": "Only the new expression was formatted; other engine formatting/comments are retained."
+  },
+  "candidate_replay_stdout": [
+    "DUM=330a86e4",
+    "NUM=2f83555f",
+    "RATIO=3ee37e2a",
+    "PRE=af83555f"
+  ],
+  "model_acceptance": {
+    "165": {
+      "command": [
+        "/home/guntherhuebler/Code/clubb/.venv-python/bin/python",
+        "/home/guntherhuebler/Code/clubb/build/parallel_cpu_lanes/remaining_driver_morrison_full_valid/diagnosis/runrepo/clubb_kokkos/auto_llm_generated_tests/integration_tests/run_kokkos_vs_fortran_cases.py",
+        "-build_dir",
+        "/home/guntherhuebler/Code/clubb/build/parallel_cpu_lanes/remaining_driver_morrison_full_valid/diagnosis/runrepo/checkpoint",
+        "-cases",
+        "lba",
+        "-stats",
+        "standard",
+        "-override",
+        "debug_level=2",
+        "-override",
+        "microphysics_setting.microphys_scheme=\"morrison\",microphysics_setting.lh_microphys_type=\"disabled\",microphysics_setting.l_arctic_nucl=.false.,debug_level=2",
+        "-workers",
+        "1",
+        "-max_iters",
+        "165"
+      ],
+      "returncode": 0,
+      "elapsed_seconds": 172.27046268503182,
+      "binary_sha256": {
+        "runrepo/checkpoint/clubb_standalone": "461485c2212bfd9c92172fd3411d330f054e01dc5288e75cd7dd29eecb4e0a94",
+        "runrepo/checkpoint/fortran/clubb_standalone": "d6be11ae22ad99fbbaff77a7d865c5a5ce588e6f87a521e878554e793f6948bc"
+      },
+      "unchanged_binaries": true,
+      "trace_sentinels_absent": true,
+      "Native_physics_unchanged": true,
+      "acceptance_scope": "165-step truncated standard gate"
+    },
+    "360": {
+      "command": [
+        "/home/guntherhuebler/Code/clubb/.venv-python/bin/python",
+        "/home/guntherhuebler/Code/clubb/build/parallel_cpu_lanes/remaining_driver_morrison_full_valid/diagnosis/runrepo/clubb_kokkos/auto_llm_generated_tests/integration_tests/run_kokkos_vs_fortran_cases.py",
+        "-build_dir",
+        "/home/guntherhuebler/Code/clubb/build/parallel_cpu_lanes/remaining_driver_morrison_full_valid/diagnosis/runrepo/checkpoint",
+        "-cases",
+        "lba",
+        "-stats",
+        "standard",
+        "-override",
+        "debug_level=2",
+        "-override",
+        "microphysics_setting.microphys_scheme=\"morrison\",microphysics_setting.lh_microphys_type=\"disabled\",microphysics_setting.l_arctic_nucl=.false.,debug_level=2",
+        "-workers",
+        "1"
+      ],
+      "returncode": 0,
+      "elapsed_seconds": 383.0560936140828,
+      "binary_sha256": {
+        "runrepo/checkpoint/clubb_standalone": "461485c2212bfd9c92172fd3411d330f054e01dc5288e75cd7dd29eecb4e0a94",
+        "runrepo/checkpoint/fortran/clubb_standalone": "d6be11ae22ad99fbbaff77a7d865c5a5ce588e6f87a521e878554e793f6948bc"
+      },
+      "unchanged_binaries": true,
+      "trace_sentinels_absent": true,
+      "Native_physics_unchanged": true,
+      "acceptance_scope": "fullNative LBA360steps dt60 standard stats; no max_iters/dt override"
+    }
+  },
+  "final_combined_full360": "PASS; see combined032033/FULL360_SAVED_FILE_PROOF.json. BFB030+032+033 and accepted logical-stride fill control; both360/360normal, complete Native file byte BFB.",
+  "live_integration": "Exact candidate promoted; live full360 Morrison LBA gate passes byte-identically. Source hashes and final records are under remaining_driver_cpu and the final Morrison lane."
+}

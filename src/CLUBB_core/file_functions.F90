@@ -47,7 +47,6 @@ module file_functions
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: & 
      file_unit,          & ! Unit number of file being read.
      num_datapts,        & ! Total number of data points being read in.
@@ -57,11 +56,9 @@ module file_functions
     character(*), intent(in) :: & 
      path_and_filename  ! Path to file and filename of file being read.
 
-    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), dimension(num_datapts), intent(out) :: & 
      variable           ! Data values output into variable
 
-    !--------------------------- Local Variables ---------------------------
     integer :: k        ! Data file row number.
     integer :: i        ! Data file column number.
     integer :: ierr
@@ -130,7 +127,6 @@ module file_functions
 
     implicit none
 
-    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: & 
       device, & 
       file_dimension1, & 
@@ -140,11 +136,9 @@ module file_functions
     character(*), intent(in) :: & 
       file_path
 
-    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), dimension(file_dimension1,file_dimension2), intent(out) :: & 
       variable
 
-    !--------------------------- Local Variables ---------------------------
     integer i, j, k
 
     ! ---- Begin Code ----

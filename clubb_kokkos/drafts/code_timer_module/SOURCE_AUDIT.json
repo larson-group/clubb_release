@@ -1,0 +1,152 @@
+{
+  "scope": "Full16-body timer source port, including both compiled backend branches. Source review only.",
+  "sources": {
+    "src/CLUBB_core/code_timer_module.F90": "7c35fa17bca062c50f8e500fbd621daea955e6fc8a5f6d4ac0eadbee8ed7a6bd",
+    "clubb_kokkos/src/CLUBB_core/code_timer_module.cpp": "95f2311c09fbe9133562611d7d0539a1a8e38333c055c66815900058720dcc5f",
+    "clubb_kokkos/src/CLUBB_core/code_timer_module.hpp": "31491aac5256cbc794b624c1ae25d0ec5f88e888fdcde3580caaa50705a93998"
+  },
+  "mechanical": {
+    "definition_order": [
+      "timer_initialize",
+      "timer_disable",
+      "timer_start",
+      "timer_stop",
+      "timer_finalize",
+      "cpu_timer_start",
+      "cpu_timer_stop",
+      "get_timer_id",
+      "ensure_registry_capacity",
+      "ensure_stack_capacity",
+      "print_cpu_timer_summary",
+      "timer_display_name",
+      "require_empty_stack",
+      "reset_cpu_timer_state",
+      "timer_absolute_path",
+      "timer_fail"
+    ],
+    "public_argument_names_and_order": "pass:5public names/argument lists in Native order",
+    "ordered_native_calls_by_backend": {
+      "cpu_time": {
+        "timer_initialize": [
+          "require_empty_stack",
+          "reset_cpu_timer_state"
+        ],
+        "timer_disable": [
+          "reset_cpu_timer_state"
+        ],
+        "timer_start": [
+          "timer_initialize",
+          "cpu_timer_start"
+        ],
+        "timer_stop": [
+          "timer_fail",
+          "cpu_timer_stop"
+        ],
+        "timer_finalize": [
+          "timer_fail",
+          "timer_absolute_path",
+          "require_empty_stack",
+          "timer_fail",
+          "print_cpu_timer_summary",
+          "reset_cpu_timer_state"
+        ],
+        "cpu_timer_start": [
+          "cpu_time",
+          "get_timer_id",
+          "ensure_stack_capacity"
+        ],
+        "cpu_timer_stop": [
+          "cpu_time",
+          "get_timer_id",
+          "timer_fail",
+          "timer_fail"
+        ],
+        "get_timer_id": [
+          "timer_fail",
+          "timer_fail",
+          "ensure_registry_capacity"
+        ],
+        "ensure_registry_capacity": [],
+        "ensure_stack_capacity": [],
+        "print_cpu_timer_summary": [
+          "timer_display_name"
+        ],
+        "timer_display_name": [],
+        "require_empty_stack": [
+          "timer_fail"
+        ],
+        "reset_cpu_timer_state": [],
+        "timer_absolute_path": [],
+        "timer_fail": []
+      },
+      "GPTL": {
+        "timer_initialize": [
+          "GPTLfinalize",
+          "GPTLsetoption",
+          "GPTLsetoption",
+          "GPTLsetoption",
+          "GPTLinitialize",
+          "timer_fail"
+        ],
+        "timer_disable": [
+          "GPTLfinalize"
+        ],
+        "timer_start": [
+          "timer_initialize",
+          "GPTLstart"
+        ],
+        "timer_stop": [
+          "timer_fail",
+          "GPTLstop"
+        ],
+        "timer_finalize": [
+          "timer_fail",
+          "timer_absolute_path",
+          "GPTLpr_file",
+          "GPTLfinalize"
+        ],
+        "timer_absolute_path": [],
+        "timer_fail": []
+      }
+    },
+    "diagnostic_and_summary_literal_fragments": 25,
+    "capacities": {
+      "registry_chunk_size": 16,
+      "stack_chunk_size": 32,
+      "display_name_length": 48
+    },
+    "private_thread_local_variables": 6,
+    "no_kokkos_f2k_or_fences": true,
+    "100_column_and_trailing_whitespace_check": true
+  },
+  "manual_review": {
+    "public_lifecycle": "Disabled guards, lazy initialize, reset/discard/reinit and initialized-state writes match Native branch and call order.",
+    "cpu_stop_failures": "Timestamp then name lookup, blank/unknown checks before empty-stack/nesting checks. Exceptions preserve state up to the failure boundary.",
+    "registry_and_stack": "Native1-based IDs/counts; vector sizes are allocated slots.16/32-slot growth copies all old slots; reset releases both allocations. Recursive same-name regions allowed.",
+    "arithmetic": "Start timestamp before lookup/capacity; stop timestamp before lookup/checks; elapsed, inclusive/exclusive and parent-child operations retain Native order. Summary loops preserve insertion order, average/percent conditions and formulas.",
+    "summary": "Native header/footer strings and6columns, A48 name+I10count+F14.6times+F10.2percent, truncation/padding, empty-registry output and overflow stars retained. Classic decimal locale is explicit. Timing values are nondeterministic and not claimed byte-identical.",
+    "paths_and_names": "Only trailing ASCII blanks trimmed. No normalization. Native1024-character assignment/truncation preserved; relative paths use PWD only when the full environment value fits1024 and has nonblank content.",
+    "gptl": "Actual GPTL8.1.1 C declarations/constants and Fortran wrappers read; direct C calls map exactly. Only initialize status is checked, preserving Native.",
+    "errors": "Native-prefix runtime_error is consumed by standalone existing std::exception catch; no new registry/fallback. Explicit opening failure retains its Native diagnostic. After successful open, failbit/badbit exceptions map Native fatal WRITE/CLOSE failures into that same existing catch before state reset.",
+    "comments_and_format": "Descriptions immediately below all16 definitions; public header purpose/usage/state/output notes and Native helper order/dividers preserved. Call groups and units documented.",
+    "state_exception": "User-authorized private per-thread timing bookkeeping only; no public state, Kokkos dependency, GPU fences or science changes."
+  },
+  "language_adaptations": [
+    "std::clock/CLOCKS_PER_SEC supplies process CPU time in real_t, matching CPU_TIME timing basis; unavailable clock maps to Native negative-unavailable sentinel -1second. Epoch/resolution/vendor timings can differ.",
+    "std::vector allocation-slot arrays replace allocatables; growth constants/logical counts are unchanged. Forward declarations enable Native definition order.",
+    "Private ostream/local ofstream replace Native integer file units; local formatting lambdas implement fixed-width numeric fields and overflow stars. Standard C++ fixed formatting is used; no exact elapsed-field rounding equality is claimed.",
+    "std::string omits unused fixed-length path padding while preserving truncation before trailing-space trim. GPTL uses trimmed null-terminated C strings.",
+    "Fatal errors propagate as std::runtime_error through the established C++ standalone handler instead of Fortran ERROR STOP."
+  ],
+  "validation": {
+    "builds": "not run by owner; Root owns",
+    "model_comparisons": "not run by owner; Root owns",
+    "utility_execution": "not run by owner; schema inspected against parse_timer_text",
+    "independent_review": "driver_microphysics read full Native and reviewed lifecycle/GPTL/path/error boundaries; exact stable hashes recorded in handoff"
+  },
+  "limits": [
+    "No elapsed-time numerical BFB claim.",
+    "No GPU performance, synchronization or numerical-cause work.",
+    "All compilation/GPTL/runtime/utility evidence must come from Root integration."
+  ]
+}

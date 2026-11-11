@@ -12,8 +12,6 @@ component covariances is correctly wired (a swapped/miscoefficiented combination
 Oracle-independent; never SKIPs. (iter 558)
 """
 
-from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
-
 
 import numpy as np
 import jax
@@ -33,7 +31,7 @@ _ARGS = dict(
 
 
 def _covar(m):
-    return float(call_jax(covar_rt_KK_auto, *_ARGS.values(), m))
+    return float(covar_rt_KK_auto(*_ARGS.values(), m))
 
 
 def test_exact_mixt_frac_linearity():
@@ -49,7 +47,7 @@ def test_exact_mixt_frac_linearity():
 
 
 def test_grad_finite():
-    g = jax.grad(lambda m: call_jax(covar_rt_KK_auto, *_ARGS.values(), m) ** 2)(0.4)
+    g = jax.grad(lambda m: covar_rt_KK_auto(*_ARGS.values(), m) ** 2)(0.4)
     assert np.isfinite(float(g)), "non-finite grad wrt mixt_frac"
     # The squared linear mixture has derivative 2*c(m)*(c(1)-c(0)).
     expected = 2.0 * _covar(0.4) * (_covar(1.0) - _covar(0.0))

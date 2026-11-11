@@ -20,7 +20,7 @@ import numpy as np
 
 from clubb_jax.src.CLUBB_core.constants_clubb import grav, pascal_per_mb, sec_per_hr
 from clubb_jax.src.CLUBB_core.grid_class import zt2zm
-from clubb_jax.src.CLUBB_core.interpolation import linear_interp_factor, zlinterp
+from clubb_jax.src.CLUBB_core.interpolation import linear_interp_factor, zlinterp_fnc
 from clubb_jax.src.Input_fields.input_names import (
     CO2_umol_name,
     T_sfc_name,
@@ -80,8 +80,6 @@ T_sfc_given = None
 wpthlp_sfc_given = None
 wpqtp_sfc_given = None
 
-# Fortran stores a (level,time) record for each forcing/column pair. JAX shares
-# each forcing's metadata and batches its values as (column,level,time).
 t_dependent_forcing_data: list[two_dim_read_var] = []
 t_dependent_forcing_data_f_grid: list[two_dim_read_var] = []
 dimension_var: one_dim_read_var | None = None
@@ -100,7 +98,6 @@ sfc_path = "_sfc.in"
 
 # ================================================================================================
 def initialize_t_dependent_input(
-    ngrdcol,
     iunit,
     runtype,
     nz,
@@ -120,7 +117,6 @@ def initialize_t_dependent_input(
     if not l_ignore_forcings:
         input_file = input_path / f"{runtype}{forcings_path}"
         initialize_t_dependent_forcings(
-            ngrdcol,
             iunit,
             input_file,
             nz,
@@ -231,7 +227,6 @@ def initialize_t_dependent_sfc(iunit, input_file):
 
 # ================================================================================================
 def initialize_t_dependent_forcings(
-    ngrdcol,
     iunit,
     input_file,
     nz,
@@ -265,7 +260,7 @@ def initialize_t_dependent_forcings(
         model_grid = np.asarray(grid)
     elif t_dependent_forcing_data_f_grid[0].name == pressure_name:
         model_grid = -np.asarray(p_in_Pa)
-        t_dependent_forcing_data_f_grid[0].values = -np.abs(t_dependent_forcing_data_f_grid[0].values)
+        t_dependent_forcing_data_f_grid[0].values *= -1.0
     else:
         raise ValueError("Incompatible grid type in first element of t_dependent_forcings")
 
@@ -274,7 +269,7 @@ def initialize_t_dependent_forcings(
             name=t_dependent_forcing_data_f_grid[0].name,
             dim1_name=time_name,
             dim2_name=t_dependent_forcing_data_f_grid[0].name,
-            values=jnp.broadcast_to(jnp.asarray(model_grid)[:, :, None], (ngrdcol, nz, n_f_grid_t)),
+            values=jnp.broadcast_to(jnp.asarray(model_grid)[:, None], (nz, n_f_grid_t)),
         )
     ]
 
@@ -282,13 +277,15 @@ def initialize_t_dependent_forcings(
     # heterogeneous named records once before any compiled timestep runs.
     for i in range(1, nforcings):
         target_name = t_dependent_forcing_data_f_grid[i].name
-        values = jnp.stack([
-            read_to_grid(
-                nforcings, n_f_grid_z, n_f_grid_t, nz, model_grid[i, :],
-                t_dependent_forcing_data_f_grid, target_name,
-            )
-            for i in range(ngrdcol)
-        ])
+        values = read_to_grid(
+            nforcings,
+            n_f_grid_z,
+            n_f_grid_t,
+            nz,
+            model_grid,
+            t_dependent_forcing_data_f_grid,
+            target_name,
+        )
         t_dependent_forcing_data.append(
             two_dim_read_var(
                 name=target_name,
@@ -367,13 +364,18 @@ def read_to_grid(
         target_name,
         two_dim_vars,
     )
-    # Treat independent time slices as the interpolation batch; model heights are shared.
-    source_grid = jnp.asarray(two_dim_vars[0].values).T
-    source_values = jnp.asarray(temp_var).T
-    target_grid = jnp.broadcast_to(jnp.asarray(grid), (other_dim_size, nz))
-    interpolated = np.asarray(zlinterp(
-        other_dim_size, nz, dim_size, target_grid, source_grid, source_values,
-    )).T
+    # Each time slice is interpolated independently onto the same model grid.
+    # Vectorizing here also keeps the host-side input path consistent with the
+    # column-vectorized device routines.
+    interpolated = np.asarray(
+        jax.vmap(
+            lambda source_grid, source_values: zlinterp_fnc(
+                grid, source_grid, source_values
+            ),
+            in_axes=(1, 1),
+            out_axes=1,
+        )(jnp.asarray(two_dim_vars[0].values), jnp.asarray(temp_var))
+    )
     return interpolated.reshape(nz, other_dim_size)
 
 
@@ -421,7 +423,7 @@ def apply_time_dependent_forcings_from_array(
     # over columns, vertical levels, or another runtime-sized device dimension.
     for n in range(1, nforcings):
         name = t_dependent_forcing_data[n].name
-        temp_array = forcings_array[:, n, :]
+        temp_array = forcings_array[n, :]
         eps = jnp.finfo(temp_array.dtype).eps
 
         # Check to see if temp_array is an actual profile or a dummy profile
@@ -429,15 +431,14 @@ def apply_time_dependent_forcings_from_array(
         # overwrite legitimate information from another source.
         l_dummy = jnp.any(
             jnp.abs(temp_array - (-999.9))
-            < jnp.abs(temp_array + (-999.9)) * 0.5 * eps,
-            axis=1, keepdims=True,
+            < jnp.abs(temp_array + (-999.9)) * 0.5 * eps
         )
 
         if name in (temperature_f_name, theta_f_name, thetal_f_name):
             if name == temperature_f_name:
-                candidate = temp_array / exner
+                candidate = temp_array[jnp.newaxis, :] / exner
             else:
-                candidate = temp_array
+                candidate = jnp.broadcast_to(temp_array, (ngrdcol, temp_array.size))
             thlm_f = jnp.where(l_dummy, thlm_f, candidate)
 
             if sclr_idx.iisclr_thl > 0:
@@ -453,9 +454,9 @@ def apply_time_dependent_forcings_from_array(
 
         elif name in (rt_f_name, sp_humidity_f_name):
             if name == sp_humidity_f_name:
-                candidate = temp_array * (1.0 + rtm) ** 2
+                candidate = temp_array[jnp.newaxis, :] * (1.0 + rtm) ** 2
             else:
-                candidate = temp_array
+                candidate = jnp.broadcast_to(temp_array, (ngrdcol, temp_array.size))
             rtm_f = jnp.where(l_dummy, rtm_f, candidate)
 
             if sclr_idx.iisclr_rt > 0:
@@ -470,32 +471,32 @@ def apply_time_dependent_forcings_from_array(
                 )
 
         elif name == um_ref_name:
-            candidate = temp_array
+            candidate = jnp.broadcast_to(temp_array, (ngrdcol, temp_array.size))
             um_ref = jnp.where(l_dummy, um_ref, candidate)
         elif name == vm_ref_name:
-            candidate = temp_array
+            candidate = jnp.broadcast_to(temp_array, (ngrdcol, temp_array.size))
             vm_ref = jnp.where(l_dummy, vm_ref, candidate)
         elif name == um_f_name:
-            candidate = temp_array
+            candidate = jnp.broadcast_to(temp_array, (ngrdcol, temp_array.size))
             um_f = jnp.where(l_dummy, um_f, candidate)
         elif name == vm_f_name:
-            candidate = temp_array
+            candidate = jnp.broadcast_to(temp_array, (ngrdcol, temp_array.size))
             vm_f = jnp.where(l_dummy, vm_f, candidate)
         elif name in (wm_name, omega_name, omega_mb_hr_name):
             if name == wm_name:
-                candidate = temp_array
+                candidate = jnp.broadcast_to(temp_array, (ngrdcol, temp_array.size))
             else:
                 if name == omega_mb_hr_name:
                     temp_array = temp_array * pascal_per_mb / sec_per_hr
-                candidate = -temp_array / (grav * rho)
+                candidate = -temp_array[jnp.newaxis, :] / (grav * rho)
             wm_zt = jnp.where(l_dummy, wm_zt, candidate)
             wm_zm_candidate = zt2zm(nzm, nzt, ngrdcol, gr, wm_zt)
             wm_zm = jnp.where(l_dummy, wm_zm, wm_zm_candidate)
         elif name == ug_name:
-            candidate = temp_array
+            candidate = jnp.broadcast_to(temp_array, (ngrdcol, temp_array.size))
             ug = jnp.where(l_dummy, ug, candidate)
         elif name == vg_name:
-            candidate = temp_array
+            candidate = jnp.broadcast_to(temp_array, (ngrdcol, temp_array.size))
             vg = jnp.where(l_dummy, vg, candidate)
         else:
             raise ValueError(f"Incompatible forcing type: {name}")
@@ -560,12 +561,12 @@ def apply_time_dependent_forcings(
     )
     interpolated = linear_interp_factor(
         time_frac,
-        forcing_values[:, :, :, after_time],
-        forcing_values[:, :, :, before_time],
+        forcing_values[:, :, after_time],
+        forcing_values[:, :, before_time],
     )
     # The source leaves row 1 unused; JAX arrays initialize it explicitly.
     forcings_array = jnp.concatenate(
-        (jnp.zeros((ngrdcol, 1, nzt), dtype=thlm_f.dtype), jnp.swapaxes(interpolated, 0, 1)), axis=1
+        (jnp.zeros((1, nzt), dtype=thlm_f.dtype), interpolated), axis=0
     )
 
     return apply_time_dependent_forcings_from_array(

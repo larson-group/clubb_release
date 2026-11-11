@@ -1,0 +1,162 @@
+[
+  {
+    "path": "/home/guntherhuebler/Code/clubb/clubb_kokkos/drafts/driver_radiation_silhs/SILHS/est_kessler_microphys_module.cpp",
+    "argument_explanations": 26,
+    "science_calls_grouped": 2,
+    "executable_tokens_equal": true,
+    "before_sha256": "3dfca071ffbc6bb0f7bc35bf91e2ddcbf1cfef2d972b5173672600ec706ce954",
+    "after_sha256": "b4547307125e8ae0999ea83cb2fd9527dc680318cae05944973afd49a69a9395"
+  },
+  {
+    "path": "/home/guntherhuebler/Code/clubb/clubb_kokkos/drafts/driver_radiation_silhs/SILHS/est_kessler_microphys_module.hpp",
+    "argument_explanations": 18,
+    "science_calls_grouped": 1,
+    "executable_tokens_equal": true,
+    "before_sha256": "187354b3cf0a2631a7ecaf31910a1deed57b9135ca8b5b00dceb8573f137616d",
+    "after_sha256": "da2b0a862a4337ef7901b51fbddf5a1fc66f65b3ff60d6d3c4466842b0f3a661"
+  },
+  {
+    "path": "/home/guntherhuebler/Code/clubb/clubb_kokkos/drafts/driver_radiation_silhs/SILHS/generate_uniform_sample_module.cpp",
+    "argument_explanations": 13,
+    "science_calls_grouped": 3,
+    "executable_tokens_equal": true,
+    "before_sha256": "e291cf9babfcbb8af4b2581cf19b7c89b1e8b14a1e01149b4577d2c69776c93d",
+    "after_sha256": "c30bace2627f63258056af074b5fe106d06aafd1288293ace2cf88274932f8aa"
+  },
+  {
+    "path": "/home/guntherhuebler/Code/clubb/clubb_kokkos/drafts/driver_radiation_silhs/SILHS/generate_uniform_sample_module.hpp",
+    "argument_explanations": 11,
+    "science_calls_grouped": 3,
+    "executable_tokens_equal": true,
+    "before_sha256": "8c1ea90dece9fcb8ab403a30f82bc6b7b2987ce5d9178a0a606d09eb07f53145",
+    "after_sha256": "79c113048ddbb71528305b7c85488276edf0b97bd5057533aca06807f4c5e816"
+  },
+  {
+    "path": "/home/guntherhuebler/Code/clubb/clubb_kokkos/drafts/driver_radiation_silhs/SILHS/latin_hypercube_arrays.cpp",
+    "argument_explanations": 0,
+    "science_calls_grouped": 0,
+    "executable_tokens_equal": true,
+    "before_sha256": "6605388792b4a17795870be2c0c3a88947c553b45858c0c9cc922cb1c8b0d8a8",
+    "after_sha256": "6605388792b4a17795870be2c0c3a88947c553b45858c0c9cc922cb1c8b0d8a8"
+  },
+  {
+    "path": "/home/guntherhuebler/Code/clubb/clubb_kokkos/drafts/driver_radiation_silhs/SILHS/latin_hypercube_arrays.hpp",
+    "argument_explanations": 0,
+    "science_calls_grouped": 0,
+    "executable_tokens_equal": true,
+    "before_sha256": "53156f5b13f64a045fa7e620b8c760fb28f244986c09f443107791f7eb6c9de4",
+    "after_sha256": "53156f5b13f64a045fa7e620b8c760fb28f244986c09f443107791f7eb6c9de4"
+  },
+  {
+    "path": "/home/guntherhuebler/Code/clubb/clubb_kokkos/drafts/driver_radiation_silhs/SILHS/latin_hypercube_driver_module.cpp",
+    "argument_explanations": 123,
+    "science_calls_grouped": 44,
+    "executable_tokens_equal": true,
+    "before_sha256": "85177ca7106808e0647ad45cd1a1f1af82ff2ea73f59c8c6737dd118f6872b31",
+    "after_sha256": "06eaccb40146082b6fb0ee756e9d83b4b8773ccb07b6dddc90b11a0b97653bb6"
+  },
+  {
+    "path": "/home/guntherhuebler/Code/clubb/clubb_kokkos/drafts/driver_radiation_silhs/SILHS/latin_hypercube_driver_module.hpp",
+    "argument_explanations": 54,
+    "science_calls_grouped": 5,
+    "executable_tokens_equal": true,
+    "before_sha256": "d58cc6d9cf4dbacc1da56ffdb426058e75be707af4b54d44487985a08ad6d7b7",
+    "after_sha256": "263f677d12669f488e8d99ce25d24c0eb7b49b9414d7185be588891e81c29b4c"
+  },
+  {
+    "path": "/home/guntherhuebler/Code/clubb/clubb_kokkos/drafts/driver_radiation_silhs/SILHS/lh_microphys_var_covar_module.cpp",
+    "argument_explanations": 18,
+    "science_calls_grouped": 11,
+    "executable_tokens_equal": true,
+    "before_sha256": "f1ce2f9fd32f4fb26efc84d1e576872c5aa380d4a4ce2595906f5ef76d489d3c",
+    "after_sha256": "7515da0a40d5d1eecbda2f3db79bbf3ae387e302004329e581495cfdac153693"
+  },
+  {
+    "path": "/home/guntherhuebler/Code/clubb/clubb_kokkos/drafts/driver_radiation_silhs/SILHS/lh_microphys_var_covar_module.hpp",
+    "argument_explanations": 18,
+    "science_calls_grouped": 1,
+    "executable_tokens_equal": true,
+    "before_sha256": "95987ae7cf9a0b3e38410bafbdbb52bcbddbe3b407ab6d69bb6469985139c3a8",
+    "after_sha256": "0bf672579f892064290dc9a060afdee9c9643ba410fcaeee23d2fa5400e9de79"
+  },
+  {
+    "path": "/home/guntherhuebler/Code/clubb/clubb_kokkos/drafts/driver_radiation_silhs/SILHS/math_utilities.cpp",
+    "argument_explanations": 21,
+    "science_calls_grouped": 0,
+    "executable_tokens_equal": true,
+    "before_sha256": "fe30498188d7422a8ff9e3b39dfc8d4f5db3497b65bd1c91fb10a574a23d7c51",
+    "after_sha256": "fe30498188d7422a8ff9e3b39dfc8d4f5db3497b65bd1c91fb10a574a23d7c51"
+  },
+  {
+    "path": "/home/guntherhuebler/Code/clubb/clubb_kokkos/drafts/driver_radiation_silhs/SILHS/math_utilities.hpp",
+    "argument_explanations": 19,
+    "science_calls_grouped": 3,
+    "executable_tokens_equal": true,
+    "before_sha256": "460f90c12228d1308913be8eea5f2fc438c2dad3b3a72acdcfb482b2895b72de",
+    "after_sha256": "041c8335d5615359a4e97bae1c8bf51491f722a2abe837bbe930be9e980b0644"
+  },
+  {
+    "path": "/home/guntherhuebler/Code/clubb/clubb_kokkos/drafts/driver_radiation_silhs/SILHS/parameters_silhs.cpp",
+    "argument_explanations": 31,
+    "science_calls_grouped": 1,
+    "executable_tokens_equal": true,
+    "before_sha256": "c3c8987165990b45214543ee2919ee648b8e07e34fc50efab4b16caf813745ff",
+    "after_sha256": "5de7b871b534eb937e8da93310011b4717f1beb156add42a34999b5a929d4cfb"
+  },
+  {
+    "path": "/home/guntherhuebler/Code/clubb/clubb_kokkos/drafts/driver_radiation_silhs/SILHS/parameters_silhs.hpp",
+    "argument_explanations": 0,
+    "science_calls_grouped": 0,
+    "executable_tokens_equal": true,
+    "before_sha256": "80f7e025643b541b8e2d2e3a95283868a6055ce44824e392cb1d2dd419ec90ba",
+    "after_sha256": "80f7e025643b541b8e2d2e3a95283868a6055ce44824e392cb1d2dd419ec90ba"
+  },
+  {
+    "path": "/home/guntherhuebler/Code/clubb/clubb_kokkos/drafts/driver_radiation_silhs/SILHS/silhs_api_module.cpp",
+    "argument_explanations": 36,
+    "science_calls_grouped": 3,
+    "executable_tokens_equal": true,
+    "before_sha256": "db7546129742e857b4732ded8b9093f5dc340e75c824fef68a37e1f464ab4b83",
+    "after_sha256": "3e20a067e8425639809ce87bf7ed707f9dd9ef4281bc4b8ab5bf846463818d5f"
+  },
+  {
+    "path": "/home/guntherhuebler/Code/clubb/clubb_kokkos/drafts/driver_radiation_silhs/SILHS/silhs_api_module.hpp",
+    "argument_explanations": 36,
+    "science_calls_grouped": 2,
+    "executable_tokens_equal": true,
+    "before_sha256": "cc99e7a43e5c0e71ec0915913f5523efd10491f9a9a62ebd2569e281ea5684a8",
+    "after_sha256": "0a45ade6dd73c2f4f50c34c2a3ae94b117e355244e5c34d744d72d53705836ac"
+  },
+  {
+    "path": "/home/guntherhuebler/Code/clubb/clubb_kokkos/drafts/driver_radiation_silhs/SILHS/silhs_importance_sample_module.cpp",
+    "argument_explanations": 85,
+    "science_calls_grouped": 22,
+    "executable_tokens_equal": true,
+    "before_sha256": "3657c00ca42b8fc9995002c2e2beba4106a3928d7300ff8d9a8497882968cf64",
+    "after_sha256": "48935495b08be875d3869fbdf6d933d656eba47c368ce1a2cbaef736d1b34c41"
+  },
+  {
+    "path": "/home/guntherhuebler/Code/clubb/clubb_kokkos/drafts/driver_radiation_silhs/SILHS/silhs_importance_sample_module.hpp",
+    "argument_explanations": 0,
+    "science_calls_grouped": 0,
+    "executable_tokens_equal": true,
+    "before_sha256": "1a0ab456d3421939bedfbf40d4eeaf4208c674b05534c83d20f5cfca334aedc7",
+    "after_sha256": "1a0ab456d3421939bedfbf40d4eeaf4208c674b05534c83d20f5cfca334aedc7"
+  },
+  {
+    "path": "/home/guntherhuebler/Code/clubb/clubb_kokkos/drafts/driver_radiation_silhs/SILHS/transform_to_pdf_module.cpp",
+    "argument_explanations": 46,
+    "science_calls_grouped": 2,
+    "executable_tokens_equal": true,
+    "before_sha256": "10cf74b0b46101a07ad734288a9472133f4954dee8415f1e4ca4b413290ec22e",
+    "after_sha256": "8c3b5145b2bf07643393596b0ff1c767c38cf9a17a71705cbf2352c0c2ed7c82"
+  },
+  {
+    "path": "/home/guntherhuebler/Code/clubb/clubb_kokkos/drafts/driver_radiation_silhs/SILHS/transform_to_pdf_module.hpp",
+    "argument_explanations": 0,
+    "science_calls_grouped": 0,
+    "executable_tokens_equal": true,
+    "before_sha256": "232c094457f19c12297768c1f9b81ca3e74203fedf781f03f0a5542e315b4d77",
+    "after_sha256": "232c094457f19c12297768c1f9b81ca3e74203fedf781f03f0a5542e315b4d77"
+  }
+]

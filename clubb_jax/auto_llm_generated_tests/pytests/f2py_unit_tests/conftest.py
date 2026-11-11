@@ -11,11 +11,6 @@ import sys
 
 import clubb_jax.src  # noqa: F401  # applies CLUBB_JAX_PRECISION before the tests import JAX code
 
-# clubb_python loads the system NetCDF-C library into the global symbol table.
-# netCDF4, which JAX stats_netcdf.py imports, segfaults if it loads its own
-# NetCDF/HDF5 libraries after that, so load it first.
-import netCDF4  # noqa: F401
-
 try:
     # The package import preloads a compatible NetCDF stack before clubb_f2py.
     import clubb_python  # noqa: F401

@@ -1,0 +1,55 @@
+{
+  "id": "BFB-025",
+  "status": "actual-input replay and combined CPU primary gate pass; live integration pending",
+  "routine": "KK_upscaled_turbulent_sed::bivar_LL_covar_partial",
+  "configuration": "NVHPC26.9 core8 -O0 -g, Serial CPU Kokkos versus CPU Native",
+  "cause": "Native assembles variance/cross terms independently of its mean pair before exp, and computes alpha^2+2alpha with fma(2,alpha,rounded alpha^2). Ordinary C++ contracts the full written prefix in a different order.",
+  "replay_counts": {
+    "unique_captured_actual_inputs": 35,
+    "rr_orientation_alpha_positive_one_third": 4,
+    "Nr_swapped_orientation_alpha_negative_one_third": 31,
+    "original_Cxx_reproduced": 35,
+    "actual_Native_reproduced": 35,
+    "candidate_matches_Native": 35
+  },
+  "actual_input_scope": "All unique differing inputs captured from the current combined023+024 DO three-step run; no synthetic grids or broad leaf oracle suite.",
+  "Native_assembly": "native_bivar_partial_assembly.txt:1ab0 polynomial FMA,1acd rounded first variance product,1ad1 second variance FMA,1ad6 cross FMA,1aef mean-pair FMA,1af4 addition before exp.",
+  "candidate": "BFB-025_candidate.patch changes only the primitive exponent grouping; rr/Nr dispatchers, coefficients, weights, tolerances and source branches remain unchanged.",
+  "first_hex_example": {
+    "Cxx": "0x1.13cf445118c38p-11",
+    "Native": "0x1.13cf445118c34p-11"
+  },
+  "no_new_library_or_GPU_diagnosis": true,
+  "evidence_sha256": {
+    "PARTIAL_ACTUAL_INPUTS.json": "abe03d5499499a915eab2e74595a5a115c4de971d8d36da568049262aae51201",
+    "partial_same_input_replay.cpp": "501acb3ee05d538194ebff776ad59b3e6b9a8b46f4c3b9ff2ee36e3519df6392",
+    "partial_same_input_replay.o": "cf3153e575d87e686fd78df2329146f7b333e7f6192384d9309f9cf08c1ff433",
+    "partial_same_input_result.log": "f790a911047b4de8a7ae2cb940b33c661d717cbbf3415e815e3d05086780c412",
+    "native_bivar_partial_assembly.txt": "a800372553f8a1ddda3f5a6351a9a4880132549dcaa6c14b2ad4594a784e2d61",
+    "BFB-025_candidate.patch": "60ef74122a7ed097d2cb69355cc5458468c1e2aebf54ff111d1d491c5ee31ce3"
+  },
+  "combined_primary_model_gate": {
+    "result": "passed strict raw-file equality 2/2",
+    "cases": [
+      "dycoms2_rf02_do",
+      "dycoms2_rf02_ds"
+    ],
+    "observed_steps_each_backend": 5,
+    "stats": "multi_col_stats",
+    "override": "debug_level=2",
+    "source": "isolated frozen microphysics batch plus five-index fix and BFB023\u2013026",
+    "log": "BFB023026_MC_model_gate.log",
+    "results_archive": "BFB023026_MC_results",
+    "no_tolerance_changes": true,
+    "repeat_retained_log": "BFB023026_MC_retain_model_gate.log"
+  },
+  "supplemental_ALL_gate": {
+    "result": "diff2/2 at180s",
+    "archive": "BFB023026_ALL_results",
+    "scope": "only w_KK_evap_covar_zt and its wprtp/wpthlp_mc and later forcing statistics; main state/means/variances/sedimentation fields exact for5steps",
+    "max_abs_moisture": 4.1359030627651384e-25,
+    "max_abs_heat": 1.6940658945086007e-21,
+    "no_acceptance_relaxation": true
+  },
+  "live_integration": "Promoted exact candidate patches in order; final combined live model acceptance pending. Detailed replay/assembly objects remain in the recorded local diagnosis lane."
+}

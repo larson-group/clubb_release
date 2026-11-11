@@ -136,8 +136,8 @@ module radiation_module
       sfc_soil_T_in_K, &
       veg_T_in_K
 
-    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(out) :: &
-      radht
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(inout) :: &
+      radht ! Heating rate retained between radiation timesteps [K/s]
 
     !------------------------ Begin Code -----------------------
 

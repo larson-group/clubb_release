@@ -1,0 +1,59 @@
+{
+  "review": "Separate owner cleanup following full source outline/implementation and expression/control review. No independent full-file review or runtime evidence.",
+  "formatting_pass": {
+    "precipitation_fraction.cpp": {
+      "before_sha256": "7182bd54fe6d7a2e867c3dc159e794ab9ecd56ebe3f93399ddff35e8cb089d8a",
+      "after_sha256": "e1a1ef8be0f04b31c3cf1dc7c1bdad71b8e79f0caa4a9fc6623aa731e2b08ae6",
+      "signatures_and_prototypes": 10,
+      "ordinary_or_nested_calls": 4,
+      "argument_notes": 59,
+      "tokens": 11689,
+      "exact_executable_token_equality": true
+    },
+    "precipitation_fraction.hpp": {
+      "before_sha256": "bb8d9ed802207d65cc17cf63923133fa93249daef8e07d443f0ba47a3a07f3f5",
+      "after_sha256": "7f06fed09031eda53509117e5cc48cc271377d9c9b1b8f8c55f7282dba900a9d",
+      "signatures_and_prototypes": 2,
+      "ordinary_or_nested_calls": 0,
+      "argument_notes": 22,
+      "tokens": 459,
+      "exact_executable_token_equality": true
+    }
+  },
+  "final_files": {
+    "precipitation_fraction.cpp": {
+      "sha256": "dcc182ff1931658e0a1425bf70af780bf5b417647ca019f81c86c28955b49e6a",
+      "lines": 1607,
+      "max_columns": 100
+    },
+    "precipitation_fraction.hpp": {
+      "sha256": "98d184cbdd7786ccc2038a6d0389a787d19eee84606d151ad3fc6b29c6891498",
+      "lines": 90,
+      "max_columns": 100
+    }
+  },
+  "subsequent_executable_cleanup": [
+    {
+      "declaration": "int k{};",
+      "count": 3
+    },
+    {
+      "declaration": "int j{};",
+      "count": 2
+    },
+    {
+      "declaration": "const auto err_info_err_code = err_info.err_code;",
+      "count": 1
+    }
+  ],
+  "reviewed": [
+    "Native procedure/argument order and physical continuation groups, with accurate In/Out/InOut tags",
+    "complete declaration notes/units, scientific derivations/dividers, Native moment/corrective associations",
+    "case-sensitive private C++call spelling and ordered field-specific diagnostics/stats",
+    "column-first access, per-call scratch, physical grid bounds and dependency-respecting recurrences",
+    "all extended-lambda enclosing functions have explicit return types; no owning UDT/host-service captures",
+    "100columns,2space indentation, no tabs/trailing whitespace; source audits rerun on final files"
+  ],
+  "token_note": "Format/comments preserve exact original executable tokens. Precipitation cpp subsequently removes only six unneeded host declarations, listed separately; no final cpp token equality to the pre-cleanup snapshot is claimed.",
+  "numerical_status": "Uncompiled/untested. No CPU/GPU/BFB claim, FMA/identity adaptation or threshold change."
+}

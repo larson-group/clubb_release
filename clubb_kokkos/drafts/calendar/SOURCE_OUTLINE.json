@@ -1,0 +1,303 @@
+{
+  "native_inventory_and_order": [
+    "gregorian2julian_date",
+    "julian2gregorian_date",
+    "leap_year",
+    "compute_current_date_api",
+    "gregorian2julian_day"
+  ],
+  "public_inventory": [
+    "gregorian2julian_date",
+    "julian2gregorian_date",
+    "leap_year",
+    "compute_current_date_api",
+    "gregorian2julian_day"
+  ],
+  "routines": [
+    {
+      "name": "gregorian2julian_date",
+      "arguments": [
+        {
+          "name": "day",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "month",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "year",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": {
+        "name": "gregorian2julian_date",
+        "kind": "integer",
+        "dims": [],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      "ordered_calls_and_checks": [],
+      "purpose": "Gregorian date to integer Julian date with Native truncating integer divisions.",
+      "source_lines": [
+        29,
+        59
+      ]
+    },
+    {
+      "name": "julian2gregorian_date",
+      "arguments": [
+        {
+          "name": "julian_date",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "day",
+          "kind": "integer",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "month",
+          "kind": "integer",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "year",
+          "kind": "integer",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "ordered_calls_and_checks": [],
+      "purpose": "Inverse date conversion, outputs day/month/year in Native order.",
+      "source_lines": [
+        62,
+        108
+      ]
+    },
+    {
+      "name": "leap_year",
+      "arguments": [
+        {
+          "name": "year",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": {
+        "name": "leap_year",
+        "kind": "logical",
+        "dims": [],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      "ordered_calls_and_checks": [],
+      "purpose": "Gregorian leap-year divisibility predicate.",
+      "source_lines": [
+        111,
+        133
+      ]
+    },
+    {
+      "name": "compute_current_date_api",
+      "arguments": [
+        {
+          "name": "previous_day",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "previous_month",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "previous_year",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "seconds_since_previous_date",
+          "kind": "double",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "current_day",
+          "kind": "integer",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "current_month",
+          "kind": "integer",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "current_year",
+          "kind": "integer",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "seconds_since_current_date",
+          "kind": "double",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "ordered_calls_and_checks": [
+        "call julian2gregorian_date ( days_since_1jan4713bc, current_day, current_month, current_year )"
+      ],
+      "purpose": "Elapsed seconds rollover using floor-to-integer days, then inverse date conversion.",
+      "source_lines": [
+        136,
+        210
+      ]
+    },
+    {
+      "name": "gregorian2julian_day",
+      "arguments": [
+        {
+          "name": "day",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "month",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "year",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": {
+        "name": "gregorian2julian_day",
+        "kind": "integer",
+        "dims": [],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      },
+      "ordered_calls_and_checks": [
+        "if ( leap_year( year ) .and. month > 2 ) then",
+        "end if",
+        "if ( ( leap_year( year ) .and. gregorian2julian_day > 366 ) .or. ( .not. leap_year( year ) .and. gregorian2julian_day > 365 ) ) then",
+        "error stop \"Problem with Julian day conversion in gregorian2julian_day.\"",
+        "end if"
+      ],
+      "purpose": "One-based day of year from ordered month prefix, leap correction, and Native fatal upper bound.",
+      "source_lines": [
+        213,
+        252
+      ]
+    }
+  ],
+  "constants": [
+    "month_names(12):immutable character(len=3)",
+    "days_per_month(12):immutable integer"
+  ],
+  "read_evidence": {
+    "Native_lines": 254,
+    "JAX_actual_file": "clubb_jax/src/CLUBB_core/calendar.py",
+    "JAX_lines": 109,
+    "full_source_and_JAX_read_before_outline": true
+  },
+  "native_sha256": "7c515505098175469cfb5a88643720e8a72a1d0184d493f6a01335d3ab152e2f",
+  "jax_sha256": "020fd9b938f43387f4425324074354cb851f283470b0678b9a69f2fba18fa5f3",
+  "storage": "Only immutable calendar tables and call-local scalar variables. No mutable global state or new class.",
+  "type_precision": "Default Native INTEGER maps to int; Native selected_real_kind(p=12) time_precision maps to double independently of core real_t. sec_per_day converts to double at the Native conversion points.",
+  "supported_semantics": "Retain Native integer truncation, FLOOR elapsed negative time, month-prefix order, repeated leap predicate and literal fatal message. Do not import JAX omitted fatal check. Invalid month indices/overflow remain outside defined valid Native contracts.",
+  "caller_contracts": [
+    "src/Radiation/cos_solar_zen_module.F90:93\u2013103",
+    "src/Input_fields/input_netcdf.F90:306\u2013307",
+    "src/CLUBB_core/stats_netcdf.F90:3133",
+    "src/CLUBB_core/clubb_api_module.F90:1880\u20131916 wrappers"
+  ],
+  "integration": "Draft only. Existing radiation/input/stats packages remain Native until their actual call boundaries port. No source/build/test/runtime claim."
+}

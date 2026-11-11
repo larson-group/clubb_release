@@ -1,0 +1,16 @@
+{
+  "checks": "Native parent definition/public declaration and scientific calls regrouped; all executable tokens identical before/after.",
+  "scientific_call_count": 99,
+  "sources": {
+    "clubb_kokkos/drafts/driver_input_fields/Input_fields/input_fields.cpp": {
+      "before_sha256": "9eed7b1261fe1f4972b4e29877691c2ac42099f97b23a7a49981e0df59b9fe01",
+      "after_sha256": "ce29a3de1f6f4ec21bec86c6de07ad18bd83222d8aae8953dc445962620a6c3d",
+      "token_count": 24086
+    },
+    "clubb_kokkos/drafts/driver_input_fields/Input_fields/input_fields.hpp": {
+      "before_sha256": "f6db5bb287dec83663e39172a8414d9ca8242e29eff21bb67c4817e869cd943a",
+      "after_sha256": "c02ff65ed867aa4ceee39ae9dfaa1f0a629a00e3d31434e00b8679313b9c775d",
+      "token_count": 1946
+    }
+  }
+}

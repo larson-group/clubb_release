@@ -94,6 +94,11 @@ def ice_dfsn(
     #     midlevel, mixed-phase clouds", J. Atmos. Sci., Vol. 59,
     #     pp. 1779--1804.
     # -------------------------------------------------------------------------------
+    thlm = jnp.asarray(thlm)
+    rcm = jnp.asarray(rcm)
+    exner = jnp.asarray(exner)
+    p_in_Pa = jnp.asarray(p_in_Pa)
+    rho = jnp.asarray(rho)
     nzt = thlm.shape[-1]
 
     # --- Vectorized thermodynamic factors (mass-independent) ---
@@ -144,16 +149,11 @@ def ice_dfsn(
         step, jnp.full(thlm.shape[:-1], _MASS_INIT), xs
     )
     rcm_icedfsn = restore(rcm_ice_r)
-    def accumulate_stats(stats):
-        """Collect this diagnostic block only on sampled timesteps."""
+    if stats.l_sample:
         stats = stats.update("rcm_icedfs", rcm_icedfsn)
         stats = stats.update("diam", restore(diam_r))
         stats = stats.update("mass_ice_cryst", restore(mass_r))
         stats = stats.update("u_T_cm", restore(u_T_cm_r))
-
-        return stats
-
-    stats = stats.sampled(accumulate_stats)
 
     # thlm tendency (ice_dfsn_module.F90:305)
     thlm_icedfsn = -(Lv / (Cp * exner)) * rcm_icedfsn

@@ -1,0 +1,24 @@
+{
+  "explicit_assignment_operation_trees": {
+    "term_ma_zt_lhs": 27,
+    "term_ma_zm_lhs": 5
+  },
+  "total": 32,
+  "whole_array_operation_trees": {
+    "term_ma_zt_lhs": 0,
+    "term_ma_zm_lhs": 0
+  },
+  "whole_array_total": 0,
+  "ordered_if_predicates": {
+    "term_ma_zt_lhs": 4,
+    "term_ma_zm_lhs": 0
+  },
+  "total_if_predicates": 4,
+  "manual_minmax_or_storage_cases": {
+    "term_ma_zt_lhs": 0,
+    "term_ma_zm_lhs": 0
+  },
+  "native_sha256": "9402f91c35cb7b2ca68260e7dda58beeea6b88b4b99d77a4aabb48cae8b67ac8",
+  "target_sha256": "a5908c3c8a4dae65c03d2dd735ec9299b43a2ec2f94f069baa5b265411246a27",
+  "scope": "Source operation structure only; no compilation or numeric execution"
+}

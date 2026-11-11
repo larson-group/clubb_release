@@ -11,8 +11,8 @@ import jax.numpy as jnp
 import numpy as np
 import pytest
 
-from clubb_jax.src.CLUBB_core.err_info_type_module import ErrInfo
-from clubb_jax.src.CLUBB_core.stats_netcdf import JaxStats
+from clubb_jax.src.CLUBB_core.err_info import ErrInfo
+from clubb_jax.src.CLUBB_core.jax_stats import JaxStats
 from clubb_jax.src.Microphys import advance_microphys_module as transport
 from clubb_jax.src.Microphys import parameters_microphys as parameters
 from clubb_jax.auto_llm_generated_tests.pytests.microphysics_test_inputs import initialize

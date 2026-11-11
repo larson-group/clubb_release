@@ -1,0 +1,28 @@
+{
+  "new_scientific_lower_contracts": [],
+  "reused_owners": [
+    "array_types.hpp",
+    "constants_clubb.hpp",
+    "grid_class.hpp",
+    "err_info_type_module.hpp",
+    "error_code.hpp",
+    "parameter_indices.hpp",
+    "f2k/stats_bridge.hpp",
+    "f2k/procedure_bridge.hpp (debug query only)"
+  ],
+  "status": "No shared edits/build/tests. Source audit only; no numerical proof.",
+  "existing_constants": [
+    "one",
+    "zero",
+    "cloud_frac_min",
+    "eps",
+    "iupsilon_precip_frac_rat",
+    "clubb_fatal_error"
+  ],
+  "native_module_parameters": {
+    "precip_frac_calc_type": 2,
+    "precip_fraction::max_hm_ip_comp_mean": "0.0025_core_rknd",
+    "precip_fraction::precip_frac_tol_coef": "0.1_core_rknd"
+  },
+  "group_callsite": "Replace setup temporary precip_fraction22-argument call with same-named C++API; same arguments, no new wrapper."
+}

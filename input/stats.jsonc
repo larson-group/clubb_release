@@ -504,7 +504,8 @@
           {"name": "Ncm_ma",   "grid": "zt", "units": "(num/kg)/s",        "long_name": "Ncm budget: Ncm vertical mean advection"},
           {"name": "Ncm_ta",   "grid": "zt", "units": "(num/kg)/s",        "long_name": "Ncm budget: Ncm turbulent advection"},
           {"name": "Ncm_mc",   "grid": "zt", "units": "(num/kg)/s",        "long_name": "Ncm budget: Change in Ncm due to microphysics"},
-          {"name": "Ncm_cl",   "grid": "zt", "units": "(num/kg)/s",        "long_name": "Ncm budget: Ncm clipping term"}
+          {"name": "Ncm_cl",   "grid": "zt", "units": "(num/kg)/s",        "long_name": "Ncm budget: Ncm clipping term"},
+          {"name": "Ncm_act",  "grid": "zt", "units": "(num/kg)/s",        "long_name": "Ncm budget: Change in Ncm due to activation"}
         ],
         "rsm_budgets": [
           {"name": "rsm_bt",   "grid": "zt", "units": "(kg/kg)/s",         "long_name": "rsm budget: rsm time tendency"},
@@ -667,6 +668,9 @@
           {"name": "mass_ice_cryst", "grid": "zt", "units": "kg",        "long_name": "Mass of a single ice crystal"},
           {"name": "rcm_icedfs",     "grid": "zt", "units": "kg/kg/s",   "long_name": "Change in liquid due to ice"},
           {"name": "u_T_cm",         "grid": "zt", "units": "cm s^{-1}", "long_name": "Ice crystal fallspeed"}
+        ],
+        "gfdl_activation": [
+          {"name": "Nc_activated",   "grid": "zt", "units": "num/kg",    "long_name": "Droplets activated by GFDL activation"}
         ]
       },
       "radiation": [

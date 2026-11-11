@@ -8,7 +8,7 @@ from clubb_jax.src.CLUBB_core.tridiag_lu_solver import tridiag_lu_solve
 
 
 def call_tridiag_lu_solve(lhs, rhs):
-    return tridiag_lu_solve(rhs.shape[1], rhs.shape[0], lhs, rhs)
+    return tridiag_lu_solve(rhs.shape[-1], lhs, rhs)
 
 
 def test_solver_f2py_oracle():

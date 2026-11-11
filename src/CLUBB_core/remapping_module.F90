@@ -78,10 +78,11 @@ module remapping_module
 
   end function remap_iv_from_var_name
 
-  function calc_mass_over_grid_intervals( ngrdcol, total_idx_lin_spline, & ! In
-                                          lin_spline_rho_vals, & ! In
-                                          lin_spline_rho_levels, & ! In
-                                          grid_levels_idx, grid_levels ) result( mass_per_interval ) ! In
+  function calc_mass_over_grid_intervals( total_idx_lin_spline, &
+                                          lin_spline_rho_vals, &
+                                          lin_spline_rho_levels, &
+                                          grid_levels_idx, grid_levels &
+                                        ) result( mass_per_interval )
 
     ! Description:
     ! Calculate the mass over every interval (grid_levels(k) to grid_levels(k+1))
@@ -92,8 +93,8 @@ module remapping_module
     ! computes the exact mass over each interval, such that any target grid with the same lowest 
     ! and highest level would give the same total mass, if the linear spline is the same.
 
-    ! Returns the mass of each interval in every column, starting at the bottom
-    ! level, with dimensions (ngrdcol, grid_levels_idx-1).
+    ! Returns an array with the dimension grid_levels_idx-1 where at each index the mass of that 
+    ! interval is stored, starting at the bottom level.
     ! References:
     ! None
     !-----------------------------------------------------------------------
@@ -104,139 +105,115 @@ module remapping_module
     implicit none
 
     !--------------------- Input Variables ---------------------
-    integer, intent(in) :: ngrdcol ! Number of grid columns
     integer, intent(in) :: & 
       total_idx_lin_spline, &  ! The total numer of indices of the spline points []
       grid_levels_idx          ! The total numer of indices of the grid levels   []
 
-    real( kind = core_rknd ), dimension(ngrdcol,total_idx_lin_spline), intent(in) ::  &
+    real( kind = core_rknd ), dimension(total_idx_lin_spline), intent(in) ::  &
       lin_spline_rho_vals,  &    ! Dry, static density                   [kg/m^3]
       lin_spline_rho_levels      ! The altitudes of the given rho values [m]
     ! Note:  The lin_spline_rho_levels and lin_spline_rho_vals need to be arranged from
     !        lowest to highest in altitude
 
-    real( kind = core_rknd ), dimension(ngrdcol,grid_levels_idx), intent(in) :: &
+    real( kind = core_rknd ), dimension(grid_levels_idx), intent(in) :: &
       grid_levels ! levels of grid over which the masses shoud be calculated [m]
 
     !--------------------- Output Variable ----------------------
-    real( kind = core_rknd ), dimension(ngrdcol,grid_levels_idx-1) :: &
+    real( kind = core_rknd ), dimension(grid_levels_idx-1) :: &
       mass_per_interval ! Array to store the mass of each interval
                         ! (grid_levels(k) to grid_levels(k+1)) [kg]
 
     !--------------------- Local Variables ----------------------
-    real( kind = core_rknd ), dimension(ngrdcol) :: &
-      val_below, &          ! The rho value of the level or spline connection point below  [kg/m^3]
-      level_below          ! The altitude of the level or spline connection point below   [m]
-
     real( kind = core_rknd ) :: &
+      val_below, &          ! The rho value of the level or spline connection point below  [kg/m^3]
+      level_below, &        ! The altitude of the level or spline connection point below   [m]
+      mass_over_interval, & ! The total mass over one grid cell                            [kg]
       upper_zm_level_rho    ! The rho value of the upper level of the grid cell            [m]
 
-    integer :: k, i ! Target interval and column indices [-]
-    integer :: l(ngrdcol) ! Next spline point in each column [-]
+    integer :: k, l
 
-    logical :: l_level_found(ngrdcol) ! Columns whose initial spline interval is located [-]
-    logical :: l_integrating(ngrdcol) ! Columns with another spline point inside this grid cell [-]
-    real( kind = core_rknd ) :: mass_over_interval(ngrdcol) ! Accumulated mass in each grid cell [kg]
+    logical :: l_level_found
 
     !--------------------- Begin Code ---------------------
-    do i = 1, ngrdcol
-
-      ! check if highest value of lin spline is higher or equal to highest level of target grid
-      if ( (grid_levels(i,grid_levels_idx) &
-        - lin_spline_rho_levels(i,total_idx_lin_spline) ) > tol ) then
-        write(fstderr,*) 'Wrong input: highest level of lin_spline_rho_levels must', &
-          ' be higher or equal to highest zm level of grid_levels'
-        write(fstderr,*) 'Cannot compute the mass to get the remapping operator if the', &
-          'density function is not defined over the whole grid region'
-        error stop 'Cannot compute the remapping operator'
-      end if
-
-    end do
+    ! check if highest value of lin spline is higher or equal to highest level of target grid
+    if ( (grid_levels(grid_levels_idx) &
+          - lin_spline_rho_levels(total_idx_lin_spline) ) > tol ) then
+      write(fstderr,*) 'Wrong input: highest level of lin_spline_rho_levels must', &
+                       ' be higher or equal to highest zm level of grid_levels'
+      write(fstderr,*) 'Cannot compute the mass to get the remapping operator if the', & 
+                       'density function is not defined over the whole grid region'
+      error stop 'Cannot compute the remapping operator'
+    end if
 
     l = 1
     l_level_found = .false.
-    ! Locate the initial spline interval independently in each column.
-    do while ( any( (.not. l_level_found) .and. (l <= total_idx_lin_spline) ) )
-      do i = 1, ngrdcol
-        if ( l_level_found(i) .or. l(i) > total_idx_lin_spline ) cycle
-
-        if ( abs( grid_levels(i,1) - lin_spline_rho_levels(i,l(i)) ) < tol ) then
-          val_below(i) = lin_spline_rho_vals(i,l(i))
-          level_below(i) = grid_levels(i,1)
-          l_level_found(i) = .true.
-        else if ( grid_levels(i,1) < lin_spline_rho_levels(i,l(i)) ) then ! l(i) > 1
-          if (l(i) <= 1) then
-            write(fstderr,*) 'Wrong input: lowest level of lin_spline_rho_levels must', &
-              ' be lower or equal to lowest zm level of grid_levels'
-            write(fstderr,*) 'Cannot compute the mass to get the remapping operator if the', &
-              'density function is not defined over the whole grid region'
-            error stop 'Cannot compute the remapping operator'
-          else
-            val_below(i) = lin_interpolate_two_points( grid_levels(i,1), &
-              lin_spline_rho_levels(i,l(i)), &
-              lin_spline_rho_levels(i,l(i)-1), &
-              lin_spline_rho_vals(i,l(i)), &
-              lin_spline_rho_vals(i,l(i)-1) )
-            level_below(i) = grid_levels(i,1)
-            l_level_found(i) = .true.
-            l(i) = l(i) - 1
-          end if
+    ! find first level and set initial val_below and level_below
+    do while ( (.not. l_level_found) .and. (l <= total_idx_lin_spline) )
+      if ( abs( grid_levels(1) - lin_spline_rho_levels(l) ) < tol ) then
+        val_below = lin_spline_rho_vals(l)
+        level_below = grid_levels(1)
+        l_level_found = .true.
+      else if ( grid_levels(1) < lin_spline_rho_levels(l) ) then ! l > 1
+        if (l <= 1) then
+          write(fstderr,*) 'Wrong input: lowest level of lin_spline_rho_levels must', &
+                           ' be lower or equal to lowest zm level of grid_levels'
+          write(fstderr,*) 'Cannot compute the mass to get the remapping operator if the', & 
+                           'density function is not defined over the whole grid region'
+          error stop 'Cannot compute the remapping operator'
+        else
+          val_below = lin_interpolate_two_points( grid_levels(1), &
+                                                  lin_spline_rho_levels(l), &
+                                                  lin_spline_rho_levels(l-1), &
+                                                  lin_spline_rho_vals(l), &
+                                                  lin_spline_rho_vals(l-1) )
+          level_below = grid_levels(1)
+          l_level_found = .true.
+          l = l - 1
         end if
-        l(i) = l(i) + 1
-      end do
-    end do ! i
-
-    ! Sum spline segments in their original order within each grid interval.
-    ! A column stops integrating when it reaches the interval's upper boundary.
+      end if
+      l = l + 1
+    end do
+    ! find all spline connection points between the level_below and the next grid level
+    ! in grid_levels and add up their masses, finally the rho value on the next grid level is
+    ! interpolated and the last part of mass added to the total mass of that interval
     do k = 1, grid_levels_idx-1
       mass_over_interval = 0.0_core_rknd
-      l_integrating = .true.
-      do while ( any( l_integrating ) )
-        do i = 1, ngrdcol
-          if ( .not. l_integrating(i) ) cycle
-
-          if ( (lin_spline_rho_levels(i,l(i)) < grid_levels(i,k+1)) &
-            .and. (l(i) < total_idx_lin_spline) ) then
-            mass_over_interval(i) = mass_over_interval(i) &
-              + (lin_spline_rho_levels(i,l(i)) - level_below(i)) &
-              *( val_below(i) + lin_spline_rho_vals(i,l(i)) )/2
-            level_below(i) = lin_spline_rho_levels(i,l(i))
-            val_below(i) = lin_spline_rho_vals(i,l(i))
-            l(i) = l(i) + 1
-          else
-            l_integrating(i) = .false.
-          end if
-        end do
+      do while ( (lin_spline_rho_levels(l) < grid_levels(k+1)) &
+                 .and. (l < total_idx_lin_spline) )
+        mass_over_interval = mass_over_interval &
+                             + (lin_spline_rho_levels(l) - level_below) &
+                              *( val_below + lin_spline_rho_vals(l) )/2
+        level_below = lin_spline_rho_levels(l)
+        val_below = lin_spline_rho_vals(l)
+        l = l + 1
       end do
+      if ( abs( grid_levels(k+1) - lin_spline_rho_levels(l) ) < tol ) then 
+        ! have approx equal altitude, so just copy value
+        upper_zm_level_rho = lin_spline_rho_vals(l)
+      else ! lin spline at l is above grid_levels(k+1) in grid_levels
+        ! lin interpolation between l lin spline node and lin spine node l-1
+        upper_zm_level_rho = lin_interpolate_two_points( grid_levels(k+1), &
+                                                         lin_spline_rho_levels(l), &
+                                                         lin_spline_rho_levels(l-1), &
+                                                         lin_spline_rho_vals(l), &
+                                                         lin_spline_rho_vals(l-1) )
+      end if
+      mass_over_interval = mass_over_interval &
+                           + (grid_levels(k+1) - level_below) &
+                            *( val_below + upper_zm_level_rho )/2
 
-      do i = 1, ngrdcol
-        if ( abs( grid_levels(i,k+1) - lin_spline_rho_levels(i,l(i)) ) < tol ) then
-          ! have approx equal altitude, so just copy value
-          upper_zm_level_rho = lin_spline_rho_vals(i,l(i))
-        else ! The next spline point is above this grid interval.
-          ! Interpolate between the surrounding spline nodes.
-          upper_zm_level_rho = lin_interpolate_two_points( grid_levels(i,k+1), &
-            lin_spline_rho_levels(i,l(i)), &
-            lin_spline_rho_levels(i,l(i)-1), &
-            lin_spline_rho_vals(i,l(i)), &
-            lin_spline_rho_vals(i,l(i)-1) )
-        end if
-        mass_over_interval(i) = mass_over_interval(i) &
-          + (grid_levels(i,k+1) - level_below(i)) &
-          *( val_below(i) + upper_zm_level_rho )/2
+      mass_per_interval(k) = mass_over_interval
 
-        mass_per_interval(i,k) = mass_over_interval(i)
-
-        val_below(i) = upper_zm_level_rho
-        level_below(i) = grid_levels(i,k+1)
-      end do
+      val_below = upper_zm_level_rho
+      level_below = grid_levels(k+1)
     end do
 
   end function calc_mass_over_grid_intervals
 
-  function matrix_vector_mult( ngrdcol, dim_input, & ! In
-                               dim_output, x_vectors, & ! In
-                               A_matrices ) result ( y_vectors ) ! In
+  function matrix_vector_mult( ngrdcol, &
+                               dim_input, dim_output, &
+                               x_vectors, &
+                               A_matrices ) result ( y_vectors )
 
     ! Description:
     ! Calculates the matrix-vector product y = Ax, where A is a matrix with dim_output x dim_input
@@ -266,10 +243,11 @@ module remapping_module
 
     !--------------------- Begin Code ---------------------
 
-    y_vectors = 0
-    do k = 1, dim_output
-      do j = 1, dim_input
-        do i = 1, ngrdcol
+    do i = 1, ngrdcol
+      ! matrix vector multiplication
+      do k = 1, dim_output
+        y_vectors(i,k) = 0
+        do j = 1, dim_input
           y_vectors(i,k) = y_vectors(i,k) + A_matrices(i,k,j)*x_vectors(i,j)
         end do
       end do
@@ -277,11 +255,11 @@ module remapping_module
 
   end function matrix_vector_mult
 
-  function vertical_integral_conserve_mass( ngrdcol, total_idx_lin_spline, & ! In
-                                            lin_spline_rho_vals, & ! In
-                                            lin_spline_rho_levels, & ! In
-                                            grid_levels_idx, grid_levels, & ! In
-                                            field ) ! In
+  function vertical_integral_conserve_mass( total_idx_lin_spline, &
+                                            lin_spline_rho_vals, &
+                                            lin_spline_rho_levels, &
+                                            grid_levels_idx, grid_levels, &
+                                            field )
 
     ! Description:
     ! Computes the vertical integral. lin_spline_rho_vals and lin_spline_rho_levels must be
@@ -302,11 +280,10 @@ module remapping_module
     implicit none
 
     !--------------------- Input Variables ---------------------
-    integer, intent(in) :: ngrdcol ! Number of grid columns
     integer, intent(in) :: & 
       total_idx_lin_spline  ! The total numer of indices of the spline points []
 
-    real( kind = core_rknd ), dimension(ngrdcol,total_idx_lin_spline), intent(in) ::  &
+    real( kind = core_rknd ), dimension(total_idx_lin_spline), intent(in) ::  &
       lin_spline_rho_vals,  &    ! Dry, static density                   [kg/m^3]
       lin_spline_rho_levels      ! The altitudes of the given rho values [m]
     ! Note:  The lin_spline_rho_levels and lin_spline_rho_vals need to be arranged from
@@ -315,23 +292,21 @@ module remapping_module
     integer, intent(in) :: & 
       grid_levels_idx  ! The total numer of indices for grid_levels []
 
-    real( kind = core_rknd ), dimension(ngrdcol,grid_levels_idx-1), intent(in) ::  &
+    real( kind = core_rknd ), dimension(grid_levels_idx-1), intent(in) ::  &
       field      ! The field to be vertically averaged   [Units vary]
 
-    real( kind = core_rknd ), dimension(ngrdcol,grid_levels_idx), intent(in) ::  &
+    real( kind = core_rknd ), dimension(grid_levels_idx), intent(in) ::  &
       grid_levels ! [m]
 
     ! Note:  The field and grid_levels points need to be arranged from
     !        lowest to highest in altitude
 
     !--------------------- Local Variables ---------------------
-    real( kind = core_rknd ), dimension(ngrdcol,grid_levels_idx-1) :: &
+    real( kind = core_rknd ), dimension(grid_levels_idx-1) :: &
       mass_per_interval ! Array to store the mass of each interval of the target_grid [kg]
 
-    real( kind = core_rknd ), dimension(ngrdcol) :: &
+    real( kind = core_rknd ) :: &
       vertical_integral_conserve_mass ! [kg]
-
-    integer :: i ! Column index
 
     !--------------------- Begin Code ---------------------
     ! Initializing vertical_integral_conserve_mass to avoid a compiler warning.
@@ -340,21 +315,20 @@ module remapping_module
     ! Compute the integral.
     ! Multiply the field at level k by rho_ds at level k and by
     ! the level thickness at level k.  Then, sum over all vertical levels.
-    mass_per_interval = calc_mass_over_grid_intervals( ngrdcol, total_idx_lin_spline, &
-      lin_spline_rho_vals, &
-      lin_spline_rho_levels, &
-      grid_levels_idx, grid_levels )
-    do i = 1, ngrdcol
-      vertical_integral_conserve_mass(i) = sum( field(i,:) * mass_per_interval(i,:) )
-    end do
+    mass_per_interval = calc_mass_over_grid_intervals( total_idx_lin_spline, &
+                                                       lin_spline_rho_vals, &
+                                                       lin_spline_rho_levels, &
+                                                       grid_levels_idx, grid_levels )
+    vertical_integral_conserve_mass = sum( field * mass_per_interval )
 
   end function vertical_integral_conserve_mass
 
-  subroutine check_conservation( ngrdcol, total_idx_rho_lin_spline, levels_source_idx, & ! In
-                                 levels_target_idx, rho_lin_spline_vals, & ! In
-                                 rho_lin_spline_levels, & ! In
-                                 levels_source, levels_target, field_source, & ! In
-                                 field_target ) ! In
+  subroutine check_conservation( total_idx_rho_lin_spline, &
+                                 rho_lin_spline_vals, &
+                                 rho_lin_spline_levels, &
+                                 levels_source_idx, levels_target_idx, &
+                                 levels_source, levels_target, &
+                                 field_source, field_target )
 
     ! Description:
     ! Check if the vertical integral is conserved during remapping. It is checked, if the vertical
@@ -365,11 +339,10 @@ module remapping_module
     implicit none
 
     !--------------------- Input Variables ---------------------
-    integer, intent(in) :: ngrdcol ! Number of grid columns
     integer, intent(in) :: &
       total_idx_rho_lin_spline ! number of indices for the linear spline definition arrays []
 
-    real( kind = core_rknd ), dimension(ngrdcol,total_idx_rho_lin_spline), intent(in) :: &
+    real( kind = core_rknd ), dimension(total_idx_rho_lin_spline), intent(in) :: &
       rho_lin_spline_vals, & ! rho values at the given altitudes [kg/m^3]
       rho_lin_spline_levels  ! altitudes for the given rho values [m]
     ! Note: both these arrays need to be sorted from low to high altitude
@@ -378,64 +351,56 @@ module remapping_module
       levels_source_idx, &       ! number of levels of the source grid []
       levels_target_idx          ! number of levels of the target grid []
 
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,levels_source_idx) :: &
+    real( kind = core_rknd ), intent(in), dimension(levels_source_idx) :: &
       levels_source           ! altitudes for the source grid [m]
 
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,levels_target_idx) :: &
+    real( kind = core_rknd ), intent(in), dimension(levels_target_idx) :: &
       levels_target           ! altitudes for the target grid [m]
 
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,levels_source_idx-1) :: &
+    real( kind = core_rknd ), intent(in), dimension(levels_source_idx-1) :: &
       field_source            ! values for a variable on the source grid
 
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,levels_target_idx-1) :: &
+    real( kind = core_rknd ), intent(in), dimension(levels_target_idx-1) :: &
       field_target           ! values for a variable on the target grid
 
     !--------------------- Local Variables ---------------------
-    real( kind = core_rknd ), dimension(ngrdcol) :: &
-      integral_source, &  ! vertical integral over the source values
-      integral_target    ! vertical integral over the target values
-
     real( kind = core_rknd ) :: &
+      integral_source, &  ! vertical integral over the source values
+      integral_target, &  ! vertical integral over the target values
       tol_cons,        &  ! fixed tolerance for conservation
       err_percentage      ! the percentage the vertical integral of the remapped values is
                           ! allowed to deviate from the original vertical inetgral due to
                           ! numerical inaccuracies (with [0,1])
 
-    integer :: i ! Column index
-
     !--------------------- Begin Code ---------------------
-    integral_source = vertical_integral_conserve_mass( ngrdcol, total_idx_rho_lin_spline, &
-      rho_lin_spline_vals, &
-      rho_lin_spline_levels, &
-      levels_source_idx, levels_source, &
-      field_source )
-
-    integral_target = vertical_integral_conserve_mass( ngrdcol, total_idx_rho_lin_spline, &
-      rho_lin_spline_vals, &
-      rho_lin_spline_levels, &
-      levels_target_idx, levels_target, &
-      field_target )
+    integral_source = vertical_integral_conserve_mass( total_idx_rho_lin_spline, &
+                                                       rho_lin_spline_vals, &
+                                                       rho_lin_spline_levels, &
+                                                       levels_source_idx, levels_source, &
+                                                       field_source )
+ 
+    integral_target = vertical_integral_conserve_mass( total_idx_rho_lin_spline, &
+                                                       rho_lin_spline_vals, &
+                                                       rho_lin_spline_levels, &
+                                                       levels_target_idx, levels_target, &
+                                                       field_target )
 
     tol_cons = 1.e-3_core_rknd
     err_percentage = 1.e-7_core_rknd
+    
+    ! not use fixed global tolerance, since there are some extremely large vertical integrals
+    if ( abs( integral_target - integral_source ) > abs( integral_source*err_percentage ) .and. &
+         abs( integral_target - integral_source ) > tol_cons ) then
 
-    do i = 1, ngrdcol
-      ! not use fixed global tolerance, since there are some extremely large vertical integrals
-      if ( abs( integral_target(i) - integral_source(i) ) > abs( integral_source(i)*err_percentage &
-        ) .and. &
-        abs( integral_target(i) - integral_source(i) ) > tol_cons ) then
-
-        write(fstderr,*) "WARNING! Integral for field was not conserved."
-        write(fstderr,*) "Integral was ", integral_target(i), " instead of ", integral_source(i)
-      end if
-
-    end do
+      write(fstderr,*) "WARNING! Integral for field was not conserved."
+      write(fstderr,*) "Integral was ", integral_target, " instead of ", integral_source
+    end if
 
   end subroutine check_conservation
 
-  subroutine check_monotonicity( ngrdcol, field_source_idx, field_target_idx, & ! In
-                                 grid_remap_method, & ! In
-                                 field_source, field_target ) ! In
+  subroutine check_monotonicity( field_source_idx, field_target_idx, &
+                                 field_source, field_target, &
+                                 grid_remap_method )
 
     ! Description:
     ! Check if remapped values are globally monotone. So, check if all remapped values on the
@@ -447,22 +412,21 @@ module remapping_module
     implicit none
 
     !--------------------- Input Variables ---------------------
-    integer, intent(in) :: ngrdcol ! Number of grid columns
     integer, intent(in) :: &
       field_source_idx, & ! dimension of field_source []
       field_target_idx    ! dimension of field_target []
 
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,field_source_idx) :: &
+    real( kind = core_rknd ), intent(in), dimension(field_source_idx) :: &
       field_source  ! values for a variable on the source grid
 
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,field_target_idx) :: &
+    real( kind = core_rknd ), intent(in), dimension(field_target_idx) :: &
       field_target  ! remapped values for a variable on the target grid
 
     integer, intent(in) :: &
       grid_remap_method ! integer specifying which remapping method was used
 
     !--------------------- Local Variables ---------------------
-    integer :: i, k, &
+    integer :: k, &
                start_index, & ! start index to check target values for monotonicity
                end_index      ! end index to check target values for monotonicity
 
@@ -480,30 +444,27 @@ module remapping_module
       end_index = field_target_idx-3
     end if
 
-    do i = 1, ngrdcol
-      source_maxval = maxval( field_source(i,:) )
-      source_minval = minval( field_source(i,:) )
+    source_maxval = maxval( field_source )
+    source_minval = minval( field_source )
 
-      do k = start_index, end_index
-        ! check if remapped target field is outside the region the global extrema
-        ! of the source values and if deviation is greater than the tolerance
-        if ( ( field_target(i,k) < source_minval &
-          .and. abs(field_target(i,k) - source_minval ) > tol ) &
-          .or. &
-          ( field_target(i,k) > source_maxval &
-          .and. abs(field_target(i,k) - source_maxval ) > tol ) ) then
-          write(fstderr,*) 'WARNING! The remapped values are not monotone.'
-          write(fstderr,*) 'The extrema on the source field were: ', source_minval, ' and ', &
-            source_maxval, ', but the remapped value is: ', field_target(i,k)
-        end if
-      end do
-
+    do k = start_index, end_index
+      ! check if remapped target field is outside the region the global extrema
+      ! of the source values and if deviation is greater than the tolerance
+      if ( ( field_target(k) < source_minval &
+             .and. abs(field_target(k) - source_minval ) > tol ) &
+           .or. &
+           ( field_target(k) > source_maxval &
+             .and. abs(field_target(k) - source_maxval ) > tol ) ) then
+        write(fstderr,*) 'WARNING! The remapped values are not monotone.'
+        write(fstderr,*) 'The extrema on the source field were: ', source_minval, ' and ', &
+                          source_maxval, ', but the remapped value is: ', field_target(k)
+      end if
     end do
 
   end subroutine check_monotonicity
 
-  subroutine check_consistency( ngrdcol, dim_input, dim_output, & ! In
-                                R_ij ) ! In
+  subroutine check_consistency( dim_input, dim_output, &
+                                R_ij )
 
     ! Description:
     ! Check if matrix used to remap values remaps values in a consistent way. So, check if
@@ -513,67 +474,61 @@ module remapping_module
         one
 
     implicit none
-
-    integer, intent(in) :: ngrdcol ! Number of grid columns
-
     !--------------------- Input Variables ---------------------
     integer, intent(in) :: &
       dim_input, & ! dimension of the input values on the source grid []
       dim_output   ! dimension of the reampped values on the target grid []
 
-    real( kind = core_rknd ), dimension(ngrdcol,dim_output,dim_input), intent(in) :: &
+    real( kind = core_rknd ), dimension(dim_output,dim_input), intent(in) :: &
       R_ij  ! matrix to apply to input values for remapping (R_ij) []
 
     !--------------------- Local Variables ---------------------
-    real( kind = core_rknd ), dimension(ngrdcol,dim_input) :: &
+    real( kind = core_rknd ), dimension(dim_input) :: &
       ones ! array with ones
 
-    real( kind = core_rknd ), dimension(ngrdcol,dim_output) :: &
+    real( kind = core_rknd ), dimension(1,dim_output) :: &
       output_ones ! remapped array of ones
 
-    integer :: i, k
+    integer :: k
 
     logical :: l_consistent
 
     !--------------------- Begin Code ---------------------
-    ones = one
-
-    output_ones = matrix_vector_mult( ngrdcol, dim_input, & ! In
-                                      dim_output, ones, & ! In
-                                      R_ij ) ! In
-
-    do i = 1, ngrdcol
-      l_consistent = .true.
-      k = 1
-      do while (l_consistent .and. k <= dim_output)
-        if (abs( output_ones(i,k) - one ) > tol) then
-          l_consistent = .false.
-        end if
-        k = k + 1
-      end do
-
-      if (.not. l_consistent) then
-        write(fstderr,*) 'WARNING! The matrix_vector_mult function is not consistent'
-        write(fstderr,*) 'The output should be all ones, but was: ', output_ones(i,:)
-      end if
-
+    do k = 1, (dim_input)
+      ones(k) = one
     end do
+
+    output_ones = matrix_vector_mult( 1, &
+                                      dim_input, dim_output, &
+                                      ones, &
+                                      R_ij )
+
+    l_consistent = .true.
+    k = 1
+    do while (l_consistent .and. k <= dim_output)
+      if (abs( output_ones(1,k) - one ) > tol) then
+        l_consistent = .false.
+      end if
+      k = k + 1
+    end do
+
+    if (.not. l_consistent) then
+      write(fstderr,*) 'WARNING! The matrix_vector_mult function is not consistent'
+      write(fstderr,*) 'The output should be all ones, but was: ', output_ones(1,:)
+    end if
 
   end subroutine check_consistency
 
-  function remap_vals_to_target_helper( ngrdcol, levels_source_idx, & ! In
-                                        levels_target_idx, & ! In
-                                        levels_source, & ! In
-                                        levels_target, & ! In
-                                        total_idx_rho_lin_spline, & ! In
-                                        rho_lin_spline_vals, & ! In
-                                        rho_lin_spline_levels, & ! In
-                                        source_values, iv, p_sfc, & ! In
-                                        grid_remap_method, & ! In
-                                        R_ij ) result( remap_vals_to_target ) ! Optional In
-
-    ! Description:
-    ! Remaps all column fields using pressure intervals derived from density.
+  function remap_vals_to_target_helper( ngrdcol, &
+                                        levels_source_idx, levels_target_idx, &
+                                        levels_source, levels_target, &
+                                        total_idx_rho_lin_spline, &
+                                        rho_lin_spline_vals, &
+                                        rho_lin_spline_levels, &
+                                        source_values, &
+                                        iv, p_sfc, &
+                                        grid_remap_method, &
+                                        R_ij ) result( remap_vals_to_target )
 
     use constants_clubb, only: &
         grav ! Constant
@@ -659,113 +614,116 @@ module remapping_module
 
     !--------------------- Begin Code ---------------------
 
-    ! Calculate pressure levels from altitudes and densities
-    mass_on_source_cells = calc_mass_over_grid_intervals( ngrdcol, total_idx_rho_lin_spline, & ! In
-                                                          rho_lin_spline_vals, & ! In
-                                                          rho_lin_spline_levels, & ! In
-                                                          levels_source_idx, levels_source ) ! In
-    mass_on_target_cells = calc_mass_over_grid_intervals( ngrdcol, total_idx_rho_lin_spline, & ! In
-                                                          rho_lin_spline_vals, & ! In
-                                                          rho_lin_spline_levels, & ! In
-                                                          levels_target_idx, levels_target ) ! In
     do i = 1, ngrdcol
+
+      ! Calculate pressure levels from altitudes and densities
+      mass_on_source_cells(i,:) = calc_mass_over_grid_intervals( total_idx_rho_lin_spline, &
+                                                                 rho_lin_spline_vals(i,:), &
+                                                                 rho_lin_spline_levels(i,:), &
+                                                                 levels_source_idx, &
+                                                                 levels_source(i,:) )
+      mass_on_target_cells(i,:) = calc_mass_over_grid_intervals( total_idx_rho_lin_spline, &
+                                                                 rho_lin_spline_vals(i,:), &
+                                                                 rho_lin_spline_levels(i,:), &
+                                                                 levels_target_idx, &
+                                                                 levels_target(i,:) )
       pressure_levels_source(i,1) = p_sfc(i)
-      pressure_levels_target(i,1) = p_sfc(i)
-    end do
-
-    do k = 2, levels_source_idx
-      do i = 1, ngrdcol
+      do k = 2, levels_source_idx
         pressure_levels_source(i,k) = pressure_levels_source(i,k-1) &
-          - mass_on_source_cells(i,k-1)*grav
+                                      - mass_on_source_cells(i,k-1)*grav
       end do
-    end do
-
-    do k = 2, levels_target_idx
-      do i = 1, ngrdcol
+      pressure_levels_target(i,1) = p_sfc(i)
+      do k = 2, levels_target_idx
         pressure_levels_target(i,k) = pressure_levels_target(i,k-1) &
-          - mass_on_target_cells(i,k-1)*grav
+                                      - mass_on_target_cells(i,k-1)*grav
       end do
+
+      ! Construct remapping matrix for cons_ullrich_remap method, if not
+      ! already given as an optional parameter
+      if ( grid_remap_method == cons_ullrich_remap .and. .not. present( R_ij ) ) then
+        R_ij_internal(i,:,:) = remapping_matrix( levels_source_idx, levels_target_idx, &
+                                                 pressure_levels_source(i,:), &
+                                                 pressure_levels_target(i,:) )
+
+      end if
+
     end do
-
-    ! Construct remapping matrix for cons_ullrich_remap method, if not
-    ! already given as an optional parameter
-    if ( grid_remap_method == cons_ullrich_remap .and. .not. present( R_ij ) ) then
-      R_ij_internal = remapping_matrix( ngrdcol, levels_source_idx, levels_target_idx, &
-        pressure_levels_source, &
-        pressure_levels_target )
-
-    end if
-
 
     ! Remap values with the selected remapping method
     if ( grid_remap_method == cons_ullrich_remap ) then
 
       if ( present( R_ij ) ) then
-        remap_vals_to_target = matrix_vector_mult( ngrdcol, levels_source_idx-1, & ! In
-                                                   levels_target_idx-1, source_values, & ! In
-                                                   R_ij ) ! In
+        remap_vals_to_target = matrix_vector_mult( ngrdcol, &
+                                                   levels_source_idx-1, &
+                                                   levels_target_idx-1, &
+                                                   source_values, &
+                                                   R_ij )
       else
-        remap_vals_to_target = matrix_vector_mult( ngrdcol, levels_source_idx-1, & ! In
-                                                   levels_target_idx-1, source_values, & ! In
-                                                   R_ij_internal ) ! In
+        remap_vals_to_target = matrix_vector_mult( ngrdcol, &
+                                                   levels_source_idx-1, &
+                                                   levels_target_idx-1, &
+                                                   source_values, &
+                                                   R_ij_internal )
       end if
 
     else if ( grid_remap_method == ppm_remap ) then
 
-      remap_vals_to_target = remap_vals_ppm( ngrdcol, levels_source_idx, levels_target_idx, & ! In
-                                             pressure_levels_source, & ! In
-                                             pressure_levels_target, source_values, iv ) ! In
+      remap_vals_to_target = remap_vals_ppm( ngrdcol, &
+                                             levels_source_idx, levels_target_idx, &
+                                             pressure_levels_source, pressure_levels_target, &
+                                             source_values, iv )
 
     else 
 
-      write(fstderr,*) 'There is no remapping method implemented for grid_remap_method=', &
-        grid_remap_method
-      error stop 'Please adjust the configurable model flags.'
-
+        write(fstderr,*) 'There is no remapping method implemented for grid_remap_method=', &
+                         grid_remap_method
+        error stop 'Please adjust the configurable model flags.'
+    
     end if
 
     ! Check remapped values
     if ( clubb_at_least_debug_level_api( 2 ) ) then
+      do i = 1, ngrdcol
 
-      call check_conservation( ngrdcol, total_idx_rho_lin_spline, levels_source_idx, & ! In
-                               levels_target_idx, rho_lin_spline_vals, & ! In
-                               rho_lin_spline_levels, & ! In
-                               levels_source, levels_target, source_values, & ! In
-                               remap_vals_to_target ) ! In
+        call check_conservation( total_idx_rho_lin_spline, &                ! In
+                                 rho_lin_spline_vals(i,:), &                ! In
+                                 rho_lin_spline_levels(i,:), &              ! In
+                                 levels_source_idx, levels_target_idx, &    ! In
+                                 levels_source(i,:), levels_target(i,:), &  ! In
+                                 source_values(i,:), &                      ! In
+                                 remap_vals_to_target(i,:) )                ! In
 
-      call check_monotonicity( ngrdcol, levels_source_idx-1, levels_target_idx-1, & ! In
-        grid_remap_method, & ! In
-                               source_values, remap_vals_to_target ) ! In
+        call check_monotonicity( levels_source_idx-1, levels_target_idx-1, & ! In
+                                 source_values(i,:), &                       ! In
+                                 remap_vals_to_target(i,:), &                ! In
+                                 grid_remap_method )                         ! In
 
-      if ( grid_remap_method == cons_ullrich_remap ) then
-        if ( present( R_ij ) ) then
-          call check_consistency( ngrdcol, levels_source_idx-1, levels_target_idx-1, R_ij ) ! In
-        else
-          call check_consistency( ngrdcol, levels_source_idx-1, levels_target_idx-1, & ! In
-                                  R_ij_internal ) ! In
+        if ( grid_remap_method == cons_ullrich_remap ) then
+          if ( present( R_ij ) ) then
+            call check_consistency( levels_source_idx-1, levels_target_idx-1, &  ! In
+                                    R_ij(i,:,:) )                                ! In
+          else
+            call check_consistency( levels_source_idx-1, levels_target_idx-1, &  ! In
+                                    R_ij_internal(i,:,:) )                       ! In
+          end if
         end if
-      end if
-
+                                 
+      end do
     end if
 
   end function remap_vals_to_target_helper
 
-  function remap_vals_to_target( ngrdcol, & ! In
-                                 gr_source, gr_target, & ! In
-                                 source_values_idx, & ! In
-                                 source_values, & ! In
-                                 target_values_idx, & ! In
-                                 total_idx_rho_lin_spline, & ! In
-                                 rho_lin_spline_vals, & ! In
-                                 rho_lin_spline_levels, & ! In
-                                 iv, p_sfc, & ! In
-                                 grid_remap_method, & ! In
-                                 l_zt_variable, & ! In
-                                 l_remap ) ! Optional In
-
-    ! Description:
-    ! Conservatively remap each column to its target grid.  An optional selection
-    ! preserves source values exactly in unchanged columns of an equal-size grid.
+  function remap_vals_to_target( ngrdcol, &
+                                 gr_source, gr_target, &
+                                 source_values_idx, &
+                                 source_values, &
+                                 target_values_idx, &
+                                 total_idx_rho_lin_spline, &
+                                 rho_lin_spline_vals, &
+                                 rho_lin_spline_levels, &
+                                 iv, p_sfc, &
+                                 grid_remap_method, &
+                                 l_zt_variable )
 
     use grid_class, only: &
         grid ! Type 
@@ -816,9 +774,6 @@ module remapping_module
       l_zt_variable ! if .true., the variable that was input is given on the zt levels of
                     ! the grid, if it is .false., it is given on the zm levels
 
-    !--------------------- Optional Input Variables ---------------------
-    logical, intent(in), optional :: l_remap(ngrdcol) ! Columns whose grid changed [-]
-
     !--------------------- Output Variable ---------------------
     real( kind = core_rknd ), dimension(ngrdcol,target_values_idx) :: &
       remap_vals_to_target ! remapped values with the dimension of the target grid
@@ -838,15 +793,15 @@ module remapping_module
 
       ! if variable is given on the zt levels, just take the surrounding zm levels to build
       ! the corresponding grid cell
-      remap_vals_to_target = remap_vals_to_target_helper( ngrdcol, gr_source%nzm, & ! In
-                                                          gr_target%nzm, & ! In
-                                                          gr_source%zm, & ! In
-                                                          gr_target%zm, & ! In
-                                                          total_idx_rho_lin_spline, & ! In
-                                                          rho_lin_spline_vals, & ! In
-                                                          rho_lin_spline_levels, & ! In
-                                                          source_values, iv, p_sfc, & ! In
-                                                          grid_remap_method ) ! In
+      remap_vals_to_target = remap_vals_to_target_helper( ngrdcol, &
+                                                          gr_source%nzm, gr_target%nzm, &
+                                                          gr_source%zm, gr_target%zm, &
+                                                          total_idx_rho_lin_spline, &
+                                                          rho_lin_spline_vals, &
+                                                          rho_lin_spline_levels, &
+                                                          source_values, &
+                                                          iv, p_sfc, &
+                                                          grid_remap_method )
 
     else if ( .not. l_zt_variable ) then
 
@@ -866,29 +821,15 @@ module remapping_module
         levels_target(i,gr_target%nzt+2) = gr_target%zm(i,gr_target%nzm)
       end do
 
-      remap_vals_to_target = remap_vals_to_target_helper( ngrdcol, gr_source%nzt+2, & ! In
-                                                          gr_target%nzt+2, & ! In
-                                                          levels_source, & ! In
-                                                          levels_target, & ! In
-                                                          total_idx_rho_lin_spline, & ! In
-                                                          rho_lin_spline_vals, & ! In
-                                                          rho_lin_spline_levels, & ! In
-                                                          source_values, iv, p_sfc, & ! In
-                                                          grid_remap_method ) ! In
-
-    end if
-
-    if ( present(l_remap) ) then
-
-      if ( source_values_idx /= target_values_idx ) then
-        error stop "Selected remapping requires equal source and target sizes"
-      end if
-
-      do k = 1, target_values_idx
-        do i = 1, ngrdcol
-          if ( .not. l_remap(i) ) remap_vals_to_target(i,k) = source_values(i,k)
-        end do
-      end do
+      remap_vals_to_target = remap_vals_to_target_helper( ngrdcol, &
+                                                          gr_source%nzt+2, gr_target%nzt+2, &
+                                                          levels_source, levels_target, &
+                                                          total_idx_rho_lin_spline, &
+                                                          rho_lin_spline_vals, &
+                                                          rho_lin_spline_levels, &
+                                                          source_values, &
+                                                          iv, p_sfc, &
+                                                          grid_remap_method )
 
     end if
 
@@ -904,35 +845,29 @@ module remapping_module
   !-------------------------------------------------------------------------------
   !-------------------------------------------------------------------------------
 
-  subroutine check_remap_matrix_conservation( ngrdcol, dim1, & ! In
-                                              dim2, R_ij, & ! In
-                                              levels_source, & ! In
-                                              levels_target ) ! In
-    ! Description:
-    ! Checks conservation with condition defined by Ullrich and Taylor in
+  subroutine check_remap_matrix_conservation( R_ij, dim1, dim2, &
+                                              levels_source, levels_target )
+    ! checks conservation with condition defined by Ullrich and Taylor in 
     ! 'Arbitrary-Order Conservative and Consistent Remapping and a Theory of Linear Maps: Part I' 
     ! in formula (9)
     ! Defintion of conservation by Ullrich and Taylor: A remapping operator R is conservative if
     ! the global mass of any field is maintained across the remapping operation
 
     implicit none
-
-    integer, intent(in) :: ngrdcol ! Number of grid columns
-
     !--------------------- Input Variables ---------------------
     integer, intent(in) :: dim1, dim2 ! dimensions of the remapping matrix []
 
-    real( kind = core_rknd ), dimension(ngrdcol,dim1,dim2), intent(in) :: &
+    real( kind = core_rknd ), dimension(dim1,dim2), intent(in) :: &
       R_ij  ! matrix to apply to input values for remapping (R_ij) []
 
-    real( kind = core_rknd ), dimension(ngrdcol,dim2+1), intent(in) :: &
+    real( kind = core_rknd ), dimension(dim2+1), intent(in) :: &
       levels_source ! the pressure levels in the source grid [kg/(ms^2)]
 
-    real( kind = core_rknd ), dimension(ngrdcol,dim1+1), intent(in) :: &
+    real( kind = core_rknd ), dimension(dim1+1), intent(in) :: &
       levels_target ! the pressure levels in the target grid [kg/(ms^2)]
 
     !--------------------- Local Variables ---------------------
-    integer :: i, k, l
+    integer :: k, l
 
     real( kind = core_rknd ) :: &
       weighted_col_sum
@@ -940,35 +875,29 @@ module remapping_module
     logical :: l_conservative
 
     !--------------------- Begin Code ---------------------
-    do i = 1, ngrdcol
-      l_conservative = .true.
+    l_conservative = .true.
 
-      l = 1
-      do while (l_conservative .and. l <= dim2)
-        weighted_col_sum = 0
-        do k = 1, dim1
-          weighted_col_sum = weighted_col_sum + R_ij(i,k,l) * abs(levels_target(i,k+1) - &
-            levels_target(i,k))
-        end do
-        if (abs(weighted_col_sum - abs(levels_source(i,l+1) - levels_source(i,l))) > tol) then
-          l_conservative = .false.
-        end if
-        l = l + 1
+    l = 1
+    do while (l_conservative .and. l <= dim2)
+      weighted_col_sum = 0
+      do k = 1, dim1
+        weighted_col_sum = weighted_col_sum + R_ij(k,l) * abs(levels_target(k+1) - levels_target(k))
       end do
-
-      if (.not. l_conservative) then
-        write(fstderr,*) 'WARNING! The remapping operator is not conservative'
-        error stop 'Operator should be conservative, something went wrong...'
+      if (abs(weighted_col_sum - abs(levels_source(l+1) - levels_source(l))) > tol) then
+        l_conservative = .false.
       end if
-
+      l = l + 1
     end do
+
+    if (.not. l_conservative) then
+      write(fstderr,*) 'WARNING! The remapping operator is not conservative'
+      error stop 'Operator should be conservative, something went wrong...'
+    end if
 
   end subroutine check_remap_matrix_conservation
 
-  subroutine check_remap_matrix_consistency( ngrdcol, dim1, & ! In
-                                             dim2, R_ij ) ! In
-    ! Description:
-    ! Checks consistency with condition defined by Ullrich and Taylor in
+  subroutine check_remap_matrix_consistency( R_ij, dim1, dim2 )
+    ! checks consistency with condition defined by Ullrich and Taylor in 
     ! 'Arbitrary-Order Conservative and Consistent Remapping and a Theory of Linear Maps: Part I' 
     ! in formula (12)
     ! Defintion of consistency by Ullrich and Taylor: A remapping operator R is consistent if the 
@@ -977,99 +906,83 @@ module remapping_module
     ! then the result should also be constant one
 
     implicit none
-
-    integer, intent(in) :: ngrdcol ! Number of grid columns
-
     !--------------------- Input Variables ---------------------
     integer, intent(in) :: dim1, dim2 ! dimension of the remapping matrix []
 
-    real( kind = core_rknd ), dimension(ngrdcol,dim1,dim2), intent(in) :: &
+    real( kind = core_rknd ), dimension(dim1,dim2), intent(in) :: &
       R_ij  ! matrix to apply to input values for remapping (R_ij) []
 
     !--------------------- Local Variables ---------------------
-    integer :: i, k, l
+    integer :: k, l
 
     real( kind = core_rknd ) :: row_sum
 
     logical :: l_consistent
 
     !--------------------- Begin Code ---------------------
-    do i = 1, ngrdcol
-      l_consistent = .true.
+    l_consistent = .true.
 
-      k = 1
-      do while (l_consistent .and. k <= dim1)
-        row_sum = 0
-        do l = 1, dim2
-          row_sum = row_sum + R_ij(i,k,l)
-        end do
-        if (abs(row_sum - 1) > tol) then
-          l_consistent = .false.
-        end if
-        k = k + 1
+    k = 1
+    do while (l_consistent .and. k <= dim1)
+      row_sum = 0
+      do l = 1, dim2
+        row_sum = row_sum + R_ij(k,l)
       end do
-
-      if (.not. l_consistent) then
-        write(fstderr,*) 'WARNING! The remapping operator is not consistent'
-        error stop 'Operator should be consistent, something went wrong...'
+      if (abs(row_sum - 1) > tol) then
+        l_consistent = .false.
       end if
-
+      k = k + 1
     end do
+
+    if (.not. l_consistent) then
+      write(fstderr,*) 'WARNING! The remapping operator is not consistent'
+      error stop 'Operator should be consistent, something went wrong...'
+    end if
 
   end subroutine check_remap_matrix_consistency
 
-  subroutine check_remap_matrix_monotonicity( ngrdcol, dim1, & ! In
-                                              dim2, R_ij ) ! In
-    ! Description:
-    ! Checks monotonicity with condition defined by Ullrich and Taylor in
+  subroutine check_remap_matrix_monotonicity( R_ij, dim1, dim2 )
+    ! checks monotonicity with condition defined by Ullrich and Taylor in 
     ! 'Arbitrary-Order Conservative and Consistent Remapping and a Theory of Linear Maps: Part I' 
     ! in formula (14)
     ! Defintion of monotonicity by Ullrich and Taylor: A remapping operator R is monotone if the 
     ! remapping operation cannot introduce additional global extrema
 
     implicit none
-
-    integer, intent(in) :: ngrdcol ! Number of grid columns
-
     !--------------------- Input Variables ---------------------
     integer, intent(in) :: dim1, dim2 ! dimensions of the remapping matrix []
 
-    real( kind = core_rknd ), dimension(ngrdcol,dim1,dim2), intent(in) :: &
+    real( kind = core_rknd ), dimension(dim1,dim2), intent(in) :: &
       R_ij  ! matrix to apply to input values for remapping (R_ij) []
 
     !--------------------- Local Variables ---------------------
-    integer :: i, k, l
+    integer :: k, l
 
     logical :: l_monotone
 
     !--------------------- Begin Code ---------------------
-    do i = 1, ngrdcol
-      l_monotone = .true.
+    l_monotone = .true.
 
-      k = 1
-      do while (l_monotone .and. k <= dim1)
-        do l = 1, dim2
-          if (R_ij(i,k,l) < 0) then
-            l_monotone = .false.
-          end if
-        end do
-        k = k + 1
+    k = 1
+    do while (l_monotone .and. k <= dim1)
+      do l = 1, dim2
+        if (R_ij(k,l) < 0) then
+          l_monotone = .false.
+        end if
       end do
-
-      if (.not. l_monotone) then
-        write(fstderr,*) 'WARNING! The remapping operator is not monotone'
-        error stop 'Operator should be monotone, something went wrong...'
-      end if
-
+      k = k + 1
     end do
+
+    if (.not. l_monotone) then
+      write(fstderr,*) 'WARNING! The remapping operator is not monotone'
+      error stop 'Operator should be monotone, something went wrong...'
+    end if
 
   end subroutine check_remap_matrix_monotonicity
 
-  function remapping_matrix( ngrdcol, levels_source_idx, levels_target_idx, & ! In
-                             levels_source, & ! In
-                             levels_target ) ! In
-    ! Description:
-    ! Implements the remapping scheme proposed by Ullrich et al. in
+  function remapping_matrix( levels_source_idx, levels_target_idx, &
+                             levels_source, levels_target )
+    ! implements the remapping scheme proposed by Ullrich et al. in 
     ! 'Arbitrary-Order Conservative and Consistent Remapping and a Theory of Linear Maps: Part II' 
     ! in formula (30)
 
@@ -1077,55 +990,49 @@ module remapping_module
         clubb_at_least_debug_level_api
 
     implicit none
-
-    integer, intent(in) :: ngrdcol ! Number of grid columns
-
     !--------------------- Input Variables ---------------------
     integer, intent(in) :: &
       levels_source_idx, & ! number of levels in the target grid []
       levels_target_idx    ! number of levels in the source grid []
 
-    real( kind = core_rknd ), dimension(ngrdcol,levels_source_idx), intent(in) :: &
+    real( kind = core_rknd ), dimension(levels_source_idx), intent(in) :: &
       levels_source ! the pressure levels in the source grid [kg/(ms^2)]
 
-    real( kind = core_rknd ), dimension(ngrdcol,levels_target_idx), intent(in) :: &
+    real( kind = core_rknd ), dimension(levels_target_idx), intent(in) :: &
       levels_target ! the pressure levels in the target grid [kg/(ms^2)]
 
     !--------------------- Output Variable ---------------------
-    real( kind = core_rknd ), dimension(ngrdcol,levels_target_idx-1,levels_source_idx-1) :: &
+    real( kind = core_rknd ), dimension(levels_target_idx-1,levels_source_idx-1) :: &
       remapping_matrix ! matrix to apply to input values for remapping (R_ij) []
 
     !--------------------- Local Variables ---------------------
-    integer :: i, k, l
+    integer :: k, l
 
     real( kind = core_rknd ) :: omega_ov, omega_ov_upper, omega_ov_lower
 
     !--------------------- Begin Code ---------------------
 
     do k = 1, (levels_target_idx-1)
-      do l = 1, (levels_source_idx-1)
-        do i = 1, ngrdcol
-          omega_ov_upper = max(levels_target(i,k+1), levels_source(i,l+1))
-          omega_ov_lower = min(levels_target(i,k), levels_source(i,l))
-          if (omega_ov_upper < omega_ov_lower) then
-            omega_ov = abs(omega_ov_upper - omega_ov_lower)
-          else
-            omega_ov = 0
-          end if
-          remapping_matrix(i,k,l) = omega_ov/abs(levels_target(i,k+1) - levels_target(i,k))
+        do l = 1, (levels_source_idx-1)
+            omega_ov_upper = max(levels_target(k+1), levels_source(l+1))
+            omega_ov_lower = min(levels_target(k), levels_source(l))
+            if (omega_ov_upper < omega_ov_lower) then
+                omega_ov = abs(omega_ov_upper - omega_ov_lower)
+            else
+                omega_ov = 0
+            end if
+            remapping_matrix(k,l) = omega_ov/abs(levels_target(k+1) - levels_target(k))
         end do
-      end do
     end do
 
     if ( clubb_at_least_debug_level_api( 2 ) ) then
-      call check_remap_matrix_conservation( ngrdcol, (levels_target_idx-1), & ! In
-                                            (levels_source_idx-1), remapping_matrix, & ! In
-                                            levels_source, & ! In
-                                            levels_target ) ! In
-      call check_remap_matrix_consistency( ngrdcol, (levels_target_idx-1), & ! In
-                                           (levels_source_idx-1), remapping_matrix ) ! In
-      call check_remap_matrix_monotonicity( ngrdcol, (levels_target_idx-1), & ! In
-                                            (levels_source_idx-1), remapping_matrix ) ! In
+      call check_remap_matrix_conservation( remapping_matrix, &
+                                            (levels_target_idx-1), (levels_source_idx-1), &
+                                            levels_source, levels_target )
+      call check_remap_matrix_consistency( remapping_matrix, &
+                                           (levels_target_idx-1), (levels_source_idx-1) )
+      call check_remap_matrix_monotonicity( remapping_matrix, &
+                                            (levels_target_idx-1), (levels_source_idx-1) )
     end if
 
   end function remapping_matrix
@@ -1743,14 +1650,14 @@ module remapping_module
     enddo
   end subroutine map1_ppm
 
-  function remap_vals_ppm( ngrdcol, levels_source_idx, levels_target_idx, & ! In
-                           levels_source, & ! In
-                           levels_target, source_values, iv ) ! In
+  function remap_vals_ppm( ngrdcol, &
+                           levels_source_idx, levels_target_idx, &
+                           levels_source, levels_target, &
+                           source_values, iv )
 
     ! Description:
-    ! Pass all columns to the existing Piecewise Parabolic Method (PPM).
-    ! Reverse the vertical ordering at this boundary because CLUBB pressure
-    ! levels run from the surface to the top and PPM expects top to surface.
+    ! This is a wrapper function for E3SM's subroutine implementing the
+    ! Piecewise Parabolic Method (PPM) that takes in the pressure levels from surface to top
     !-----------------------------------------------------------------------
 
     implicit none
@@ -1785,16 +1692,16 @@ module remapping_module
     !--------------------- Local Variables ---------------------
     integer :: i, k
 
-    real( kind = core_rknd ), dimension(ngrdcol,levels_source_idx) :: &
+    real( kind = core_rknd ), dimension(levels_source_idx) :: &
       source_flipped ! levels_source flipped [kg/(ms^2)]
 
-    real( kind = core_rknd ), dimension(ngrdcol,levels_target_idx) :: &
+    real( kind = core_rknd ), dimension(levels_target_idx) :: &
       target_flipped ! levels_target flipped [kg/(ms^2)]
 
-    real( kind = core_rknd ), dimension(ngrdcol,1,levels_source_idx-1) :: &
+    real( kind = core_rknd ), dimension(levels_source_idx-1) :: &
       source_values_flipped  ! source_values flipped
 
-    real( kind = core_rknd ), dimension(ngrdcol,1,levels_target_idx-1) :: &
+    real( kind = core_rknd ), dimension(levels_target_idx-1) :: &
       target_values_flipped  ! remapped values on the target grid
 
     ! configurations for the map1_ppm method
@@ -1813,44 +1720,39 @@ module remapping_module
 
     ghost_lat_south = 0
     ghost_lat_north = 0
-    total_lat = ngrdcol
+    total_lat = 1
     start_long = 1
-    finish_long = ngrdcol
+    finish_long = 1
     current_lat = 1
     start_lat = 1
     finish_lat = 1
     kord = 4
 
+    do i = 1, ngrdcol
 
-    ! the pressure levels and values are flipped, since map1_ppm takes in the grids
-    ! from top to surface instead of surface to top, like CLUBB does
-    do k = 1, levels_source_idx
-      do i = 1, ngrdcol
-        source_flipped(i,k) = levels_source(i,levels_source_idx - k + 1)
+      ! the pressure levels and values are flipped, since map1_ppm takes in the grids
+      ! from top to surface instead of surface to top, like CLUBB does
+      do k = 1, levels_source_idx
+          source_flipped(k) = levels_source(i,levels_source_idx - k + 1)
       end do
-    end do
-    do k = 1, levels_target_idx
-      do i = 1, ngrdcol
-        target_flipped(i,k) = levels_target(i,levels_target_idx - k + 1)
+      do k = 1, levels_target_idx
+          target_flipped(k) = levels_target(i,levels_target_idx - k + 1)
       end do
-    end do
-    do k = 1, levels_source_idx-1
-      do i = 1, ngrdcol
-        source_values_flipped(i,1,k) = source_values(i,levels_source_idx - k)
+      do k = 1, levels_source_idx-1
+          source_values_flipped(k) = source_values(i,levels_source_idx - k)
       end do
-    end do
 
-    ! remap values using E3SM's PPM implementation
-    call map1_ppm( levels_source_idx-1, source_flipped, source_values_flipped, &
-      levels_target_idx-1, target_flipped, target_values_flipped, &
-      ghost_lat_south, ghost_lat_north, total_lat, start_long, finish_long, &
-      current_lat, start_lat, finish_lat, iv, kord )
+      ! remap values using E3SM's PPM implementation
+      call map1_ppm( levels_source_idx-1, source_flipped, source_values_flipped, &
+                     levels_target_idx-1, target_flipped, target_values_flipped, &
+                     ghost_lat_south, ghost_lat_north, total_lat, start_long, finish_long, &
+                     current_lat, start_lat, finish_lat, iv, kord )
 
-    ! flip output values back so they correspond to the surface to top ordering in CLUBB's grid
-    do k = 1, levels_target_idx-1
-      do i = 1, ngrdcol
-        remap_vals_ppm(i,k) = target_values_flipped(i,1,levels_target_idx - k)
+      ! flip output values back so they correspond to the surface to top ordering in CLUBB's grid
+      do k = 1, levels_target_idx-1
+          remap_vals_ppm(i,k) = target_values_flipped(levels_target_idx - k)
       end do
+
     end do
 
   end function remap_vals_ppm

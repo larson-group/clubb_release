@@ -1,0 +1,9 @@
+{
+  "source_contract_review": "Complete Native bounded body48\u2013171: seven formals, all eight executable Native assignments, both while predicates/endpoints, ordered reader/constructor/debug/error paths. C++IntentOut release and I/O staging are separate necessary language adaptations.",
+  "separate_cleanup": "Direct stringinclude +clangformat only.",
+  "original_executable_tokens_preserved": true,
+  "before_sha256": "02c6faecbb4b7c99281e1cdb547ff59d76040888e09bb72eab9e693f0c8b5960",
+  "after_sha256": "2e77760fab26554deada4c5552fdd9095e9c9e92d1dd557960aacdf2efc3c10f",
+  "independent_before_review": "/tmp/clubb_setup_gr_dycore_independent_source_audit.json",
+  "new_runtime": "pending"
+}

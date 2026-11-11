@@ -822,9 +822,8 @@ module advance_microphys_module
 
        !$acc data copyin( gr, gr%invrs_dzm, K_hm_nu_hm, hydromet(:,:,ihm) ) &
        !$acc      copyout( xpwp )
-       call calc_xpwp( gr%nzm, gr%nzt, ngrdcol, gr, & ! In
-                       K_hm_nu_hm, hydromet(:,:,ihm), & ! In
-                       xpwp ) ! Out
+       call calc_xpwp( gr%nzm, gr%nzt, ngrdcol, gr, K_hm_nu_hm, &
+                       hydromet(:,:,ihm), xpwp )
        !$acc end data
         
        wphydrometp(:,2:gr%nzm-1,ihm) = - one_half * xpwp(:,2:gr%nzm-1)
@@ -949,9 +948,8 @@ module advance_microphys_module
 
        !$acc data copyin( gr, gr%invrs_dzm, K_hm_nu_hm, hydromet(:,:,ihm) ) &
        !$acc      copyout( xpwp )
-       call calc_xpwp( gr%nzm, gr%nzt, ngrdcol, gr, & ! In
-                       K_hm_nu_hm, hydromet(:,:,ihm), & ! In
-                       xpwp ) ! Out
+       call calc_xpwp( gr%nzm, gr%nzt, ngrdcol, gr, K_hm_nu_hm, &
+                       hydromet(:,:,ihm), xpwp )
        !$acc end data
         
        wphydrometp(:,2:gr%nzm-1,ihm) = - one_half * xpwp(:,2:gr%nzm-1)

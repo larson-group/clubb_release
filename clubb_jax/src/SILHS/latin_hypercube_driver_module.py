@@ -8,7 +8,6 @@ Fortran CUDA/MT95 generator branches are replaced by native JAX randomness.
 import jax
 import jax.numpy as jnp
 from clubb_jax.src.CLUBB_core.clubb_precision import core_rknd
-from clubb_jax.src.CLUBB_core.advance_helper_module import vertical_integral
 from clubb_jax.src.CLUBB_core.constants_clubb import (
     rc_tol,
     rt_tol,
@@ -38,8 +37,8 @@ from clubb_jax.src.SILHS.math_utilities import (
     rand_integer_in_range,
 )
 
-l_output_lognormal_samples = False
-l_output_uniform_samples = False
+l_output_2D_lognormal_dist = False
+l_output_2D_uniform_dist = False
 l_lh_old_cloud_weighted = False
 
 
@@ -182,21 +181,15 @@ def generate_silhs_sample(
     )
 
     # Accumulate diagnostics that require uniform-space sample information.
-    if stats is not None:
-        def accumulate_stats(stats):
-            """Collect this diagnostic block only on sampled timesteps."""
-            stats = stats_accumulate_uniform_lh(
-                nzt, num_samples, ngrdcol, l_in_precip,                                      # In
-                X_mixt_comp_all_levs, X_u_all_levs[..., hm_metadata.iiPDF_chi], pdf_params,  # In
-                lh_sample_point_weights, k_lh_start,                                         # In
-                stats,                                                                       # InOut
-            )
-
-            return stats
-
-        stats = stats.sampled(accumulate_stats)
-    # Source sample-output flags are compile-time false. Host output initialization
-    # remains in latin_hypercube_output_init_api; I/O never occurs in this kernel.
+    if stats is not None and stats.l_sample:
+        stats = stats_accumulate_uniform_lh(
+            nzt, num_samples, ngrdcol, l_in_precip,                                      # In
+            X_mixt_comp_all_levs, X_u_all_levs[..., hm_metadata.iiPDF_chi], pdf_params,  # In
+            lh_sample_point_weights, k_lh_start,                                         # In
+            stats,                                                                       # InOut
+        )
+    # Source 2D output flags are compile-time false. Host output initialization
+    # remains in latin_hypercube_2D_output_api; I/O never occurs in this kernel.
     if clubb_at_least_debug_level(2):
         l_error |= jnp.any((X_u_all_levs <= 0.0) | (X_u_all_levs >= 1.0))
         l_error |= jnp.any(
@@ -635,32 +628,16 @@ def assert_correct_cloud_normal(
 
 
 # -----------------------------------------------------------------------------
-def latin_hypercube_output_init_api(
+def latin_hypercube_2D_output_api(
     nzt, zt, pdf_dim, num_samples, hm_metadata,  # In
     stats, err_info,                             # InOut
 ):
-    """Register optional lognormal and uniform SILHS sample fields with the
-    statistics writer. Samples are indexed by column, sample and level.
+    """Create/open optional SILHS 2D output through the host statistics writer.
 
-    Returns:
-        (stats, err_info)
-
-    Fortran declarations (latin_hypercube_output_init_api in src/SILHS/latin_hypercube_driver_module.F90):
-
-        integer, intent(in) :: nzt
-        integer, intent(in) :: pdf_dim
-        integer, intent(in) :: num_samples
-        real(kind=core_rknd), dimension(nzt), intent(in) :: zt
-
-        type (hm_metadata_type), intent(in) :: &
-          hm_metadata
-
-        type(stats_type), intent(inout), optional :: &
-          stats
-
-        ! Input/Output Variables
-        type(err_info_type), intent(inout) :: &
-          err_info              ! err_info struct containing err_code and err_header
+    Arguments:
+        hm_metadata: Hydrometeor/PDF variable index metadata
+        stats: JAX statistics state; updated state is returned
+        err_info: err_info struct containing err_code and err_header
     """
     # Host-only API; both source output flags are false in the normal build.
     if stats is None:
@@ -686,10 +663,10 @@ def latin_hypercube_output_init_api(
     stats.stats_lh_samples_init(
         num_samples,
         nzt,
-        names if l_output_lognormal_samples else (),
+        names if l_output_2D_lognormal_dist else (),
         (
             names + ["dp1", "dp2", "X_mixt_comp", "lh_sample_point_weights"]
-            if l_output_uniform_samples
+            if l_output_2D_uniform_dist
             else ()
         ),
         zt,
@@ -792,191 +769,161 @@ def stats_accumulate_lh_api(
     lh_Nc_clipped,                                      # In
     stats,                                              # InOut
 ):
-    """Accumulate diagnostic statistics from clipped SILHS samples, including
-    water paths integrated independently over each model column.
+    """Clip subcolumns from latin hypercube and create stats for diagnostic
+    purposes.
 
-    Returns:
-        stats
-
-    Fortran declarations (stats_accumulate_lh_api in src/SILHS/latin_hypercube_driver_module.F90):
-
-        !-------------------------- Input Variables --------------------------
-        type (grid), intent(in) :: gr
-
-        integer, intent(in) :: &
-          pdf_dim,        & ! Number of variables to sample
-          num_samples,    & ! Number of calls to microphysics per timestep (normally=2)
-          nzt,             & ! Number of vertical model levels
-          ngrdcol,         & ! Number of model columns
-          hydromet_dim      ! Number of hydrometeor species
-
-        type (hm_metadata_type), intent(in) :: &
-          hm_metadata
-
-        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
-          rho_ds_zt  ! Dry, static density (thermo. levs.) [kg/m^3]
-
-        real( kind = core_rknd ), intent(in), dimension(ngrdcol,num_samples,nzt) :: &
-          lh_sample_point_weights
-
-        real( kind = core_rknd ), intent(in), dimension(ngrdcol,num_samples,nzt,pdf_dim) :: &
-          X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
-
-        real( kind = core_rknd ), dimension(ngrdcol,num_samples,nzt), intent(in) :: &
-          lh_rt_clipped,  & ! rt generated from silhs sample points
-          lh_thl_clipped, & ! thl generated from silhs sample points
-          lh_rc_clipped,  & ! rc generated from silhs sample points
-          lh_rv_clipped,  & ! rv generated from silhs sample points
-          lh_Nc_clipped     ! Nc generated from silhs sample points
-
-        type(stats_type), intent(inout), optional :: &
-          stats
+    Arguments:
+        gr: Grid metadata and coordinate arrays
+        nzt: Number of vertical model levels
+        ngrdcol: Number of model columns
+        num_samples: Number of calls to microphysics per timestep (normally=2)
+        pdf_dim: Number of variables to sample
+        rho_ds_zt: Dry, static density (thermo. levs.) [kg/m^3]
+        hydromet_dim: Number of hydrometeor species
+        hm_metadata: Hydrometeor/PDF variable index metadata
+        X_nl_all_levs: Sample that is transformed ultimately to normal-lognormal
+        lh_rt_clipped: rt generated from silhs sample points
+        lh_thl_clipped: thl generated from silhs sample points
+        lh_rc_clipped: rc generated from silhs sample points
+        lh_rv_clipped: rv generated from silhs sample points
+        lh_Nc_clipped: Nc generated from silhs sample points
+        stats: JAX statistics state; updated state is returned
     """
-    if stats is None:
+    if stats is None or not stats.l_sample:
         return stats
+    # Weighted sample means; weights are one when importance sampling is off.
+    lh_rcm = compute_sample_mean(
+        nzt, num_samples, ngrdcol,               # In
+        lh_sample_point_weights, lh_rc_clipped,  # In
+    )
+    stats = stats.update("lh_rcm", lh_rcm)
+    stats = stats.update("lh_lwp", jnp.sum(rho_ds_zt * lh_rcm * gr.dzt, axis=1))
+    weights_sum = jnp.sum(lh_sample_point_weights, axis=(1, 2))
+    stats = stats.update("lh_sample_weights_sum", weights_sum)
+    stats = stats.update("lh_sample_weights_avg", weights_sum / (num_samples * nzt))
+    lh_thlm = compute_sample_mean(
+        nzt, num_samples, ngrdcol,                # In
+        lh_sample_point_weights, lh_thl_clipped,  # In
+    )
+    stats = stats.update("lh_thlm", lh_thlm)
+    lh_rvm = compute_sample_mean(
+        nzt, num_samples, ngrdcol,               # In
+        lh_sample_point_weights, lh_rv_clipped,  # In
+    )
+    stats = stats.update("lh_rvm", lh_rvm)
+    stats = stats.update("lh_vwp", jnp.sum(rho_ds_zt * lh_rvm * gr.dzt, axis=1))
+    w = X_nl_all_levs[..., hm_metadata.iiPDF_w]
+    lh_wm = compute_sample_mean(nzt, num_samples, ngrdcol, lh_sample_point_weights, w)
+    stats = stats.update("lh_wm", lh_wm)
+    lh_hydromet = jnp.zeros((ngrdcol, nzt, hydromet_dim))
+    hydromet_all_points, Ncn_all_points = copy_X_nl_into_hydromet_all_pts(
+        nzt, pdf_dim, num_samples, ngrdcol, X_nl_all_levs,  # In
+        hydromet_dim, hm_metadata, lh_hydromet,             # In
+    )
+    lh_hydromet = compute_sample_mean(
+        nzt, num_samples, ngrdcol,                                # In
+        lh_sample_point_weights[..., None], hydromet_all_points,  # In
+    )
+    lh_Ncnm = compute_sample_mean(
+        nzt, num_samples, ngrdcol,                # In
+        lh_sample_point_weights, Ncn_all_points,  # In
+    )
+    stats = stats.update("lh_Ncnm", lh_Ncnm)
+    lh_Ncm = compute_sample_mean(
+        nzt, num_samples, ngrdcol,               # In
+        lh_sample_point_weights, lh_Nc_clipped,  # In
+    )
+    stats = stats.update("lh_Ncm", lh_Ncm)
 
-    def accumulate_stats(stats):
-        """Collect diagnostics only on sampled timesteps."""
-        # Weighted sample means; weights are one when importance sampling is off.
-        lh_rcm = compute_sample_mean(
-            nzt, num_samples, ngrdcol,               # In
-            lh_sample_point_weights, lh_rc_clipped,  # In
-        )
-        stats = stats.update("lh_rcm", lh_rcm)
-        stats = stats.update("lh_lwp", vertical_integral(ngrdcol, nzt, rho_ds_zt, lh_rcm, gr.dzt))
-        # Match Fortran SUM order: sample index varies fastest within each level.
-        weights_sum = jax.lax.fori_loop(
-            0, num_samples * nzt,
-            lambda index, total: total + lh_sample_point_weights[:, index % num_samples, index // num_samples],
-            jnp.zeros((ngrdcol,), dtype=lh_sample_point_weights.dtype),
-        )
-        stats = stats.update("lh_sample_weights_sum", weights_sum)
-        stats = stats.update("lh_sample_weights_avg", weights_sum / (num_samples * nzt))
-        lh_thlm = compute_sample_mean(
-            nzt, num_samples, ngrdcol,                # In
-            lh_sample_point_weights, lh_thl_clipped,  # In
-        )
-        stats = stats.update("lh_thlm", lh_thlm)
-        lh_rvm = compute_sample_mean(
-            nzt, num_samples, ngrdcol,               # In
-            lh_sample_point_weights, lh_rv_clipped,  # In
-        )
-        stats = stats.update("lh_rvm", lh_rvm)
-        stats = stats.update("lh_vwp", vertical_integral(ngrdcol, nzt, rho_ds_zt, lh_rvm, gr.dzt))
-        w = X_nl_all_levs[..., hm_metadata.iiPDF_w]
-        lh_wm = compute_sample_mean(nzt, num_samples, ngrdcol, lh_sample_point_weights, w)
-        stats = stats.update("lh_wm", lh_wm)
-        lh_hydromet = jnp.zeros((ngrdcol, nzt, hydromet_dim))
-        hydromet_all_points, Ncn_all_points = copy_X_nl_into_hydromet_all_pts(
-            nzt, pdf_dim, num_samples, ngrdcol, X_nl_all_levs,  # In
-            hydromet_dim, hm_metadata, lh_hydromet,             # In
-        )
-        lh_hydromet = compute_sample_mean(
-            nzt, num_samples, ngrdcol,                                # In
-            lh_sample_point_weights[..., None], hydromet_all_points,  # In
-        )
-        lh_Ncnm = compute_sample_mean(
-            nzt, num_samples, ngrdcol,                # In
-            lh_sample_point_weights, Ncn_all_points,  # In
-        )
-        stats = stats.update("lh_Ncnm", lh_Ncnm)
-        lh_Ncm = compute_sample_mean(
-            nzt, num_samples, ngrdcol,               # In
-            lh_sample_point_weights, lh_Nc_clipped,  # In
-        )
-        stats = stats.update("lh_Ncm", lh_Ncm)
+    # Weighted and unweighted Latin-hypercube estimates of cloud fraction.
+    cloud = (X_nl_all_levs[..., hm_metadata.iiPDF_chi] > 0.0).astype(core_rknd)
+    stats = stats.update(
+        "lh_cloud_frac",
+        compute_sample_mean(nzt, num_samples, ngrdcol, lh_sample_point_weights, cloud),
+    )
+    stats = stats.update("lh_cloud_frac_unweighted", jnp.mean(cloud, axis=1))
 
-        # Weighted and unweighted Latin-hypercube estimates of cloud fraction.
-        cloud = (X_nl_all_levs[..., hm_metadata.iiPDF_chi] > 0.0).astype(core_rknd)
+    # Estimate chi, its variance, and eta.
+    chi = X_nl_all_levs[..., hm_metadata.iiPDF_chi]
+    lh_chi = compute_sample_mean(nzt, num_samples, ngrdcol, lh_sample_point_weights, chi)
+    stats = stats.update("lh_chi", lh_chi)
+    stats = stats.update(
+        "lh_chip2",
+        compute_sample_variance(
+            nzt, num_samples, ngrdcol,             # In
+            chi, lh_sample_point_weights, lh_chi,  # In
+        ),
+    )
+    stats = stats.update(
+        "lh_eta",
+        compute_sample_mean(
+            nzt, num_samples, ngrdcol,                                           # In
+            lh_sample_point_weights, X_nl_all_levs[..., hm_metadata.iiPDF_eta],  # In
+        ),
+    )
+
+    # Variances of velocity, cloud/total water and liquid potential temperature.
+    for name, samples, mean in (
+        ("lh_wp2_zt", w, lh_wm),
+        ("lh_rcp2_zt", lh_rc_clipped, lh_rcm),
+        ("lh_rtp2_zt", lh_rt_clipped, lh_rvm + lh_rcm),
+        ("lh_thlp2_zt", lh_thl_clipped, lh_thlm),
+    ):
         stats = stats.update(
-            "lh_cloud_frac",
-            compute_sample_mean(nzt, num_samples, ngrdcol, lh_sample_point_weights, cloud),
-        )
-        stats = stats.update("lh_cloud_frac_unweighted", jnp.mean(cloud, axis=1))
-
-        # Estimate chi, its variance, and eta.
-        chi = X_nl_all_levs[..., hm_metadata.iiPDF_chi]
-        lh_chi = compute_sample_mean(nzt, num_samples, ngrdcol, lh_sample_point_weights, chi)
-        stats = stats.update("lh_chi", lh_chi)
-        stats = stats.update(
-            "lh_chip2",
+            name,
             compute_sample_variance(
-                nzt, num_samples, ngrdcol,             # In
-                chi, lh_sample_point_weights, lh_chi,  # In
+                nzt, num_samples, ngrdcol,               # In
+                samples, lh_sample_point_weights, mean,  # In
             ),
         )
+    if hm_metadata.iirr >= 0:
         stats = stats.update(
-            "lh_eta",
-            compute_sample_mean(
-                nzt, num_samples, ngrdcol,                                           # In
-                lh_sample_point_weights, X_nl_all_levs[..., hm_metadata.iiPDF_eta],  # In
-            ),
-        )
-
-        # Variances of velocity, cloud/total water and liquid potential temperature.
-        for name, samples, mean in (
-            ("lh_wp2_zt", w, lh_wm),
-            ("lh_rcp2_zt", lh_rc_clipped, lh_rcm),
-            ("lh_rtp2_zt", lh_rt_clipped, lh_rvm + lh_rcm),
-            ("lh_thlp2_zt", lh_thl_clipped, lh_thlm),
-        ):
-            stats = stats.update(
-                name,
-                compute_sample_variance(
-                    nzt, num_samples, ngrdcol,               # In
-                    samples, lh_sample_point_weights, mean,  # In
-                ),
-            )
-        if hm_metadata.iirr >= 0:
-            stats = stats.update(
-                "lh_rrp2_zt",
-                compute_sample_variance(
-                    nzt, num_samples, ngrdcol,                                            # In
-                    hydromet_all_points[..., hm_metadata.iirr], lh_sample_point_weights,  # In
-                    lh_hydromet[..., hm_metadata.iirr],                                   # In
-                ),
-            )
-        if hm_metadata.iiPDF_Ncn >= 0:
-            stats = stats.update(
-                "lh_Ncnp2_zt",
-                compute_sample_variance(
-                    nzt, num_samples, ngrdcol,                         # In
-                    Ncn_all_points, lh_sample_point_weights, lh_Ncnm,  # In
-                ),
-            )
-        stats = stats.update(
-            "lh_Ncp2_zt",
+            "lh_rrp2_zt",
             compute_sample_variance(
-                nzt, num_samples, ngrdcol,                       # In
-                lh_Nc_clipped, lh_sample_point_weights, lh_Ncm,  # In
+                nzt, num_samples, ngrdcol,                                            # In
+                hydromet_all_points[..., hm_metadata.iirr], lh_sample_point_weights,  # In
+                lh_hydromet[..., hm_metadata.iirr],                                   # In
             ),
         )
-        if hm_metadata.iiNr >= 0:
-            stats = stats.update(
-                "lh_Nrp2_zt",
-                compute_sample_variance(
-                    nzt, num_samples, ngrdcol,                                            # In
-                    hydromet_all_points[..., hm_metadata.iiNr], lh_sample_point_weights,  # In
-                    lh_hydromet[..., hm_metadata.iiNr],                                   # In
-                ),
-            )
+    if hm_metadata.iiPDF_Ncn >= 0:
+        stats = stats.update(
+            "lh_Ncnp2_zt",
+            compute_sample_variance(
+                nzt, num_samples, ngrdcol,                         # In
+                Ncn_all_points, lh_sample_point_weights, lh_Ncnm,  # In
+            ),
+        )
+    stats = stats.update(
+        "lh_Ncp2_zt",
+        compute_sample_variance(
+            nzt, num_samples, ngrdcol,                       # In
+            lh_Nc_clipped, lh_sample_point_weights, lh_Ncm,  # In
+        ),
+    )
+    if hm_metadata.iiNr >= 0:
+        stats = stats.update(
+            "lh_Nrp2_zt",
+            compute_sample_variance(
+                nzt, num_samples, ngrdcol,                                            # In
+                hydromet_all_points[..., hm_metadata.iiNr], lh_sample_point_weights,  # In
+                lh_hydromet[..., hm_metadata.iiNr],                                   # In
+            ),
+        )
 
-        # Diagnostic averages of the sample points fed to microphysics.
-        for name, index in (
-            ("rrm", hm_metadata.iirr),
-            ("rim", hm_metadata.iiri),
-            ("rsm", hm_metadata.iirs),
-            ("rgm", hm_metadata.iirg),
-            ("Nrm", hm_metadata.iiNr),
-            ("Nim", hm_metadata.iiNi),
-            ("Nsm", hm_metadata.iiNs),
-            ("Ngm", hm_metadata.iiNg),
-        ):
-            if index >= 0:
-                stats = stats.update("lh_" + name, lh_hydromet[..., index])
-        return stats
-
-    return stats.sampled(accumulate_stats)
+    # Diagnostic averages of the sample points fed to microphysics.
+    for name, index in (
+        ("rrm", hm_metadata.iirr),
+        ("rim", hm_metadata.iiri),
+        ("rsm", hm_metadata.iirs),
+        ("rgm", hm_metadata.iirg),
+        ("Nrm", hm_metadata.iiNr),
+        ("Nim", hm_metadata.iiNi),
+        ("Nsm", hm_metadata.iiNs),
+        ("Ngm", hm_metadata.iiNg),
+    ):
+        if index >= 0:
+            stats = stats.update("lh_" + name, lh_hydromet[..., index])
+    return stats
 
 
 # -----------------------------------------------------------------------------
@@ -1003,47 +950,45 @@ def stats_accumulate_uniform_lh(
         k_lh_start: Zero-based starting level for preferential cloud sampling
         stats: JAX statistics state; updated state is returned
     """
-    def accumulate_stats(stats):
-        """Collect diagnostics only on sampled timesteps."""
-        int_in_precip = l_in_precip_all_levs.astype(core_rknd)
-        int_mixt_comp = (X_mixt_comp_all_levs == 1).astype(core_rknd)
-        stats = stats.update(
-            "lh_precip_frac",
-            compute_sample_mean(
-                nzt, num_samples, ngrdcol,               # In
-                lh_sample_point_weights, int_in_precip,  # In
-            ),
-        )
-        stats = stats.update("lh_precip_frac_unweighted", jnp.mean(int_in_precip, axis=1))
-        stats = stats.update(
-            "lh_mixt_frac",
-            compute_sample_mean(
-                nzt, num_samples, ngrdcol,               # In
-                lh_sample_point_weights, int_mixt_comp,  # In
-            ),
-        )
-        stats = stats.update("lh_mixt_frac_unweighted", jnp.mean(int_mixt_comp, axis=1))
-
-        # Diagnostics retain the source one-based level, represented as a real.
-        stats = stats.update("k_lh_start", (k_lh_start + 1).astype(core_rknd))
-        cloud_frac_i = jnp.where(
-            X_mixt_comp_all_levs == 1,
-            pdf_params.cloud_frac_1[:, None, :],
-            pdf_params.cloud_frac_2[:, None, :],
-        )
-        l_in_cloud = X_u_chi_all_levs > 1.0 - cloud_frac_i
-        category = (
-            (~l_in_precip_all_levs).astype(jnp.int32) * 4
-            + (~l_in_cloud).astype(jnp.int32) * 2
-            + (X_mixt_comp_all_levs != 1).astype(jnp.int32)
-        )
-        for icategory in range(8):
-            # Microphysics is not run at the lower boundary level.
-            frac = jnp.mean(category == icategory, axis=1).at[:, 0].set(0.0)
-            stats = stats.update(f"lh_samp_frac_{icategory+1}", frac)
+    if not stats.l_sample:
         return stats
+    int_in_precip = l_in_precip_all_levs.astype(core_rknd)
+    int_mixt_comp = (X_mixt_comp_all_levs == 1).astype(core_rknd)
+    stats = stats.update(
+        "lh_precip_frac",
+        compute_sample_mean(
+            nzt, num_samples, ngrdcol,               # In
+            lh_sample_point_weights, int_in_precip,  # In
+        ),
+    )
+    stats = stats.update("lh_precip_frac_unweighted", jnp.mean(int_in_precip, axis=1))
+    stats = stats.update(
+        "lh_mixt_frac",
+        compute_sample_mean(
+            nzt, num_samples, ngrdcol,               # In
+            lh_sample_point_weights, int_mixt_comp,  # In
+        ),
+    )
+    stats = stats.update("lh_mixt_frac_unweighted", jnp.mean(int_mixt_comp, axis=1))
 
-    return stats.sampled(accumulate_stats)
+    # Diagnostics retain the source one-based level, represented as a real.
+    stats = stats.update("k_lh_start", (k_lh_start + 1).astype(core_rknd))
+    cloud_frac_i = jnp.where(
+        X_mixt_comp_all_levs == 1,
+        pdf_params.cloud_frac_1[:, None, :],
+        pdf_params.cloud_frac_2[:, None, :],
+    )
+    l_in_cloud = X_u_chi_all_levs > 1.0 - cloud_frac_i
+    category = (
+        (~l_in_precip_all_levs).astype(jnp.int32) * 4
+        + (~l_in_cloud).astype(jnp.int32) * 2
+        + (X_mixt_comp_all_levs != 1).astype(jnp.int32)
+    )
+    for icategory in range(8):
+        # Microphysics is not run at the lower boundary level.
+        frac = jnp.mean(category == icategory, axis=1).at[:, 0].set(0.0)
+        stats = stats.update(f"lh_samp_frac_{icategory+1}", frac)
+    return stats
 
 
 # -----------------------------------------------------------------------------

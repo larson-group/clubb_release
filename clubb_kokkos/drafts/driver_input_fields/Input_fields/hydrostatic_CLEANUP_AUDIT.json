@@ -1,0 +1,19 @@
+{
+  "date_UTC": "2026-11-06T06:33:31.051969+00:00",
+  "separate_cleanup_pass": [
+    "reread public25formals in Nativeorder and both returnedprivatecontracts",
+    "Nativephysicalformula/branch/recurrence/call review separate from formatting",
+    "all4routinederivations retained; branch narratives copiedbackfromNative",
+    "Cpppointer/referencealignment and100column/no-trailing-whitespace checks",
+    "no f2k/global/thread_local/scratchcache",
+    "explicitreturntypes for two value-returning routines",
+    "allruntimeevidencepending"
+  ],
+  "sha256": {
+    "src/Input_fields/hydrostatic_module.F90": "1b406593e3b75ed2e6e50040860cb2e1d273480d05a67db8bd3befb37a834d8f",
+    "clubb_jax/src/Input_fields/hydrostatic_module.py": "d3ae20e2effdc7cd7f65359c63783bd8cce783907ccd485da8d85dcae3e0d3ca",
+    "clubb_kokkos/drafts/driver_input_fields/Input_fields/hydrostatic_module.cpp": "65ab47b80ab186ecdbed7ff37b0eebb5d62658949f499d389b307ddfa94be0d5",
+    "clubb_kokkos/drafts/driver_input_fields/Input_fields/hydrostatic_module.hpp": "2eccfab9938979c88db1560a1ead4fb9e5aae08379a40a857a420cdb255250ae"
+  },
+  "defects_remaining": []
+}

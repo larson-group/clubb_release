@@ -1,0 +1,76 @@
+{
+  "status": "Complete supported source draft; not compiled/runtime validated",
+  "source": "src/CLUBB_core/clip_explicit.F90; all1016 lines read",
+  "routine_order": [
+    "clip_covars_denom",
+    "clip_covar",
+    "clip_variance",
+    "clip_skewness",
+    "clip_skewness_core",
+    "clip_rcm"
+  ],
+  "argument_counts": {
+    "clip_covars_denom": 24,
+    "clip_covar": 7,
+    "clip_variance": 9,
+    "clip_skewness": 10,
+    "clip_skewness_core": 8,
+    "clip_rcm": 5
+  },
+  "all_signature_names_order_optionals": true,
+  "source_order_call_counts": {
+    "clip_covars_denom": 23,
+    "clip_covar": 0,
+    "clip_variance": 2,
+    "clip_skewness": 3,
+    "clip_skewness_core": 0,
+    "clip_rcm": 0
+  },
+  "all_non_solver_call_arguments_checked": 117,
+  "grid_function_calls": {
+    "clip_covars_denom": 0,
+    "clip_covar": 0,
+    "clip_variance": 0,
+    "clip_skewness": 0,
+    "clip_skewness_core": 1,
+    "clip_rcm": 0
+  },
+  "stats_calls_by_routine": {
+    "clip_covars_denom": 16,
+    "clip_covar": 0,
+    "clip_variance": 2,
+    "clip_skewness": 2,
+    "clip_skewness_core": 0,
+    "clip_rcm": 0
+  },
+  "device_kernel_bodies_checked": 32,
+  "native_diagnostic_write_labels_in_order": {
+    "clip_covars_denom": 0,
+    "clip_covar": 0,
+    "clip_variance": 2,
+    "clip_skewness": 0,
+    "clip_skewness_core": 0,
+    "clip_rcm": 1
+  },
+  "all_diagnostic_payload_values_checked": 38,
+  "no_udt_capture_host_access_or_nested_launch_in_kernel": true,
+  "scope_exclusion": "None; all source options included",
+  "matrix_adapter": [],
+  "native_public_integer_constants_checked": 19,
+  "manual_variance_diagnostic_pass_order_checked": true,
+  "manual_fatal_write_payload": true,
+  "manual_source_review": [
+    "Optional scalar threshold guard and normal STOP host boundary before any stats/clipping",
+    "Both physical-grid and numeric-level bounds; debug lower prints before assignment, upper after assignment",
+    "Covariance strict comparisons, unchanged boundaries and zero boundary change",
+    "All public constants, blank-budget-name calls, unconditional four counter increments and perturbed overwrite order",
+    "Native kind epsilon and signed skewness caps; warning host mirrors only at debug I/O boundary"
+  ],
+  "runtime": "No builds/tests/numerical execution; root owns CPU BFB integration gate and occasional GPU milestone comparison",
+  "sha256": {
+    "clip_explicit.cpp": "f906bad6de0d5159a6156c093634d7ffea1088e22ec1465a85a616d00cc10372",
+    "clip_explicit.hpp": "a31d5cfba20379b9050ee8d2769dae43dc300da1f06406cfdc19b1660c6e4d5f",
+    "f2k_dependencies.hpp": "87a51a6b293bc5aec1f27955e925aa2920ac1145948df5f903f78b108c1e8d41"
+  },
+  "native_sha256": "d05ccb611d9512a7e00ddc74e864dc6391c7cf525915c4fa2ad0b9797a54be8b"
+}

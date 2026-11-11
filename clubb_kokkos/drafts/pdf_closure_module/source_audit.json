@@ -1,0 +1,47 @@
+{
+  "status": "Four source-audited routines promoted; CPU model checks pass, new GPU check pending.",
+  "source": "src/CLUBB_core/pdf_closure_module.F90:1828\u20132347 (four selected public routines)",
+  "native_order": [
+    "calc_wp4_pdf",
+    "calc_wp2xp_pdf",
+    "calc_wpxp2_pdf",
+    "calc_wpxpyp_pdf"
+  ],
+  "argument_counts": {
+    "calc_wp4_pdf": 9,
+    "calc_wp2xp_pdf": 16,
+    "calc_wpxp2_pdf": 16,
+    "calc_wpxpyp_pdf": 25
+  },
+  "all_signatures_and_complete_assignment_trees_match": true,
+  "all_integer_powers_expanded_with_surrounding_association_intact": true,
+  "device_kernels": 4,
+  "scientific_lower_calls": [],
+  "manual_review": [
+    "Full four Native procedures read before drafting; preimplementation outline retained.",
+    "Complete equation/physical-parameter descriptions, references blocks and all input/output units retained.",
+    "Each formula matches both component means/variances/correlations and mixture factors in Native order, with no added floors, limits, aliases, temporaries or arithmetic fixes.",
+    "Native final arrays overwritten in every cell; no branch/stats/error behavior exists in these four routines.",
+    "Native wp4/wpxpyp missing INTENT is not used to infer optional or omitted outputs; complete bodies assign them.",
+    "Flat (column,level) loops, explicit scalar indices and only required View captures.",
+    "Public definitions must be interleaved with private anonymous scopes in production to preserve full Native order; documented in integration notes.",
+    "Separate cleanup simplified redundant power-expression parentheses and argument-comment padding; formatter and syntax-token checks pass."
+  ],
+  "numerical_limits": "Ordinary C++ expressions only; no BFB or GPU claim until maintained model integration.",
+  "hashes": {
+    "pdf_closure_module.cpp": "8804a8236558614d6c582711ef3e5a7220ece7493340122c013469ccd8120099",
+    "pdf_closure_module.hpp": "5b5e3e716a8a881fb01e919c422b44724270e82c98f58508d5d1f6118027b39d"
+  },
+  "native_sha256": "11776506ccb2aa64b4d8cc3a801a4d8bb058c5416587729f728b3ee76244c196",
+  "production_promotion": {
+    "all_four_complete_definitions_match_audited_draft": true,
+    "all_seventeen_definitions_in_native_relative_order": true,
+    "public_private_namespace_scopes": "Anonymous scopes closed/reopened only at required public/private boundaries.",
+    "replaced_whole_bridges": 4,
+    "remaining_interfaces": 86,
+    "cleanup": "Removed three obsolete native-closure TODO lines; updated elemental-SQRT and lower-dependency comments against current calls.",
+    "cpu_short": "BOMEX/COBRA/DYCOMS/JUN25 five steps/30s:4/4 MC and4/4 all-stats byte-identical.",
+    "source_sha256": "d570400a9902d19ef70907880d5b00ec79c36863bb63e670518f4abf4e9d2ab5",
+    "following_cleanup": "Independent correlation fusion: one kernel replaces five, removing8 temporary fields/four copies; CPU4/4 MC and2/2 cloudy all-stats exact; GPU check pending."
+  }
+}

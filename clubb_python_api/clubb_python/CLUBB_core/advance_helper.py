@@ -26,16 +26,16 @@ def calc_ri_zm(nzm: int, ngrdcol: int, bv_freq_sqd, shear, lim_bv: float, lim_sh
         nzm=int(nzm), ngrdcol=int(ngrdcol))
 
 
-def vertical_avg(ngrdcol: int, total_idx: int, rho_ds, field, dz):
-    """Compute density-weighted vertical averages for every column."""
-    return clubb_f2py.f2py_vertical_avg(
-        f_arr(rho_ds), f_arr(field), f_arr(dz), ngrdcol=int(ngrdcol), total_idx=int(total_idx))
+def vertical_avg(total_idx: int, rho_ds, field, dz) -> float:
+    """Compute density-weighted vertical average of a 1D profile."""
+    return float(clubb_f2py.f2py_vertical_avg(
+        f_arr(rho_ds), f_arr(field), f_arr(dz), total_idx=int(total_idx)))
 
 
-def vertical_integral(ngrdcol: int, total_idx: int, rho_ds, field, dz):
-    """Compute density-weighted vertical integrals for every column."""
-    return clubb_f2py.f2py_vertical_integral(
-        f_arr(rho_ds), f_arr(field), f_arr(dz), ngrdcol=int(ngrdcol), total_idx=int(total_idx))
+def vertical_integral(total_idx: int, rho_ds, field, dz) -> float:
+    """Compute density-weighted vertical integral of a 1D profile."""
+    return float(clubb_f2py.f2py_vertical_integral(
+        f_arr(rho_ds), f_arr(field), f_arr(dz), total_idx=int(total_idx)))
 
 
 def pvertinterp(nzt: int, ngrdcol: int, gr: Grid, p_mid, p_out: float, input_var):
@@ -80,7 +80,7 @@ def smooth_min(nz: int, ngrdcol: int, input_var1, input_var2, smth_coef: float):
 def calc_xpwp(nzm: int, nzt: int, ngrdcol: int, gr: Grid, km_zm, xm):
     """Compute x'w' from grid spacing, diffusivity, and a thermo-level field."""
     set_fortran_grid(gr)
-    return clubb_f2py.f2py_calc_xpwp(
+    return clubb_f2py.f2py_calc_xpwp_2d(
         f_arr(km_zm), f_arr(xm), nzm=int(nzm), nzt=int(nzt), ngrdcol=int(ngrdcol))
 
 

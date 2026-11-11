@@ -6,7 +6,7 @@
   * `build_rad_grid_setup` / `_assemble_zt` — the grid-setup helpers this driver owns.
 
 The std/extended-atmosphere readers it consumes live in their Fortran-home modules: `load_extended_std_atm` /
-`convert_snd2extended_atm` in Input_fields/sounding.py (sounding.F90), and
+`convert_snd2extended_atm` / `read_ozone_sounding` in Input_fields/sounding.py (sounding.F90), and
 `determine_extended_atmos_bounds` in Radiation/extended_atmosphere_module.py (extended_atmosphere_module.F90).
 
 The radiation grid runs TOA→surface (index 1 = top), opposite to CLUBB's surface→top, hence the `[::-1]`
@@ -37,7 +37,7 @@ def _jitted_bugs_rad(s0, grav, cp, umco2, umch4, umn2o):
                                      umco2=umco2, umch4=umch4, umn2o=umn2o))
 
 
-# ── load_extended_std_atm / convert_snd2extended_atm now live in their Fortran-home
+# ── load_extended_std_atm / read_ozone_sounding / convert_snd2extended_atm now live in their Fortran-home
 #    module Input_fields/sounding.py (sounding.F90:load_extended_std_atm / convert_snd2extended_atm, mirror-refactor
 #    iter 215); radiation_module / clubb_driver / tests import them from there directly. ──
 
@@ -70,7 +70,7 @@ def _assemble_zt(model_rev, ext_col, setup):
     (rad idx range_size), per the Fortran z-loop weights."""
     ncol = model_rev.shape[0]
     rsize, linbuf, buf = setup["range_size"], setup["lin_int_buffer"], setup["buffer"]
-    ext_part = jnp.broadcast_to(ext_col[None, :], (ncol, rsize))      # rad idx 1..range_size
+    ext_part = jnp.broadcast_to(jnp.asarray(ext_col)[None, :], (ncol, rsize))      # rad idx 1..range_size
     col_top = model_rev[:, 0]                                                      # rad idx buffer+1 (model top)
     col_ext = ext_part[:, rsize - 1]                                              # rad idx range_size (ext bottom)
     z1, z2 = buf + 1, rsize                                                        # Fortran indices of the endpoints

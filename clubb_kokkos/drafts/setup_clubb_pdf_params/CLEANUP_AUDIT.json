@@ -1,0 +1,484 @@
+{
+  "review": "Separate owner cleanup after complete source implementation/audit. No model execution.",
+  "formatting_pass": {
+    "setup_clubb_pdf_params.cpp": {
+      "before_sha256": "477b78638d6fbe581a74bb36be9338eb8317aa48911c6ffd3e9ca1ad26fe365f",
+      "after_sha256": "913a1166b946d78003188a1df6aec2572d5a1c53860a0c25ec14550905112d39",
+      "signatures_prototypes_adapters": 40,
+      "ordinary_calls": 114,
+      "argument_notes": 287,
+      "tokens": 37069,
+      "exact_executable_token_equality": true
+    },
+    "setup_clubb_pdf_params.hpp": {
+      "before_sha256": "4086d379bb0dcf6fe4175c608c8ad17319cb7c16d7034b89bc131fa6df30ed11",
+      "after_sha256": "08d173dadf469edb928dc6deb670ea882696af5027076a533f4c5f8d2b7c637b",
+      "signatures_prototypes_adapters": 12,
+      "ordinary_calls": 0,
+      "argument_notes": 153,
+      "tokens": 2891,
+      "exact_executable_token_equality": true
+    },
+    "documented_native_gaps": [
+      [
+        "setup_pdf_parameters_api",
+        "gr"
+      ],
+      [
+        "setup_pdf_parameters_api",
+        "stats"
+      ],
+      [
+        "compute_mean_stdev",
+        "hm_metadata"
+      ],
+      [
+        "calc_corr_norm_and_cholesky_factor",
+        "hm_metadata"
+      ],
+      [
+        "comp_corr_norm",
+        "hm_metadata"
+      ],
+      [
+        "norm_transform_mean_stdev",
+        "hm_metadata"
+      ],
+      [
+        "denorm_transform_corr",
+        "hm_metadata"
+      ],
+      [
+        "pdf_param_hm_stats",
+        "hm_metadata"
+      ],
+      [
+        "pdf_param_hm_stats",
+        "stats"
+      ],
+      [
+        "pdf_param_ln_hm_stats",
+        "hm_metadata"
+      ],
+      [
+        "pdf_param_ln_hm_stats",
+        "stats"
+      ],
+      [
+        "pack_hydromet_pdf_params",
+        "hm_metadata"
+      ]
+    ]
+  },
+  "subsequent_cleanup": {
+    "removed_unneeded_host_declarations": [
+      [
+        "calc_corr_norm_and_cholesky_factor",
+        "i"
+      ],
+      [
+        "calc_corr_norm_and_cholesky_factor",
+        "k"
+      ],
+      [
+        "calc_comp_mu_sigma_hm",
+        "Rmax"
+      ],
+      [
+        "calc_comp_mu_sigma_hm",
+        "coef_A"
+      ],
+      [
+        "calc_comp_mu_sigma_hm",
+        "coef_B"
+      ],
+      [
+        "calc_comp_mu_sigma_hm",
+        "coef_C"
+      ],
+      [
+        "calc_comp_mu_sigma_hm",
+        "Bsqd_m_4AC"
+      ],
+      [
+        "calc_comp_mu_sigma_hm",
+        "zeta_vrnce_rat"
+      ],
+      [
+        "calc_comp_mu_sigma_hm",
+        "mu_hm_1_min"
+      ],
+      [
+        "calc_comp_mu_sigma_hm",
+        "mu_hm_2_min"
+      ],
+      [
+        "calc_comp_mu_sigma_hm",
+        "i"
+      ],
+      [
+        "calc_comp_mu_sigma_hm",
+        "k"
+      ],
+      [
+        "component_corr_w_x",
+        "i"
+      ],
+      [
+        "component_corr_w_x",
+        "k"
+      ],
+      [
+        "component_corr_chi_eta",
+        "i"
+      ],
+      [
+        "component_corr_chi_eta",
+        "k"
+      ],
+      [
+        "component_corr_w_hm_n_ip",
+        "i"
+      ],
+      [
+        "component_corr_w_hm_n_ip",
+        "k"
+      ],
+      [
+        "component_corr_x_hm_n_ip",
+        "i"
+      ],
+      [
+        "component_corr_x_hm_n_ip",
+        "k"
+      ],
+      [
+        "component_corr_hmx_hmy_n_ip",
+        "i"
+      ],
+      [
+        "component_corr_hmx_hmy_n_ip",
+        "k"
+      ],
+      [
+        "norm_transform_mean_stdev",
+        "i"
+      ],
+      [
+        "unused component alias",
+        "err_info_err_code"
+      ]
+    ],
+    "moved_native_comments_to_private_device_locals": [
+      [
+        "calc_comp_mu_sigma_hm",
+        "Rmax"
+      ],
+      [
+        "calc_comp_mu_sigma_hm",
+        "coef_A"
+      ],
+      [
+        "calc_comp_mu_sigma_hm",
+        "coef_B"
+      ],
+      [
+        "calc_comp_mu_sigma_hm",
+        "coef_C"
+      ],
+      [
+        "calc_comp_mu_sigma_hm",
+        "Bsqd_m_4AC"
+      ],
+      [
+        "calc_comp_mu_sigma_hm",
+        "zeta_vrnce_rat"
+      ],
+      [
+        "calc_comp_mu_sigma_hm",
+        "mu_hm_1_min"
+      ],
+      [
+        "calc_comp_mu_sigma_hm",
+        "mu_hm_2_min"
+      ]
+    ],
+    "output_staging_copy_values_false": [
+      [
+        "setup_clubb_pdf_params.cpp",
+        "component_corr_w_x",
+        "corr_w_x_2"
+      ],
+      [
+        "setup_clubb_pdf_params.cpp",
+        "component_corr_w_x",
+        "corr_w_x_1"
+      ],
+      [
+        "setup_clubb_pdf_params.cpp",
+        "component_corr_chi_eta",
+        "corr_chi_eta_2"
+      ],
+      [
+        "setup_clubb_pdf_params.cpp",
+        "component_corr_chi_eta",
+        "corr_chi_eta_1"
+      ],
+      [
+        "setup_clubb_pdf_params.cpp",
+        "component_corr_w_hm_n_ip",
+        "corr_w_hm_1_n"
+      ],
+      [
+        "setup_clubb_pdf_params.cpp",
+        "component_corr_w_hm_n_ip",
+        "corr_w_hm_2_n"
+      ],
+      [
+        "setup_clubb_pdf_params.cpp",
+        "component_corr_x_hm_n_ip",
+        "corr_x_hm_2_n"
+      ],
+      [
+        "setup_clubb_pdf_params.cpp",
+        "component_corr_x_hm_n_ip",
+        "corr_x_hm_1_n"
+      ],
+      [
+        "setup_clubb_pdf_params.cpp",
+        "component_corr_hmx_hmy_n_ip",
+        "corr_hmx_hmy_2_n"
+      ],
+      [
+        "setup_clubb_pdf_params.cpp",
+        "component_corr_hmx_hmy_n_ip",
+        "corr_hmx_hmy_1_n"
+      ],
+      [
+        "setup_clubb_pdf_params.cpp",
+        "component_corr_eta_hm_n_ip",
+        "corr_eta_hm_n_1"
+      ],
+      [
+        "setup_clubb_pdf_params.cpp",
+        "component_corr_eta_hm_n_ip",
+        "corr_eta_hm_n_2"
+      ],
+      [
+        "setup_clubb_pdf_params.hpp",
+        "compute_mean_stdev",
+        "hm_1"
+      ],
+      [
+        "setup_clubb_pdf_params.hpp",
+        "compute_mean_stdev",
+        "hm_2"
+      ],
+      [
+        "setup_clubb_pdf_params.hpp",
+        "compute_mean_stdev",
+        "sigma_x_1"
+      ],
+      [
+        "setup_clubb_pdf_params.hpp",
+        "compute_mean_stdev",
+        "sigma_hm_2_sqd_on_mu_hm_2_sqd"
+      ],
+      [
+        "setup_clubb_pdf_params.hpp",
+        "compute_mean_stdev",
+        "mu_x_1"
+      ],
+      [
+        "setup_clubb_pdf_params.hpp",
+        "compute_mean_stdev",
+        "mu_x_2"
+      ],
+      [
+        "setup_clubb_pdf_params.hpp",
+        "compute_mean_stdev",
+        "sigma_x_2"
+      ],
+      [
+        "setup_clubb_pdf_params.hpp",
+        "compute_mean_stdev",
+        "sigma_hm_1_sqd_on_mu_hm_1_sqd"
+      ],
+      [
+        "setup_clubb_pdf_params.hpp",
+        "comp_corr_norm",
+        "corr_array_1_n"
+      ],
+      [
+        "setup_clubb_pdf_params.hpp",
+        "comp_corr_norm",
+        "corr_array_2_n"
+      ],
+      [
+        "setup_clubb_pdf_params.hpp",
+        "calc_comp_mu_sigma_hm",
+        "hm_1"
+      ],
+      [
+        "setup_clubb_pdf_params.hpp",
+        "calc_comp_mu_sigma_hm",
+        "hm_2"
+      ],
+      [
+        "setup_clubb_pdf_params.hpp",
+        "calc_comp_mu_sigma_hm",
+        "mu_hm_2"
+      ],
+      [
+        "setup_clubb_pdf_params.hpp",
+        "calc_comp_mu_sigma_hm",
+        "sigma_hm_1"
+      ],
+      [
+        "setup_clubb_pdf_params.hpp",
+        "calc_comp_mu_sigma_hm",
+        "sigma_hm_2_sqd_on_mu_hm_2_sqd"
+      ],
+      [
+        "setup_clubb_pdf_params.hpp",
+        "calc_comp_mu_sigma_hm",
+        "mu_hm_1"
+      ],
+      [
+        "setup_clubb_pdf_params.hpp",
+        "calc_comp_mu_sigma_hm",
+        "sigma_hm_2"
+      ],
+      [
+        "setup_clubb_pdf_params.hpp",
+        "calc_comp_mu_sigma_hm",
+        "sigma_hm_1_sqd_on_mu_hm_1_sqd"
+      ],
+      [
+        "setup_clubb_pdf_params.hpp",
+        "norm_transform_mean_stdev",
+        "mu_x_1_n"
+      ],
+      [
+        "setup_clubb_pdf_params.hpp",
+        "norm_transform_mean_stdev",
+        "sigma_x_1_n"
+      ],
+      [
+        "setup_clubb_pdf_params.hpp",
+        "norm_transform_mean_stdev",
+        "mu_x_2_n"
+      ],
+      [
+        "setup_clubb_pdf_params.hpp",
+        "norm_transform_mean_stdev",
+        "sigma_x_2_n"
+      ],
+      [
+        "setup_clubb_pdf_params.hpp",
+        "denorm_transform_corr",
+        "corr_array_2"
+      ],
+      [
+        "setup_clubb_pdf_params.hpp",
+        "denorm_transform_corr",
+        "corr_array_1"
+      ],
+      [
+        "setup_clubb_pdf_params.hpp",
+        "setup_pdf_parameters_api",
+        "hydrometp2"
+      ],
+      [
+        "setup_clubb_pdf_params.hpp",
+        "setup_pdf_parameters_api",
+        "mu_x_1_n"
+      ],
+      [
+        "setup_clubb_pdf_params.hpp",
+        "setup_pdf_parameters_api",
+        "mu_x_2_n"
+      ],
+      [
+        "setup_clubb_pdf_params.hpp",
+        "setup_pdf_parameters_api",
+        "sigma_x_1_n"
+      ],
+      [
+        "setup_clubb_pdf_params.hpp",
+        "setup_pdf_parameters_api",
+        "sigma_x_2_n"
+      ],
+      [
+        "setup_clubb_pdf_params.hpp",
+        "setup_pdf_parameters_api",
+        "corr_array_1_n"
+      ],
+      [
+        "setup_clubb_pdf_params.hpp",
+        "setup_pdf_parameters_api",
+        "corr_array_2_n"
+      ],
+      [
+        "setup_clubb_pdf_params.hpp",
+        "setup_pdf_parameters_api",
+        "corr_cholesky_mtx_1"
+      ],
+      [
+        "setup_clubb_pdf_params.hpp",
+        "setup_pdf_parameters_api",
+        "corr_cholesky_mtx_2"
+      ],
+      [
+        "setup_clubb_pdf_params.cpp",
+        "calc_corr_norm_and_cholesky_factor",
+        "corr_array_1_n"
+      ],
+      [
+        "setup_clubb_pdf_params.cpp",
+        "calc_corr_norm_and_cholesky_factor",
+        "corr_array_2_n"
+      ],
+      [
+        "setup_clubb_pdf_params.cpp",
+        "calc_corr_norm_and_cholesky_factor",
+        "corr_cholesky_mtx_1"
+      ],
+      [
+        "setup_clubb_pdf_params.cpp",
+        "calc_corr_norm_and_cholesky_factor",
+        "corr_cholesky_mtx_2"
+      ]
+    ],
+    "scientific_formula_changes": false
+  },
+  "final_files": {
+    "setup_clubb_pdf_params.cpp": {
+      "sha256": "419e0744cfbb6b7e3b9597559488404cdb845e06db7e1147e585bed30c8a0f34",
+      "lines": 5444,
+      "max_columns": 100
+    },
+    "setup_clubb_pdf_params.hpp": {
+      "sha256": "7835977a44ba35d00aee9237e4b37587952cc336c6abfc25858289608e5aaad9",
+      "lines": 576,
+      "max_columns": 100
+    },
+    "f2k_dependencies.hpp": {
+      "sha256": "b47f5763848876f423bf0b7fd71a0e905739b360c3d912fde7551c9b936eb384",
+      "lines": 33,
+      "max_columns": 100
+    }
+  },
+  "reviewed": [
+    "18 Native definitions and six public declarations, source physical continuation groups and actual intents",
+    "114 ordinary calls, Native continuation groups and exact order; stats arguments In/In/InOut",
+    "all complete argument descriptions, Native scientific derivations/references/dividers, required multi-line descriptions",
+    "clear copied-unit corrections: stdev_w inputs [m/s], rtp2 output [(kg/kg)^2]; component2 copied wording corrected",
+    "no detached intent-only comments, no owning-UDT captures, host duplicates removed with Native notes retained beside private locals",
+    "Out staging avoids copying unspecified caller values; caller allocations restored by existing array owner",
+    "exact case-sensitive C++ private names, dynamic names and stats registration guards",
+    "all final scientific assignment/call/predicate/capture/adapter audits rerun after cleanup"
+  ],
+  "executable_token_note": "The isolated argument/comment/whitespace formatting pass preserves exact37,069cpp and2,891hpp executable tokens against its snapshot. Subsequent24unused host declaration removals and49Out-staging false flags are listed separately; final source is not claimed token-identical to that pre-cleanup snapshot. All308 ordered scientific assignment trees and114/670 ordered calls/actuals remain exact by source analysis.",
+  "runtime_status": "Uncompiled and untested. No CPU/GPU/BFB claim. Full independent source review still pending."
+}

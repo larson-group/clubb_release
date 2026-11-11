@@ -1,0 +1,104 @@
+{
+  "status": "Separate source audit complete; compilation/integration/model comparison pending.",
+  "source_read": {
+    "full_native_lines": 2157,
+    "all7procedures": true,
+    "actual_jax_supported_scope_read": true
+  },
+  "procedures": {
+    "monotonic_turbulent_flux_limit": {
+      "signature": 26,
+      "ordered_indexed_assignment_trees": 36,
+      "ordered_scalar_assignment_trees": 21,
+      "ordered_calls": 17
+    },
+    "mfl_xm_lhs": {
+      "signature": 12,
+      "ordered_indexed_assignment_trees": 2,
+      "ordered_scalar_assignment_trees": 0,
+      "ordered_calls": 1
+    },
+    "mfl_xm_rhs": {
+      "signature": 11,
+      "ordered_indexed_assignment_trees": 3,
+      "ordered_scalar_assignment_trees": 0,
+      "ordered_calls": 0
+    },
+    "mfl_xm_solve": {
+      "signature": 10,
+      "solver_adapter": "Manually reviewed against actual public header; Native lhs/rhs/xm restored before all-column fatal return; xm flip only on success."
+    },
+    "calc_turb_adv_range": {
+      "signature": 13,
+      "ordered_indexed_assignment_trees": 15,
+      "ordered_scalar_assignment_trees": 15,
+      "ordered_calls": 1
+    },
+    "mean_vert_vel_up_down": {
+      "signature": 12,
+      "ordered_indexed_assignment_trees": 2,
+      "ordered_scalar_assignment_trees": 0,
+      "ordered_calls": 4
+    },
+    "calc_mean_w_up_down_component": {
+      "signature": 8,
+      "ordered_indexed_assignment_trees": 12,
+      "ordered_scalar_assignment_trees": 4,
+      "ordered_calls": 0
+    }
+  },
+  "indexed_assignment_trees": 70,
+  "scalar_assignment_trees": 40,
+  "ordered_native_calls": 24,
+  "native_call_actuals": 128,
+  "explicit_stats_payload_adapters": [
+    {
+      "caller": "monotonic_turbulent_flux_limit",
+      "callee": "stats_begin_budget",
+      "native_value": "wpxp / dt",
+      "cpp_payload": "stats_values_1"
+    },
+    {
+      "caller": "monotonic_turbulent_flux_limit",
+      "callee": "stats_begin_budget",
+      "native_value": "xm / dt",
+      "cpp_payload": "stats_values_2"
+    },
+    {
+      "caller": "monotonic_turbulent_flux_limit",
+      "callee": "stats_finalize_budget",
+      "native_value": "wpxp / dt",
+      "cpp_payload": "stats_values_13"
+    },
+    {
+      "caller": "monotonic_turbulent_flux_limit",
+      "callee": "stats_finalize_budget",
+      "native_value": "xm / dt",
+      "cpp_payload": "stats_values_14"
+    }
+  ],
+  "device_lambda_bodies": 31,
+  "device_f2k_or_io_or_stdmax": [],
+  "owning_udt_captures": [],
+  "mutable_scalar_first_use_candidates": [],
+  "case_sensitive_call_errors": [],
+  "manual_contract_review": [
+    "All26/13public required args; private12/11/10/12/8 signatures and actual lower grid/mean/solver/stats headers.",
+    "Parallel screen uses only original neighbor wpxp; integer ANY gate precedes sequential per-column recurrence in Native physical direction; min scratch only set on original source paths.",
+    "Native flags permit implicit and explicit correction bodies; per-column xm replacement occurs before parent fatal check. All-column existing fatal state included, no reset or guessed zero initialization.",
+    "Source min/max influence windows, exp/erf branches, source literal constants, signed powers, interpolation actuals and boundary values; no JAX sqrt clamp or safe divisor introduced.",
+    "Solver bands-first layout, optional force-descending pack, actual live tridiag generic argument order, post-solver lhs/rhs/solution restoration before fatal, and success-only final xm reversal.",
+    "Native spike density integral and -0.99 cap, ordered whole-column scaling, top restoration, CPU warning payload/order and diagnostic comments retained at host boundary.",
+    "All named stats selected by same case, blank names retained, sampled budgets/updates in same order; four field/dt payload buffers and same-kind0literal are expected call expression adapters.",
+    "Both grid directions and disabled constant-thickness searches retain Native loop and break order;1based output integer levels and six unused-level boundaries retained.",
+    "Meaningful Native description/derivations, declaration intent grouping, source call continuations, comments and units checked; sigma_w_i_zm copied-unit typo corrected only in target."
+  ],
+  "hashes": {
+    "src/CLUBB_core/mono_flux_limiter.F90": "0b592a5b8feab48def3b465a246b7bd8b790265d95d2a2d0e78780fdeee5568a",
+    "clubb_jax/src/CLUBB_core/mono_flux_limiter.py": "61ac3d64b11b2fe2e68b4d243015b817c74cf1f8f0c0fae48ec5e176c1dc4212",
+    "clubb_kokkos/drafts/mono_flux_limiter/mono_flux_limiter.cpp": "f1fe129b6b80d452d3b341ac13b57f82978c3931a9c9ca96f2f75f51e4ca7bf7",
+    "clubb_kokkos/drafts/mono_flux_limiter/mono_flux_limiter.hpp": "b0abfe2d157729696d36a4da7178155bd519b90fe67daf72f393ccf9a8dc46e8"
+  },
+  "builds_tests_numerical_or_BFB_claim": false,
+  "missing_shared_owner": "l_force_descending_solves=false in existing model_flags generator; mean_adv owner promotion; existing stats/grid/solver APIs otherwise present."
+}

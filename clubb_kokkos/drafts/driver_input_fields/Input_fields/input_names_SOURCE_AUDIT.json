@@ -1,0 +1,8 @@
+{
+  "Native_read": 83,
+  "actualJAX_read": 55,
+  "all35constants_exact_name_value_sourceorder": true,
+  "implementation_sha256": "25eabb3970889fc06c348dd1216850bd6b545195989c0504f9b5a9bef4417569",
+  "scope": "ImmutableNativeheaderstrings only; no runtimealgorithm.",
+  "separate_cleanup": "Headerpurpose/sourceorder/constantspellings/100columnschecked."
+}

@@ -1,0 +1,636 @@
+{
+  "canonical_source": "src/CLUBB_core/new_tsdadg_pdf.F90",
+  "canonical_sha256": "38a1467cb60e3ce5d061880815d9f351bcdab93922fed6dd854ad1dcd12d0f1c",
+  "canonical_lines": 931,
+  "read_full_before_implementation": true,
+  "JAX_source": "clubb_jax/src/CLUBB_core/new_tsdadg_pdf.py",
+  "JAX_scope": "All4Native procedures; no supported option excluded. Keep Native scalar helper APIs, misspellingrespnder, branching/root warning/clipping semantics; do not import gradient-safe sqrt or eager vectorized branch selection.",
+  "routines": [
+    {
+      "name": "tsdadg_pdf_driver",
+      "module": "new_tsdadg_pdf",
+      "source": "src/CLUBB_core/new_tsdadg_pdf.F90",
+      "arguments": [
+        {
+          "name": "nz",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wm",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rtm",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "thlm",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp2",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rtp2",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "thlp2",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "Skw",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "Skrt",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "Skthl",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wprtp",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wpthlp",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mu_w_1",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mu_w_2",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mu_rt_1",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mu_rt_2",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mu_thl_1",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mu_thl_2",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma_w_1_sqd",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma_w_2_sqd",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma_rt_1_sqd",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma_rt_2_sqd",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma_thl_1_sqd",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma_thl_2_sqd",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mixt_frac",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null
+    },
+    {
+      "name": "calc_setter_parameters",
+      "module": "new_tsdadg_pdf",
+      "source": "src/CLUBB_core/new_tsdadg_pdf.F90",
+      "arguments": [
+        {
+          "name": "xm",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "xp2",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "Skx",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sgn_wpxp",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "big_L_x_1",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "big_L_x_2",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mu_x_1",
+          "kind": "real",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mu_x_2",
+          "kind": "real",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma_x_1_sqd",
+          "kind": "real",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma_x_2_sqd",
+          "kind": "real",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mixt_frac",
+          "kind": "real",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "coef_sigma_x_1_sqd",
+          "kind": "real",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "coef_sigma_x_2_sqd",
+          "kind": "real",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null
+    },
+    {
+      "name": "calc_L_x_Skx_fnc",
+      "module": "new_tsdadg_pdf",
+      "source": "src/CLUBB_core/new_tsdadg_pdf.F90",
+      "arguments": [
+        {
+          "name": "Skx",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sgn_wpxp",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "small_l_x_1",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "small_l_x_2",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "big_L_x_1",
+          "kind": "real",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "big_L_x_2",
+          "kind": "real",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null
+    },
+    {
+      "name": "calc_respnder_parameters",
+      "module": "new_tsdadg_pdf",
+      "source": "src/CLUBB_core/new_tsdadg_pdf.F90",
+      "arguments": [
+        {
+          "name": "xm",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "xp2",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "Skx",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sgn_wpxp",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mixt_frac",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "big_L_x_1",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mu_x_1",
+          "kind": "real",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mu_x_2",
+          "kind": "real",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma_x_1_sqd",
+          "kind": "real",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma_x_2_sqd",
+          "kind": "real",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "coef_sigma_x_1_sqd",
+          "kind": "real",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "coef_sigma_x_2_sqd",
+          "kind": "real",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null
+    }
+  ],
+  "native_inventory_and_order": [
+    "tsdadg_pdf_driver",
+    "calc_setter_parameters",
+    "calc_L_x_Skx_fnc",
+    "calc_respnder_parameters"
+  ],
+  "public_inventory": [
+    "tsdadg_pdf_driver",
+    "calc_setter_parameters",
+    "calc_L_x_Skx_fnc"
+  ],
+  "private_inventory": [
+    "calc_respnder_parameters"
+  ],
+  "driver_stage_order": [
+    "sgn_wprtp/wpthlp>=0->+1 else-1; sgn_wp2=+1; small_l pairs .75/.5",
+    "3 orderedcalc_L_x_Skx_fnc calls(w,rt,thl)",
+    "Setterpriority w>=rt && w>=thl; else rt>w && rt>=thl; else thl. Each branch setter first then2ordered responders.",
+    "6ordered warning/clip blocks:w1,w2,rt1,rt2,thl1,thl2. Print preclipfield then variance+coefficient=0 iffnegative."
+  ],
+  "helper_branches": [
+    "Setter4mixturebranches using normalized means/eps; normalized-mean denominator floor with sign; both coefficient/variance formulas in order.",
+    "calcL swaps small_l roles iffSkx*sign<0, zero takes>=branch.",
+    "Responder givenmixture, no mixtureoutput; normalized denominator floor and bothcoef/variance formulas in source order."
+  ],
+  "methods_comment_regions": [
+    "Native326\u2013514 complete setter derivation/tunable restrictions retained beforecalc_setter_parameters",
+    "Native717\u2013817 complete responder derivation retained beforecalc_respnder_parameters"
+  ],
+  "execution": [
+    "Nativeprofile API rank1Views retain inputmemoryspace and accept currentcolumnsubviews; use input ExecutionSpace explicitpolicy.",
+    "Oneindependentlevel kernel with Native scalar helpers KOKKOS_INLINE_FUNCTION; level-localarray scratch becomes distinctworkitemscalars, immutable small_l values local tocall.",
+    "Only integer warning count reduces; owned(level,6)LayoutLeft warningpayload retains negativebeforeclipvalues; hostprintonlywhenfailures, in Nativelevel/fieldorder. No GPUio/f2k/nested launch."
+  ],
+  "dependencies": [
+    "Existingconstants one,zero,four,three,one_half,eps and array_types/Kokkosmath; no calc_roots call or lowerphysicsbridge in Native."
+  ],
+  "stats_errors": "No statistics orerr_info API; preserve6warningmessages and data labels/oldvalues.",
+  "documentation_corrections": [
+    "Setter outputs variances, notstandard deviations; responder consumesmixture rather than setting/returningit. Preserve mathematicalmethod explanations with stddev notation."
+  ],
+  "status": "Source outline before code; compilation/numerical evidence pending."
+}

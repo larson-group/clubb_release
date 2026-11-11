@@ -83,17 +83,3 @@ def test_remap_vals_to_target_identity_zm(gr):
     )
     assert target.shape == source.shape
     np.testing.assert_allclose(target, source, rtol=1.0e-10, atol=1.0e-12)
-
-
-def test_unselected_remap_preserves_signed_zero(gr):
-    """The optional F2PY column mask retains raw input bits, including signed zero."""
-    source = np.linspace(0., 2., gr.nzt, dtype=np.float64)[None, :]
-    source[0, 0] = -0.0
-    rho_vals, rho_levels = _rho_linear_spline(gr)
-    target = clubb_api.remap_vals_to_target(
-        gr.ngrdcol, gr, gr, gr.nzt, source, gr.nzt, 2,
-        rho_vals, rho_levels, 1, np.array([100000.]), 1, True,
-        l_remap=np.array([False]),
-    )
-    assert target.shape == source.shape
-    assert target.tobytes() == source.tobytes()

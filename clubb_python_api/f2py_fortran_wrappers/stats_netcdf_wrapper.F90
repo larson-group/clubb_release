@@ -279,34 +279,11 @@ subroutine f2py_stats_end_timestep(time_value)
 
 end subroutine f2py_stats_end_timestep
 
-subroutine f2py_stats_update_sfc( name, ncol, values ) ! In
-
-  ! Description:
-  !   Accumulate a complete surface column vector.
-
-  use clubb_precision, only: core_rknd
-  use derived_type_storage, only: stored_stats
-  use stats_netcdf, only: stats_update
-
-  implicit none
-
-  !--------------------------- Input Variables ---------------------------
-  character(len=64), intent(in) :: name ! Registered variable name to update [-]
-  integer, intent(in) :: ncol ! Number of grid columns [-]
-  ! Surface values indexed by column [var-dependent]
-  real(core_rknd), dimension(ncol), intent(in) :: values
-
-  !--------------------------- Begin Code ---------------------------
-
-  call stats_update(trim(name), values, & ! In
-    stored_stats) ! InOut
-
-end subroutine f2py_stats_update_sfc
-
-subroutine f2py_stats_update_var( name, ncol, nz, values ) ! In
-
-  ! Description:
-  !   Accumulate a complete profile column/level batch.
+!---------------------------------------------------------------------------
+! 9. stats_update — scalar variant
+!    icol=0 and level=0 mean "not present"
+!---------------------------------------------------------------------------
+subroutine f2py_stats_update_scalar(name, values, icol, level)
 
   use clubb_precision, only: core_rknd
   use derived_type_storage, only: stored_stats
@@ -314,24 +291,65 @@ subroutine f2py_stats_update_var( name, ncol, nz, values ) ! In
 
   implicit none
 
-  !--------------------------- Input Variables ---------------------------
-  character(len=64), intent(in) :: name ! Registered variable name to update [-]
-  integer, intent(in) :: ncol ! Number of grid columns [-]
-  integer, intent(in) :: nz ! Number of vertical levels [-]
-  ! 2D payload (col,level) in variable units [var-dependent]
+  character(len=64), intent(in) :: name
+  real(core_rknd), intent(in) :: values
+  integer, intent(in) :: icol, level
+
+  if (level > 0 .and. icol > 0) then
+    call stats_update(trim(name), values, stored_stats, icol=icol, level=level)
+  else if (icol > 0) then
+    call stats_update(trim(name), values, stored_stats, icol=icol)
+  end if
+
+end subroutine f2py_stats_update_scalar
+
+!---------------------------------------------------------------------------
+! 10. stats_update — 1d variant
+!     icol=0 means "not present" (updates all columns for surface)
+!---------------------------------------------------------------------------
+subroutine f2py_stats_update_1d(name, n, values, icol)
+
+  use clubb_precision, only: core_rknd
+  use derived_type_storage, only: stored_stats
+  use stats_netcdf, only: stats_update
+
+  implicit none
+
+  character(len=64), intent(in) :: name
+  integer, intent(in) :: n, icol
+  real(core_rknd), dimension(n), intent(in) :: values
+
+  if (icol > 0) then
+    call stats_update(trim(name), values, stored_stats, icol=icol)
+  else
+    call stats_update(trim(name), values, stored_stats)
+  end if
+
+end subroutine f2py_stats_update_1d
+
+!---------------------------------------------------------------------------
+! 11. stats_update — 2d variant
+!---------------------------------------------------------------------------
+subroutine f2py_stats_update_2d(name, ncol, nz, values)
+
+  use clubb_precision, only: core_rknd
+  use derived_type_storage, only: stored_stats
+  use stats_netcdf, only: stats_update
+
+  implicit none
+
+  character(len=64), intent(in) :: name
+  integer, intent(in) :: ncol, nz
   real(core_rknd), dimension(ncol, nz), intent(in) :: values
 
-  !--------------------------- Begin Code ---------------------------
+  call stats_update(trim(name), values, stored_stats)
 
-  call stats_update(trim(name), values, & ! In
-    stored_stats) ! InOut
+end subroutine f2py_stats_update_2d
 
-end subroutine f2py_stats_update_var
-
-subroutine f2py_stats_begin_budget( name, ncol, nz, values ) ! In
-
-  ! Description:
-  !   Call stats_begin_budget with complete column batches through the F2PY bridge.
+!---------------------------------------------------------------------------
+! 12. stats_begin_budget — scalar
+!---------------------------------------------------------------------------
+subroutine f2py_stats_begin_budget_scalar(name, values, icol)
 
   use clubb_precision, only: core_rknd
   use derived_type_storage, only: stored_stats
@@ -339,23 +357,64 @@ subroutine f2py_stats_begin_budget( name, ncol, nz, values ) ! In
 
   implicit none
 
-  !--------------------------- Input Variables ---------------------------
-  character(len=64), intent(in) :: name ! Registered budget variable name [-]
-  integer, intent(in) :: ncol ! Number of grid columns [-]
-  integer, intent(in) :: nz ! Number of vertical levels [-]
-  ! 2D state payload (col,level) in variable units [var-dependent]
-  real(core_rknd), dimension(ncol, nz), intent(in) :: values
+  character(len=64), intent(in) :: name
+  real(core_rknd), intent(in) :: values
+  integer, intent(in) :: icol
 
-  !--------------------------- Begin Code ---------------------------
+  if (icol > 0) then
+    call stats_begin_budget(trim(name), values, stored_stats, icol=icol)
+  else
+    call stats_begin_budget(trim(name), values, stored_stats)
+  end if
+
+end subroutine f2py_stats_begin_budget_scalar
+
+!---------------------------------------------------------------------------
+! 13. stats_begin_budget — 1d
+!---------------------------------------------------------------------------
+subroutine f2py_stats_begin_budget_1d(name, n, values, icol)
+
+  use clubb_precision, only: core_rknd
+  use derived_type_storage, only: stored_stats
+  use stats_netcdf, only: stats_begin_budget
+
+  implicit none
+
+  character(len=64), intent(in) :: name
+  integer, intent(in) :: n, icol
+  real(core_rknd), dimension(n), intent(in) :: values
+
+  if (icol > 0) then
+    call stats_begin_budget(trim(name), values, stored_stats, icol=icol)
+  else
+    call stats_begin_budget(trim(name), values, stored_stats)
+  end if
+
+end subroutine f2py_stats_begin_budget_1d
+
+!---------------------------------------------------------------------------
+! 14. stats_begin_budget — 2d
+!---------------------------------------------------------------------------
+subroutine f2py_stats_begin_budget_2d(name, ncol, nz, values)
+
+  use clubb_precision, only: core_rknd
+  use derived_type_storage, only: stored_stats
+  use stats_netcdf, only: stats_begin_budget
+
+  implicit none
+
+  character(len=64), intent(in) :: name
+  integer, intent(in) :: ncol, nz
+  real(core_rknd), dimension(ncol, nz), intent(in) :: values
 
   call stats_begin_budget(trim(name), values, stored_stats)
 
-end subroutine f2py_stats_begin_budget
+end subroutine f2py_stats_begin_budget_2d
 
-subroutine f2py_stats_update_budget( name, ncol, nz, values ) ! In
-
-  ! Description:
-  !   Accumulate a complete profile column/level batch.
+!---------------------------------------------------------------------------
+! 15. stats_update_budget — scalar
+!---------------------------------------------------------------------------
+subroutine f2py_stats_update_budget_scalar(name, values, icol, level)
 
   use clubb_precision, only: core_rknd
   use derived_type_storage, only: stored_stats
@@ -363,24 +422,64 @@ subroutine f2py_stats_update_budget( name, ncol, nz, values ) ! In
 
   implicit none
 
-  !--------------------------- Input Variables ---------------------------
-  character(len=64), intent(in) :: name ! Registered budget variable name [-]
-  integer, intent(in) :: ncol ! Number of grid columns [-]
-  integer, intent(in) :: nz ! Number of vertical levels [-]
-  ! 2D incremental budget contribution [var-dependent]
+  character(len=64), intent(in) :: name
+  real(core_rknd), intent(in) :: values
+  integer, intent(in) :: icol, level
+
+  if (level > 0 .and. icol > 0) then
+    call stats_update_budget(trim(name), values, stored_stats, icol=icol, level=level)
+  else if (icol > 0) then
+    call stats_update_budget(trim(name), values, stored_stats, icol=icol)
+  end if
+
+end subroutine f2py_stats_update_budget_scalar
+
+!---------------------------------------------------------------------------
+! 16. stats_update_budget — 1d
+!---------------------------------------------------------------------------
+subroutine f2py_stats_update_budget_1d(name, n, values, icol)
+
+  use clubb_precision, only: core_rknd
+  use derived_type_storage, only: stored_stats
+  use stats_netcdf, only: stats_update_budget
+
+  implicit none
+
+  character(len=64), intent(in) :: name
+  integer, intent(in) :: n, icol
+  real(core_rknd), dimension(n), intent(in) :: values
+
+  if (icol > 0) then
+    call stats_update_budget(trim(name), values, stored_stats, icol=icol)
+  else
+    call stats_update_budget(trim(name), values, stored_stats)
+  end if
+
+end subroutine f2py_stats_update_budget_1d
+
+!---------------------------------------------------------------------------
+! 17. stats_update_budget — 2d
+!---------------------------------------------------------------------------
+subroutine f2py_stats_update_budget_2d(name, ncol, nz, values)
+
+  use clubb_precision, only: core_rknd
+  use derived_type_storage, only: stored_stats
+  use stats_netcdf, only: stats_update_budget
+
+  implicit none
+
+  character(len=64), intent(in) :: name
+  integer, intent(in) :: ncol, nz
   real(core_rknd), dimension(ncol, nz), intent(in) :: values
 
-  !--------------------------- Begin Code ---------------------------
+  call stats_update_budget(trim(name), values, stored_stats)
 
-  call stats_update_budget(trim(name), values, & ! In
-    stored_stats) ! InOut
+end subroutine f2py_stats_update_budget_2d
 
-end subroutine f2py_stats_update_budget
-
-subroutine f2py_stats_finalize_budget( name, ncol, nz, values, l_count ) ! In
-
-  ! Description:
-  !   Call stats_finalize_budget with complete column batches through the F2PY bridge.
+!---------------------------------------------------------------------------
+! 18. stats_finalize_budget — scalar
+!---------------------------------------------------------------------------
+subroutine f2py_stats_finalize_budget_scalar(name, values, icol, l_count_sample)
 
   use clubb_precision, only: core_rknd
   use derived_type_storage, only: stored_stats
@@ -388,21 +487,67 @@ subroutine f2py_stats_finalize_budget( name, ncol, nz, values, l_count ) ! In
 
   implicit none
 
-  !--------------------------- Input Variables ---------------------------
-  character(len=64), intent(in) :: name ! Registered budget variable name [-]
-  integer, intent(in) :: ncol ! Number of grid columns [-]
-  integer, intent(in) :: nz ! Number of vertical levels [-]
-  ! 2D closing state payload in variable units [var-dependent]
+  character(len=64), intent(in) :: name
+  real(core_rknd), intent(in) :: values
+  integer, intent(in) :: icol
+  logical, intent(in) :: l_count_sample
+
+  if (icol > 0) then
+    call stats_finalize_budget(trim(name), values, stored_stats, &
+      icol=icol, l_count_sample=l_count_sample)
+  else
+    call stats_finalize_budget(trim(name), values, stored_stats, &
+      l_count_sample=l_count_sample)
+  end if
+
+end subroutine f2py_stats_finalize_budget_scalar
+
+!---------------------------------------------------------------------------
+! 19. stats_finalize_budget — 1d
+!---------------------------------------------------------------------------
+subroutine f2py_stats_finalize_budget_1d(name, n, values, icol, l_count)
+
+  use clubb_precision, only: core_rknd
+  use derived_type_storage, only: stored_stats
+  use stats_netcdf, only: stats_finalize_budget
+
+  implicit none
+
+  character(len=64), intent(in) :: name
+  integer, intent(in) :: n, icol
+  logical, intent(in) :: l_count
+  real(core_rknd), dimension(n), intent(in) :: values
+
+  if (icol > 0) then
+    call stats_finalize_budget(trim(name), values, stored_stats, &
+      icol=icol, l_count_sample=l_count)
+  else
+    call stats_finalize_budget(trim(name), values, stored_stats, &
+      l_count_sample=l_count)
+  end if
+
+end subroutine f2py_stats_finalize_budget_1d
+
+!---------------------------------------------------------------------------
+! 20. stats_finalize_budget — 2d
+!---------------------------------------------------------------------------
+subroutine f2py_stats_finalize_budget_2d(name, ncol, nz, values, l_count)
+
+  use clubb_precision, only: core_rknd
+  use derived_type_storage, only: stored_stats
+  use stats_netcdf, only: stats_finalize_budget
+
+  implicit none
+
+  character(len=64), intent(in) :: name
+  integer, intent(in) :: ncol, nz
+  logical, intent(in) :: l_count
   real(core_rknd), dimension(ncol, nz), intent(in) :: values
-  logical, intent(in) :: l_count ! l count [var-dependent]
 
-  !--------------------------- Begin Code ---------------------------
+  call stats_finalize_budget(trim(name), values, stored_stats, &
+    l_count_sample=l_count)
 
-  call stats_finalize_budget( trim(name), values, & ! In
-                              stored_stats, & ! InOut
-                              l_count_sample=l_count ) ! Optional In
-
-end subroutine f2py_stats_finalize_budget
+end subroutine f2py_stats_finalize_budget_2d
 
 !---------------------------------------------------------------------------
 ! 21. var_on_stats_list — query if variable is registered
@@ -421,6 +566,9 @@ subroutine f2py_var_on_stats_list(name, l_result)
 
 end subroutine f2py_var_on_stats_list
 
+!---------------------------------------------------------------------------
+! 22. stats_update_grid — update adaptive grid remapping inputs
+!---------------------------------------------------------------------------
 subroutine f2py_stats_update_grid(ncol, nzt, nzm, nrho, &
     zt_src, zm_src, rho_vals, rho_levels, p_sfc)
 

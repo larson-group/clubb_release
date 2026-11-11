@@ -21,7 +21,7 @@ from clubb_python.clubb_api import (
     get_stats_var_meta, get_stats_var_data, set_stats_var_data,
     stats_begin_timestep, stats_end_timestep,
     stats_l_sample,
-    stats_update,
+    stats_update_scalar, stats_update_1d, stats_update_2d,
     var_on_stats_list,
 )
 from clubb_python.derived_types.err_info import ErrInfo
@@ -242,27 +242,31 @@ class TestTimestepAndUpdate:
         cfg = get_stats_config()
         assert cfg[7] == 1  # l_sample
 
-    def test_scalar_update_rejected(self, stats_env):
-        """A scalar cannot stand in for a complete profile or surface batch."""
+    def test_update_scalar(self, stats_env):
+        """Update a scalar value and verify buffer accumulation."""
         stats_begin_timestep(0)
-        with pytest.raises(ValueError, match="surface vector"):
-            stats_update("thlm", 300.0)
-
-    def test_surface_update(self, stats_env):
-        """A complete surface vector accumulates independent column values."""
-        stats_begin_timestep(0)
-        surface = np.array([0.1, 0.2])
-        stats_update("lwp", surface)
+        stats_update_scalar("thlm", 300.0, icol=0, level=0)
         stats_end_timestep(DT, err_info=stats_env)
-        buf, nsamp = get_stats_var_data(2, NCOL, 1)
-        np.testing.assert_array_equal(buf[:, 0], surface)
-        np.testing.assert_array_equal(nsamp[:, 0], 1)
+
+        buf, nsamp = get_stats_var_data(0, NCOL, NZT)
+        assert nsamp[0, 0] == 1
+        np.testing.assert_allclose(buf[0, 0], 300.0)
+
+    def test_update_1d(self, stats_env):
+        """Update a 1D profile and verify buffer."""
+        stats_begin_timestep(0)
+        profile = np.arange(1.0, NZT + 1.0)
+        stats_update_1d("thlm", NZT, profile, icol=0)
+        stats_end_timestep(DT, err_info=stats_env)
+
+        buf, nsamp = get_stats_var_data(0, NCOL, NZT)
+        np.testing.assert_allclose(buf[0, :], profile)
 
     def test_update_2d(self, stats_env):
         """Update a 2D field and verify buffer."""
         stats_begin_timestep(0)
         field = np.ones((NCOL, NZM)) * 42.0
-        stats_update("wp2", field)
+        stats_update_2d("wp2", NCOL, NZM, field)
         stats_end_timestep(DT, err_info=stats_env)
 
         buf, nsamp = get_stats_var_data(1, NCOL, NZM)

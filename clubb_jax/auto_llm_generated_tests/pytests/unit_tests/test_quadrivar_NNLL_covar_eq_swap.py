@@ -11,8 +11,6 @@ the documented primitive with the (possibly swapped) args. A wrong-swap bug — 
 end-to-end — is now caught directly. Oracle-independent; never SKIPs. (iter 554)
 """
 
-from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
-
 
 from clubb_jax.src.Microphys.KK_microphys.KK_upscaled_covariances import quadrivar_NNLL_covar_eq, _CHI_TOL
 from clubb_jax.src.Microphys.KK_microphys.PDF_integrals_covar import (
@@ -30,7 +28,7 @@ _X2A = _MCT / _MCC
 
 
 def _eq(s_x, s_chi, s_rr, s_nr):
-    return float(call_jax(quadrivar_NNLL_covar_eq, _MUX, _MUCHI, _MURR, _MUNR, _MURRN, _MUNRN,
+    return float(quadrivar_NNLL_covar_eq(_MUX, _MUCHI, _MURR, _MUNR, _MURRN, _MUNRN,
                                          s_x, s_chi, s_rr, s_nr, _SRRN, _SNRN,
                                          _R12, _R13N, _R14N, _R23N, _R24N, _R34N,
                                          _XM, _MCT, _MCC, _XTOL, _RRTOL, _NRTOL, _A, _B, _G))
@@ -46,7 +44,7 @@ def _close(got, ref, name):
 
 def test_base_all_vary():
     _close(_eq(0.4, 0.3, 2e-4, 2e5),
-           float(call_jax(quadrivar_NNLL_covar, _MUX, _MUCHI, _MURRN, _MUNRN, 0.4, _s2g(0.3), _SRRN, _SNRN,
+           float(quadrivar_NNLL_covar(_MUX, _MUCHI, _MURRN, _MUNRN, 0.4, _s2g(0.3), _SRRN, _SNRN,
                                       _R12, _R13N, _R14N, _R23N, _R24N, _R34N, _XM, _X2A, _A, _B, _G)), "base")
     print("  all vary -> quadrivar_NNLL_covar (base)  PASS")
 
@@ -54,7 +52,7 @@ def test_base_all_vary():
 def test_c3_const_x3_NONswap():
     # r_r const (c3): non-swapped x3 variant — uses mu_x3, mu_x4_n, sg4n, r14n, r24n and (a,b,g).
     _close(_eq(0.4, 0.3, 0.0, 2e5),
-           float(call_jax(quadrivar_NNLL_covar_const_x3, _MUX, _MUCHI, _MURR, _MUNRN, 0.4, _s2g(0.3), _SNRN,
+           float(quadrivar_NNLL_covar_const_x3(_MUX, _MUCHI, _MURR, _MUNRN, 0.4, _s2g(0.3), _SNRN,
                                                _R12, _R14N, _R24N, _XM, _X2A, _A, _B, _G)), "const_x3")
     print("  r_r const -> const_x3 (NON-swapped: mu_x4_n, sg_Nr_n, r14n, r24n, b,g)  PASS")
 
@@ -62,7 +60,7 @@ def test_c3_const_x3_NONswap():
 def test_c4_const_x3_SWAPPED():
     # N_r const (c4): reuse the x3 variant with x3↔x4 args + β↔γ swapped — mu_x4, mu_x3_n, sg3n, r13n, r23n, (a,g,b).
     _close(_eq(0.4, 0.3, 2e-4, 0.0),
-           float(call_jax(quadrivar_NNLL_covar_const_x3, _MUX, _MUCHI, _MUNR, _MURRN, 0.4, _s2g(0.3), _SRRN,
+           float(quadrivar_NNLL_covar_const_x3(_MUX, _MUCHI, _MUNR, _MURRN, 0.4, _s2g(0.3), _SRRN,
                                                _R12, _R13N, _R23N, _XM, _X2A, _A, _G, _B)), "const_x3 swapped")
     print("  N_r const -> const_x3 with x3↔x4 args + β↔γ SWAPPED  PASS")
 

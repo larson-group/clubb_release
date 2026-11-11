@@ -65,6 +65,7 @@ module microphys_init_cleanup
         l_var_covar_src,              & ! Flag for using variance and covariance src terms
         microphys_scheme,             & ! The microphysical scheme in use
         l_hydromet_sed,               & ! Flag to sediment a hydrometeor
+        l_gfdl_activation,            & ! Flag to use GFDL activation scheme
         microphys_start_time,         & ! When to start the microphysics [s]
         sigma_g,                      & ! Parameter used in the cloud droplet sedimentation code
         Nc0_in_cloud                    ! Initial value for Nc (K&K, l_cloud_sed, Morrison)
@@ -144,6 +145,17 @@ module microphys_init_cleanup
 
     use error_code, only: &
         clubb_at_least_debug_level_api   ! Procedure
+
+    use gfdl_activation, only: nooc, sul_concen, & ! Variables
+        low_concen, high_concen, &
+        lowup, highup, lowup2, highup2, &
+        lowmass2, highmass2, lowmass3, highmass3, &
+        lowmass4, highmass4, lowmass5, highmass5, &
+        lowT2, highT2, aeromass_value
+
+    use aer_ccn_act_k_mod, only: aer_ccn_act_k_init ! Procedure
+
+    use gfdl_activation, only: Loading ! Procedure
 
     use clubb_precision, only:  & 
         core_rknd, &
@@ -253,6 +265,11 @@ module microphys_init_cleanup
 
     !------------------------ Local variables ------------------------
     character(len=30) :: lh_microphys_type
+    integer, parameter :: res = 20   ! Used for lookup tables with GFDL activation
+    integer, parameter :: res2 = 20  ! Used for lookup tables with GFDL activation
+    real( kind = core_rknd ), dimension( :, :, :, :, : ), allocatable :: &
+      droplets, droplets2            ! Used for lookup tables with GFDL activation
+
     character(len=128) :: &
      corr_file_path_cloud, &
      corr_file_path_below
@@ -329,6 +346,13 @@ module microphys_init_cleanup
       Nc0_in_cloud, ccnconst, ccnexpnt, aer_rm1, aer_rm2, &
       aer_n1, aer_n2, aer_sig1, aer_sig2, pgam_fixed
 
+    namelist /gfdl_activation_setting/ &
+      nooc, sul_concen, low_concen, high_concen, &
+      lowup, highup, lowup2, highup2, lowmass2, &
+      highmass2, lowmass3, highmass3,  &
+      lowmass4, highmass4, lowmass5, highmass5, &
+      lowT2, highT2, aeromass_value, l_gfdl_activation
+
     namelist /silhs_params_nl/ &
       eight_cluster_presc_probs, vert_decorr_coef, importance_prob_thresh
 
@@ -346,6 +370,7 @@ module microphys_init_cleanup
     ! Module variables and explicitly initialized locals retain their values
     ! between calls; omitted namelist entries must not inherit those values.
 
+    l_gfdl_activation = .false.
     microphys_scheme = "none"
     microphys_start_time = 0._time_precision
     Nc0_in_cloud = 1.0e8_core_rknd
@@ -376,6 +401,26 @@ module microphys_init_cleanup
     eight_cluster_presc_probs = eight_cluster_presc_probs_type()
     importance_prob_thresh = 1.0e-8_core_rknd
     vert_decorr_coef = 0.03_core_rknd
+
+    nooc = .false.
+    sul_concen = 0.1_core_rknd
+    low_concen = 0.1_core_rknd
+    high_concen = 1._core_rknd
+    lowup = 0.3_core_rknd
+    highup = 10._core_rknd
+    lowup2 = 0.01_core_rknd
+    highup2 = 0.3_core_rknd
+    lowmass2 = 0.01_core_rknd
+    highmass2 = 100._core_rknd
+    lowmass3 = 0.01_core_rknd
+    highmass3 = 100._core_rknd
+    lowmass4 = 0.01_core_rknd
+    highmass4 = 100._core_rknd
+    lowmass5 = 0.01_core_rknd
+    highmass5 = 100._core_rknd
+    lowT2 = 243.15_core_rknd
+    highT2 = 308.15_core_rknd
+    aeromass_value = 2.25e-12_core_rknd
 
     ! Cloud water sedimentation from the RF02 case
     ! This has no effect on Morrison's cloud water sedimentation
@@ -617,6 +662,32 @@ module microphys_init_cleanup
        if ( l_write_to_file ) close(unit=iunit)
 
     endif ! clubb_at_least_debug_level_api( 1 )
+
+    ! Read in the name list for initialization, if it exists
+    open(unit=iunit, file=namelist_file, status='old', action='read')
+    read(iunit, nml=gfdl_activation_setting)
+    close(unit=iunit)
+
+    ! Initialize the GFDL activation code, if necessary
+    if( l_gfdl_activation ) then
+       ! Ensure a microphysics that has Ncm is being used
+       if( trim( microphys_scheme ) == "coamps" .or. &
+           trim( microphys_scheme ) == "morrison" ) then
+
+          ! Read in the lookup tables
+          call Loading( droplets, droplets2 )
+          allocate( droplets(res,res,res,res,res), droplets2(res,res,res,res,res) )
+          ! Initialize the activation variables
+          call aer_ccn_act_k_init                            &
+               ( real( droplets ), real( droplets2 ), res, res2, nooc,     &
+                 real( sul_concen ), real( low_concen ), real( high_concen ),      &
+                 real( lowup ), real( highup ), real( lowup2 ), real( highup2 ), real( lowmass2 ), &
+                 real( highmass2 ), real( lowmass3 ), real( highmass3 ),           &
+                 real( lowmass4 ), real( highmass4 ), real( lowmass5 ), real( highmass5 ), &
+                 real( lowT2 ),real( highT2 ) )
+          deallocate( droplets, droplets2 )
+       endif ! coamps .or. morrison .or. khairoutdinov_kogan
+    endif ! l_gfdl_activation
 
     ! The location of the fields in the hydromet array are arbitrary,
     ! and don't need to be set consistently among schemes so long as

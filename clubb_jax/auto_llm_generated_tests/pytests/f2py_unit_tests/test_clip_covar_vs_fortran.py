@@ -6,7 +6,7 @@ import clubb_python.CLUBB_core.clip_explicit as fortran
 
 from clubb_jax.auto_llm_generated_tests.pytests.f2py_unit_test_helpers import max_abs_diff
 from clubb_jax.src.CLUBB_core.clip_explicit import clip_covar, clip_covars_denom
-from clubb_jax.src.CLUBB_core.stats_netcdf import JaxStats
+from clubb_jax.src.CLUBB_core.jax_stats import JaxStats
 
 NG, NZM = 2, 9
 CLIP_RTPTHLP, CLIP_WPRTP = 3, 8

@@ -1,0 +1,803 @@
+{
+  "native_inventory_and_order": [
+    "precip_fraction",
+    "component_precip_frac_weighted",
+    "component_precip_frac_specify",
+    "precip_frac_assert_check"
+  ],
+  "public_inventory": [
+    "precip_fraction"
+  ],
+  "routines": [
+    {
+      "name": "precip_fraction",
+      "module": "precipitation_fraction",
+      "source": "src/CLUBB_core/precipitation_fraction.F90",
+      "arguments": [
+        {
+          "name": "gr",
+          "kind": "grid",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "hydromet_dim",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "hydromet",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt",
+            "hydromet_dim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "cloud_frac",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "cloud_frac_1",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_mix_rat_hm",
+          "kind": "logical",
+          "dims": [
+            "hydromet_dim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_frozen_hm",
+          "kind": "logical",
+          "dims": [
+            "hydromet_dim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "hydromet_tol",
+          "kind": "real",
+          "dims": [
+            "hydromet_dim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "cloud_frac_2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ice_supersat_frac",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ice_supersat_frac_1",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ice_supersat_frac_2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mixt_frac",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "clubb_params",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nparams"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "err_info",
+          "kind": "err_info_type",
+          "dims": [],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "precip_frac",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "precip_frac_1",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "precip_frac_2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "precip_frac_tol",
+          "kind": "real",
+          "dims": [
+            "ngrdcol"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "stats",
+          "kind": "stats_type",
+          "dims": [],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "source_lines": [
+        26,
+        407
+      ],
+      "call_and_function_order": [
+        "call component_precip_frac_weighted( gr, nzt, ngrdcol, hydromet_dim, l_frozen_hm, hydromet_tol, hydromet(:,:,:), precip_frac(:,:), cloud_frac_1(:,:), cloud_frac_2(:,:), ice_supersat_frac_1(:,:), ice_supersat_frac_2(:,:), mixt_frac(:,:), precip_frac_tol(:), precip_frac_1(:,:), precip_frac_2(:,:) )",
+        "call component_precip_frac_specify( nzt, ngrdcol, hydromet_dim, hydromet_tol, clubb_params(:,iupsilon_precip_frac_rat), hydromet(:,:,:), precip_frac(:,:), mixt_frac(:,:), precip_frac_tol(:), precip_frac_1(:,:), precip_frac_2(:,:) )",
+        "call stats_update( \"precip_frac_tol\", precip_frac_tol, stats )",
+        "call precip_frac_assert_check( nzt, hydromet_dim, hydromet_tol, hydromet(j,:,:), mixt_frac(j,:), precip_frac(j,:), precip_frac_1(j,:), precip_frac_2(j,:), precip_frac_tol(j), err_info )"
+      ],
+      "branches_in_order": [
+        "if ( any( l_frozen_hm ) ) then",
+        "else",
+        "if ( any( l_frozen_hm ) ) then",
+        "else",
+        "if ( any( hydromet(j,k,:) >= hydromet_tol(:) ) .and. precip_frac(j,k) < precip_frac_tol(j) ) then",
+        "elseif ( all( hydromet(j,k,:) < hydromet_tol(:) ) ) then",
+        "if ( precip_frac_calc_type == 1 ) then",
+        "elseif ( precip_frac_calc_type == 2 ) then",
+        "else",
+        "if ( l_mix_rat_hm(ivar) ) then",
+        "if ( hydromet(j,k,ivar) >= hydromet_tol(ivar) .and. hydromet(j,k,ivar) > mixt_frac(j,k) * precip_frac_1(j,k) * max_hm_ip_comp_mean ) then",
+        "if ( hydromet(j,k,ivar) >= hydromet_tol(ivar) .and. hydromet(j,k,ivar) > ( one - mixt_frac(j,k) ) * precip_frac_2(j,k) * max_hm_ip_comp_mean ) then",
+        "if ( any( hydromet(j,k,:) >= hydromet_tol(:) ) ) then",
+        "if ( stats%l_sample ) then",
+        "if ( clubb_at_least_debug_level_api( 2 ) ) then",
+        "if ( err_info%err_code(j) == clubb_fatal_error ) then"
+      ]
+    },
+    {
+      "name": "component_precip_frac_weighted",
+      "module": "precipitation_fraction",
+      "source": "src/CLUBB_core/precipitation_fraction.F90",
+      "arguments": [
+        {
+          "name": "gr",
+          "kind": "grid",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "hydromet_dim",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_frozen_hm",
+          "kind": "logical",
+          "dims": [
+            "hydromet_dim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "hydromet_tol",
+          "kind": "real",
+          "dims": [
+            "hydromet_dim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "hydromet",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt",
+            "hydromet_dim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "precip_frac",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "cloud_frac_1",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "cloud_frac_2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ice_supersat_frac_1",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ice_supersat_frac_2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mixt_frac",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "precip_frac_tol",
+          "kind": "real",
+          "dims": [
+            "ngrdcol"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "precip_frac_1",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "precip_frac_2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "source_lines": [
+        410,
+        751
+      ],
+      "call_and_function_order": [],
+      "branches_in_order": [
+        "if ( any( l_frozen_hm ) ) then",
+        "else",
+        "if ( weighted_pfrac_1(j,k) + weighted_pfrac_2(j,k) > zero ) then",
+        "else",
+        "if ( any( hydromet(j,k,:) >= hydromet_tol(:) ) .and. precip_frac_1(j,k) > min( one, precip_frac(j,k) / mixt_frac(j,k) ) ) then",
+        "elseif ( any( hydromet(j,k,:) >= hydromet_tol(:) ) .and. precip_frac_1(j,k) > zero .and. precip_frac_1(j,k) < precip_frac_tol(j) ) then",
+        "elseif ( all( hydromet(j,k,:) < hydromet_tol(:) ) ) then",
+        "if ( any( hydromet(j,k,:) >= hydromet_tol(:) ) ) then",
+        "if ( precip_frac_2(j,k) > one ) then",
+        "if ( precip_frac_1(j,k) > one ) then",
+        "elseif ( precip_frac_1(j,k) > zero .and. precip_frac_1(j,k) < precip_frac_tol(j) ) then",
+        "elseif ( precip_frac_2(j,k) > zero .and. precip_frac_2(j,k) < precip_frac_tol(j) ) then",
+        "if ( precip_frac_1(j,k) > one ) then",
+        "elseif ( precip_frac_1(j,k) > zero .and. precip_frac_1(j,k) < precip_frac_tol(j) ) then",
+        "else"
+      ]
+    },
+    {
+      "name": "component_precip_frac_specify",
+      "module": "precipitation_fraction",
+      "source": "src/CLUBB_core/precipitation_fraction.F90",
+      "arguments": [
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ngrdcol",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "hydromet_dim",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "hydromet_tol",
+          "kind": "real",
+          "dims": [
+            "hydromet_dim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "upsilon_precip_frac_rat",
+          "kind": "real",
+          "dims": [
+            "ngrdcol"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "hydromet",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt",
+            "hydromet_dim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "precip_frac",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mixt_frac",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "precip_frac_tol",
+          "kind": "real",
+          "dims": [
+            "ngrdcol"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "precip_frac_1",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "precip_frac_2",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nzt"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "source_lines": [
+        754,
+        931
+      ],
+      "call_and_function_order": [],
+      "branches_in_order": [
+        "if ( any( hydromet(j,k,:) >= hydromet_tol(:) ) ) then",
+        "if ( precip_frac_1(j,k) > one ) then",
+        "elseif ( precip_frac_1(j,k) < precip_frac_tol(j) ) then",
+        "if ( precip_frac_2(j,k) > one ) then",
+        "if ( precip_frac_1(j,k) > one ) then",
+        "elseif ( precip_frac_1(j,k) < precip_frac_tol(j) ) then",
+        "elseif ( precip_frac_2(j,k) < precip_frac_tol(j) ) then",
+        "if ( precip_frac_1(j,k) > one ) then",
+        "elseif ( precip_frac_1(j,k) < precip_frac_tol(j) ) then",
+        "else"
+      ]
+    },
+    {
+      "name": "precip_frac_assert_check",
+      "module": "precipitation_fraction",
+      "source": "src/CLUBB_core/precipitation_fraction.F90",
+      "arguments": [
+        {
+          "name": "nzt",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "hydromet_dim",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "hydromet_tol",
+          "kind": "real",
+          "dims": [
+            "hydromet_dim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "hydromet",
+          "kind": "real",
+          "dims": [
+            "nzt",
+            "hydromet_dim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mixt_frac",
+          "kind": "real",
+          "dims": [
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "precip_frac",
+          "kind": "real",
+          "dims": [
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "precip_frac_1",
+          "kind": "real",
+          "dims": [
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "precip_frac_2",
+          "kind": "real",
+          "dims": [
+            "nzt"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "precip_frac_tol",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "err_info",
+          "kind": "err_info_type",
+          "dims": [],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "source_lines": [
+        934,
+        1176
+      ],
+      "call_and_function_order": [],
+      "branches_in_order": [
+        "if ( any( hydromet(k,:) >= hydromet_tol(:) ) ) then",
+        "if ( precip_frac(k) < precip_frac_tol ) then",
+        "if ( precip_frac(k) > one ) then",
+        "if ( precip_frac_1(k) > zero .and. precip_frac_1(k) < precip_frac_tol - eps ) then",
+        "if ( precip_frac_1(k) > one ) then",
+        "if ( precip_frac_1(k) < zero ) then",
+        "if ( precip_frac_2(k) > zero .and. precip_frac_2(k) < precip_frac_tol - eps ) then",
+        "if ( precip_frac_2(k) > one ) then",
+        "if ( precip_frac_2(k) < zero ) then",
+        "else",
+        "if ( abs(precip_frac(k)) > eps) then",
+        "if ( abs(precip_frac_1(k)) > eps) then",
+        "if ( abs(precip_frac_2(k)) > eps) then",
+        "if ( ( precip_frac(k) - ( mixt_frac(k) * precip_frac_1(k) + ( one - mixt_frac(k) ) * precip_frac_2(k) ) ) > eps ) then"
+      ]
+    }
+  ],
+  "read_evidence": {
+    "native_lines": 1180,
+    "jax_lines": 843,
+    "full_read_before_implementation": true
+  },
+  "native_sha256": "f093801bb2a4352787342ff0147e6375f9a60e934a13258def68622b8af1dcbd",
+  "jax_sha256": "cdbb91e7138b6640913a43f085e927bdf05dd1f44d6f48a7ec3c60dea9cbb00b",
+  "ownership": "Scalar device functions and column-first LayoutLeft Views; local scratch, no mutable global storage; existing Native stats and error owners.",
+  "supported_scope": "All4 Native routines, including Native selector1 weighted and selector2 specified, both grid directions, warm/frozen species and full checker/stat diagnostics.",
+  "branches": [
+    "Native public immutable selector precip_frac_calc_type=2; alternate branch retained, no newruntimeflag",
+    "column-local maxval reductions and physical-top-to-bottom recurrences",
+    "Native ANY>= and ALL< remain separate predicates, including zero-length species and NaN behavior",
+    "species-ordered boosts; then overall consistency and bounds",
+    "Native checker first failed level/check returns and marks every error column; parent continues columnloop and prints header on fatal"
+  ],
+  "jax_differences": [
+    "No JAX safe denominators or fp==tol identity/optimization_barrier substitution. Preserve parenthesized Native formula.",
+    "Native parent invokes checker under debug2 and mutates err_info; JAX jitted parent omits this and standalone checker returns bool.",
+    "Final mixture check remains one-sided residual>eps; no abs/no finite guard."
+  ],
+  "lower_dependencies": [
+    "existing constants_clubb/parameter_indices/error_code/grid/array_types owners",
+    "Native stats_update and debug query only; no scientific f2k boundary"
+  ]
+}

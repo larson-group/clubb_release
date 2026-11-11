@@ -1,0 +1,47 @@
+{
+  "date": "2026-11-06",
+  "scope": "Runtime-use API/state/layout/kind review; numerical model verification is separate and pending Root maintained CPU gate",
+  "contracts": [
+    {
+      "boundary": "Public top-level array APIs",
+      "finding": "Native argument prefixes retained; Array0.. formal templates stage through existing array_types.hpp owners. Out/InOut copies restore values into caller allocations; init correlation outputs alone allocate as Native allocatable Out fields."
+    },
+    {
+      "boundary": "SILHS callback to KK/Morrison engines",
+      "finding": "Same Native callback argument list/order; bound lambda appends only required CPP case records. Strided per-sample Views are accepted by actual HostSpace C++ science; scalar Out refs retain caller aliases."
+    },
+    {
+      "boundary": "SILHS return arrays",
+      "finding": "compute_sample_mean returns default execution Real2D. Eleven uses now call shared from_execution_space to restore into host/strided outputs rather than assume a contiguous cross-space deep_copy."
+    },
+    {
+      "boundary": "Host diagnostic reductions",
+      "finding": "ANY traverses actual (column,level) indices and honors View strides/padding; MAXVAL retains per-column vertical comparison order. Morrison diagnostic masks include rank1 column integrals and rank2 column-level fields; both traverse logical indices."
+    },
+    {
+      "boundary": "Morrison columns",
+      "finding": "MorrisonColumn is float/HostSpace/LayoutStride. Local/source array accesses subtract actual KMS lower bound; fixed module arrays subtract declared lower bounds. Float input/output conversions stay in Native top-level wrapper, imported core constants retain actual core precision."
+    },
+    {
+      "boundary": "Morrison helpers and DATA",
+      "finding": "POLYSVP/GAMMA/DERF1 use Native default-real float coefficients and machine constants. Complex initializers preserve default-single CMPLX conversion; explicit return is added for END FUNCTION-only source exits. No tgamma/erf approximation substitution."
+    },
+    {
+      "boundary": "Algorithm850",
+      "finding": "Active alpha/order/inverse-Nc/mixed-moment call closure and recursive seeds are documented in KK_engine_closure.json. Retained algorithms guard unsupported direct a<1.5/mode1 requests; all active coefficients/stopping/overflow tests remain Native."
+    },
+    {
+      "boundary": "Case-owned state",
+      "finding": "microphysics/KK/Morrison/SILHS/RNG/permutation records replace implicit Native module state. No C++ mutable model globals, opaque engine registry, Native environment reads or settings copyback remain in owned Microphys files."
+    },
+    {
+      "boundary": "Fortran services",
+      "finding": "Only four call-local namelist readers, true stats recording/accumulation helpers, timers/debug queries remain. Root added canonical stats wrappers; duplicate manual delta files removed. New f2k/generate_microphys_io.py is portable and discovers current Native field kinds/widths and emits only its owned files."
+    },
+    {
+      "boundary": "PDF prep wrapper and seed",
+      "finding": "Full Native prefix includes nullable optional collection with required appended microphys,silhs,sampling_state,rng records. All science uses C++ package APIs. BFB-022 explicitly preserves int32 seed-product bits via unsigned multiply/bit_cast; no observed floating/mismatch fix."
+    }
+  ],
+  "remaining": "Integrated model CPU BFB cases and post-gate correction/cleanup, owned by Root. GPU numerical differences should be recorded by newly changed file only; no GPU diagnosis performed."
+}

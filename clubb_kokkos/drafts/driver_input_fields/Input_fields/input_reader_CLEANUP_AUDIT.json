@@ -1,0 +1,28 @@
+{
+  "date_UTC": "2026-11-06T06:45:12.758757+00:00",
+  "separate_pass": [
+    "Native11formalname/ordercontracts checked",
+    "completebodyreread forlookup/control/compaction/order/definedness",
+    "permanent types/sharedarrayowner and Nativeflatdimensionorder checked",
+    "nativeI/Ocalls3only; allocationlifetimeprimitiveABIreviewed",
+    "100column/no trailingwhitespace/nosaveglobalverified",
+    "Nativecomments/units/errorstrings and argumentgroups reread"
+  ],
+  "sha256": {
+    "src/Input_fields/input_reader.F90": "7fa79bd77c26fdc6078e9bdd96b06392fc5ee60c71bfc4c3804f8aed9efbab1c",
+    "clubb_jax/src/Input_fields/input_reader.py": "e88fb7f4fbd7c1f39d4a799ce2fee7f4979558619f693235b5bbed68b3721faf",
+    "clubb_kokkos/drafts/driver_input_fields/Input_fields/input_reader.cpp": "69842393084485b06a977243a65d035d58e866046951a804788c7c56c1726f9b",
+    "clubb_kokkos/drafts/driver_input_fields/Input_fields/input_reader.hpp": "8548f239e310ec58b0718ed5967d7a8bac50eba11cd5e2fc8f2c49214954f9f3",
+    "clubb_kokkos/drafts/driver_input_fields/Input_fields/input_names.hpp": "25eabb3970889fc06c348dd1216850bd6b545195989c0504f9b5a9bef4417569",
+    "clubb_kokkos/drafts/driver_input_fields/f2k/input_reader_io_bridge.hpp": "ae2b82bf25563a34a712ccc07b7e6cfd21bfa4333a828f7e0d1409fc8b39f9d2",
+    "clubb_kokkos/drafts/driver_input_fields/f2k/input_reader_io_bridge.F90": "9c76f9c5756eb8560812079e975615abbf9ff0942a512ea3824b1c4c4abefcb7"
+  },
+  "defects_remaining": [],
+  "runtime": "pending",
+  "metadata_boundary_correction": {
+    "date_UTC": "2026-11-06T08:33:57.793857+00:00",
+    "finding": "Root integration review found padded fixed30 std::string metadata fails direct external C++ comparisons.",
+    "remedy": "Trim trailing blanks when assigning public name/dim_name/dim1_name/dim2_name/other_dim metadata; preserve leading blanks and unchanged fixed30 primitive wire. No array/numerical changes.",
+    "validation": "Owner inspected all7assignment sites; no build/runtime claim."
+  }
+}

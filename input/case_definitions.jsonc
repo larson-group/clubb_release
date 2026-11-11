@@ -164,6 +164,9 @@
       "stats_tout": 60.0                        // Frequency of statistical output.  [s]
     },
 
+    //================================= GFDL (soon to be removed) =================================
+    "gfdl_activation_setting": {},
+
     //================================= Microphysics =================================
     "microphysics_setting": {
       // Select a scheme explicitly in the case; the options below stay defined.

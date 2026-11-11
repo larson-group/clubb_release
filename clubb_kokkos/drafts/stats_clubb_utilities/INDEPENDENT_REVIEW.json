@@ -1,0 +1,54 @@
+{
+  "reviewer": "Independent stats_util_review agent; implementation draft was authored by a previous agent.",
+  "scope": "Read-only review of all 743 Native source lines and complete draft CPP/header; lower scientific and memory-owner interfaces checked where needed. No production edits, compilation, model runs or numerical claims in this review.",
+  "reference_revision": "daab8bc7d4ba6c1f429cd9a86f4316037731a11c",
+  "sha256": {
+    "src/CLUBB_core/stats_clubb_utilities.F90": "66857329cb3020de9cd8a15ac762678ea7abaf06d74f617654f2f294e465f270",
+    "clubb_kokkos/drafts/stats_clubb_utilities/stats_clubb_utilities.cpp": "f4953904cd01f9a8d3158473c8124446ae1534890ea1fc3a1d2c739760df64f2",
+    "clubb_kokkos/drafts/stats_clubb_utilities/stats_clubb_utilities.hpp": "4e261ecf13a2915e12bbe91f9de17c7175eb3a7c6e6548871cb5b9a8f0839088",
+    "clubb_kokkos/drafts/stats_netcdf/stats_netcdf.hpp": "95ccc3fe840103367db2e0e102c88d2ffbd606e726493bd77a1fb6044bf3237d"
+  },
+  "status": "source_review_passed",
+  "verified_defects": [],
+  "routine_contracts": [
+    {
+      "name": "stats_accumulate",
+      "arguments": 66,
+      "review": "Leading scalar/grid/flags/parameter order and all fields match Native; only stats is mutated. Host sampled gate, conditional T/ice/cloud/shear diagnostics, zt/scalar/eddy/zm ordering, gamma lower calls, column maxima/cloud-base/water paths/vertical means, three normalized variations, physical-boundary spurious-source fluxes and sentinel paths reviewed."
+    },
+    {
+      "name": "stats_accumulate_hydromet_api",
+      "arguments": 7,
+      "review": "Sample gate, eight metadata-positive species updates, snow/ice/rain path guards, species indices and raw gr.dzt integral inputs match Native."
+    },
+    {
+      "name": "stats_accumulate_lh_tend",
+      "arguments": 17,
+      "review": "Sample gate; four thermodynamic/cloud tendencies, eight metadata-positive hydrometeor tendencies and seven Kessler fields preserve Native sequence and payloads."
+    }
+  ],
+  "independent_sequence_checks": {
+    "stats_update_count_native": 102,
+    "stats_update_count_cpp": 102,
+    "exact_ordered_update_names": true,
+    "var_on_stats_list_count_native": 15,
+    "var_on_stats_list_count_cpp": 15,
+    "method": "A fresh balanced-parenthesis parser independently extracted all call first arguments after comment removal; Native scalar suffix concatenation was normalized to C++ syntax. All 102 names match in order. Public argument counts were separately parsed."
+  },
+  "manual_checks": [
+    "All scientific payloads matched by reading the Native and C++ call blocks, including passive/eddy subviews and hydrometeor metadata.",
+    "Native scalar/species/grid-bound metadata stays one-based; only array element selections subtract one. Explicit scalar stats column arguments use zero-based C++ loops.",
+    "Signed dzm/dzt in stats_accumulate and unsigned gr.dzt in hydrometeor paths preserve their distinct Native expressions.",
+    "Shear endpoints remain zero, cloud threshold comparisons and cloud-base last-level sentinel remain exact, and l_stability_correct_tau_zm gates only the same field update.",
+    "Normalized total variation keeps epsilon endpoint guard, -999 sentinel and each divided absolute difference inside its level sum. Increasing-level sum is the faithful initial translation; CPU numerical equivalence remains a whole-model gate.",
+    "Spurious-source eligibility preserves l_implemented or both all(abs(wm)<eps); host-applied surface fluxes become zero; physical top/surface indices, integral/flux argument order, -9999 excluded values and two output calls match.",
+    "Generic overloads stage only sampled timesteps and preserve every formal argument. Host scientific inputs are call-local copies and never overwritten. Shared to_host_space packs strided views before cross-space transfer.",
+    "Existing calc_wp3_on_wp2, temperature, saturation, zt2zm, skewness/gamma and ordered vertical profile helper owners remain visible lower calls; no Native fallback, new global model storage or new arithmetic workaround.",
+    "Routine order, meaningful scientific comments/dividers, argument grouping/intent comments and opening descriptions are coherent with Native. C++ templates and memory-stage adapters are documented language boundaries, not hidden field-specific algorithms."
+  ],
+  "limitations": [
+    "The recorded Serial/CUDA object probes belong to the draft author and were inspected but not rerun by this reviewer.",
+    "A full-model CPU BFB comparison, file-byte equality, GPU checkpoint and final integration audit remain Root responsibilities; this source review does not establish them.",
+    "The permanent lower profile integral/average helpers use execution-space ordered kernels; no GPU numerical cause or performance analysis was done."
+  ]
+}

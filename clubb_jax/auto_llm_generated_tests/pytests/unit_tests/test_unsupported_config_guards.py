@@ -8,7 +8,7 @@ import pytest
 
 from clubb_jax.src.CLUBB_core.model_flags import get_default_config_flags
 from clubb_jax.src.Radiation.parameters_radiation import initialize_radiation_parameters
-from clubb_jax.src.clubb_case_initialization import _check_unsupported_features
+from clubb_jax.src.clubb_case_initalization import _check_unsupported_features
 
 
 _BASE = {
@@ -37,6 +37,7 @@ def test_baseline_and_supported_radiation_schemes_pass():
     ("cfg", "overrides", "message"),
     [
         ({}, {"microphys_scheme": "coamps"}, "microphys_scheme"),
+        ({"l_gfdl_activation": True}, {}, "l_gfdl_activation"),
         ({}, {"rad_scheme": "bugsrad"}, "rad_scheme"),
         ({}, {"l_calc_thlp2_rad": True}, "l_calc_thlp2_rad"),
         ({"wp2_sponge_damp_settings%l_sponge_damping": True}, {}, "Sponge damping"),

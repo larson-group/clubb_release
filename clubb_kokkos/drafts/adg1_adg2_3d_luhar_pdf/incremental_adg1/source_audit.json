@@ -1,0 +1,28 @@
+{
+  "source": "src/CLUBB_core/adg1_adg2_3d_luhar_pdf.F90:32\u2013240,1072\u20131233",
+  "routines": [
+    "ADG1_pdf_driver",
+    "ADG1_ADG2_responder_params"
+  ],
+  "arguments": {
+    "ADG1_pdf_driver": 58,
+    "ADG1_ADG2_responder_params": 19
+  },
+  "source_definition_order": true,
+  "calls_in_source_order": 6,
+  "every_call_argument_mapping": true,
+  "responder_expression_trees_compared": 6,
+  "clamp_manual_review": "min(alpha,one), then max(result,zero_threshold), retaining second operand on equal tie",
+  "manual_review": [
+    "source signatures, shapes/intents/required arguments, call grouping/order",
+    "sole parent fatal gate immediately after w closure, no new responder gates",
+    "all-column debug2 variance check and untouched outputs on return",
+    "rt/thl/u/v field mappings and native thl_tol for both winds",
+    "explicit l_scalar_calc branch, per-species tolerance host boundary, untouched outputs when skipped",
+    "source equations/denominator order, scalar width temporary per GPU work item",
+    "scientific derivation,2003 width-factor notes and inactive branch/PR1276 rationale",
+    "only w closure remains lower f2k boundary; no stats/global state/new UDT",
+    "comment/spacing/formatting cleanup and natural-language adaptations"
+  ],
+  "builds_or_numerical_tests": "not run; root owns later integration/model comparison"
+}

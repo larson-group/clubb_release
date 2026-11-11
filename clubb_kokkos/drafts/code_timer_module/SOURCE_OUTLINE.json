@@ -1,0 +1,75 @@
+{
+  "source": "src/CLUBB_core/code_timer_module.F90",
+  "source_sha256": "7c35fa17bca062c50f8e500fbd621daea955e6fc8a5f6d4ac0eadbee8ed7a6bd",
+  "source_lines": 807,
+  "public_order": [
+    "timer_initialize",
+    "timer_disable",
+    "timer_start",
+    "timer_stop",
+    "timer_finalize"
+  ],
+  "definition_order": [
+    "timer_initialize",
+    "timer_disable",
+    "timer_start",
+    "timer_stop",
+    "timer_finalize",
+    "cpu_timer_start",
+    "cpu_timer_stop",
+    "get_timer_id",
+    "ensure_registry_capacity",
+    "ensure_stack_capacity",
+    "print_cpu_timer_summary",
+    "timer_display_name",
+    "require_empty_stack",
+    "reset_cpu_timer_state",
+    "timer_absolute_path",
+    "timer_fail"
+  ],
+  "arguments": {
+    "timer_initialize": [],
+    "timer_disable": [],
+    "timer_start": [
+      "timer_name: character(*) In"
+    ],
+    "timer_stop": [
+      "timer_name: character(*) In"
+    ],
+    "timer_finalize": [
+      "output_file: character(*) In"
+    ]
+  },
+  "backends": {
+    "GPTL": "Direct C GPTL API; options print_method/full_tree, abort_on_error=1, overhead=0; only initialize return is checked, exactly as Native.",
+    "cpu_time": "Process CPU time in core-kind seconds; dynamic registry, strict LIFO stack, recursive same-name regions allowed."
+  },
+  "state": "Private thread_local initialized/enabled, registry/stack and logical counts mirror Native OpenMP threadprivate; expressly authorized exception to no globals.",
+  "CPU_constants": {
+    "registry_chunk_size": 16,
+    "stack_chunk_size": 32,
+    "display_name_length": 48
+  },
+  "preserved_semantics": [
+    "disabled operations return without validation; initialize reenables",
+    "start initializes lazily; stop before initialization fails",
+    "initialize requires empty CPU stack; disable discards an active stack",
+    "stop reads time and looks up name before empty-stack/nesting checks",
+    "insertion-order counts, inclusive time, exclusive time minus immediate children",
+    "finalize validates filename and announces path before CPU active-stack check",
+    "filename/name trim removes trailing blanks only; no normalization",
+    "PWD relative-path resolution and fixed1024 character assignment/truncation",
+    "same table headers, widths, precision, footer and no-timer output",
+    "all Native diagnostics and checks, no Kokkos dependency or GPU synchronization"
+  ],
+  "adaptations_planned": [
+    "std::clock/CLOCKS_PER_SEC maps Native process cpu_time; unavailable clock maps to -1 second",
+    "std::vector resized by Native16/32 increments represents allocatable slots; separate1-based timer IDs and logical counts",
+    "private ostream replaces Native integer output unit; file is local and truncating",
+    "timer_fail throws Native-prefixed runtime_error for existing standalone catch",
+    "C strings at GPTL boundary; same trailing-blank trim",
+    "C++ fixed-format numeric fields retain Native widths/precision; overflows rendered as stars"
+  ],
+  "validation_scope": "Source/control/argument/comment/format review only; Root owns compilation, GPTL/CPU edge checks, maintained model comparisons and utility execution.",
+  "promotion": "Permanent implementation is under src/CLUBB_core; draft source snapshots archived locally under build/validation/timers_cpp/promoted_draft."
+}

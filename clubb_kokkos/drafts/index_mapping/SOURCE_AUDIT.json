@@ -1,0 +1,57 @@
+{
+  "canonical_source": "src/CLUBB_core/index_mapping.F90",
+  "canonical_sha256": "a4aa95685dc19381303a1427a9eca03b01b9241463db95845a79587f757c91b8",
+  "cpp_sha256": "0930979b51c597b3a43ed6b0d003385a0768543b3ed88dda48c69ab90b24e332",
+  "hpp_sha256": "033a95a84a4711673013559e151254d7e1cc5c40221c6c60b0689fabe97eef1f",
+  "routines": [
+    {
+      "name": "pdf2hydromet_idx",
+      "required_arguments": 2,
+      "ordered_assignments": 9,
+      "ordered_branch_predicates": 8,
+      "result_name_and_type": "exact",
+      "case_sensitive_generated_members": "verified"
+    },
+    {
+      "name": "hydromet2pdf_idx",
+      "required_arguments": 2,
+      "ordered_assignments": 9,
+      "ordered_branch_predicates": 8,
+      "result_name_and_type": "exact",
+      "case_sensitive_generated_members": "verified"
+    },
+    {
+      "name": "rx2Nx_hm_idx",
+      "required_arguments": 2,
+      "ordered_assignments": 5,
+      "ordered_branch_predicates": 4,
+      "result_name_and_type": "exact",
+      "case_sensitive_generated_members": "verified"
+    },
+    {
+      "name": "Nx2rx_hm_idx",
+      "required_arguments": 2,
+      "ordered_assignments": 5,
+      "ordered_branch_predicates": 4,
+      "result_name_and_type": "exact",
+      "case_sensitive_generated_members": "verified"
+    },
+    {
+      "name": "mvr_hm_max",
+      "required_arguments": 2,
+      "ordered_assignments": 5,
+      "ordered_branch_predicates": 4,
+      "result_name_and_type": "exact",
+      "case_sensitive_generated_members": "verified"
+    }
+  ],
+  "manual_review": [
+    "Full Native/JAX scope; no JAX-only helper, guarded sentinel or0based conversion imported.",
+    "Field-specific branch order including inverse mapping order differences and scalar radius OR predicates retained.",
+    "Existing generated26-field metadata owner reused; functions read scalar metadata only, no array staging/global owner/device captures.",
+    "All five full procedure descriptions and species comments retained. Stale module ownership/initialization comments corrected to existing hm_metadata_type/init_pdf_hydromet_arrays_api.",
+    "Separate cleanup:100columns, whitespace, exact case-sensitive names, same argument order, no target-only helper or optional."
+  ],
+  "remaining_dependencies": "None beyond existing generated metadata type and Native-valued constants_clubb maximum radii/zero.",
+  "numerical_evidence": "No build, unit/model test, runtime or BFB claim."
+}

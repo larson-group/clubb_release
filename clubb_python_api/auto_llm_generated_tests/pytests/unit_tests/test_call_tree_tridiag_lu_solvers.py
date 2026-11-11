@@ -11,12 +11,12 @@ sys.path.insert(0, str(_REPO_ROOT / "clubb_python_api"))
 from clubb_python import clubb_api
 
 
-def test_tridiag_lu_solve_one_column_batch_solves_diagonal_system():
-    """tridiag_lu_solve should solve a one-column diagonal batch."""
+def test_tridiag_lu_solve_single_rhs_lhs_solves_diagonal_system():
+    """tridiag_lu_solve should solve a single-LHS diagonal system."""
     ndim = 4
-    lhs = np.zeros((3, 1, ndim), dtype=np.float64, order="F")
+    lhs = np.zeros((3, ndim), dtype=np.float64, order="F")
     lhs[1, :] = np.array([2.0, 4.0, 8.0, 16.0], dtype=np.float64)
-    expected = np.array([[1.0, 2.0, 3.0, 4.0]], dtype=np.float64, order="F")
+    expected = np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float64, order="F")
     rhs = (lhs[1, :] * expected).copy(order="F")
 
     soln = clubb_api.tridiag_lu_solve(ndim=ndim, lhs=lhs, rhs=rhs)

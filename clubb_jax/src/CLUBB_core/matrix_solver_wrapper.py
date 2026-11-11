@@ -38,6 +38,7 @@ from clubb_jax.src.CLUBB_core.penta_lu_solver import (
 )
 from clubb_jax.src.CLUBB_core.tridiag_lu_solver import (
     tridiag_lu_solve_multiple_rhs_lhs,
+    tridiag_lu_solve_single_rhs_lhs,
     tridiag_lu_solve_single_rhs_multiple_lhs,
 )
 
@@ -47,19 +48,6 @@ from clubb_jax.src.CLUBB_core.tridiag_lu_solver import (
 # -------------------------------------------------------------------
 # JAX port note: unsupported Fortran solver choices below intentionally fail
 # fatal rather than silently falling back to a different linear solver.
-
-
-def _optional_rcond(l_use_rcond, estimate, disabled):
-    """Evaluate a requested reciprocal-condition estimate only when enabled.
-
-    A Python false flag removes an unrequested diagnostic during tracing. A
-    runtime flag retains a scalar conditional around the expensive estimate.
-    ``disabled`` supplies the existing zero output with the required shape.
-    """
-    if isinstance(l_use_rcond, bool):
-        return estimate() if l_use_rcond else disabled
-    return jax.lax.cond(l_use_rcond, lambda _: estimate(), lambda _: disabled, None)
-
 
 def _reciprocal_condition_number(a):
     norm_a = jnp.max(jnp.sum(jnp.abs(a), axis=-2), axis=-1)
@@ -229,60 +217,17 @@ def band_solve_single_rhs_multiple_lhs(
     old_soln=None,
     l_use_rcond: bool = False,
 ):
-    """Band solve written for single RHS and multiple LHS.
-
-    Fortran declarations (band_solve_single_rhs_multiple_lhs in src/CLUBB_core/matrix_solver_wrapper.F90):
-
-        ! ----------------------- Input Variables -----------------------
-        character(len=*), intent(in) :: &
-          solve_name
-
-        integer, intent(in) :: &
-          penta_solve_method
-
-        integer, intent(in) :: &
-          ngrdcol,  & ! Number of grid columns
-          nsup,     & ! Number of superdiagonals
-          nsub,     & ! Number of subdiagonals
-          ndim        ! The order of the LHS Matrix, i.e. the # of linear equations
-
-        logical, intent(in) :: &
-          l_implemented ! True if CLUBB is being implemented and run in a host model
-
-        real( kind = core_rknd ), dimension(nsup+nsub+1,ngrdcol,ndim), intent(inout) :: &
-          lhs ! Left hand side
-
-        real( kind = core_rknd ), dimension(ngrdcol,ndim), intent(inout) :: &
-          rhs ! Right hand side(s)
-
-        type(err_info_type), intent(inout) :: &
-          err_info        ! err_info struct containing err_code and err_header
-
-        ! ----------------------- Output Variables -----------------------
-        real( kind = core_rknd ), dimension(ngrdcol,ndim), intent(out) :: &
-          soln
-
-        ! ----------------------- Optional In -----------------------
-        real( kind = core_rknd ), optional, dimension(ngrdcol,ndim), intent(in) :: &
-          old_soln
-
-        ! ----------------------- Optional Out -----------------------
-
-        ! The estimate of the reciprocal condition number of matrix
-        ! after equilibration (if done).
-        real( kind = core_rknd ), optional, dimension(ngrdcol), intent(out) :: &
-          rcond
-    """
+    """Band solve written for single RHS and multiple LHS."""
     del old_soln
 
     # ----------------------- Begin Code -----------------------
 
     # The estimate of the reciprocal condition number of matrix
     # after equilibration (if done).
-    rcond = _optional_rcond(
-        l_use_rcond,
-        lambda: _band_rcond(ndim, lhs),
-        jnp.zeros((ngrdcol,)),
+    rcond = (
+        _band_rcond(ndim, lhs)
+        if l_use_rcond
+        else jnp.zeros((ngrdcol,))
     )
 
     if nsup != 2 or nsub != 2:
@@ -349,61 +294,17 @@ def band_solve_multiple_rhs_lhs(
     old_soln=None,
     l_use_rcond: bool = False,
 ):
-    """Band solve written for multiple RHS and multiple LHS.
-
-    Fortran declarations (band_solve_multiple_rhs_lhs in src/CLUBB_core/matrix_solver_wrapper.F90):
-
-        ! ----------------------- Input Variables -----------------------
-        character(len=*), intent(in) :: &
-          solve_name
-
-        integer, intent(in) :: &
-          penta_solve_method
-
-        integer, intent(in) :: &
-          ngrdcol,  & ! Number of grid columns
-          nsup,     & ! Number of superdiagonals
-          nsub,     & ! Number of subdiagonals
-          ndim,     & ! The order of the LHS Matrix, i.e. the # of linear equations
-          nrhs        ! Number of RHS's to back substitute for
-
-        logical, intent(in) :: &
-          l_implemented ! True if CLUBB is being implemented and run in a host model
-
-        real( kind = core_rknd ), dimension(nsup+nsub+1,ngrdcol,ndim), intent(inout) :: &
-          lhs ! Left hand side
-
-        real( kind = core_rknd ), dimension(ngrdcol,ndim,nrhs), intent(inout) :: &
-          rhs ! Right hand side(s)
-
-        type(err_info_type), intent(inout) :: &
-          err_info        ! err_info struct containing err_code and err_header
-
-        ! ----------------------- Output Variables -----------------------
-        real( kind = core_rknd ), dimension(ngrdcol,ndim,nrhs), intent(out) :: &
-          soln
-
-        ! ----------------------- Optional In -----------------------
-        real( kind = core_rknd ), optional, dimension(ngrdcol,ndim,nrhs), intent(in) :: &
-          old_soln
-
-        ! ----------------------- Optional Out -----------------------
-
-        ! The estimate of the reciprocal condition number of matrix
-        ! after equilibration (if done).
-        real( kind = core_rknd ), optional, dimension(ngrdcol), intent(out) :: &
-          rcond
-    """
+    """Band solve written for multiple RHS and multiple LHS."""
     del old_soln
 
     # ----------------------- Begin Code -----------------------
 
     # The estimate of the reciprocal condition number of matrix
     # after equilibration (if done).
-    rcond = _optional_rcond(
-        l_use_rcond,
-        lambda: _band_rcond(ndim, lhs),
-        jnp.zeros((ngrdcol,)),
+    rcond = (
+        _band_rcond(ndim, lhs)
+        if l_use_rcond
+        else jnp.zeros((ngrdcol,))
     )
 
     if nsup != 2 or nsub != 2:
@@ -470,51 +371,7 @@ def band_solve(
     old_soln=None,
     l_use_rcond: bool = False,
 ):
-    """Generic band solve interface.
-
-    Fortran declarations (band_solve_multiple_rhs_lhs in src/CLUBB_core/matrix_solver_wrapper.F90):
-
-        ! ----------------------- Input Variables -----------------------
-        character(len=*), intent(in) :: &
-          solve_name
-
-        integer, intent(in) :: &
-          penta_solve_method
-
-        integer, intent(in) :: &
-          ngrdcol,  & ! Number of grid columns
-          nsup,     & ! Number of superdiagonals
-          nsub,     & ! Number of subdiagonals
-          ndim,     & ! The order of the LHS Matrix, i.e. the # of linear equations
-          nrhs        ! Number of RHS's to back substitute for
-
-        logical, intent(in) :: &
-          l_implemented ! True if CLUBB is being implemented and run in a host model
-
-        real( kind = core_rknd ), dimension(nsup+nsub+1,ngrdcol,ndim), intent(inout) :: &
-          lhs ! Left hand side
-
-        real( kind = core_rknd ), dimension(ngrdcol,ndim,nrhs), intent(inout) :: &
-          rhs ! Right hand side(s)
-
-        type(err_info_type), intent(inout) :: &
-          err_info        ! err_info struct containing err_code and err_header
-
-        ! ----------------------- Output Variables -----------------------
-        real( kind = core_rknd ), dimension(ngrdcol,ndim,nrhs), intent(out) :: &
-          soln
-
-        ! ----------------------- Optional In -----------------------
-        real( kind = core_rknd ), optional, dimension(ngrdcol,ndim,nrhs), intent(in) :: &
-          old_soln
-
-        ! ----------------------- Optional Out -----------------------
-
-        ! The estimate of the reciprocal condition number of matrix
-        ! after equilibration (if done).
-        real( kind = core_rknd ), optional, dimension(ngrdcol), intent(out) :: &
-          rcond
-    """
+    """Generic band solve interface."""
     if rhs.ndim == 2:
         return band_solve_single_rhs_multiple_lhs(
             solve_name,
@@ -555,6 +412,55 @@ def band_solve(
 # JAX port note: keep LAPACK branches fatal here until those Fortran solver paths
 # have true JAX equivalents.
 
+def tridiag_solve_single_rhs_lhs(
+    solve_name: str,
+    tridiag_solve_method: int,
+    ndim: int,
+    lhs,
+    rhs,
+    err_info,
+    l_use_rcond: bool = False,
+):
+    """Tridiagonal solve written for single RHS and single LHS."""
+    # ----------------------- Begin Code -----------------------
+
+    # The estimate of the reciprocal condition number of matrix
+    # after equilibration (if done).
+    rcond = (
+        _tridiag_rcond_single_lhs(ndim, lhs)
+        if l_use_rcond
+        else jnp.zeros((1,))
+    )
+
+    if tridiag_solve_method == lapack:
+        print(
+            "WARNING: matrix_solver_wrapper.tridiag_solve_single_rhs_lhs "
+            "does not yet support the LAPACK tridiagonal solver path.",
+            file=sys.stderr,
+        )
+        return err_info.set_fatal(), jnp.zeros_like(rhs), rcond
+
+    if tridiag_solve_method == tridiag_lu:
+        # Solve the system with a tri-diagonal specific LU decomp
+        soln = tridiag_lu_solve_single_rhs_lhs(
+            ndim,
+            lhs, rhs,
+        )
+
+    else:
+        # The solve method should match one of the above
+        if clubb_at_least_debug_level(0):
+            jax.debug.callback(
+                lambda info: print(info.global_error_header_host(), "Error in tridiag_solve_single_rhs_lhs: ",
+                                   "  no case for tridiag_solve_method = ", tridiag_solve_method, sep="\n", file=sys.stderr),
+                err_info, ordered=True,
+            )
+        return err_info.set_fatal(), jnp.zeros_like(rhs), rcond
+
+    return check_nan_soln_1d(
+        solve_name, tridiag_solve_method, ndim, soln, err_info
+    ), soln, rcond
+
 
 def tridiag_solve_single_rhs_multiple_lhs(
     solve_name: str,
@@ -567,52 +473,15 @@ def tridiag_solve_single_rhs_multiple_lhs(
     err_info,
     l_use_rcond: bool = False,
 ):
-    """Tridiagonal solve written for single RHS and multiple LHS.
-
-    Fortran declarations (tridiag_solve_single_rhs_multiple_lhs in src/CLUBB_core/matrix_solver_wrapper.F90):
-
-        ! ----------------------- Input Variables -----------------------
-        character(len=*), intent(in) :: &
-          solve_name
-
-        integer, intent(in) :: &
-          tridiag_solve_method
-
-        integer, intent(in) :: &
-          ngrdcol,  & ! Number of grid columns
-          ndim        ! The order of the LHS Matrix, i.e. the # of linear equations
-
-        logical, intent(in) :: &
-          l_implemented ! True if CLUBB is being implemented and run in a host model
-
-        real( kind = core_rknd ), dimension(3,ngrdcol,ndim), intent(inout) :: &
-          lhs ! Left hand side
-
-        real( kind = core_rknd ), dimension(ngrdcol,ndim), intent(inout) :: &
-          rhs ! Right hand side(s)
-
-        type(err_info_type), intent(inout) :: &
-          err_info        ! err_info struct containing err_code and err_header
-
-        ! ----------------------- Output Variables -----------------------
-        real( kind = core_rknd ), dimension(ngrdcol,ndim), intent(out) :: &
-          soln
-
-        ! ----------------------- Optional Out -----------------------
-
-        ! The estimate of the reciprocal condition number of matrix
-        ! after equilibration (if done).
-        real( kind = core_rknd ), optional, dimension(ngrdcol), intent(out) :: &
-          rcond
-    """
+    """Tridiagonal solve written for single RHS and multiple LHS."""
     # ----------------------- Begin Code -----------------------
 
     # The estimate of the reciprocal condition number of matrix
     # after equilibration (if done).
-    rcond = _optional_rcond(
-        l_use_rcond,
-        lambda: _tridiag_rcond_multiple_lhs(ndim, lhs),
-        jnp.zeros((ngrdcol,)),
+    rcond = (
+        _tridiag_rcond_multiple_lhs(ndim, lhs)
+        if l_use_rcond
+        else jnp.zeros((ngrdcol,))
     )
 
     if tridiag_solve_method == lapack:
@@ -659,53 +528,15 @@ def tridiag_solve_multiple_rhs_lhs(
     err_info,
     l_use_rcond: bool = False,
 ):
-    """Tridiagonal solve written for multiple RHS and multiple LHS.
-
-    Fortran declarations (tridiag_solve_multiple_rhs_lhs in src/CLUBB_core/matrix_solver_wrapper.F90):
-
-        ! ----------------------- Input Variables -----------------------
-        character(len=*), intent(in) :: &
-          solve_name
-
-        integer, intent(in) :: &
-          tridiag_solve_method
-
-        integer, intent(in) :: &
-          ngrdcol,  & ! Number of grid columns
-          ndim,     & ! The order of the LHS Matrix, i.e. the # of linear equations
-          nrhs        ! Number of RHS's to back substitute for
-
-        logical, intent(in) :: &
-          l_implemented ! True if CLUBB is being implemented and run in a host model
-
-        real( kind = core_rknd ), dimension(3,ngrdcol,ndim), intent(inout) :: &
-          lhs ! Left hand side
-
-        real( kind = core_rknd ), dimension(ngrdcol,ndim,nrhs), intent(inout) :: &
-          rhs ! Right hand side(s)
-
-        type(err_info_type), intent(inout) :: &
-          err_info        ! err_info struct containing err_code and err_header
-
-        ! ----------------------- Output Variables -----------------------
-        real( kind = core_rknd ), dimension(ngrdcol,ndim,nrhs), intent(out) :: &
-          soln
-
-        ! ----------------------- Optional Out -----------------------
-
-        ! The estimate of the reciprocal condition number of matrix
-        ! after equilibration (if done).
-        real( kind = core_rknd ), optional, dimension(ngrdcol), intent(out) :: &
-          rcond
-    """
+    """Tridiagonal solve written for multiple RHS and multiple LHS."""
     # ----------------------- Begin Code -----------------------
 
     # The estimate of the reciprocal condition number of matrix
     # after equilibration (if done).
-    rcond = _optional_rcond(
-        l_use_rcond,
-        lambda: _tridiag_rcond_multiple_lhs(ndim, lhs),
-        jnp.zeros((ngrdcol,)),
+    rcond = (
+        _tridiag_rcond_multiple_lhs(ndim, lhs)
+        if l_use_rcond
+        else jnp.zeros((ngrdcol,))
     )
 
     if tridiag_solve_method == lapack:
@@ -751,44 +582,17 @@ def tridiag_solve(
     l_use_rcond: bool = False,
     l_implemented: bool = False,
 ):
-    """Generic tridiagonal solve interface.
-
-    Fortran declarations (tridiag_solve_single_rhs_multiple_lhs in src/CLUBB_core/matrix_solver_wrapper.F90):
-
-        ! ----------------------- Input Variables -----------------------
-        character(len=*), intent(in) :: &
-          solve_name
-
-        integer, intent(in) :: &
-          tridiag_solve_method
-
-        integer, intent(in) :: &
-          ngrdcol,  & ! Number of grid columns
-          ndim        ! The order of the LHS Matrix, i.e. the # of linear equations
-
-        logical, intent(in) :: &
-          l_implemented ! True if CLUBB is being implemented and run in a host model
-
-        real( kind = core_rknd ), dimension(3,ngrdcol,ndim), intent(inout) :: &
-          lhs ! Left hand side
-
-        real( kind = core_rknd ), dimension(ngrdcol,ndim), intent(inout) :: &
-          rhs ! Right hand side(s)
-
-        type(err_info_type), intent(inout) :: &
-          err_info        ! err_info struct containing err_code and err_header
-
-        ! ----------------------- Output Variables -----------------------
-        real( kind = core_rknd ), dimension(ngrdcol,ndim), intent(out) :: &
-          soln
-
-        ! ----------------------- Optional Out -----------------------
-
-        ! The estimate of the reciprocal condition number of matrix
-        ! after equilibration (if done).
-        real( kind = core_rknd ), optional, dimension(ngrdcol), intent(out) :: &
-          rcond
-    """
+    """Generic tridiagonal solve interface."""
+    if lhs.ndim == 2 and rhs.ndim == 1:
+        return tridiag_solve_single_rhs_lhs(
+            solve_name,
+            tridiag_solve_method,
+            ndim,
+            lhs,
+            rhs,
+            err_info,
+            l_use_rcond=l_use_rcond,
+        )
     if lhs.ndim == 3 and rhs.ndim == 2:
         return tridiag_solve_single_rhs_multiple_lhs(
             solve_name,
@@ -817,26 +621,30 @@ def tridiag_solve(
     raise ValueError("Unsupported lhs/rhs ranks for tridiag_solve")
 
 
+def check_nan_soln_1d(solve_name: str, solve_method: int, ndim: int, soln, err_info):
+    del ndim
+    l_has_nan = jnp.any(jnp.isnan(soln))
+    # Host I/O adaptation of source rank-specific loops; fatal state unchanged.
+    def print_nan_solution(values, info):
+        import numpy as np
+        for k in np.flatnonzero(np.isnan(values)):
+            print("ERROR: NaN detected: soln(", k+1, ") = ", values[k], file=sys.stderr)
+        print(info.global_error_header_host(), file=sys.stderr)
+        print("solve_method =", solve_method, file=sys.stderr)
+        print(solve_name.strip() + " NaNs in solution", file=sys.stderr)
+    jax.lax.cond(
+        jnp.any(l_has_nan),
+        lambda _: jax.debug.callback(print_nan_solution, soln, err_info, ordered=True),
+        lambda _: None, operand=None,
+    )
+    return err_info.set_fatal(
+        mask=jnp.full((int(err_info.ngrdcol),), l_has_nan, dtype=bool)
+    )
+
+
 def check_nan_soln_2d(
     solve_name: str, solve_method: int, ngrdcol: int, ndim: int, soln, err_info
 ):
-    """
-    Fortran declarations (check_nan_soln_2d in src/CLUBB_core/matrix_solver_wrapper.F90):
-
-        !--------------------------- Input Variables ---------------------------
-        character(len=*), intent(in) :: &
-          solve_name
-
-        integer, intent(in) :: &
-          solve_method, ngrdcol, ndim
-
-        real( kind = core_rknd ), intent(in), dimension(ngrdcol,ndim) :: &
-          soln
-
-        !--------------------------- Input/Output Variables ---------------------------
-        type(err_info_type), intent(inout) :: &
-          err_info
-    """
     del ndim
     l_has_nan = jnp.any(jnp.isnan(soln), axis=1)
     # Host I/O adaptation of source rank-specific loops; fatal state unchanged.
@@ -864,23 +672,6 @@ def check_nan_soln_3d(
     soln,
     err_info,
 ):
-    """
-    Fortran declarations (check_nan_soln_3d in src/CLUBB_core/matrix_solver_wrapper.F90):
-
-        !--------------------------- Input Variables ---------------------------
-        character(len=*), intent(in) :: &
-          solve_name
-
-        integer, intent(in) :: &
-          solve_method, ngrdcol, ndim, nrhs
-
-        real( kind = core_rknd ), intent(in), dimension(ngrdcol,ndim,nrhs) :: &
-          soln
-
-        !--------------------------- Input/Output Variables ---------------------------
-        type(err_info_type), intent(inout) :: &
-          err_info
-    """
     del ndim, nrhs
     l_has_nan = jnp.any(jnp.isnan(soln), axis=(1, 2))
     # Host I/O adaptation of source rank-specific loops; fatal state unchanged.

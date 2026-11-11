@@ -1,0 +1,133 @@
+{
+  "status": "Source-only audit; uncompiled/untested",
+  "routines": [
+    {
+      "name": "new_pdf_driver",
+      "native_arguments": 29,
+      "profile_contract": "exact Native argument order; no optionals",
+      "scalar_overload": false,
+      "assignment_trees_checked": 34,
+      "source_branches": "independent AST comparison"
+    },
+    {
+      "name": "calc_responder_var",
+      "native_arguments": 19,
+      "profile_contract": "exact Native argument order; no optionals",
+      "scalar_overload": false,
+      "assignment_trees_checked": 4,
+      "source_branches": "independent AST comparison"
+    },
+    {
+      "name": "calc_F_x_zeta_x_setter",
+      "native_arguments": 9,
+      "profile_contract": "exact Native argument order; no optionals",
+      "scalar_overload": true,
+      "assignment_trees_checked": 6,
+      "source_branches": "independent AST comparison"
+    },
+    {
+      "name": "calc_F_x_responder",
+      "native_arguments": 5,
+      "profile_contract": "exact Native argument order; no optionals",
+      "scalar_overload": true,
+      "assignment_trees_checked": 1,
+      "source_branches": "independent AST comparison"
+    },
+    {
+      "name": "calc_mixture_fraction",
+      "native_arguments": 5,
+      "profile_contract": "exact Native argument order; no optionals",
+      "scalar_overload": true,
+      "assignment_trees_checked": 4,
+      "source_branches": "independent AST comparison"
+    },
+    {
+      "name": "calc_setter_var_params",
+      "native_arguments": 14,
+      "profile_contract": "exact Native argument order; no optionals",
+      "scalar_overload": true,
+      "assignment_trees_checked": 7,
+      "source_branches": "independent AST comparison"
+    },
+    {
+      "name": "calc_responder_params",
+      "native_arguments": 13,
+      "profile_contract": "exact Native argument order; no optionals",
+      "scalar_overload": true,
+      "assignment_trees_checked": 12,
+      "source_branches": "independent AST comparison"
+    },
+    {
+      "name": "calc_limits_F_x_responder",
+      "native_arguments": 8,
+      "profile_contract": "exact Native argument order; no optionals",
+      "scalar_overload": false,
+      "assignment_trees_checked": 20,
+      "source_branches": "independent AST comparison"
+    },
+    {
+      "name": "sort_roots",
+      "native_arguments": 2,
+      "profile_contract": "exact Native argument order; no optionals",
+      "scalar_overload": true,
+      "assignment_trees_checked": 15,
+      "source_branches": "independent AST comparison"
+    },
+    {
+      "name": "calc_coef_wp4_implicit",
+      "native_arguments": 5,
+      "profile_contract": "exact Native argument order; no optionals",
+      "scalar_overload": true,
+      "assignment_trees_checked": 1,
+      "source_branches": "independent AST comparison"
+    },
+    {
+      "name": "calc_coef_wpxp2_implicit",
+      "native_arguments": 12,
+      "profile_contract": "exact Native argument order; no optionals",
+      "scalar_overload": true,
+      "assignment_trees_checked": 3,
+      "source_branches": "independent AST comparison"
+    },
+    {
+      "name": "calc_coefs_wp2xp_semiimpl",
+      "native_arguments": 13,
+      "profile_contract": "exact Native argument order; no optionals",
+      "scalar_overload": true,
+      "assignment_trees_checked": 5,
+      "source_branches": "independent AST comparison"
+    },
+    {
+      "name": "calc_coefs_wpxpyp_semiimpl",
+      "native_arguments": 20,
+      "profile_contract": "exact Native argument order; no optionals",
+      "scalar_overload": true,
+      "assignment_trees_checked": 10,
+      "source_branches": "independent AST comparison"
+    }
+  ],
+  "findings": [],
+  "hashes": {
+    "src/CLUBB_core/new_pdf_main.F90": "538ec6d95d3d1854ba04ea0c91036af7f08b9322560df4b4840c062df7207f38",
+    "src/CLUBB_core/new_pdf.F90": "03f81f9d04755974603d60e7a77718a2af033f80bc926630e645d2dd5cf59e64",
+    "clubb_kokkos/drafts/new_pdf/new_pdf.hpp": "b37117023ae0c9692ed45107340d34e857dabc635f76d963f69b67e409125dca",
+    "clubb_kokkos/drafts/new_pdf/new_pdf_main.cpp": "462623187e150564baf1bbc8fba0f1859ae52c057299fab1cde9b8eaa734bb13",
+    "clubb_kokkos/drafts/new_pdf/new_pdf_main.hpp": "d4c0d122c987eaae2c254a7b228bb86a51e7da797364314cad3983af774c393f",
+    "clubb_kokkos/drafts/new_pdf/f2k_dependencies.hpp": "ae39663f63c694ce0f431443121a3b69fbd125e842467f4904c904ad19d21d08"
+  },
+  "validation": "No compilation/tests/numerical execution. CPU Fortran versus CPU Kokkos BFB is required at root integration; GPU differences are milestone evidence.",
+  "cleanup": {
+    "cpp_delimiters": "balanced after comments/string removal",
+    "whitespace": "100 columns; no trailing whitespace",
+    "documentation_links": "all local destinations exist",
+    "manual_review": [
+      "all three advection flags and Native column order",
+      "same Fortran invalid-mixture condition including nonpositive/NaN spread branch",
+      "nine implicit coefficient/explicit-term packed fields",
+      "all scalar/profile array index adapters and caller-memory-space return paths",
+      "complex root real extraction, exact solve/sort/selection order",
+      "no statistics calls in Native; deprecated diagnostic F outputs retained"
+    ],
+    "runtime": "not run; root owns promotion and CPU BFB gate"
+  }
+}

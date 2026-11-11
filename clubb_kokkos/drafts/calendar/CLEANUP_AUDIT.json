@@ -1,0 +1,25 @@
+{
+  "review": "Separate owner cleanup after full source/expression/control audit; not a distinct independent review.",
+  "files": {
+    "calendar.cpp": {
+      "sha256": "ee7c8ca6757f21df171b66695de77255092e2b366f744c1640b5954d3148e7b0",
+      "lines": 156,
+      "token_count": 527,
+      "exact_cleanup_token_equality": true
+    },
+    "calendar.hpp": {
+      "sha256": "262a8eae2b7bd878507831d262ade6b912a1c75d25bc90c3de61808743d053c8",
+      "lines": 48,
+      "token_count": 180,
+      "exact_cleanup_token_equality": true
+    }
+  },
+  "checked": [
+    "Native procedure/argument order and physical groups",
+    "Native integer arithmetic, explicit time kind, FLOOR vs truncation",
+    "Ordered month prefix, leap correction and exact fatal literal",
+    "Public immutable constants, complete descriptions/units/references",
+    "100 columns, two-space indentation, no trailing whitespace/tabs"
+  ],
+  "runtime_status": "No builds/tests or BFB claims."
+}

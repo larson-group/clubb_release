@@ -13,10 +13,10 @@ from .callbacks_display import register_display_callbacks
 from .callbacks_runs import register_run_callbacks
 from .callbacks_settings import register_settings_callbacks
 from .callbacks_workspaces import register_workspace_callbacks
-from dash_app.shared.tunable_configs import available_tunable_configs, default_tunable_config_name
-
 from .discovery import (
     available_fields_for_cases,
+    available_tunable_configs,
+    default_tunable_config_name,
     load_case_defaults,
     load_tunable_default_ranges,
     load_tunable_names,
@@ -93,7 +93,15 @@ def build_initial_tune_state():
         "aggregation_mode": DEFAULT_AGGREGATION_MODE,
         "aggregation_weights": list(DEFAULT_AGGREGATION_WEIGHTS),
         "scm_override": "",
-        "strategy_options": {},
+        "random_max_samples": 2000,
+        "resolve_spacing": 0.1,
+        "simann_max_iters": 200,
+        "simann_initial_temp": 1.0,
+        "simann_final_temp": 1.0e-12,
+        "adam_max_updates": 100,
+        "adam_learning_rate_percent": 1.0,
+        "adam_perturbation_percent": 5.0,
+        "adam_spsa_pairs": 2,
         "initial_case_rows": initial_case_rows,
         "initial_param_rows": initial_param_rows,
         "field_options": field_options,

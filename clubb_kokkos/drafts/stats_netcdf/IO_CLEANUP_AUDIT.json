@@ -1,0 +1,20 @@
+{
+  "status": "complete",
+  "Cpp_sha256": "74ab73479757c4eee9ea64c12ed14609c0e88e4868972aafd4481fe60101f3d5",
+  "header_sha256": "f84addefda5ee9413df8baf6939b36fe3eaa9587f8a59a9ea8a1c924568678eb",
+  "checks": {
+    "all14NativeBodiesPresentInSourceOrder": true,
+    "balancedNamespaceRangeChunks": true,
+    "allNativeSignatureArgumentOrderPreservedExceptApprovedWarningStateAndOptionalForwarding": true,
+    "everyRoutineHasDescriptionInsideDefinition": true,
+    "characterAndPackedIOAdaptersAreCallLocal": true,
+    "noNativeTopLevelForwarding": true,
+    "noGlobalModelStorage": true,
+    "noDeliberateArithmeticBFBAssociationChanges": true,
+    "noSpeculativeFMA": true,
+    "noSourceStubs": true,
+    "noTrailingWhitespace": true
+  },
+  "ignored_status_annotation": "maybe_unused on stats_lh_samples_init return-code local, matching Native unchecked statuses. No change to executable operations.",
+  "independent_review": "Owner source/cleanup pass; independent review not claimed."
+}

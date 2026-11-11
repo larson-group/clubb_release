@@ -1,0 +1,54 @@
+{
+  "scope": "Draft-only object compilation; no shared build, linkage, model run or numerical oracle.",
+  "environment": "NVHPC26.9, Kokkos5.2.2, core real8, C++20, O0. Serial include owner build/kokkos_serial_nvhpc26_debug/install; CUDA module targets sm86.",
+  "commands": [
+    {
+      "compiler": "nvc++",
+      "source": "stats_clubb_utilities.cpp",
+      "result": "passed, no diagnostics",
+      "configuration": "Serial Kokkos",
+      "object": "/tmp/clubb_stats_clubb_utilities_draft.o",
+      "source_compatibility": "Compiled before final format/comment cleanup; CLEANUP_AUDIT proves all executable tokens unchanged."
+    },
+    {
+      "compiler": "nvc++",
+      "source": "/tmp/clubb_stats_clubb_utilities_compile_probe.cpp",
+      "result": "passed, no diagnostics",
+      "configuration": "Serial Kokkos",
+      "object": "/tmp/clubb_stats_clubb_utilities_generic_serial.o"
+    },
+    {
+      "compiler": "nvcc_wrapper",
+      "source": "stats_clubb_utilities.cpp",
+      "result": "passed, no diagnostics",
+      "configuration": "CUDA sm86 with --extended-lambda --expt-relaxed-constexpr -arch=sm_86",
+      "object": "/tmp/clubb_stats_clubb_utilities_cuda.o"
+    },
+    {
+      "compiler": "nvcc_wrapper",
+      "source": "/tmp/clubb_stats_clubb_utilities_compile_probe.cpp",
+      "result": "passed, no diagnostics",
+      "configuration": "CUDA sm86 with --extended-lambda --expt-relaxed-constexpr -arch=sm_86",
+      "object": "/tmp/clubb_stats_clubb_utilities_generic_cuda.o"
+    }
+  ],
+  "generic_probe": "Instantiates all3 public generic entries with const default-execution Views and strided HostSpace Views at all required ranks; compile-only functions are not executed.",
+  "overlay": "/tmp/clubb_stats_utils_include/CLUBB_core contains header symlinks only; production headers/CMake remain unchanged.",
+  "initial_draft_findings_resolved": [
+    "First CPU compile caught trailing comma on the mixed rho_ds_zt In / stats InOut final Native continuation group; source signatures now split at actual intent boundary.",
+    "Initial ad hoc CUDA command omitted --extended-lambda; rejected inherited existing Kokkos kernel headers before meaningful compilation. Corrected commands pass both final TUs."
+  ],
+  "undefined_symbol_scan": "nm -C -u Serial implementation object has no f2k/Fortran call symbols. Calls to lower scientific owners are permanent C++ names.",
+  "runtime": "Root maintained CPU BFB integration gate remains pending. CUDA compile success is not GPU numerical/performance evidence.",
+  "header_dependency_sha256": "1ed0e28cc10c54d383ee75e91fe41d0ce12e07435be77adb6c29ad805cfffb98",
+  "current_source_sha256": {
+    "stats_clubb_utilities.hpp": "4e261ecf13a2915e12bbe91f9de17c7175eb3a7c6e6548871cb5b9a8f0839088",
+    "stats_clubb_utilities.cpp": "f4953904cd01f9a8d3158473c8124446ae1534890ea1fc3a1d2c739760df64f2"
+  },
+  "objects_sha256": {
+    "/tmp/clubb_stats_clubb_utilities_draft.o": "880c847ec494b81a0e7604feb4c1275f3ce36275eeed5bd9f6728b853f510f77",
+    "/tmp/clubb_stats_clubb_utilities_generic_serial.o": "2903572fcb9895a9459777922c147dc919592ada7e4f50a9c71c89a8a6f28227",
+    "/tmp/clubb_stats_clubb_utilities_cuda.o": "38ad177fb0f96c5a1870229fef1b2b943209649b9b250c05e0ef5cee7538452c",
+    "/tmp/clubb_stats_clubb_utilities_generic_cuda.o": "150a482bd519f2bdfe33afe2867db34b25dd5a6389d9f1ca15f4608b495dda5f"
+  }
+}

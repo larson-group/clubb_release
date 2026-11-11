@@ -58,22 +58,9 @@ def sat_vapor_press_liq_flatau(T_in_K):
     """Computes SVP for water vapor.
 
     References:
-    ``Polynomial Fits to Saturation Vapor Pressure'' Falatau, Walko,
-      and Cotton.  (1992)  Journal of Applied Meteorology, Vol. 31,
-      pp. 1507--1513
-
-    Returns:
-        esat
-
-    Fortran declarations (sat_vapor_press_liq_flatau in src/CLUBB_core/saturation.F90):
-
-        ! ---------------------- Input Variables ----------------------
-        real( kind = core_rknd ), intent(in) :: &
-          T_in_K   ! Temperature   [K]
-
-        ! ---------------------- Output Variables ----------------------
-        real( kind = core_rknd ), intent(out) :: &
-          esat  ! Saturation vapor pressure over water [Pa]
+      ``Polynomial Fits to Saturation Vapor Pressure'' Falatau, Walko,
+        and Cotton.  (1992)  Journal of Applied Meteorology, Vol. 31,
+        pp. 1507--1513
     """
     # Determine deg K - 273.15
     T_in_C = jnp.maximum(T_in_K - T_freeze_K, -85.0)
@@ -107,20 +94,7 @@ def sat_vapor_press_liq_bolton(T_in_K):
     """Computes SVP for water vapor.
 
     References:
-    Bolton 1980
-
-    Returns:
-        esat
-
-    Fortran declarations (sat_vapor_press_liq_bolton in src/CLUBB_core/saturation.F90):
-
-        ! --------------------- Input Variables ---------------------
-        real( kind = core_rknd ), intent(in) :: &
-          T_in_K   ! Temperature   [K]
-
-        ! --------------------- Output Variables ---------------------
-        real( kind = core_rknd ), intent(out) :: &
-          esat  ! Saturation vapor pressure over water [Pa]
+      Bolton 1980
     """
     # (Bolton 1980) approx.
     # Generally this more computationally expensive than the Flatau polnomial expansion
@@ -129,25 +103,19 @@ def sat_vapor_press_liq_bolton(T_in_K):
 
 
 def sat_vapor_press_liq_gfdl(T_in_K):
-    """copy from "GFDL polysvp.F90"
-     Compute saturation vapor pressure with respect to liquid  by using
-    function from Goff and Gratch (1946)
+    """Compute saturation vapor pressure with respect to liquid.
 
-    This function is shared with sat_mixrat_liq; it keeps the lower
-    temperature bound used in the Fortran sat_mixrat_liq_* GFDL branch.
+    Description:
+      copy from "GFDL polysvp.F90"
+       Compute saturation vapor pressure with respect to liquid  by using
+      function from Goff and Gratch (1946)
 
-    Returns:
-        esat
+       Polysvp returned in units of pa.
+       T_in_K  is input in units of K.
 
-    Fortran declarations (sat_vapor_press_liq_gfdl in src/CLUBB_core/saturation.F90):
-
-        ! --------------------------- Input Variables ---------------------------
-        real( kind = core_rknd ), intent(in) :: &
-          T_in_K   ! Absolute temperature   [K]
-
-        ! --------------------------- Output Variables ---------------------------
-        real( kind = core_rknd ), intent(out) :: &
-          esat  ! Saturation vapor pressure over water [Pa]
+    JAX note:
+      This helper is shared with `sat_mixrat_liq`; it keeps the lower
+      temperature bound used in the Fortran `sat_mixrat_liq_*` GFDL branch.
     """
     # Since the Goff-Gratch approximation is valid only down to -70 degrees Celsius,
     #   we threshold the temperature.  This will yield a minimal saturation at
@@ -171,21 +139,14 @@ def sat_vapor_press_liq_gfdl(T_in_K):
 
 
 def sat_vapor_press_liq(T_in_K, saturation_formula: int):
-    """Computes SVP for water vapor. Calls one of the other functions
-    that calculate an approximation to SVP.
+    """Computes SVP for water vapor.
 
-    Fortran declarations (sat_vapor_press_liq in src/CLUBB_core/saturation.F90):
+    Description:
+      Computes SVP for water vapor. Calls one of the other functions
+      that calculate an approximation to SVP.
 
-        ! ------------------------ Input Variables ------------------------
-        real( kind = core_rknd ), intent(in) :: &
-          T_in_K     ! Temperature                          [K]
-
-        integer, intent(in) :: &
-          saturation_formula
-
-        ! ------------------------ Output Variables ------------------------
-        real( kind = core_rknd ), intent(out) :: &
-          esat      ! Saturation Vapor Pressure over Water [Pa]
+    References:
+      None
     """
     # Saturation Vapor Pressure, esat, can be found to be approximated
     # in many different ways.
@@ -231,24 +192,7 @@ def sat_mixrat_ice(p_in_Pa, T_in_K):
     """Used to compute the saturation mixing ratio of ice.
 
     References:
-    Formula from Emanuel 1994, 4.4.15
-
-    Returns:
-        sat_mixrat_ice
-
-    Fortran declarations (sat_mixrat_ice_k in src/CLUBB_core/saturation.F90):
-
-        ! ------------------------ Input Variables ------------------------
-        real( kind = core_rknd ), intent(in) :: &
-          p_in_Pa, &          ! Pressure [Pa]
-          T_in_K              ! Temperature [K]
-
-        integer, intent(in) :: &
-          saturation_formula
-
-        ! ------------------------ Output Variables ------------------------
-        real( kind = core_rknd ) :: &
-          sat_mixrat_ice_k
+      Formula from Emanuel 1994, 4.4.15
     """
     # Determine deg K - 273.15
     T_in_C = jnp.maximum(T_in_K - T_freeze_K, _FLATAU_ICE_MIN_T_C)
@@ -299,26 +243,15 @@ def sat_mixrat_ice(p_in_Pa, T_in_K):
 
 
 def rcm_sat_adj(thlm, rtm, p_in_Pa, exner, saturation_formula: int):
-    """This function uses an iterative method to find the value of rcm
-    from an initial profile that has saturation at some point.
+    """Find rcm from an initial profile that has saturation at some point.
 
-    Returns:
-        rcm
+    Description:
 
-    Fortran declarations (rcm_sat_adj in src/CLUBB_core/saturation.F90):
+      This function uses an iterative method to find the value of rcm
+      from an initial profile that has saturation at some point.
 
-        !--------------------------- Input Variables ---------------------------
-        real( kind = core_rknd ), intent(in) :: &
-          thlm,    & ! Liquid Water Potential Temperature [K]
-          rtm,     & ! Total Water Mixing Ratio       [kg/kg]
-          p_in_Pa, & ! Pressure                          [Pa]
-          exner      ! Exner function                     [-]
-
-        integer, intent(in) :: &
-          saturation_formula
-
-        !--------------------------- Output Variables ---------------------------
-        real( kind = core_rknd ) :: rcm ! Cloud water mixing ratio      [kg/kg]
+    References:
+      None
     """
     tolerance = 0.001
     zero_threshold = 0.0

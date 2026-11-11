@@ -1,0 +1,1194 @@
+{
+  "status": "Native outline before implementation; uncompiled/untested draft",
+  "sources": {
+    "src/CLUBB_core/new_hybrid_pdf_main.F90": "d429812fa879b00add2576638bfca8df50a930a9bd21c76e2dbd21f9552f0abc",
+    "src/CLUBB_core/new_hybrid_pdf.F90": "ef24cba7c5f888ccd02dd38474e36819e8d925df374360a35ee0fa93ee6fa546"
+  },
+  "native_lines_read": {
+    "new_hybrid_pdf_main": "1\u20131054",
+    "new_hybrid_pdf": "1\u20131399"
+  },
+  "routines": [
+    {
+      "module": "new_hybrid_pdf_main",
+      "name": "new_hybrid_pdf_driver",
+      "line": 27,
+      "kind": "subroutine",
+      "elemental": false,
+      "arguments": [
+        {
+          "name": "nz",
+          "intent": "in",
+          "kind": "integer",
+          "dims": []
+        },
+        {
+          "name": "ngrdcol",
+          "intent": "in",
+          "kind": "integer",
+          "dims": []
+        },
+        {
+          "name": "sclr_dim",
+          "intent": "in",
+          "kind": "integer",
+          "dims": []
+        },
+        {
+          "name": "wm",
+          "intent": "in",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ]
+        },
+        {
+          "name": "rtm",
+          "intent": "in",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ]
+        },
+        {
+          "name": "thlm",
+          "intent": "in",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ]
+        },
+        {
+          "name": "um",
+          "intent": "in",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ]
+        },
+        {
+          "name": "vm",
+          "intent": "in",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ]
+        },
+        {
+          "name": "wp2",
+          "intent": "in",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ]
+        },
+        {
+          "name": "rtp2",
+          "intent": "in",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ]
+        },
+        {
+          "name": "thlp2",
+          "intent": "in",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ]
+        },
+        {
+          "name": "up2",
+          "intent": "in",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ]
+        },
+        {
+          "name": "vp2",
+          "intent": "in",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ]
+        },
+        {
+          "name": "Skw",
+          "intent": "in",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ]
+        },
+        {
+          "name": "wprtp",
+          "intent": "in",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ]
+        },
+        {
+          "name": "wpthlp",
+          "intent": "in",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ]
+        },
+        {
+          "name": "upwp",
+          "intent": "in",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ]
+        },
+        {
+          "name": "vpwp",
+          "intent": "in",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ]
+        },
+        {
+          "name": "sclrm",
+          "intent": "in",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz",
+            "sclr_dim"
+          ]
+        },
+        {
+          "name": "sclrp2",
+          "intent": "in",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz",
+            "sclr_dim"
+          ]
+        },
+        {
+          "name": "wpsclrp",
+          "intent": "in",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz",
+            "sclr_dim"
+          ]
+        },
+        {
+          "name": "clubb_params",
+          "intent": "in",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nparams"
+          ]
+        },
+        {
+          "name": "slope_coef_spread_DG_means_w",
+          "intent": "in",
+          "kind": "real",
+          "dims": [
+            "ngrdcol"
+          ]
+        },
+        {
+          "name": "pdf_component_stdev_factor_w",
+          "intent": "in",
+          "kind": "real",
+          "dims": [
+            "ngrdcol"
+          ]
+        },
+        {
+          "name": "Skrt",
+          "intent": "inout",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ]
+        },
+        {
+          "name": "Skthl",
+          "intent": "inout",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ]
+        },
+        {
+          "name": "Sku",
+          "intent": "inout",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ]
+        },
+        {
+          "name": "Skv",
+          "intent": "inout",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ]
+        },
+        {
+          "name": "Sksclr",
+          "intent": "inout",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz",
+            "sclr_dim"
+          ]
+        },
+        {
+          "name": "mu_w_1",
+          "intent": "out",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ]
+        },
+        {
+          "name": "mu_w_2",
+          "intent": "out",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ]
+        },
+        {
+          "name": "mu_rt_1",
+          "intent": "out",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ]
+        },
+        {
+          "name": "mu_rt_2",
+          "intent": "out",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ]
+        },
+        {
+          "name": "mu_thl_1",
+          "intent": "out",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ]
+        },
+        {
+          "name": "mu_thl_2",
+          "intent": "out",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ]
+        },
+        {
+          "name": "mu_u_1",
+          "intent": "out",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ]
+        },
+        {
+          "name": "mu_u_2",
+          "intent": "out",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ]
+        },
+        {
+          "name": "mu_v_1",
+          "intent": "out",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ]
+        },
+        {
+          "name": "mu_v_2",
+          "intent": "out",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ]
+        },
+        {
+          "name": "sigma_w_1_sqd",
+          "intent": "out",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ]
+        },
+        {
+          "name": "sigma_w_2_sqd",
+          "intent": "out",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ]
+        },
+        {
+          "name": "sigma_rt_1_sqd",
+          "intent": "out",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ]
+        },
+        {
+          "name": "sigma_rt_2_sqd",
+          "intent": "out",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ]
+        },
+        {
+          "name": "sigma_thl_1_sqd",
+          "intent": "out",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ]
+        },
+        {
+          "name": "sigma_thl_2_sqd",
+          "intent": "out",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ]
+        },
+        {
+          "name": "sigma_u_1_sqd",
+          "intent": "out",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ]
+        },
+        {
+          "name": "sigma_u_2_sqd",
+          "intent": "out",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ]
+        },
+        {
+          "name": "sigma_v_1_sqd",
+          "intent": "out",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ]
+        },
+        {
+          "name": "sigma_v_2_sqd",
+          "intent": "out",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ]
+        },
+        {
+          "name": "mu_sclr_1",
+          "intent": "out",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz",
+            "sclr_dim"
+          ]
+        },
+        {
+          "name": "mu_sclr_2",
+          "intent": "out",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz",
+            "sclr_dim"
+          ]
+        },
+        {
+          "name": "sigma_sclr_1_sqd",
+          "intent": "out",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz",
+            "sclr_dim"
+          ]
+        },
+        {
+          "name": "sigma_sclr_2_sqd",
+          "intent": "out",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz",
+            "sclr_dim"
+          ]
+        },
+        {
+          "name": "mixt_frac",
+          "intent": "out",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ]
+        },
+        {
+          "name": "sigma_sqd_w",
+          "intent": "out",
+          "kind": "real",
+          "dims": [
+            "ngrdcol",
+            "nz"
+          ]
+        },
+        {
+          "name": "pdf_implicit_coefs_terms",
+          "intent": "inout",
+          "kind": "implicit_coefs_terms",
+          "dims": []
+        }
+      ],
+      "all_required_no_optionals": true,
+      "calls_in_order": [
+        "compute_gamma_Skw",
+        "calc_F_w_zeta_w",
+        "calculate_w_params",
+        "calc_responder_driver",
+        "calc_responder_driver",
+        "calc_responder_driver",
+        "calc_responder_driver",
+        "calc_responder_driver",
+        "calc_coefs_wpxp2_semiimpl",
+        "calc_coefs_wpxp2_semiimpl",
+        "calc_coefs_wpxpyp_semiimpl",
+        "calc_coefs_wpxp2_semiimpl",
+        "calc_coefs_wpxp2_semiimpl",
+        "calc_coefs_wpxp2_semiimpl",
+        "calc_coefs_wpxpyp_semiimpl",
+        "calc_coefs_wpxpyp_semiimpl"
+      ]
+    },
+    {
+      "module": "new_hybrid_pdf_main",
+      "name": "calc_responder_driver",
+      "line": 692,
+      "kind": "subroutine",
+      "elemental": true,
+      "arguments": [
+        {
+          "name": "xm",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "xp2",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "wpxp",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "wp2",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "mixt_frac",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "F_w",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "Skx",
+          "intent": "inout",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "mu_x_1",
+          "intent": "out",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "mu_x_2",
+          "intent": "out",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "sigma_x_1_sqd",
+          "intent": "out",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "sigma_x_2_sqd",
+          "intent": "out",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "coef_sigma_x_1_sqd",
+          "intent": "out",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "coef_sigma_x_2_sqd",
+          "intent": "out",
+          "kind": "real",
+          "dims": []
+        }
+      ],
+      "all_required_no_optionals": true,
+      "calls_in_order": [
+        "calculate_responder_params"
+      ]
+    },
+    {
+      "module": "new_hybrid_pdf_main",
+      "name": "calc_F_w_zeta_w",
+      "line": 836,
+      "kind": "subroutine",
+      "elemental": true,
+      "arguments": [
+        {
+          "name": "Skw",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "wprtp",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "wpthlp",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "upwp",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "vpwp",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "wp2",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "rtp2",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "thlp2",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "up2",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "vp2",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "gamma_Skw_fnc",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "slope_coef_spread_DG_means_w",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "pdf_component_stdev_factor_w",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "max_corr_w_sclr_sqd",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "F_w",
+          "intent": "out",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "zeta_w",
+          "intent": "out",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "min_F_w",
+          "intent": "out",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "max_F_w",
+          "intent": "out",
+          "kind": "real",
+          "dims": []
+        }
+      ],
+      "all_required_no_optionals": true,
+      "calls_in_order": []
+    },
+    {
+      "module": "new_hybrid_pdf",
+      "name": "calculate_mixture_fraction",
+      "line": 262,
+      "kind": "function",
+      "elemental": true,
+      "arguments": [
+        {
+          "name": "Skw",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "F_w",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "zeta_w",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        }
+      ],
+      "all_required_no_optionals": true,
+      "calls_in_order": []
+    },
+    {
+      "module": "new_hybrid_pdf",
+      "name": "calculate_w_params",
+      "line": 342,
+      "kind": "subroutine",
+      "elemental": true,
+      "arguments": [
+        {
+          "name": "wm",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "wp2",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "Skw",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "F_w",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "zeta_w",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "mu_w_1",
+          "intent": "out",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "mu_w_2",
+          "intent": "out",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "sigma_w_1",
+          "intent": "out",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "sigma_w_2",
+          "intent": "out",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "mixt_frac",
+          "intent": "out",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "coef_sigma_w_1_sqd",
+          "intent": "out",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "coef_sigma_w_2_sqd",
+          "intent": "out",
+          "kind": "real",
+          "dims": []
+        }
+      ],
+      "all_required_no_optionals": true,
+      "calls_in_order": []
+    },
+    {
+      "module": "new_hybrid_pdf",
+      "name": "calculate_responder_params",
+      "line": 597,
+      "kind": "subroutine",
+      "elemental": true,
+      "arguments": [
+        {
+          "name": "xm",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "xp2",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "Skx",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "wpxp",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "wp2",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "F_w",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "mixt_frac",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "mu_x_1",
+          "intent": "out",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "mu_x_2",
+          "intent": "out",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "sigma_x_1_sqd",
+          "intent": "out",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "sigma_x_2_sqd",
+          "intent": "out",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "coef_sigma_x_1_sqd",
+          "intent": "out",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "coef_sigma_x_2_sqd",
+          "intent": "out",
+          "kind": "real",
+          "dims": []
+        }
+      ],
+      "all_required_no_optionals": true,
+      "calls_in_order": []
+    },
+    {
+      "module": "new_hybrid_pdf",
+      "name": "calculate_coef_wp4_implicit",
+      "line": 722,
+      "kind": "function",
+      "elemental": true,
+      "arguments": [
+        {
+          "name": "mixt_frac",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "F_w",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "coef_sigma_w_1_sqd",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "coef_sigma_w_2_sqd",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        }
+      ],
+      "all_required_no_optionals": true,
+      "calls_in_order": []
+    },
+    {
+      "module": "new_hybrid_pdf",
+      "name": "calc_coef_wp2xp_implicit",
+      "line": 828,
+      "kind": "function",
+      "elemental": true,
+      "arguments": [
+        {
+          "name": "wp2",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "mixt_frac",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "F_w",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "coef_sigma_w_1_sqd",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "coef_sigma_w_2_sqd",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        }
+      ],
+      "all_required_no_optionals": true,
+      "calls_in_order": []
+    },
+    {
+      "module": "new_hybrid_pdf",
+      "name": "calc_coefs_wpxp2_semiimpl",
+      "line": 979,
+      "kind": "subroutine",
+      "elemental": true,
+      "arguments": [
+        {
+          "name": "wp2",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "wpxp",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "mixt_frac",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "F_w",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "coef_sigma_x_1_sqd",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "coef_sigma_x_2_sqd",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "coef_wpxp2_implicit",
+          "intent": "out",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "term_wpxp2_explicit",
+          "intent": "out",
+          "kind": "real",
+          "dims": []
+        }
+      ],
+      "all_required_no_optionals": true,
+      "calls_in_order": []
+    },
+    {
+      "module": "new_hybrid_pdf",
+      "name": "calc_coefs_wpxpyp_semiimpl",
+      "line": 1131,
+      "kind": "subroutine",
+      "elemental": true,
+      "arguments": [
+        {
+          "name": "wp2",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "wpxp",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "wpyp",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "mixt_frac",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "F_w",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "coef_sigma_x_1_sqd",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "coef_sigma_x_2_sqd",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "coef_sigma_y_1_sqd",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "coef_sigma_y_2_sqd",
+          "intent": "in",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "coef_wpxpyp_implicit",
+          "intent": "out",
+          "kind": "real",
+          "dims": []
+        },
+        {
+          "name": "term_wpxpyp_explicit",
+          "intent": "out",
+          "kind": "real",
+          "dims": []
+        }
+      ],
+      "all_required_no_optionals": true,
+      "calls_in_order": []
+    }
+  ],
+  "branches": {
+    "new_hybrid_pdf_driver": "Column loop; scalar maximum with zero-denominator gate; invalid mixture ANY<0 then diagnostic ERROR STOP; rt/thl/u/v/scalar responders; all three explicit/implicit advection flags and scalar gates; each implicit UDT field in source order; final sigma=1-F_w",
+    "calc_responder_driver": "F_w>0; wp2*xp2>0 vs zero correlation; nonnegative covariance vs negative swaps skew bounds; F_w<=0 zero bounds; ordered upper/lower Skx clip then responder call",
+    "calc_F_w_zeta_w": "Each of four variance-product >0 gates; max scalar included; correlation-flux cap; absSkw>0 minimumF1e-3; inactive exponential F_w blend retained; active gamma form; positive/negative Skw zeta symmetry",
+    "calculate_mixture_fraction": "F_w>0 full formula; F_w<=0 and absSkw>0 returns-1; otherwise zeta ratio",
+    "calculate_w_params": "valid 0<mixture<1 equations vs all parameter outputs zero (mixture retained)",
+    "calculate_responder_params": "abs(wpxp)>0 equations with native coefficient zero floors; otherwise single Gaussian",
+    "calculate_coef_wp4_implicit": "full six-term expression",
+    "calc_coef_wp2xp_implicit": "F_w>0 formula else zero",
+    "calc_coefs_wpxp2_semiimpl": "F_w>0 and wp2>0 formulas else zero",
+    "calc_coefs_wpxpyp_semiimpl": "either coefficient product positive AND F_w/wp2 positive full equations; otherwise F_w>0 fallback (even wp2<=0) vs zero; explicit term alwayszero in fallback"
+  },
+  "dependencies": {
+    "already_ported": [
+      "compute_gamma_Skw",
+      "implicit_coefs_terms execution-space View struct",
+      "constants_clubb"
+    ],
+    "missing_generated_compile_constants": [
+      "l_explicit_turbulent_adv_wp3=false",
+      "l_explicit_turbulent_adv_wpxp=false"
+    ],
+    "existing_compile_constant": "l_explicit_turbulent_adv_xpyp=false"
+  },
+  "adaptations_planned": [
+    "Elemental functions/subroutines become device-callable scalar functions with required reference outputs",
+    "Native driver column loop and ordered phases retained; independent profile/field operations become Kokkos kernels",
+    "Call-owned source-named profile and scalar scratch, column-first model fields",
+    "ERROR STOP becomes host exception after exact Native diagnostics; no new err_info argument",
+    "Full scientific method descriptions/equations/comments preserved",
+    "No speculative explicit FMA, new floor, cbrt, log1p or reassociation"
+  ]
+}

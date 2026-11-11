@@ -1,0 +1,130 @@
+{
+  "id": "BFB-027",
+  "date_UTC": "2026-11-06T09:58:11.795597+00:00",
+  "status": "Root promoted exact candidate after isolated540-step BFB pass. Root CPU/CUDA rebuild and combined acceptance pending; diagnosis owner made no live/Native edits.",
+  "scope": {
+    "routine": "cos_solar_zen",
+    "Native_source": "src/Radiation/cos_solar_zen_module.F90:119",
+    "Cpp_source": "clubb_kokkos/src/Radiation/cos_solar_zen_module.cpp",
+    "case": "dycoms2_rf01_fixed_sst",
+    "microphysics": "none",
+    "backend": "SerialCPU Kokkos vsCPU Native",
+    "build": "NVHPC26.9,core8,Debug -O0 -g",
+    "settings": "Native300s main/radiation timestep,21600..183600s native duration,standard stats,4C8 columns,debug2,zero tolerance"
+  },
+  "first_cause": {
+    "first_saved_index_zero_based": 226,
+    "first_saved_time_s": 89700,
+    "first_model_call_time_s": 89400,
+    "first_raw_fields": [
+      "Frad_SW",
+      "Frad",
+      "radht_SW",
+      "radht"
+    ],
+    "initial_surface_Frad_SW_Cpp": -239.3014642762671,
+    "initial_surface_Frad_SW_Native": -239.30146427626704,
+    "surface_Frad_SW_ULPs": 2,
+    "first_radht_SW_abs_difference": 3.56544e-19,
+    "causality": "All saved fields before this sample agree; prognostic/forcing feedback follows at227 and LW at229. Model callback to compiled Native cos_solar_zen first differs at89400, matching the first saved shortwave boundary.",
+    "actual_scalar_replay": {
+      "day": 10,
+      "month": 7,
+      "year": 2001,
+      "time": 89400,
+      "lat": 31.5,
+      "lon": -122,
+      "t": 3.2879134073186327,
+      "latang": 0.5497787143782138,
+      "longang": 5.052728184523584,
+      "ordinary_delta": 0.38848258240673844,
+      "grouped_delta": 0.3884825824067385,
+      "original_Cpp": 0.46132322088010813,
+      "Native": 0.4613232208801081,
+      "grouped_Cpp": 0.4613232208801081
+    }
+  },
+  "arithmetic": {
+    "ordinary_translation": "delta = c0 + c1 * std::cos(t) + d1 * std::sin(t) + c2 * std::cos(2.0 * t) +\n          d2 * std::sin(2.0 * t) + c3 * std::cos(3.0 * t) + d3 * std::sin(3.0 * t);",
+    "candidate_translation": "// BFB-027: Native NVHPC rounds the harmonic terms separately from c0+c1*cos(t).\n  delta = (d1 * std::sin(t) + c2 * std::cos(2.0 * t) + d2 * std::sin(2.0 * t) +\n           c3 * std::cos(3.0 * t) + d3 * std::sin(3.0 * t)) + (c0 + c1 * std::cos(t));",
+    "Native_group1": "Round d1*sin(t); successively FMA c2*cos(2*t),d2*sin(2*t),c3*cos(3*t),d3*sin(3*t) into it.",
+    "Native_group2": "Round fma(c1,cos(t),c0).",
+    "Native_delta": "Add the two rounded groups.",
+    "cause": "NVHPC Fortran lowers Native source into two groups at -O0; ordinary C++ compiles one six-FMA chain. Native and C++ use the same __fd_sin_1_avx2/__fd_cos_1_avx2 and already share the final zenith multiply/FMA sequence.",
+    "candidate_operations": "Native rounded first product/four-FMA chain + separate one-FMA group + final addition. Only parentheses/term grouping needed; no explicit FMA or constant/gate/input change.",
+    "Native_assembly": "native_cos_assembly.txt addresses242..2ad; coefficient offsets verified from native_cos_text.bin",
+    "ordinary_Cpp_assembly": "cpp_cos_assembly.txt addresses78c..7cd",
+    "candidate_assembly": "candidate_cos_assembly.txt addresses6db,79d..7d5",
+    "Native_embedded_constants": {
+      "0x10": 0.006918,
+      "0x18": -0.399912,
+      "0x20": 0.000148,
+      "0x28": -0.002697,
+      "0x30": 0.000907,
+      "0x38": -0.006758,
+      "0x40": 0.070257,
+      "0x48": 2.0,
+      "0x50": 3.0,
+      "0x58": 6.283185307179586,
+      "0x60": 3600.0,
+      "0x68": 180.0,
+      "0x70": 15.0,
+      "0x78": 540.0,
+      "0x80": 0.017453292519943295,
+      "0x88": 0.0
+    },
+    "limits": "Recorded compiler/build preservation only; no other-compiler/GPU numerical claim."
+  },
+  "evidence": {
+    "baseline_reproduction": "baseline_228_RESULT.json: maintained harness mismatch227/228, both execute228.",
+    "same_input_model_probe": "cos_trace_RESULT.json/log: Native call with original model arguments. Probe saved output bytes equal uninstrumented control.",
+    "actual_replay": "cos_actual_input_replay.cpp / ACTUAL_COS_INPUT.json: one captured model input, ordinary function differs and grouped result equals compiled Native.",
+    "final_model": "candidate_full_RESULT.json + candidate_full_results/case_compare_summary.json: normal540/540steps, saved bytes exact, no max_iters/dt override.",
+    "Native_full_unchanged": "Candidate Native full output also byte-identical to original frozen Native full output.",
+    "baseline_source_equivalence": "Reconstructed control variables exactly match original frozen full C++ run through228 samples; isolated copies of all relative static archives/object inputs.",
+    "preexisting_baseline": "ac37a3898 full19 pass used Native outer radiation. Cause is newly translated radiation arithmetic, not a Native change."
+  },
+  "source_audit": {
+    "coverage": "Reread complete Native one-routine file + original/final C++ and actual radiation caller; inspect ordinary/candidate/Native assembly and embedded coefficients.",
+    "Native_formals": [
+      "day",
+      "month",
+      "year",
+      "current_time",
+      "lat_in_degrees",
+      "lon_in_degrees"
+    ],
+    "unchanged": "Procedure name/signature/precision, calendar calls/date branches, constants, zln guards, longitude/latitude transforms, final zenith formula and error behavior; candidate differs only identified delta expression + local BFB reason.",
+    "ownership": "Function-local scalars; no new mutable globals, allocation, temporary API or bridge.",
+    "cleanup": "Comment explains verified compiler grouping, both continued expression lines retain100-column limit.",
+    "limits": "Source review and scalar/model evidence are distinct; no unexecuted alternate date/compiler/GPU BFB claim."
+  },
+  "checks": {
+    "control_prefix_variables_exact": 633,
+    "probe_vs_control_file_bytes_equal": true,
+    "candidate_vs_Native_file_bytes_equal": true,
+    "candidate_Native_vs_frozen_Native_file_bytes_equal": true,
+    "signature_and_non_delta_body_unchanged": true,
+    "new_globals_or_state": false,
+    "Native_source_changed": false
+  },
+  "source_and_binary_sha256": {
+    "build/parallel_cpu_lanes/driver_none_numeric/cos_solar_zen_before027.cpp": "64dcb43372a08f251833c34b1aeeb5c54366c8eeb4cbf1b9b2bc64b0f0ff4673",
+    "build/parallel_cpu_lanes/driver_none_numeric/candidate_cos_solar_zen_module.cpp": "1462648a2138cc0d242f26c61c90ef856770ff845e439c0bd80dfdb8667e0b96",
+    "build/parallel_cpu_lanes/driver_none_numeric/candidate_clubb_standalone": "09032e9e25600b1c108983e60186b5365a911ecb0b6f75436dea889ebd9e2b91",
+    "build/parallel_cpu_lanes/driver_none_numeric/baseline_clubb_standalone": "f1f2498eccfbb965e0ed24af543cf75a2c0a8d7a453fafe7667a6e687d014e3d",
+    "build/parallel_cpu_lanes/driver_none_numeric/cos_actual_input_replay.cpp": "4cf1641ff6aa31e460646e24e0c2072996d4e043720ade5512a68791750b3af8",
+    "src/Radiation/cos_solar_zen_module.F90": "fd83bbd63c9047efbb210f728f6f5acce0c135d698140cb8c16c052200b41dd6",
+    "clubb_kokkos/src/Radiation/cos_solar_zen_module.cpp": "1462648a2138cc0d242f26c61c90ef856770ff845e439c0bd80dfdb8667e0b96"
+  },
+  "output_sha256": {
+    "frozen_Cpp_full": "85f70867998bf0dc7f63843ff2288c2f49303ed7a1069c89b4dd044105432485",
+    "frozen_Native_full": "fea9eff89d97f59fde7e3e6f8275ad9cf42ddd5f7eb3b5a860f14c11124b03eb",
+    "control_Cpp_228": "726ed6f3599f341d05832b63d1ab9328ff9979c7afdc5e47b3998a767cc9b7d8",
+    "trace_Cpp_228": "726ed6f3599f341d05832b63d1ab9328ff9979c7afdc5e47b3998a767cc9b7d8",
+    "candidate_Cpp_full": "fea9eff89d97f59fde7e3e6f8275ad9cf42ddd5f7eb3b5a860f14c11124b03eb",
+    "candidate_Native_full": "fea9eff89d97f59fde7e3e6f8275ad9cf42ddd5f7eb3b5a860f14c11124b03eb"
+  },
+  "patch": "BFB-027_candidate.patch",
+  "live_integration": "Exact candidate promoted; both complete CPU and CUDA targets rebuilt successfully. Root frozen six-case simplified-radiation full gate running."
+}

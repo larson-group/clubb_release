@@ -1,0 +1,23 @@
+{
+  "Native_full_read": 111,
+  "actual_JAX_full_read": 51,
+  "routines": [
+    "read_correlation_matrix"
+  ],
+  "source_call_order": [
+    "count_columns",
+    "read_one_dim_file",
+    "get_corr_var_index(i)",
+    "get_corr_var_index(j)",
+    "set_lower_triangular_matrix",
+    "deallocate_one_dim_vars"
+  ],
+  "branches": [
+    "rows/cols mismatchfatal",
+    "unknown metadata skips",
+    "0metadataindexpassesreaderbutcanonicalsetter ignoresnonpositive"
+  ],
+  "science": "zero unspecified correlations; diagonal1; inputuppertriangle values storedcanonical lowertriangle inNative1basedmetadataordering",
+  "new_required_lower": "ActualNative public set_lower_triangular_matrix body staged as canonical-owner mergefragment; no duplicate type or invented API",
+  "runtime": "pending"
+}

@@ -9,7 +9,7 @@ Porting deviations:
     remain jit-friendly.
   * Fortran ``l_quintic_poly_interp`` is a module flag; JAX passes
     ``l_quintic_poly_interp`` as an explicit argument.
-  * ``zlinterp`` and ``lin_interp_between_grids`` replace explicit Fortran
+  * ``zlinterp_fnc`` and ``lin_interp_between_grids`` replace explicit Fortran
     searches with vectorized JAX interpolation while preserving zero-fill or
     clamp semantics.
 """
@@ -23,6 +23,7 @@ from clubb_jax.src.CLUBB_core.constants_clubb import eps
 
 def lin_interpolate_two_points(height_int, height_high, height_low, var_high, var_low):
     """This function computes a linear interpolation of the value of variable.
+
     Given two known values of a variable at two height values, the value
     of that variable at a height between those two height levels (rather
     than a height outside of those two height levels) is computed.
@@ -31,9 +32,16 @@ def lin_interpolate_two_points(height_int, height_high, height_low, var_high, va
 
      ################################ Height high, know variable value
 
+
+
      -------------------------------- Height to be interpolated to; linear interpolation
 
+
+
+
+
      ################################ Height low, know variable value
+
 
     FORMULA:
 
@@ -42,22 +50,10 @@ def lin_interpolate_two_points(height_int, height_high, height_low, var_high, va
     [ (variable(@ Height high) - variable(@ Height low)) / (Height high - Height low) ]
     * (Height interpolation - Height low)  +  variable(@ Height low)
 
-    Returns:
-        lin_interpolate_two_points
+    Comments from WRF-HOC, Brian Griffin.
 
-    Fortran declarations (lin_interpolate_two_points in src/CLUBB_core/interpolation.F90):
-
-        !--------------------------- Input Variables ---------------------------
-
-        real( kind = core_rknd ), intent(in) :: &
-          height_int,  & ! Height to be interpolated to     [m]
-          height_high, & ! Height above the interpolation   [m]
-          height_low,  & ! Height below the interpolation   [m]
-          var_high,    & ! Variable above the interpolation [units vary]
-          var_low        ! Variable below the interpolation [units vary]
-
-        !--------------------------- Output Variables ---------------------------
-        real( kind = core_rknd ) :: lin_interpolate_two_points
+    References:
+    None
     """
     # Diagnostic-only restoration; retain the existing numerical/STOP boundary.
     jax.lax.cond(
@@ -77,31 +73,20 @@ def lin_interpolate_two_points(height_int, height_high, height_low, var_high, va
 
 def mono_cubic_interp(z_in, km1, k00, kp1, kp2, zm1, z00, zp1, zp2, fm1, f00, fp1, fp2,
                       l_quintic_poly_interp=False):
-    """Steffen's monotone cubic interpolation method
+    """Steffen's monotone cubic interpolation method.
+
     Returns monotone cubic interpolated value between x00 and xp1
 
+    Original Author:
+      Takanobu Yamaguchi
+      tak.yamaguchi@noaa.gov
+
+      This version has been modified slightly for CLUBB's coding standards and
+      adds the 3/2 from eqn 21. -dschanen 26 Oct 2011
+      We have also added a quintic polynomial option.
+
     References:
-    M. Steffen, Astron. Astrophys. 239, 443-450 (1990)
-
-    Returns:
-        f_out
-
-    Fortran declarations (mono_cubic_interp in src/CLUBB_core/interpolation.F90):
-
-        !--------------------------- Input Variables ---------------------------
-        real( kind = core_rknd ), intent(in) :: &
-          z_in ! The altitude to be interpolated to [m]
-
-        ! k-levels;  their meaning depends on whether we're extrapolating or interpolating
-        integer, intent(in) :: &
-          km1, k00, kp1, kp2
-
-        real( kind = core_rknd ), intent(in) :: &
-          zm1, z00, zp1, zp2, & ! The altitudes for km1, k00, kp1, kp2      [m]
-          fm1, f00, fp1, fp2    ! The field at km1, k00, kp1, and kp2       [units vary]
-
-        !--------------------------- Output Variables ---------------------------
-        real( kind = core_rknd ) :: f_out ! The interpolated field
+      M. Steffen, Astron. Astrophys. 239, 443-450 (1990)
     """
     coef1 = 1.0
     coef2 = 1.0
@@ -191,53 +176,18 @@ def mono_cubic_interp(z_in, km1, k00, kp1, kp2, zm1, z00, zp1, zp2, fm1, f00, fp
 
 
 def linear_interp_factor(factor, var_high, var_low):
-    """Determines the coefficient for a linear interpolation
+    """Determines the coefficient for a linear interpolation.
 
-    Returns:
-        linear_interp_factor
-
-    Fortran declarations (linear_interp_factor in src/CLUBB_core/interpolation.F90):
-
-        !--------------------------- Input Variables ---------------------------
-        real( kind = core_rknd ), intent(in) :: &
-          factor,   & ! Factor                           [units vary]
-          var_high, & ! Variable above the interpolation [units vary]
-          var_low     ! Variable below the interpolation [units vary]
+    References:
+      None
     """
     linear_interp_factor = factor * (var_high - var_low) + var_low
     return linear_interp_factor
 
 
-def lin_interp_between_grids(ngrdcol, size_interpolate, size_current,
-                             interpolate_altitudes, current_altitudes, current_values):
-    """Interpolate all columns to the target grids, using the nearest source
-    value outside each source grid and preserving the near-level tolerance.
-
-    Returns:
-        lin_interp_between_grids
-
-    Fortran declarations (lin_interp_between_grids in src/CLUBB_core/interpolation.F90):
-
-        !--------------------- Input Variables ---------------------
-        integer, intent(in) :: &
-            ngrdcol, & ! Number of grid columns [-]
-            size_interpolate, & ! Number of target levels [-]
-            size_current ! Number of source levels [-]
-
-        real( kind = core_rknd ), dimension(ngrdcol,size_interpolate), intent(in) :: &
-          interpolate_altitudes ! Target heights [m]
-
-        real( kind = core_rknd ), dimension(ngrdcol,size_current), intent(in) :: &
-          current_altitudes ! Source heights [m]
-
-        real( kind = core_rknd ), dimension(ngrdcol,size_current), intent(in) :: &
-          current_values ! given values on the current_altitudes altitudes that should be interpolated
-                         ! to the interpolate_altitudes altitudes
-
-        !--------------------- Return Variable ---------------------
-        real( kind = core_rknd ), dimension(ngrdcol,size_interpolate) :: &
-          lin_interp_between_grids ! Field on target heights [units vary]
-    """
+def lin_interp_between_grids(interpolate_altitudes, current_altitudes, current_values):
+    """Interpolates from the values (gr_current_values) on the current grid (gr_current) to the gr_interpolate grid."""
+    current_values = jnp.asarray(current_values)
 
     # --------------------- Begin Code ---------------------
     tol = 1.0e-6
@@ -254,8 +204,8 @@ def lin_interp_between_grids(ngrdcol, size_interpolate, size_current,
             lambda _: None, operand=None,
         )
         jax.lax.cond(
-            jnp.any(jnp.min(interpolate_altitudes, axis=1) < current_altitudes[:, 0])
-            | jnp.any(jnp.max(interpolate_altitudes, axis=1) > current_altitudes[:, -1]),
+            (jnp.min(interpolate_altitudes) < current_altitudes[0])
+            | (jnp.max(interpolate_altitudes) > current_altitudes[-1]),
             lambda _: jax.debug.callback(
                 lambda: print(
                     "lin_interp_between_grids: Value is out of range. Extrapolating...",
@@ -264,75 +214,41 @@ def lin_interp_between_grids(ngrdcol, size_interpolate, size_current,
             ),
             lambda _: None, operand=None,
         )
-    interp = jax.vmap(jnp.interp)(interpolate_altitudes, current_altitudes, current_values)
+    interp = jnp.interp(interpolate_altitudes, current_altitudes, current_values)
 
     # find nearest zt level of gr_current for zt(i) of gr_interpolate grid
     # if there is no gr_current zt level above or below the gr_interpolate grid level,
     # then the gr_current value of the closest level is taken
-    abs_delta = jnp.abs(interpolate_altitudes[:, :, None] - current_altitudes[:, None, :])
-    nearby = abs_delta < tol
-    nearest = jnp.argmax(nearby, axis=2)
-    exact = jnp.any(nearby, axis=2)
-    near_values = jnp.take_along_axis(current_values, nearest, axis=1)
-    lin_interp_between_grids = jnp.where(exact, near_values, interp)
-    return lin_interp_between_grids
+    abs_delta = jnp.abs(interpolate_altitudes[:, None] - current_altitudes[None, :])
+    nearest = jnp.argmin(abs_delta, axis=1)
+    exact = jnp.min(abs_delta, axis=1) < tol
+    return jnp.where(exact, current_values[nearest], interp)
 
 
-def zlinterp(ngrdcol, dim_out, dim_src, grid_out, grid_src, var_src, nout=None):
-    """Interpolate every column independently in the vertical. Optional nout
-    limits the active output levels when merged grids have different sizes.
+def zlinterp_fnc(grid_out, grid_src, var_src):
+    """Do a linear interpolation in the vertical.
+
     Assumes values that
     are less than lowest source point are zero and above the highest
     source point are zero. Also assumes altitude increases linearly.
 
     References:
-    function LIN_INT from WRF-HOC
-
-    Returns:
-        var_out
-
-    Fortran declarations (zlinterp in src/CLUBB_core/interpolation.F90):
-
-        !--------------------------- Input Variables ---------------------------
-        integer, intent(in) :: ngrdcol ! Number of grid columns
-        integer, intent(in) :: dim_out, dim_src
-
-        real( kind = core_rknd ), dimension(ngrdcol,dim_src), intent(in) ::  &
-          grid_src,  & ! [m]
-          var_src      ! [units vary]
-
-        real( kind = core_rknd ), dimension(ngrdcol,dim_out), intent(in) :: &
-          grid_out ! [m]
-
-        !--------------------------- Output Variables ---------------------------
-        real( kind = core_rknd ), dimension(ngrdcol,dim_out) :: &
-          var_out ! [units vary]
-
-        !--------------------------- Optional Input Variables ---------------------------
-        integer, intent(in), optional :: nout(ngrdcol) ! Active output levels in each column
+      function LIN_INT from WRF-HOC
     """
-    if dim_src < 2:
-        return jnp.zeros((ngrdcol, dim_out), dtype=var_src.dtype)
+    # ---- Begin Code ----
+    return jnp.interp(grid_out, grid_src, var_src, left=0.0, right=0.0)
 
-    # searchsorted requires one sorted vector; batching belongs inside this routine.
-    upper = jax.vmap(lambda source, target: jnp.searchsorted(source, target, side="left"))(
-        grid_src, grid_out,
-    )
-    upper = jnp.clip(upper, 1, dim_src - 1)
-    lower = upper - 1
-    z_hi = jnp.take_along_axis(grid_src, upper, axis=1)
-    z_lo = jnp.take_along_axis(grid_src, lower, axis=1)
-    value_hi = jnp.take_along_axis(var_src, upper, axis=1)
-    value_lo = jnp.take_along_axis(var_src, lower, axis=1)
-    last_out = jnp.full((ngrdcol,), dim_out) if nout is None else nout
-    active = jnp.arange(dim_out)[None, :] < last_out[:, None]
-    above_source = active & (grid_out > grid_src[:, -1:])
-    active &= jnp.cumsum(above_source, axis=1) == 0
-    active &= grid_out >= grid_src[:, :1]
-    delta_z = jnp.where(active, grid_out - z_lo, 0.0)
-    interval = jnp.where(active, z_hi - z_lo, 1.0)
-    value_hi = jnp.where(active, value_hi, 0.0)
-    value_lo = jnp.where(active, value_lo, 0.0)
-    var_out = (delta_z / interval) * (value_hi - value_lo) + value_lo
-    var_out = jnp.where(active, var_out, 0.0)
-    return var_out
+
+def plinterp_fnc(grid_out, grid_src, var_src):
+    """Do a linear interpolation in the vertical with pressures.
+
+    Assumes
+    values that are less than lowest source point are zero and above the
+    highest source point are zero. Also assumes altitude increases linearly.
+    This function just calls zlinterp_fnc, but negates grid_out and grid_src.
+
+    References:
+      function LIN_INT from WRF-HOC
+    """
+    # ---- Begin Code ----
+    return zlinterp_fnc(-grid_out, -grid_src, var_src)

@@ -1,0 +1,77 @@
+{
+  "status": "Complete supported source draft; not compiled/runtime validated",
+  "source": "src/CLUBB_core/advance_windm_edsclrm_module.F90; all2547 lines read",
+  "routine_order": [
+    "advance_windm_edsclrm",
+    "windm_edsclrm_solve",
+    "windm_edsclrm_implicit_stats",
+    "compute_uv_tndcy",
+    "windm_edsclrm_lhs",
+    "windm_edsclrm_rhs"
+  ],
+  "argument_counts": {
+    "advance_windm_edsclrm": 52,
+    "windm_edsclrm_solve": 12,
+    "windm_edsclrm_implicit_stats": 15,
+    "compute_uv_tndcy": 10,
+    "windm_edsclrm_lhs": 14,
+    "windm_edsclrm_rhs": 15
+  },
+  "all_signature_names_order_optionals": true,
+  "source_order_call_counts": {
+    "advance_windm_edsclrm": 51,
+    "windm_edsclrm_solve": 3,
+    "windm_edsclrm_implicit_stats": 2,
+    "compute_uv_tndcy": 3,
+    "windm_edsclrm_lhs": 0,
+    "windm_edsclrm_rhs": 2
+  },
+  "all_non_solver_call_arguments_checked": 427,
+  "grid_function_calls": {
+    "advance_windm_edsclrm": 2,
+    "windm_edsclrm_solve": 0,
+    "windm_edsclrm_implicit_stats": 0,
+    "compute_uv_tndcy": 0,
+    "windm_edsclrm_lhs": 0,
+    "windm_edsclrm_rhs": 0
+  },
+  "stats_calls_by_routine": {
+    "advance_windm_edsclrm": 16,
+    "windm_edsclrm_solve": 1,
+    "windm_edsclrm_implicit_stats": 2,
+    "compute_uv_tndcy": 3,
+    "windm_edsclrm_lhs": 0,
+    "windm_edsclrm_rhs": 2
+  },
+  "device_kernel_bodies_checked": 78,
+  "native_diagnostic_write_labels_in_order": {
+    "advance_windm_edsclrm": 37,
+    "windm_edsclrm_solve": 2,
+    "windm_edsclrm_implicit_stats": 0,
+    "compute_uv_tndcy": 0,
+    "windm_edsclrm_lhs": 0,
+    "windm_edsclrm_rhs": 0
+  },
+  "all_diagnostic_payload_values_checked": 72,
+  "no_udt_capture_host_access_or_nested_launch_in_kernel": true,
+  "scope_exclusion": "One UV sponge block, matching JAX initialization exclusion; upstream rejection required",
+  "matrix_adapter": [
+    "windm_edsclrm_solve: Native bands-first/C++ column-first solver storage and optional-rcond boundary",
+    "windm_edsclrm_solve: Native bands-first/C++ column-first solver storage and optional-rcond boundary"
+  ],
+  "manual_source_review": [
+    "Native matrix conversion, all11 solver argument slots and optional rcond dispatch",
+    "forcing validator keeps one ordered vertical scan per column",
+    "validators precede scratch allocation; host error payloads preserve embedded commas",
+    "all branch/statistics/clipping/error sequences and meaningful comments",
+    "exact52-argument public interface and five private routines",
+    "Native scalar first/second-half coefficients and assignment preserved; no speculative formula repair"
+  ],
+  "runtime": "No builds/tests/numerical execution; root owns CPU BFB integration gate and occasional GPU milestone comparison",
+  "sha256": {
+    "advance_windm_edsclrm_module.cpp": "4230d735fdb96636c8310ff17268673ba878b38ba139d43c7f8685a91a9b7dd4",
+    "advance_windm_edsclrm_module.hpp": "26f57bea6ee34e94e1f5b80cf42988b78130fe5d8d8bdf635143d28fe33ed46e",
+    "f2k_dependencies.hpp": "403c9b7048537d0e9501d230dd2a1fdd5d3ec7ba9ceb15015929d09e2d53ac9c"
+  },
+  "native_sha256": "7fdcf962c3ac68ecc5c0385d8e999cf59bb3e5ec4a282f12169dc60a46113b06"
+}

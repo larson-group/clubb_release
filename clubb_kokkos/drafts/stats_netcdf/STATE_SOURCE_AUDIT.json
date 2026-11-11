@@ -1,0 +1,282 @@
+{
+  "scope": "State/header draft only; source review independent of model numerical acceptance",
+  "source": "src/CLUBB_core/stats_netcdf.F90",
+  "source_sha256": "348fe3d29d1b4bbcd8d7317904c0b6a4368ecf8f896793449cec2884db4f8621",
+  "ranges": [
+    [
+      1,
+      1084
+    ],
+    [
+      1350,
+      2293
+    ],
+    [
+      2884,
+      3090
+    ]
+  ],
+  "target_hashes": {
+    "stats_netcdf.hpp": "f84addefda5ee9413df8baf6939b36fe3eaa9587f8a59a9ea8a1c924568678eb",
+    "stats_netcdf_state.cpp": "df7e1558975a78a2154738dac32d5c3d3ba289faa5988342ca3c879c9997e836"
+  },
+  "routine_count": 26,
+  "routines": [
+    {
+      "name": "stats_init_api",
+      "source_range": [
+        403,
+        730
+      ],
+      "review": "Required/optional-presence validation, real-kind cadence casts and NINT/lround, registry read/expand/prune, source/output grid setup, runtime state then NetCDF open, error propagation and enable-last order reviewed.",
+      "status": "source-reviewed"
+    },
+    {
+      "name": "stats_finalize_api",
+      "source_range": [
+        732,
+        817
+      ],
+      "review": "Partial allocations, nested module release, lookup/reset field assignments, close/error/ncid order match. Destructor is a C++ owner-lifetime adapter; explicit API remains error-reporting path.",
+      "status": "source-reviewed"
+    },
+    {
+      "name": "stats_reset_api",
+      "source_range": [
+        819,
+        868
+      ],
+      "review": "Final-batch wrap, flags/time index/cache counters and all pointwise buffers/active/budget flags reset in source order.",
+      "status": "source-reviewed"
+    },
+    {
+      "name": "start_next_stats_batch_api",
+      "source_range": [
+        870,
+        901
+      ],
+      "review": "Enabled gate and full next-batch-fit check before offset assignment preserved.",
+      "status": "source-reviewed"
+    },
+    {
+      "name": "stats_get_source_grid_api",
+      "source_range": [
+        903,
+        928
+      ],
+      "review": "Disabled-grid returns allocated zero-by-zero arrays; initialized-grid results own independent source-height copies.",
+      "status": "source-reviewed"
+    },
+    {
+      "name": "stats_type_initialize",
+      "source_range": [
+        930,
+        1083
+      ],
+      "review": "Registry field copy, positive/reject cache allocation/counters, each of seven grid family output/source vertical sizes, error and buffer allocation order reviewed.",
+      "status": "source-reviewed"
+    },
+    {
+      "name": "stats_begin_timestep_api",
+      "source_range": [
+        1350,
+        1428
+      ],
+      "review": "One-based itime, double sample/expected times, explicit core-kind step-offset cast, epsilon gate, clean-window order, open/closed window, partial-write omission, active flags and cache heads preserved.",
+      "status": "source-reviewed"
+    },
+    {
+      "name": "stats_end_timestep_api",
+      "source_range": [
+        1430,
+        1480
+      ],
+      "review": "Substep flush before last-sample gate, unfinished budget diagnostics, average/write and fatal error then sample flags order preserved.",
+      "status": "source-reviewed"
+    },
+    {
+      "name": "stats_prepare_sub_timestep_average",
+      "source_range": [
+        1482,
+        1495
+      ],
+      "review": "Lazy paired buffers allocate and zero only on first use; reset/flush clears values without reallocation.",
+      "status": "source-reviewed"
+    },
+    {
+      "name": "stats_flush_sub_timestep_averages",
+      "source_range": [
+        1497,
+        1526
+      ],
+      "review": "Column-first pointwise masked sum/count division into double buffer; each nonempty point increments once, then zero/reset and oversampling warning.",
+      "status": "source-reviewed"
+    },
+    {
+      "name": "stats_update_scalar",
+      "source_range": [
+        1536,
+        1630
+      ],
+      "review": "Native enabled->ID->registered->sample->budget order; rank2 exact shape gate; update-host staging at source position; mixed-mode rejection; pointwise accumulation and counts; rank1 optional column versus surface mapping; scalar level/column zero-base adaptation; oversampling diagnostics reviewed.",
+      "status": "source-reviewed"
+    },
+    {
+      "name": "stats_update_1d",
+      "source_range": [
+        1632,
+        1725
+      ],
+      "review": "Native enabled->ID->registered->sample->budget order; rank2 exact shape gate; update-host staging at source position; mixed-mode rejection; pointwise accumulation and counts; rank1 optional column versus surface mapping; scalar level/column zero-base adaptation; oversampling diagnostics reviewed.",
+      "status": "source-reviewed"
+    },
+    {
+      "name": "stats_update_2d",
+      "source_range": [
+        1727,
+        1811
+      ],
+      "review": "Native enabled->ID->registered->sample->budget order; rank2 exact shape gate; update-host staging at source position; mixed-mode rejection; pointwise accumulation and counts; rank1 optional column versus surface mapping; scalar level/column zero-base adaptation; oversampling diagnostics reviewed.",
+      "status": "source-reviewed"
+    },
+    {
+      "name": "stats_begin_budget_scalar",
+      "source_range": [
+        1813,
+        1857
+      ],
+      "review": "Native enabled->ID->registered->sample->already-in-budget gates; host staging; scalar/rank1/rank2 subtraction; budget flags set after arithmetic. Scalar absent required-on-branch column rejects via optional.value rather than undefined Native access.",
+      "status": "source-reviewed"
+    },
+    {
+      "name": "stats_begin_budget_1d",
+      "source_range": [
+        1859,
+        1910
+      ],
+      "review": "Native enabled->ID->registered->sample->already-in-budget gates; host staging; scalar/rank1/rank2 subtraction; budget flags set after arithmetic. Scalar absent required-on-branch column rejects via optional.value rather than undefined Native access.",
+      "status": "source-reviewed"
+    },
+    {
+      "name": "stats_begin_budget_2d",
+      "source_range": [
+        1912,
+        1951
+      ],
+      "review": "Native enabled->ID->registered->sample->already-in-budget gates; host staging; scalar/rank1/rank2 subtraction; budget flags set after arithmetic. Scalar absent required-on-branch column rejects via optional.value rather than undefined Native access.",
+      "status": "source-reviewed"
+    },
+    {
+      "name": "stats_update_budget_scalar",
+      "source_range": [
+        1953,
+        2001
+      ],
+      "review": "Native enabled->sample->ID->registered order and in-budget gate; rank2 uniquely stages before in-budget check exactly as source. Matching pointwise +core value into stat-double without counts.",
+      "status": "source-reviewed"
+    },
+    {
+      "name": "stats_update_budget_1d",
+      "source_range": [
+        2003,
+        2050
+      ],
+      "review": "Native enabled->sample->ID->registered order and in-budget gate; rank2 uniquely stages before in-budget check exactly as source. Matching pointwise +core value into stat-double without counts.",
+      "status": "source-reviewed"
+    },
+    {
+      "name": "stats_update_budget_2d",
+      "source_range": [
+        2052,
+        2090
+      ],
+      "review": "Native enabled->sample->ID->registered order and in-budget gate; rank2 uniquely stages before in-budget check exactly as source. Matching pointwise +core value into stat-double without counts.",
+      "status": "source-reviewed"
+    },
+    {
+      "name": "stats_finalize_budget_scalar",
+      "source_range": [
+        2092,
+        2156
+      ],
+      "review": "Native enabled->sample->ID->registered->count option->in-budget order; host staging; closing pointwise addition, optional count increment, l_budget true/l_in_budget false, conditional oversampling warning.",
+      "status": "source-reviewed"
+    },
+    {
+      "name": "stats_finalize_budget_1d",
+      "source_range": [
+        2158,
+        2229
+      ],
+      "review": "Native enabled->sample->ID->registered->count option->in-budget order; host staging; closing pointwise addition, optional count increment, l_budget true/l_in_budget false, conditional oversampling warning.",
+      "status": "source-reviewed"
+    },
+    {
+      "name": "stats_finalize_budget_2d",
+      "source_range": [
+        2231,
+        2292
+      ],
+      "review": "Native enabled->sample->ID->registered->count option->in-budget order; host staging; closing pointwise addition, optional count increment, l_budget true/l_in_budget false, conditional oversampling warning.",
+      "status": "source-reviewed"
+    },
+    {
+      "name": "var_on_stats_list",
+      "source_range": [
+        2884,
+        2916
+      ],
+      "review": "Read-only membership trims/left-adjusts untruncated query; enabled/blank gates and ordered first-match semantics preserved.",
+      "status": "source-reviewed"
+    },
+    {
+      "name": "stats_get_id",
+      "source_range": [
+        2918,
+        2998
+      ],
+      "review": "Fixed64 query, expected-hit and reject replay, unordered repeated-miss search, linear first-match, append/head behavior reviewed.",
+      "status": "source-reviewed"
+    },
+    {
+      "name": "stats_lookup_append",
+      "source_range": [
+        3000,
+        3041
+      ],
+      "review": "Initial/growing capacity max16/double, preserved entries, zero new slots, Native one-based cache IDs and lengths.",
+      "status": "source-reviewed"
+    },
+    {
+      "name": "stats_lookup_reject_append",
+      "source_range": [
+        3043,
+        3089
+      ],
+      "review": "Initial/growing capacity max16/double, preserved entries, blank new slots, fixed64 normalized names and lengths.",
+      "status": "source-reviewed"
+    }
+  ],
+  "types": {
+    "inventory": [
+      "stats_var",
+      "stats_grid_module",
+      "stats_lh_2d",
+      "stats_varname_lookup_cache",
+      "stats_type"
+    ],
+    "review": "All Native fields/defaults/order retained; HostSpace stat-double accumulation and core-kind metadata arrays; Native source/output grid UDT retained. StatsInitOptions bundles Native optionals without changing presence. C++ owner metadata is explicit and not process/model global."
+  },
+  "adaptations": [
+    "Column/level arguments are zero-based C++; model itime and internal registry/cache IDs/cursors remain Native one-based.",
+    "Generic rank1/rank2 executable bodies live in header templates to preserve arbitrary const/strided/device View types until the Native host-update boundary; C++ generic dispatch overloads do no additional arithmetic.",
+    "Kokkos View assignment aliases, so stats_var assignment and snapshot copies explicitly deep-copy all allocatable arrays; stats_type ordinary copying is prohibited to prevent duplicate file ownership. Snapshots borrow numeric file IDs but cannot mutate or close owners.",
+    "Native process-SAVE registry overflow warning becomes context-owned, persists across reset/reinitialize, and warns once/context rather than once/process; data truncation/deduplication is unchanged.",
+    "Native OpenMP critical region is unnecessary for current sequential standalone host-call path. Concurrent host statistics I/O is not supported; no global mutex introduced.",
+    "Native fixed strings use bounded std::string assignments in registry owner and normalized lookup; output list-directed diagnostic whitespace is language-specific.",
+    "Native WHERE/array expressions translate to host column-first loops with identical pointwise arithmetic; no cross-point reductions except integer max diagnostics.",
+    "RAII destructor closes partial owned contexts if explicit finalize is skipped; explicit finalize remains caller-visible error-reporting API."
+  ],
+  "numeric_status": "Pending integrated root whole-model CPU raw NetCDF comparisons; compile checks do not establish BFB.",
+  "cleanup_status": "No known unported assigned branch or placeholder; no f2k/Native call in these drafts."
+}

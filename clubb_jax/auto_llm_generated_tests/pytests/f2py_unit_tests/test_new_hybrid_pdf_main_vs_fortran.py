@@ -1,8 +1,6 @@
 """Check the new-hybrid PDF driver port (new_hybrid_pdf_main.F90)
 against Fortran."""
 
-from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
-
 from input.scripts.create_case_namelist import create_case_namelist_file
 
 import os
@@ -54,7 +52,7 @@ def test_f2py_oracle():
     from clubb_python.CLUBB_core.new_hybrid_pdf_main import new_hybrid_pdf_driver as fortran_driver
     from clubb_python.CLUBB_core.pdf_parameter_module import init_pdf_implicit
     from clubb_python.derived_types.pdf_params_converter import get_fortran_implicit_coefs
-    from clubb_jax.src.CLUBB_core.pdf_parameter_module import init_pdf_implicit_coefs_terms_api
+    from clubb_jax.src.CLUBB_core.pdf_params import init_pdf_implicit_coefs_terms_api
     from clubb_jax.src.CLUBB_core.Skx_module import compute_gamma_Skw
     from clubb_jax.src.CLUBB_core.parameters_tunable import init_clubb_params
     rng = np.random.default_rng(17)
@@ -70,7 +68,7 @@ def test_f2py_oracle():
             a['Skrt'], a['Skthl'], a['Sku'], a['Skv'], s['Sksclr'],
             pdf_implicit_coefs_terms=init_pdf_implicit(NZ, NG, SD))
         f_coefs = get_fortran_implicit_coefs()
-        g = call_jax(new_hybrid_pdf_driver,
+        g = new_hybrid_pdf_driver(
             a['wm'], a['rtm'], a['thlm'], a['um'], a['vm'], a['wp2'], a['rtp2'], a['thlp2'],
             a['up2'], a['vp2'], a['Skw'], a['wprtp'], a['wpthlp'], a['upwp'], a['vpwp'],
             compute_gamma_Skw(NZ, NG, a['Skw'], cp, True),

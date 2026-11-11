@@ -11,8 +11,6 @@ the empirical triple central moment — validating the three correlation cross-t
 grad. Companion to iters 559/560 (calc_wp4_pdf, the binormal moments). (iter 561)
 """
 
-from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
-
 
 import numpy as np
 
@@ -35,7 +33,7 @@ def _args():
 
 def test_closed_form():
     a = _args()
-    got = float(call_jax(calc_wpxpyp_pdf, *a))
+    got = float(calc_wpxpyp_pdf(*a))
     wm, xm, ym = a[0], a[1], a[2]
     ref = 0.0
     for w, C in ((_A, _C1), (1 - _A, _C2)):
@@ -57,7 +55,7 @@ def _chol(C):
 def test_monte_carlo():
     rng = np.random.default_rng(561)
     N = 12_000_000
-    a = _args(); got = float(call_jax(calc_wpxpyp_pdf, *a)); wm, xm, ym = a[0], a[1], a[2]
+    a = _args(); got = float(calc_wpxpyp_pdf(*a)); wm, xm, ym = a[0], a[1], a[2]
     L1, L2 = _chol(_C1), _chol(_C2)
     z = rng.standard_normal((3, N))
     s1 = np.array([[_C1['mw']], [_C1['mx']], [_C1['my']]]) + L1 @ z

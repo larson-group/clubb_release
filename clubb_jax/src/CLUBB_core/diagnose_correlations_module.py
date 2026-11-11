@@ -32,25 +32,8 @@ def diagnose_correlations(pdf_dim, iiPDF_w, corr_array_pre, l_calc_w_corr=False)
     into SILHS microphysics.
 
     References:
-    Larson et al. (2011), J. of Geophysical Research, Vol. 116, D00T02
-    (see CLUBB Trac ticket#514)
-
-    Fortran declarations (diagnose_correlations in src/CLUBB_core/diagnose_correlations_module.F90):
-
-        !--------------------------- Input Variables ---------------------------
-        integer, intent(in) :: &
-          pdf_dim, &  ! number of diagnosed correlations
-          iiPDF_w
-
-        real( kind = core_rknd ), dimension(pdf_dim, pdf_dim), intent(in) :: &
-          corr_array_pre   ! Prescribed correlations
-
-        logical, intent(in) :: &
-          l_calc_w_corr ! Calculate the correlations between w and the hydrometeors
-
-        !--------------------------- Output Variables ---------------------------
-        real( kind = core_rknd ), dimension(pdf_dim, pdf_dim), intent(out) :: &
-          corr_array
+      Larson et al. (2011), J. of Geophysical Research, Vol. 116, D00T02
+      (see CLUBB Trac ticket#514)
     """
     if l_calc_w_corr:
         raise NotImplementedError(
@@ -80,24 +63,8 @@ def diagnose_corr(n_variables, sqrt_sigma2_on_mu2_ip,
     """This subroutine diagnoses the correlation matrix for each timestep.
 
     References:
-    Larson et al. (2011), J. of Geophysical Research, Vol. 116, D00T02
-    (see CLUBB Trac ticket#514)
-
-    Fortran declarations (diagnose_corr in src/CLUBB_core/diagnose_correlations_module.F90):
-
-        !--------------------------- Input Variables ---------------------------
-        integer, intent(in) :: &
-          n_variables  ! number of variables in the correlation matrix [-]
-
-        real( kind = core_rknd ), dimension(n_variables), intent(in) :: &
-          sqrt_sigma2_on_mu2_ip  ! sqrt of sigma_x^2/mu_x^2 (ith PDF comp.) ip [-]
-
-        real( kind = core_rknd ), dimension(n_variables,n_variables), intent(in) :: &
-          corr_matrix_prescribed ! correlation matrix [-]
-
-        !--------------------------- Input/Output Variables ---------------------------
-        real( kind = core_rknd ), dimension(n_variables,n_variables), intent(inout) :: &
-          corr_matrix_approx ! correlation matrix [-]
+      Larson et al. (2011), J. of Geophysical Research, Vol. 116, D00T02
+      (see CLUBB Trac ticket#514)
     """
     del sqrt_sigma2_on_mu2_ip
 
@@ -124,24 +91,7 @@ def calc_w_corr(wpxp, stdev_w, stdev_x, w_tol, x_tol):
     """Compute the correlations of w with the hydrometeors.
 
     References:
-    clubb:ticket:514
-
-    Returns:
-        calc_w_corr
-
-    Fortran declarations (calc_w_corr in src/CLUBB_core/diagnose_correlations_module.F90):
-
-        !--------------------------- Input Variables ---------------------------
-        real( kind = core_rknd ), intent(in) :: &
-          stdev_w,  & ! standard deviation of w [m/s]
-          stdev_x,  & ! standard deviation of x [units vary]
-          wpxp,     & ! Covariances of w with the hydrometeors [units vary]
-          w_tol,    & ! tolerance for w [m/s]
-          x_tol       ! tolerance for x [units vary]
-
-        !--------------------------- Output Variables ---------------------------
-        real( kind = core_rknd ) :: &
-          calc_w_corr
+      clubb:ticket:514
     """
     calc_w_corr_value = wpxp / (
         jnp.maximum(stdev_x, x_tol) * jnp.maximum(stdev_w, w_tol)
@@ -159,26 +109,8 @@ def calc_varnce(mixt_frac, x1, x2, xm, x1p2, x2p2):
     """Calculate the variance xp2 from the components x1, x2.
 
     References:
-    Larson et al. (2011), J. of Geophysical Research, Vol. 116, D00T02,
-    page 3535
-
-    Returns:
-        calc_varnce
-
-    Fortran declarations (calc_varnce in src/CLUBB_core/diagnose_correlations_module.F90):
-
-        !--------------------------- Input Variables ---------------------------
-        real( kind = core_rknd ), intent(in) :: &
-          mixt_frac, &  ! mixing ratio [-]
-          x1, &         ! first component of the double gaussian [units vary]
-          x2, &         ! second component of the double gaussian [units vary]
-          xm, &         ! mean of x [units vary]
-          x1p2, &       ! variance of the first component [units vary]
-          x2p2          ! variance of the second component [units vary]
-
-        !--------------------------- Output Variables ---------------------------
-        real( kind = core_rknd ) :: &
-          calc_varnce ! variance of x (both components) [units vary]
+      Larson et al. (2011), J. of Geophysical Research, Vol. 116, D00T02,
+      page 3535
     """
     calc_varnce = (
         mixt_frac * ((x1 - xm) ** 2 + x1p2)
@@ -191,23 +123,8 @@ def calc_mean(mixt_frac, x1, x2):
     """Calculate the mean xm from the components x1, x2.
 
     References:
-    Larson et al. (2011), J. of Geophysical Research, Vol. 116, D00T02,
-    page 3535
-
-    Returns:
-        calc_mean
-
-    Fortran declarations (calc_mean in src/CLUBB_core/diagnose_correlations_module.F90):
-
-        !--------------------------- Input Variables ---------------------------
-        real( kind = core_rknd ), intent(in) :: &
-          mixt_frac, &  ! mixing ratio [-]
-          x1, &         ! first component of the double gaussian [units vary]
-          x2            ! second component of the double gaussian [units vary]
-
-        !--------------------------- Output Variables ---------------------------
-        real( kind = core_rknd ) :: &
-          calc_mean  ! mean of x (both components) [units vary]
+      Larson et al. (2011), J. of Geophysical Research, Vol. 116, D00T02,
+      page 3535
     """
     calc_mean = mixt_frac * x1 + (1.0 - mixt_frac) * x2
     return calc_mean
@@ -218,28 +135,8 @@ def calc_cholesky_corr_mtx_approx(n_variables, iiPDF_w, corr_matrix):
     from the correlation matrix
 
     References:
-    1 Larson et al. (2011), J. of Geophysical Research, Vol. 116, D00T02
-    2 CLUBB Trac ticket#514
-
-    Returns:
-        (corr_cholesky_mtx, corr_mtx_approx)
-
-    Fortran declarations (calc_cholesky_corr_mtx_approx in src/CLUBB_core/diagnose_correlations_module.F90):
-
-        !--------------------------- Input Variables ---------------------------
-        integer, intent(in) :: &
-          n_variables, &  ! number of variables in the correlation matrix [-]
-          iiPDF_w
-
-        real( kind = core_rknd ), dimension(n_variables,n_variables), intent(in) :: &
-          corr_matrix ! correlation matrix [-]
-
-        !--------------------------- Output Variables ---------------------------
-
-        ! correlation cholesky matrix transposed L', C = LL'; see reference 1 formula 10
-        real( kind = core_rknd ), dimension(n_variables,n_variables), intent(out) :: &
-          corr_cholesky_mtx, & ! Transposed correlation cholesky matrix    [-]
-          corr_mtx_approx      ! Approximated correlation matrix (C = LL') [-]
+      1 Larson et al. (2011), J. of Geophysical Research, Vol. 116, D00T02
+      2 CLUBB Trac ticket#514
     """
     corr_mtx_swap = rearrange_corr_array(n_variables, iiPDF_w, corr_matrix)
     corr_cholesky_mtx_swap = setup_corr_cholesky_mtx(
@@ -276,26 +173,8 @@ def setup_corr_cholesky_mtx(n_variables, corr_matrix):
     from the correlation matrix
 
     References:
-    1 Larson et al. (2011), J. of Geophysical Research, Vol. 116, D00T02
-    2 CLUBB Trac ticket#514
-
-    Returns:
-        corr_cholesky_mtx_t
-
-    Fortran declarations (setup_corr_cholesky_mtx in src/CLUBB_core/diagnose_correlations_module.F90):
-
-        !--------------------------- Input Variables ---------------------------
-        integer, intent(in) :: &
-          n_variables  ! number of variables in the correlation matrix [-]
-
-        real( kind = core_rknd ), dimension(n_variables,n_variables), intent(in) :: &
-          corr_matrix ! correlation matrix [-]
-
-        !--------------------------- Output Variables ---------------------------
-
-        ! correlation cholesky matrix transposed L', C = LL'; see reference 1 formula 10
-        real( kind = core_rknd ), dimension(n_variables,n_variables), intent(out) :: &
-          corr_cholesky_mtx_t ! transposed correlation cholesky matrix [-]
+      1 Larson et al. (2011), J. of Geophysical Research, Vol. 116, D00T02
+      2 CLUBB Trac ticket#514
     """
     # calculate all necessary square roots
     s = _safe_corr_sqrt(1.0 - corr_matrix ** 2)
@@ -338,24 +217,8 @@ def cholesky_to_corr_mtx_approx(n_variables, corr_cholesky_mtx_t=None):
     cholesky matrix
 
     References:
-    1 Larson et al. (2011), J. of Geophysical Research, Vol. 116, D00T02
-    2 CLUBB Trac ticket#514
-
-    Returns:
-        corr_matrix_approx
-
-    Fortran declarations (cholesky_to_corr_mtx_approx in src/CLUBB_core/diagnose_correlations_module.F90):
-
-        !--------------------------- Input Variables ---------------------------
-        integer, intent(in) :: &
-          n_variables  ! number of variables in the correlation matrix [-]
-
-        real( kind = core_rknd ), dimension(n_variables,n_variables), intent(in) :: &
-          corr_cholesky_mtx_t ! transposed correlation cholesky matrix [-]
-
-        !--------------------------- Output Variables ---------------------------
-        real( kind = core_rknd ), dimension(n_variables,n_variables), intent(out) :: &
-          corr_matrix_approx ! correlation matrix [-]
+      1 Larson et al. (2011), J. of Geophysical Research, Vol. 116, D00T02
+      2 CLUBB Trac ticket#514
     """
     if corr_cholesky_mtx_t is None:
         corr_cholesky_mtx_t = n_variables
@@ -366,22 +229,10 @@ def cholesky_to_corr_mtx_approx(n_variables, corr_cholesky_mtx_t=None):
 
 
 def corr_array_assertion_checks(n_variables, corr_array=None):
-    """This subroutine does the assertion checks for the corr_array.
+    """Check the correlation matrix elements and diagonal.
 
-    The Fortran routine stops the program on failure; the JAX function returns
-    False instead.
-
-    Returns:
-        l_corr_array_valid
-
-    Fortran declarations (corr_array_assertion_checks in src/CLUBB_core/diagnose_correlations_module.F90):
-
-        !--------------------------- Input Variables ---------------------------
-        integer, intent(in) :: &
-          n_variables  ! number of variables in the correlation matrix [-]
-
-        real( kind = core_rknd ), dimension(n_variables,n_variables), intent(in) :: &
-          corr_array ! correlation matrix [-]
+    The Fortran routine stops the program on failure; this JAX/Python helper
+    returns ``False`` instead.
     """
     if corr_array is None:
         corr_array = n_variables
@@ -400,29 +251,9 @@ def corr_array_assertion_checks(n_variables, corr_array=None):
 
 
 def rearrange_corr_array(pdf_dim, iiPDF_w, corr_array):
-    """This subroutine swaps the w-correlations to the first row if the input
-    matrix is in the same order as the *_corr_array_cloud.in files. It swaps
-    the rows back to the order of the *_corr_array_cloud.in files if the
-    input matrix is already swapped (first row w-correlations).
-
-    Returns:
-        corr_array_swapped
-
-    Fortran declarations (rearrange_corr_array in src/CLUBB_core/diagnose_correlations_module.F90):
-
-        !--------------------------- Input Variables ---------------------------
-        integer, intent(in) :: &
-          pdf_dim, &  ! number of diagnosed correlations
-          iiPDF_w
-
-        real( kind = core_rknd ), dimension(pdf_dim, pdf_dim), intent(in) :: &
-          corr_array   ! Correlation matrix
-
-        !--------------------------- Output Variables ---------------------------
-        real( kind = core_rknd ), dimension(pdf_dim, pdf_dim), intent(out) :: &
-          corr_array_swapped   ! Swapped correlation matrix
-    """
+    """Swap the w-correlations to the first row."""
     w_idx = int(iiPDF_w) - 1
+    corr_array = jnp.asarray(corr_array)
     swap_array = corr_array[:, 0]
 
     corr_array_swapped = corr_array

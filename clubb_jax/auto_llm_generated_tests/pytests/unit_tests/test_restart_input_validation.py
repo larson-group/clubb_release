@@ -21,7 +21,7 @@ def test_invalid_field_returns_read_error_without_replacing_state(tmp_path, kind
             var.units = units
     original = jnp.array([[280., 281.]])
     result, error = input_fields.get_clubb_variable_interpolated(
-        True, path, 'thlm', 2, 1, 1, np.broadcast_to(np.array([0., 10.]), (1, 2)), original,
+        True, path, 'thlm', 2, 1, np.array([0., 10.]), original,
     )
     assert error
     np.testing.assert_array_equal(result, original)

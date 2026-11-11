@@ -1,0 +1,442 @@
+{
+  "canonical_source": "src/CLUBB_core/LY93_pdf.F90",
+  "canonical_sha256": "572b41115b5c90ccfa031a55f9d9eb9921374fde66f4a686cb287cf412b10d2b",
+  "canonical_lines": 279,
+  "read_full_before_implementation": true,
+  "JAX_source": "clubb_jax/src/CLUBB_core/LY93_pdf.py",
+  "JAX_scope": "All3Native routines ported; JAX-only gradient-safe sqrt/cube-root and60iteration scan are not adopted. Native direct sqrt/real cube-power and unbounded per-level convergence retained.",
+  "routines": [
+    {
+      "name": "LY93_driver",
+      "module": "LY93_pdf",
+      "source": "src/CLUBB_core/LY93_pdf.F90",
+      "arguments": [
+        {
+          "name": "nz",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wm",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rtm",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "thlm",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "wp2",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "rtp2",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "thlp2",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "Skw",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "Skrt",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "Skthl",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mu_w_1",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mu_w_2",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mu_rt_1",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mu_rt_2",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mu_thl_1",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mu_thl_2",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma_w_1_sqd",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma_w_2_sqd",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma_rt_1_sqd",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma_rt_2_sqd",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma_thl_1_sqd",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma_thl_2_sqd",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mixt_frac",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null
+    },
+    {
+      "name": "calc_mixt_frac_LY93",
+      "module": "LY93_pdf",
+      "source": "src/CLUBB_core/LY93_pdf.F90",
+      "arguments": [
+        {
+          "name": "nz",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "Sk_max",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": {
+        "name": "mixt_frac",
+        "kind": "real",
+        "dims": [
+          "nz"
+        ],
+        "intent": "out",
+        "optional": false,
+        "allocatable": false,
+        "character_length": ""
+      }
+    },
+    {
+      "name": "calc_params_LY93",
+      "module": "LY93_pdf",
+      "source": "src/CLUBB_core/LY93_pdf.F90",
+      "arguments": [
+        {
+          "name": "nz",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "xm",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "xp2",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "Skx",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mixt_frac",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mu_x_1",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "mu_x_2",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma_x_1_sqd",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "sigma_x_2_sqd",
+          "kind": "real",
+          "dims": [
+            "nz"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null
+    }
+  ],
+  "native_inventory_and_order": [
+    "LY93_driver",
+    "calc_mixt_frac_LY93",
+    "calc_params_LY93"
+  ],
+  "public_inventory": [
+    "LY93_driver",
+    "calc_mixt_frac_LY93",
+    "calc_params_LY93"
+  ],
+  "native_call_order": [
+    "LY93_driver: calc_mixt_frac_LY93 assignment",
+    "LY93_driver: calc_params_LY93(wm,wp2,Skw,...)",
+    "LY93_driver: calc_params_LY93(rtm,rtp2,Skrt,...)",
+    "LY93_driver: calc_params_LY93(thlm,thlp2,Skthl,...)"
+  ],
+  "branches": [
+    "Mixture threshold Sk_max>0.84; bisection(low=.5,high=1) until abs(expr)<1e-4; bracket update expr>0; elsemixture=.75. No new iterationcap.",
+    "Parameter sign uses Skx>=0 inclnegativezero ->+1; otherwise-1."
+  ],
+  "execution": [
+    "Native nz profiles stay rank1 public APIs, genericViews admit existing column subviews; explicit profile ExecutionSpace retained from input.",
+    "Sk_max call-local rank1 LayoutLeft scratch; returnmixture ownedrank1LayoutLeft sameMemorySpace; outputparams caller-owned.",
+    "Independent levels parallel; bisection serial within work item. Native per-level intermediates sgn_Skx/B_x become distinct local scalars in one params kernel."
+  ],
+  "stats_errors": "No Native statistics/error API/host IO; no introduced bridge/globalstate.",
+  "dependencies": [
+    "Existing array_types.hpp, constants_clubb.hpp and Kokkos math. No lower physics bridge."
+  ],
+  "status": "Outline before code; compilation/numerical evidence pending."
+}

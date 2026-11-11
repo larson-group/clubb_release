@@ -1,0 +1,39 @@
+{
+  "Native_source": "src/readiopdata_core/readiopdata_core_module.F90",
+  "Native_full_read_lines": 1519,
+  "Native_sha256": "61302cec1ee1c89cdd9d0a51a3e8ca2892eea954531c82cf073e460c09964cc1",
+  "actual_JAX_scope": "No readiopdata module/core body exists in actual JAX tree. Preserve currently accepted Native/C++ l_readiopdata path; no new exclusion.",
+  "routines_in_source_order": [
+    "readiopdata_core_dims",
+    "readiopdata_core_snd",
+    "readiopdata_core_sfc",
+    "readiopdata_core_frc",
+    "get_netcdf_dimlength",
+    "get_netcdf_var1d_real",
+    "get_netcdf_var2d_real",
+    "calcdate",
+    "isLeapYear"
+  ],
+  "configuration": "UWM_MISC active in actual cmake/utils/CPPDefinitions.cmake; preserve that public snd signature and branches, document inactive else clauses.",
+  "precision": "Native defaultreal/explicitreal4 alwaysfloat, literalsretainfloat; wrapperreal(core_rknd) remains real_t and convertsatactual boundaries.",
+  "state": "Sameaccepted readiopdata_state: ntime/nlev/tsec/dplevs/forcingbuffers/loadingflags+coremasterproc_ logging; no globals or cache.",
+  "procedures": [
+    "dims: opening/time vs tsec dimension+varfallback/bdate/pressure+CAM100/latlon/explicitclose",
+    "snd: missingvalues/surfacereadflags+CAMTsairzero ANY/surfacepressuregate/2Dreads/cloudliquid+iceadjustments/omega-w-CAM branch/winds+geostrophic/surfaceoverrides/Tg fallback/close/theta conversion/surfaceextrapolation/reverselevels/gkgvertical+windchoices/deallocation",
+    "sfc:heatfluxoldnamefallback/requiredguard/Tg/windcomponentsquares/close/alloc/copy+sqrtstress/deallocation",
+    "frc:sourcelevs/sixoptionalforcingreadsinorder/sixsurfacereads/close/surfaceextrapolation/nativelevsundefined/nlev-onlyoutput/omega-horizontalor3D-vsverticalhorizontal precedence",
+    "dimlength:requiredfatal+close oroptionalnote/errorstatus",
+    "var1:varidrequired/optional;inquireallactualdims/defaultonesfullcounts/rawrank1floatread/status;use_NF90_REAL unusedbyref",
+    "var2:varid/typefloatdoubleint/ndims<=4guards;temporaryactualshape/rawrank2floatread/exactNative row*col transpose loopevenonreaderror/status",
+    "calcdate:integerdatevalidation/Julianoffset/sequentialyear-monthrecurrences/calendarfloat/outDate/outSecs;privateisLeapYear exactmodrules"
+  ],
+  "source_definedness": [
+    "frc levs(nlev+1) neverassigned before optional extrapolation coefficient",
+    "wrapper nlevels local onlyassigned !l_frc butread latercalls",
+    "wrapper get_add_surface_data true reads nlev+1 rows from nlev-row forcingoutput",
+    "Native optional snd flags actuallyusedunguarded; actualwrapper passesall; valuesnotsetonunselectedbranchesremainundefined",
+    "get_var1 use_NF90_REAL may be uninitializedcallerbutunusedcallee; retainconstreference/no invented read"
+  ],
+  "IO_primitives": "Rootowned13operation raw nf90 shim; allmetadatachoices/reshape/scienceCpp.",
+  "runtime_status": "Outlinebeforeimplementation; no build/test/BFBclaim."
+}

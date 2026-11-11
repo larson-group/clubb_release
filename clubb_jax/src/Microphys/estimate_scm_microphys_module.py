@@ -238,19 +238,13 @@ def est_silhs_tndcy(
             stats = stats.update(name, x)
 
     # Invoke the category variance sampler if requested in the statistics list.
-    if stats.var_on_stats_list('silhs_var_cat_1'):
-        def accumulate_stats(stats):
-            """Collect this diagnostic block only on sampled timesteps."""
-            stats = silhs_category_variance_driver(
-                ngrdcol, nzt, num_samples, pdf_dim, hydromet_dim, hm_metadata,  # In
-                X_nl_all_levs, X_mixt_comp_all_levs, lh_hydromet_mc_all,        # In
-                lh_sample_point_weights, pdf_params, precip_fracs,              # In
-                stats,                                                          # InOut
-            )
-
-            return stats
-
-        stats = stats.sampled(accumulate_stats)
+    if stats.l_sample and stats.var_on_stats_list("silhs_var_cat_1"):
+        stats = silhs_category_variance_driver(
+            ngrdcol, nzt, num_samples, pdf_dim, hydromet_dim, hm_metadata,  # In
+            X_nl_all_levs, X_mixt_comp_all_levs, lh_hydromet_mc_all,        # In
+            lh_sample_point_weights, pdf_params, precip_fracs,              # In
+            stats,                                                          # InOut
+        )
     return (
         stats,
         lh_hydromet_mc,

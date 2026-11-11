@@ -1,6 +1,4 @@
 """Verification of calc_comp_mu_sigma_hm (hydrometeor in-precip component moments)."""
-
-from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
 import numpy as np
 
 
@@ -21,7 +19,7 @@ def _run(hmm, mf, pf, pf1, pf2, ratio, omicron, zeta, thl1, thl2, hmp2=None):
         hmp2 = ((ratio + 1.0) / pf - 1.0) * hmm ** 2     # consistent overall variance
     else:
         hmp2 = np.array([[hmp2]])
-    out = call_jax(calc_comp_mu_sigma_hm, hmm, hmp2, np.full_like(hmm, ratio), mf, pf, pf1, pf2,
+    out = calc_comp_mu_sigma_hm(hmm, hmp2, np.full_like(hmm, ratio), mf, pf, pf1, pf2,
                                 _HM_TOL, _PFTOL, thl1, thl2, omicron, zeta)
     s = lambda x: float(np.asarray(x).ravel()[0])
     return [s(x) for x in out], s(hmm), s(mf), s(pf1), s(pf2), s(hmp2)
@@ -136,7 +134,7 @@ def test_compute_mean_stdev_columns():
 
     # --- Non-constant Ncn variant (so the Ncn column exercises sqrt(ratio)*Ncnm) ---
     Ncnm = np.array([[1.0e8, 2.0e8]]); Ncnp2_on_Ncnm2 = 0.36
-    mu1, mu2, sig1, sig2, hm1, hm2, s2m2_1, s2m2_2 = call_jax(compute_mean_stdev,
+    mu1, mu2, sig1, sig2, hm1, hm2, s2m2_1, s2m2_2 = compute_mean_stdev(
         chi_1, chi_2, sc1, sc2, se1, se2, Ncnm, Ncnp2_on_Ncnm2, False,
         [(rrm, hmp2_rr, rr_ratio, _HM_TOL), (Nrm, hmp2_Nr, Nr_ratio, Nr_tol)],
         thl_1, thl_2, mf, pf, pf1, pf2, _PFTOL, omicron, zeta,
@@ -156,7 +154,7 @@ def test_compute_mean_stdev_columns():
     # hydrometeor columns == standalone calc_comp_mu_sigma_hm
     for j, (hmm, hmp2, ratio, tol) in enumerate(
             [(rrm, hmp2_rr, rr_ratio, _HM_TOL), (Nrm, hmp2_Nr, Nr_ratio, Nr_tol)]):
-        m1, m2, s1, s2, h1, h2, r1, r2 = call_jax(calc_comp_mu_sigma_hm,
+        m1, m2, s1, s2, h1, h2, r1, r2 = calc_comp_mu_sigma_hm(
             hmm, hmp2, np.full_like(rrm, ratio), mf, pf, pf1, pf2, tol, _PFTOL,
             thl_1, thl_2, omicron, zeta)
         iv = IIPDF_NCN + 1 + j
@@ -165,7 +163,7 @@ def test_compute_mean_stdev_columns():
         np.testing.assert_allclose(s2m2_1[..., iv], r1, rtol=0, atol=0)
 
     # --- Constant Ncn (l_const_Nc_in_cloud=True): sigma_Ncn = 0 ---
-    mu1c, _, sig1c, _, _, _, s2m2_1c, _ = call_jax(compute_mean_stdev,
+    mu1c, _, sig1c, _, _, _, s2m2_1c, _ = compute_mean_stdev(
         chi_1, chi_2, sc1, sc2, se1, se2, Ncnm, 0.0, True,
         [(rrm, hmp2_rr, rr_ratio, _HM_TOL), (Nrm, hmp2_Nr, Nr_ratio, Nr_tol)],
         thl_1, thl_2, mf, pf, pf1, pf2, _PFTOL, omicron, zeta)
@@ -183,12 +181,12 @@ def test_norm_transform_matches_L2N():
     hmp2_rr = ((rr_ratio + 1.0) / pf - 1.0) * rrm ** 2
     hmp2_Nr = ((Nr_ratio + 1.0) / pf - 1.0) * Nrm ** 2
     Ncnm = np.array([[1.0e8, 2.0e8]]); ratio_Ncn = 0.36
-    args = call_jax(compute_mean_stdev,
+    args = compute_mean_stdev(
         chi_1, chi_2, sc1, sc2, se1, se2, Ncnm, ratio_Ncn, False,
         [(rrm, hmp2_rr, rr_ratio, _HM_TOL), (Nrm, hmp2_Nr, Nr_ratio, Nr_tol)],
         thl_1, thl_2, mf, pf, pf1, pf2, _PFTOL, omicron, zeta)
     mu1, mu2, sig1, sig2, hm1, hm2, s2m2_1, s2m2_2 = args
-    mu1_n, mu2_n, sig1_n, sig2_n = call_jax(norm_transform_mean_stdev,
+    mu1_n, mu2_n, sig1_n, sig2_n = norm_transform_mean_stdev(
         mu1, mu2, sig1, sig2, s2m2_1, s2m2_2, Ncnm, hm1, hm2, [_HM_TOL, Nr_tol], False)
     # chi/eta/w unchanged
     for iv in (IIPDF_CHI, IIPDF_ETA, IIPDF_W):

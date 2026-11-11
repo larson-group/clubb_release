@@ -636,11 +636,15 @@ module advance_windm_edsclrm_module
           call stats_begin_budget( "vm_sdmp", vm / dt, stats )
         end if
 
-        um = sponge_damp_xm( ngrdcol, nzm, nzt, gr, dt, gr%zt, gr%zm, & ! In
-                             um_ref, um, uv_sponge_damp_profile ) ! In
+        do i = 1, ngrdcol
+          um(i,1:nzt) = sponge_damp_xm( gr, nzm, nzt, dt, gr%zt(i,:), gr%zm(i,:), &
+                                        um_ref(i,1:nzt), um(i,1:nzt), uv_sponge_damp_profile )
+        end do
 
-        vm = sponge_damp_xm( ngrdcol, nzm, nzt, gr, dt, gr%zt, gr%zm, & ! In
-                             vm_ref, vm, uv_sponge_damp_profile ) ! In
+        do i = 1, ngrdcol
+          vm(i,1:nzt) = sponge_damp_xm( gr, nzm, nzt, dt, gr%zt(i,:), gr%zm(i,:), &
+                                        vm_ref(i,1:nzt), vm(i,1:nzt), uv_sponge_damp_profile )
+        end do
 
         if ( stats%l_sample ) then
           !$acc update host( um, vm )
@@ -1235,9 +1239,8 @@ module advance_windm_edsclrm_module
 
     if ( edsclr_dim > 0 .and. fill_holes_type /= 0 ) then
       do edsclr = 1, edsclr_dim
-        call fill_holes_vertical_api( nzt, ngrdcol, zero_threshold, & ! In
-                                      gr%k_lb_zt, & ! In
-                                      gr%k_ub_zt, & ! In
+        call fill_holes_vertical_api( nzt, ngrdcol, zero_threshold,       & ! In
+                                      gr%k_lb_zt, gr%k_ub_zt,             & ! In
                                       gr%dzt, rho_ds_zt, gr%grid_dir_indx, & ! In
                                       fill_holes_type,                    & ! In
                                       edsclrm(:,:,edsclr) )                 ! InOut

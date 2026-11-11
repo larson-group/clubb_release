@@ -1,108 +1,86 @@
-// Build GNU, Intel and NVHPC variants and run each variant's CTests.
-// From the repository root on a UWM worker, source /etc/profile.d/larson-group.sh
-// and load the compiler plus netcdf-fortran; for example: ./compile.py -debug -openmp -run_tests.
 // Record independent failures while allowing manual aborts to stop the pipeline.
 pipeline {
 
-  agent any
+  agent none
   options { disableConcurrentBuilds() }
 
   stages {
-    // Parallel checks use separate workspaces and checkouts on the selected worker.
+    // Each branch owns its executor, checkout, build, and output files.
     stage('Independent workflows') {
       parallel {
         stage('Compile gfortran') {
+          agent any
           steps {
-            ws("${env.WORKSPACE}@compile_gfortran") {
-              checkout scm
-
-              catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
-                sh '''
-                  source /etc/profile.d/larson-group.sh
-                  module load gcc netcdf-fortran
-                  ./compile.py -run_tests
-                '''
-              }
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+              sh '''
+                source /etc/profile.d/larson-group.sh
+                module load gcc netcdf-fortran
+                ./compile.py -run_tests
+              '''
             }
           }
         }
         stage('Compile gfortran: openmp+debug') {
+          agent any
           steps {
-            ws("${env.WORKSPACE}@compile_gfortran_openmp_debug") {
-              checkout scm
-
-              catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
-                sh '''
-                  source /etc/profile.d/larson-group.sh
-                  module load gcc netcdf-fortran
-                  ./compile.py -debug -openmp -run_tests
-                '''
-              }
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+              sh '''
+                source /etc/profile.d/larson-group.sh
+                module load gcc netcdf-fortran
+                ./compile.py -debug -openmp -run_tests
+              '''
             }
           }
         }
         stage('Compile ifx') {
+          agent any
           steps {
-            ws("${env.WORKSPACE}@compile_ifx") {
-              checkout scm
-
-              catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
-                sh '''
-                  source /etc/profile.d/larson-group.sh
-                  module load intel netcdf-fortran
-                  ./compile.py -run_tests
-                '''
-              }
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+              sh '''
+                source /etc/profile.d/larson-group.sh
+                module load intel netcdf-fortran
+                ./compile.py -run_tests
+              '''
             }
           }
         }
         stage('Compile ifx: single precision') {
+          agent any
           steps {
-            ws("${env.WORKSPACE}@compile_ifx_single_precision") {
-              checkout scm
-
-              catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
-                sh '''
-                  source /etc/profile.d/larson-group.sh
-                  module load intel netcdf-fortran
-                  ./compile.py -precision single -run_tests
-                '''
-              }
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+              sh '''
+                source /etc/profile.d/larson-group.sh
+                module load intel netcdf-fortran
+                ./compile.py -precision single -run_tests
+              '''
             }
           }
         }
         stage('Compile nvfortran') {
+          agent any
           steps {
-            ws("${env.WORKSPACE}@compile_nvfortran") {
-              checkout scm
-
-              catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
-                sh '''
-                  source /etc/profile.d/larson-group.sh
-                  module load nvhpc netcdf-fortran
-                  ./compile.py -run_tests
-                '''
-              }
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+              sh '''
+                source /etc/profile.d/larson-group.sh
+                module load nvhpc netcdf-fortran
+                ./compile.py -run_tests
+              '''
             }
           }
         }
         stage('Compile nvfortran: openacc') {
-
+          agent any
           // CTest must also run GPU executables one at a time.
           environment { CTEST_PARALLEL_LEVEL = '1' }
           steps {
-            ws("${env.WORKSPACE}@compile_nvfortran_openacc") {
-              checkout scm
-
-              // Serialize GPU cases on this worker; other nodes may run concurrently.
-              lock("GPU_${env.NODE_NAME}") {
-                catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
-                  sh '''
-                    source /etc/profile.d/larson-group.sh
-                    module load nvhpc netcdf-fortran
-                    ./compile.py -gpu openacc -run_tests
-                  '''
-                }
+            // Serialize GPU cases on this worker; other nodes may run concurrently.
+            lock("GPU_${env.NODE_NAME}") {
+              catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+                sh '''
+                  source /etc/profile.d/larson-group.sh
+                  module load nvhpc netcdf-fortran
+                  ./compile.py -gpu openacc -run_tests
+                '''
               }
             }
           }

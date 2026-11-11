@@ -46,7 +46,7 @@ def advance_xp2_xpyp(
     set_fortran_nu_vert_res_dep(nu_vert_res_dep)
     set_fortran_implicit_coefs(pdf_implicit_coefs_terms)
     set_fortran_err_info(err_info)
-    wp2_zt = clubb_f2py.f2py_zm2zt(
+    wp2_zt = clubb_f2py.f2py_zm2zt_2d(
         int(nzt), f_arr(wp2), nzm=int(nzm), ngrdcol=int(ngrdcol))
 
     result = clubb_f2py.f2py_advance_xp2_xpyp(

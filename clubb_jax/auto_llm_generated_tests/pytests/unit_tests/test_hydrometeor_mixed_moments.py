@@ -91,7 +91,7 @@ def _ref(p):
 def _run_interface(p):
     """Pack independent scalar-loop fixtures into the source interface's types."""
     from clubb_jax.src.CLUBB_core.grid_class import setup_grid
-    from clubb_jax.src.CLUBB_core.stats_netcdf import JaxStats
+    from clubb_jax.src.CLUBB_core.jax_stats import JaxStats
     gr = setup_grid(1, 100., 100., 100. * (NZT + 1))
     metadata = SimpleNamespace(iiPDF_w=0, iiPDF_chi=1, iiPDF_eta=2,
         iirr=0, iiNr=1, iiri=2, iiPDF_rr=3, iiPDF_Nr=4, iiPDF_ri=5,

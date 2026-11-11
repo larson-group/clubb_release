@@ -1,0 +1,446 @@
+{
+  "microphysics_setting": [
+    {
+      "name": "namelist_file",
+      "kind": "character"
+    },
+    {
+      "name": "iunit",
+      "kind": "integer"
+    },
+    {
+      "name": "read_status",
+      "kind": "integer"
+    },
+    {
+      "name": "microphys_scheme",
+      "kind": "character"
+    },
+    {
+      "name": "l_cloud_sed",
+      "kind": "logical"
+    },
+    {
+      "name": "sigma_g",
+      "kind": "real"
+    },
+    {
+      "name": "l_ice_microphys",
+      "kind": "logical"
+    },
+    {
+      "name": "l_graupel",
+      "kind": "logical"
+    },
+    {
+      "name": "l_hail",
+      "kind": "logical"
+    },
+    {
+      "name": "l_var_covar_src",
+      "kind": "logical"
+    },
+    {
+      "name": "l_upwind_diff_sed",
+      "kind": "logical"
+    },
+    {
+      "name": "l_seifert_beheng",
+      "kind": "logical"
+    },
+    {
+      "name": "l_predict_Nc",
+      "kind": "logical"
+    },
+    {
+      "name": "l_const_Nc_in_cloud",
+      "kind": "logical"
+    },
+    {
+      "name": "specify_aerosol",
+      "kind": "character"
+    },
+    {
+      "name": "l_subgrid_w",
+      "kind": "logical"
+    },
+    {
+      "name": "l_arctic_nucl",
+      "kind": "logical"
+    },
+    {
+      "name": "l_cloud_edge_activation",
+      "kind": "logical"
+    },
+    {
+      "name": "l_fix_pgam",
+      "kind": "logical"
+    },
+    {
+      "name": "l_in_cloud_Nc_diff",
+      "kind": "logical"
+    },
+    {
+      "name": "lh_microphys_type",
+      "kind": "character"
+    },
+    {
+      "name": "l_local_kk",
+      "kind": "logical"
+    },
+    {
+      "name": "lh_num_samples",
+      "kind": "integer"
+    },
+    {
+      "name": "lh_sequence_length",
+      "kind": "integer"
+    },
+    {
+      "name": "lh_seed",
+      "kind": "integer"
+    },
+    {
+      "name": "l_fix_w_chi_eta_correlations",
+      "kind": "logical"
+    },
+    {
+      "name": "l_silhs_KK_convergence_adj_mean",
+      "kind": "logical"
+    },
+    {
+      "name": "hmp2_ip_on_hmm2_ip_slope__rr",
+      "kind": "real"
+    },
+    {
+      "name": "hmp2_ip_on_hmm2_ip_slope__Nr",
+      "kind": "real"
+    },
+    {
+      "name": "hmp2_ip_on_hmm2_ip_slope__ri",
+      "kind": "real"
+    },
+    {
+      "name": "hmp2_ip_on_hmm2_ip_slope__Ni",
+      "kind": "real"
+    },
+    {
+      "name": "hmp2_ip_on_hmm2_ip_slope__rs",
+      "kind": "real"
+    },
+    {
+      "name": "hmp2_ip_on_hmm2_ip_slope__Ns",
+      "kind": "real"
+    },
+    {
+      "name": "hmp2_ip_on_hmm2_ip_slope__rg",
+      "kind": "real"
+    },
+    {
+      "name": "hmp2_ip_on_hmm2_ip_slope__Ng",
+      "kind": "real"
+    },
+    {
+      "name": "hmp2_ip_on_hmm2_ip_intrcpt__rr",
+      "kind": "real"
+    },
+    {
+      "name": "hmp2_ip_on_hmm2_ip_intrcpt__Nr",
+      "kind": "real"
+    },
+    {
+      "name": "hmp2_ip_on_hmm2_ip_intrcpt__ri",
+      "kind": "real"
+    },
+    {
+      "name": "hmp2_ip_on_hmm2_ip_intrcpt__Ni",
+      "kind": "real"
+    },
+    {
+      "name": "hmp2_ip_on_hmm2_ip_intrcpt__rs",
+      "kind": "real"
+    },
+    {
+      "name": "hmp2_ip_on_hmm2_ip_intrcpt__Ns",
+      "kind": "real"
+    },
+    {
+      "name": "hmp2_ip_on_hmm2_ip_intrcpt__rg",
+      "kind": "real"
+    },
+    {
+      "name": "hmp2_ip_on_hmm2_ip_intrcpt__Ng",
+      "kind": "real"
+    },
+    {
+      "name": "Ncnp2_on_Ncnm2",
+      "kind": "real"
+    },
+    {
+      "name": "C_evap",
+      "kind": "real"
+    },
+    {
+      "name": "r_0",
+      "kind": "real"
+    },
+    {
+      "name": "microphys_start_time",
+      "kind": "double"
+    },
+    {
+      "name": "Nc0_in_cloud",
+      "kind": "real"
+    },
+    {
+      "name": "ccnconst",
+      "kind": "float"
+    },
+    {
+      "name": "ccnexpnt",
+      "kind": "float"
+    },
+    {
+      "name": "aer_rm1",
+      "kind": "float"
+    },
+    {
+      "name": "aer_rm2",
+      "kind": "float"
+    },
+    {
+      "name": "aer_n1",
+      "kind": "float"
+    },
+    {
+      "name": "aer_n2",
+      "kind": "float"
+    },
+    {
+      "name": "aer_sig1",
+      "kind": "float"
+    },
+    {
+      "name": "aer_sig2",
+      "kind": "float"
+    },
+    {
+      "name": "pgam_fixed",
+      "kind": "float"
+    }
+  ],
+  "gfdl_activation_setting": [
+    {
+      "name": "namelist_file",
+      "kind": "character"
+    },
+    {
+      "name": "iunit",
+      "kind": "integer"
+    },
+    {
+      "name": "read_status",
+      "kind": "integer"
+    },
+    {
+      "name": "nooc",
+      "kind": "logical"
+    },
+    {
+      "name": "sul_concen",
+      "kind": "real"
+    },
+    {
+      "name": "low_concen",
+      "kind": "real"
+    },
+    {
+      "name": "high_concen",
+      "kind": "real"
+    },
+    {
+      "name": "lowup",
+      "kind": "real"
+    },
+    {
+      "name": "highup",
+      "kind": "real"
+    },
+    {
+      "name": "lowup2",
+      "kind": "real"
+    },
+    {
+      "name": "highup2",
+      "kind": "real"
+    },
+    {
+      "name": "lowmass2",
+      "kind": "real"
+    },
+    {
+      "name": "highmass2",
+      "kind": "real"
+    },
+    {
+      "name": "lowmass3",
+      "kind": "real"
+    },
+    {
+      "name": "highmass3",
+      "kind": "real"
+    },
+    {
+      "name": "lowmass4",
+      "kind": "real"
+    },
+    {
+      "name": "highmass4",
+      "kind": "real"
+    },
+    {
+      "name": "lowmass5",
+      "kind": "real"
+    },
+    {
+      "name": "highmass5",
+      "kind": "real"
+    },
+    {
+      "name": "lowT2",
+      "kind": "real"
+    },
+    {
+      "name": "highT2",
+      "kind": "real"
+    },
+    {
+      "name": "aeromass_value",
+      "kind": "real"
+    },
+    {
+      "name": "l_gfdl_activation",
+      "kind": "logical"
+    }
+  ],
+  "silhs_params_nl": [
+    {
+      "name": "namelist_file",
+      "kind": "character"
+    },
+    {
+      "name": "iunit",
+      "kind": "integer"
+    },
+    {
+      "name": "read_status",
+      "kind": "integer"
+    },
+    {
+      "name": "eight_cluster_presc_probs__cloud_precip_comp1",
+      "kind": "real"
+    },
+    {
+      "name": "eight_cluster_presc_probs__cloud_precip_comp2",
+      "kind": "real"
+    },
+    {
+      "name": "eight_cluster_presc_probs__nocloud_precip_comp1",
+      "kind": "real"
+    },
+    {
+      "name": "eight_cluster_presc_probs__nocloud_precip_comp2",
+      "kind": "real"
+    },
+    {
+      "name": "eight_cluster_presc_probs__cloud_noprecip_comp1",
+      "kind": "real"
+    },
+    {
+      "name": "eight_cluster_presc_probs__cloud_noprecip_comp2",
+      "kind": "real"
+    },
+    {
+      "name": "eight_cluster_presc_probs__nocloud_noprecip_comp1",
+      "kind": "real"
+    },
+    {
+      "name": "eight_cluster_presc_probs__nocloud_noprecip_comp2",
+      "kind": "real"
+    },
+    {
+      "name": "vert_decorr_coef",
+      "kind": "real"
+    },
+    {
+      "name": "importance_prob_thresh",
+      "kind": "real"
+    }
+  ],
+  "configurable_silhs_flags_nl": [
+    {
+      "name": "namelist_file",
+      "kind": "character"
+    },
+    {
+      "name": "iunit",
+      "kind": "integer"
+    },
+    {
+      "name": "read_status",
+      "kind": "integer"
+    },
+    {
+      "name": "cluster_allocation_strategy",
+      "kind": "integer"
+    },
+    {
+      "name": "l_lh_importance_sampling",
+      "kind": "logical"
+    },
+    {
+      "name": "l_Lscale_vert_avg",
+      "kind": "logical"
+    },
+    {
+      "name": "l_lh_straight_mc",
+      "kind": "logical"
+    },
+    {
+      "name": "l_lh_clustered_sampling",
+      "kind": "logical"
+    },
+    {
+      "name": "l_rcm_in_cloud_k_lh_start",
+      "kind": "logical"
+    },
+    {
+      "name": "l_random_k_lh_start",
+      "kind": "logical"
+    },
+    {
+      "name": "l_max_overlap_in_cloud",
+      "kind": "logical"
+    },
+    {
+      "name": "l_lh_instant_var_covar_src",
+      "kind": "logical"
+    },
+    {
+      "name": "l_lh_limit_weights",
+      "kind": "logical"
+    },
+    {
+      "name": "l_lh_var_frac",
+      "kind": "logical"
+    },
+    {
+      "name": "l_lh_normalize_weights",
+      "kind": "logical"
+    },
+    {
+      "name": "l_lh_deterministic_test",
+      "kind": "logical"
+    }
+  ]
+}

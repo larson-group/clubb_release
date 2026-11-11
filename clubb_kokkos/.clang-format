@@ -1,0 +1,11 @@
+BasedOnStyle: LLVM
+IndentWidth: 2
+ColumnLimit: 100
+PointerAlignment: Left
+ReferenceAlignment: Left
+SortIncludes: Never
+ReflowComments: Never
+SeparateDefinitionBlocks: Leave
+BinPackArguments: true
+BinPackParameters: true
+AlignConsecutiveAssignments: Consecutive

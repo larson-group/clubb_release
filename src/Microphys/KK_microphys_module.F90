@@ -39,20 +39,19 @@ module KK_microphys_module
   !=============================================================================
 
   !=============================================================================
-  subroutine KK_local_microphys_driver( &
-               gr, ngrdcol, dt, nzt, & ! In
-               hydromet_dim, hm_metadata, & ! In
-               l_latin_hypercube, & ! In
-               thlm, wm_zt, p_in_Pa, exner, rho, & ! In
-               cloud_frac, w_std_dev, dzq, rcm, & ! In
-               Ncm, chi, rvm, hydromet, & ! In
-               saturation_formula, sample_weight, & ! In
-               stats, & ! InOut
-               hydromet_mc, hydromet_vel, & ! Out
-               Ncm_mc, rcm_mc, rvm_mc, thlm_mc, & ! Out
-               rrm_auto_diag, rrm_accr_diag, & ! Out
-               rrm_evap_diag, Nrm_auto_diag, & ! Out
-               Nrm_evap_diag ) ! Out
+  subroutine KK_local_microphys_driver( gr, ngrdcol, dt, nzt,           & ! In
+                                        hydromet_dim, hm_metadata,      & ! In
+                                        l_latin_hypercube,              & ! In
+                                        thlm, wm_zt, p_in_Pa, exner, rho, & ! In
+                                        cloud_frac, w_std_dev, dzq, rcm, & ! In
+                                        Ncm, chi, rvm, hydromet,        & ! In
+                                        saturation_formula, sample_weight, & ! In
+                                        stats,                          & ! InOut
+                                        hydromet_mc, hydromet_vel,      & ! Out
+                                        Ncm_mc, rcm_mc, rvm_mc, thlm_mc, & ! Out
+                                        rrm_auto_diag, rrm_accr_diag,   & ! Out
+                                        rrm_evap_diag, Nrm_auto_diag,   & ! Out
+                                        Nrm_evap_diag )                   ! Out
 
     ! Description:
     !   Run local K-K microphysics for all model columns and update statistics

@@ -1,0 +1,59 @@
+{
+  "hashes": {
+    "prefix_definitions.cpp.inc": "e12e0d55a8523a2743af133149829a790323aceea6918d273014106642d496e8",
+    "calc_zt2zm_weights.cpp.inc": "83e23294604a1f6faa47c155f3535864594525b0f6a02c920c45ac219920437f",
+    "calc_zm2zt_weights.cpp.inc": "fc19ddd9a3330da514a373e8ffc08a1b44a864cec0698b0de84755bd76384284",
+    "private_declarations.cpp.inc": "86f4af55dd2d501df794432aae20f10b610b5e78992a775ac2f1f57e40a38a6d",
+    "procedure_declarations.hpp.inc": "965b1baacd6766dea529cb9947bf95201bf54e450b837bb63446a1aca8d7ec3b",
+    "procedure_includes.hpp.inc": "2c4fa6396621649dd2811297b1827d509d71e174e454441cfa3660c75c6a120c",
+    "clubb_api_module.hpp.inc": "009b4a64ce4ac4bbba4c90a0908f43524a9438808b761803460d652f440fce08",
+    "api_includes.hpp.inc": "9932182bb835d9ddca5800f257382e07219b61e41b7f54bd5da6d6f2ca43c944",
+    "cpp_includes.inc": "ba61fb682dbb0f83199e5f9cb512178ebe4e62e15483dae6cdb6e0152672b3c4"
+  },
+  "checks": [
+    {
+      "file": "prefix_definitions.cpp.inc",
+      "exact_executable_token_equality": true,
+      "tokens": 3117
+    },
+    {
+      "file": "calc_zt2zm_weights.cpp.inc",
+      "exact_executable_token_equality": true,
+      "tokens": 380
+    },
+    {
+      "file": "calc_zm2zt_weights.cpp.inc",
+      "exact_executable_token_equality": true,
+      "tokens": 165
+    },
+    {
+      "file": "private_declarations.cpp.inc",
+      "exact_executable_token_equality": true,
+      "tokens": 33
+    },
+    {
+      "file": "procedure_declarations.hpp.inc",
+      "exact_executable_token_equality": true,
+      "tokens": 304
+    },
+    {
+      "file": "procedure_includes.hpp.inc",
+      "exact_executable_token_equality": true,
+      "tokens": 3
+    },
+    {
+      "file": "clubb_api_module.hpp.inc",
+      "exact_executable_token_equality": true,
+      "tokens": 900
+    },
+    {
+      "file": "api_includes.hpp.inc",
+      "exact_executable_token_equality": true,
+      "tokens": 11
+    }
+  ],
+  "max_columns": 100,
+  "no_trailing_whitespace": true,
+  "source_grouping": "Native physical argument/call groups retained, splitting typed C++ width only.",
+  "runtime_status": "Draft only; no shared edits/build/tests/CPU/GPU/BFB claim. All runtime branches pending root integration."
+}

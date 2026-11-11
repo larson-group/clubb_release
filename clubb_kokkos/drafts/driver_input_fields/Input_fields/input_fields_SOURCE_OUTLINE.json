@@ -1,0 +1,48 @@
+{
+  "Native_source": "src/Input_fields/input_fields.F90",
+  "Native_sha256": "5a45102b7765fcbacb29c502df280ae07948d6fbe02baa9a9a22c35a49b8cfd9",
+  "Native_full_read_lines": 3240,
+  "actual_JAX_source": "clubb_jax/src/Input_fields/input_fields.py",
+  "actual_JAX_full_read_lines": 1186,
+  "routines_in_source_order": [
+    "set_filenames",
+    "stat_fields_reader",
+    "compute_timestep",
+    "get_clubb_variable_interpolated",
+    "get_input_variables_interp",
+    "inputfields_interp_and_adjust",
+    "inputfields_init",
+    "cleanup_input_fields"
+  ],
+  "public": [
+    "stat_fields_reader",
+    "compute_timestep",
+    "inputfields_init",
+    "set_filenames",
+    "cleanup_input_fields",
+    "get_clubb_variable_interpolated"
+  ],
+  "state": "Accepted inputfields_state retains115flag moduledefaults/stat_files/input_type/privateformatselector + actual input_netcdf datefields; allprocedure state becomes explicit existingcasecontext, no globals.",
+  "main_branches": [
+    "setfilenames COAMPS/CLUBB+statsfallback/SAM/RAMS+unknownfatal",
+    "statfields CLUBBzt/zm/sfcorderedfields+fatal;COAMPS61orderedmetadatafields/conditionalhydrometeors/postinterpolationboundaryadjustments;SAM70orderedmetadatafields/unitadjustments+zt2zmscalarinterpolation;RAMS4;final3varianceclips",
+    "compute time: netCDFsuffixguard/Uorthlmprobe/native Gregorianadjustedfiletime;restartremainderinterval+minutechecks,nintwithout+1;explicitclose",
+    "getCLUBB: optionalread,negativeheightghostbool,statfileaverage npower1,fullresultassignment evenerror;disabledfalseerror",
+    "getexternal: openallfileswithUprobe/error;bounds/minia/maxiz;fieldnoneerror/cycle;rawread+interpolation evenwhenrawerror;closeall",
+    "interp: zt/zmfirstcolumnpointer,exactorlinearbracket arrays,sourcelevelassignmentthenmultiplyadjustment",
+    "init:3dates/actualexplicitresetlist/notallmoduleflags/call-localsetfieldsnamelist/defaulttypeclubb/datafileempty/print/read/close/setfilenames",
+    "cleanup:releaseonlystat_files,notresetflags"
+  ],
+  "JAX_differences_preserved": [
+    "JAX onlyCLUBBstatbranch;Native COAMPS/SAM/RAMS retained sourceonly",
+    "Native rank1profiles/firstPDFrow andfirststoredcolumn retained vs JAXmulticolumnrestoration",
+    "Native unconditionalsurfaceassignmentsfromtmp1retained; JAXguardsthese",
+    "Native compute_timestep nint/no+1/minuteguard retained vs JAX actualcoordinateclosestrecord"
+  ],
+  "dependencies": [
+    "currentcoreconstants/grid/extrapolation/pdf/hm owners",
+    "stableInput_fieldsNetCDF/statutils",
+    "stagedexistingdescriptorowner setfieldsnamelistIOfragment"
+  ],
+  "runtime_status": "Outlinebeforeimplementation. No builds/tests/model/BFBclaim."
+}

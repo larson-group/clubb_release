@@ -47,7 +47,7 @@ def check_active_driver_runs_without_clubb_python(case):
                 raise AssertionError(f"Binding import guard failed for {name}")
 
         from clubb_jax.src.advance_clubb_to_end import advance_clubb_to_end
-        from clubb_jax.src.clubb_case_initialization import clean_up_clubb, init_clubb_case
+        from clubb_jax.src.clubb_case_initalization import clean_up_clubb, init_clubb_case
 
         from input.scripts.create_case_namelist import create_case_namelist_file
         namelist = create_case_namelist_file(case, repo_root / "output/no_bindings")

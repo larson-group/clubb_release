@@ -617,6 +617,16 @@ def KK_upscaled_microphys(
     # Calculate the variance of KK rain drop mean volume radius.
     from clubb_jax.src.Microphys.KK_microphys.KK_upscaled_variances import variance_KK_mvr
 
+    if stats.l_sample and stats.var_on_stats_list("KK_mvr_variance_zt"):
+        KK_mvr_variance = variance_KK_mvr(
+            mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, mu_rr_1_n,  # In
+            mu_rr_2_n, mu_Nr_1_n, mu_Nr_2_n, sigma_rr_1,    # In
+            sigma_rr_2, sigma_Nr_1, sigma_Nr_2,             # In
+            sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n,       # In
+            sigma_Nr_2_n, corr_rr_Nr_1_n, corr_rr_Nr_2_n,   # In
+            KK_mean_vol_rad, KK_mvr_coef, mixt_frac,        # In
+            precip_frac_1, precip_frac_2,                   # In
+        )
     # Statistics use full-column fields after all tendencies are calculated.
     stats = stats.update("rr_KK_mvr_covar_zt", sedimentation["rr_KK_mvr_covar"])
     stats = stats.update("Nr_KK_mvr_covar_zt", sedimentation["Nr_KK_mvr_covar"])
@@ -636,25 +646,8 @@ def KK_upscaled_microphys(
     stats = stats.update("mvrr", KK_mean_vol_rad)
     stats = stats.update("Nrm_evap", KK_Nrm_evap_tndcy)
     stats = stats.update("Nrm_auto", KK_Nrm_auto_tndcy)
-    if stats.var_on_stats_list('KK_mvr_variance_zt'):
-        # Keep this optional calculation with its sampled update so unsampled
-        # steps neither compute nor carry a variance temporary.
-        def accumulate_stats(stats):
-            """Collect this diagnostic block only on sampled timesteps."""
-            KK_mvr_variance = variance_KK_mvr(
-                mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, mu_rr_1_n,  # In
-                mu_rr_2_n, mu_Nr_1_n, mu_Nr_2_n, sigma_rr_1,    # In
-                sigma_rr_2, sigma_Nr_1, sigma_Nr_2,             # In
-                sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n,       # In
-                sigma_Nr_2_n, corr_rr_Nr_1_n, corr_rr_Nr_2_n,   # In
-                KK_mean_vol_rad, KK_mvr_coef, mixt_frac,        # In
-                precip_frac_1, precip_frac_2,                   # In
-            )
-            stats = stats.update("KK_mvr_variance_zt", KK_mvr_variance)
-
-            return stats
-
-        stats = stats.sampled(accumulate_stats)
+    if stats.l_sample and stats.var_on_stats_list("KK_mvr_variance_zt"):
+        stats = stats.update("KK_mvr_variance_zt", KK_mvr_variance)
 
     # Interpolate source terms to momentum levels and impose zero tendencies
     # at both boundaries; disabled variance/covariance sources remain zero.

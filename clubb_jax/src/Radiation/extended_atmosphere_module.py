@@ -20,7 +20,7 @@ from clubb_jax.src.CLUBB_core.constants_clubb import pascal_per_mb as PASCAL_PER
 def determine_extended_atmos_bounds(zm_grid, zm_grid_spacing, p_in_Pa_zm, radiation_top, ext):
     """Port of extended_atmosphere_module.F90:determine_extended_atmos_bounds. `zm_grid`=(nzm,) momentum
     altitudes [m]; `zm_grid_spacing`=(nzm-1,) Δz; `p_in_Pa_zm`=(nzm,) momentum-level pressure [Pa];
-    `radiation_top` [m]; `ext`=load_extended_std_atm(iunit) dict. Returns (bottom_level, top_level, range_size,
+    `radiation_top` [m]; `ext`=load_extended_std_atm() dict. Returns (bottom_level, top_level, range_size,
     lin_int_buffer) — bottom/top are 1-based Fortran indices into the std-atm arrays."""
     extended_alt = np.asarray(ext["alt"]); extended_p_in_mb = np.asarray(ext["p_in_mb"])
     ext_dim = extended_alt.shape[0]

@@ -1,0 +1,109 @@
+{
+  "canonical": "src/CLUBB_core/mixing_length.F90:1-3543",
+  "source_read_in_full_before_implementation": true,
+  "jax_scope": "All7 routines and methods1/2/3 supported; no method exclusions imported. Native arithmetic/branches used.",
+  "source_outline": "SOURCE_OUTLINE.md",
+  "routines_in_native_order": [
+    "calc_Lscale",
+    "set_Lscale_max",
+    "compute_mixing_length",
+    "calc_Lscale_directly",
+    "diagnose_Lscale_from_tau",
+    "compute_coherent_mixing_length",
+    "sat_mixrat_liq_flatau"
+  ],
+  "inventory_matches": true,
+  "signature_args": {
+    "calc_Lscale": 52,
+    "set_Lscale_max": 5,
+    "compute_mixing_length": 20,
+    "calc_Lscale_directly": 27,
+    "diagnose_Lscale_from_tau": 39,
+    "compute_coherent_mixing_length": 23,
+    "sat_mixrat_liq_flatau": 2
+  },
+  "signature_order_matches": true,
+  "public_header_inventory": [
+    "calc_Lscale",
+    "set_Lscale_max",
+    "calc_Lscale_directly",
+    "diagnose_Lscale_from_tau"
+  ],
+  "native_lower_call_sequence_counts": {
+    "calc_Lscale": 35,
+    "set_Lscale_max": 0,
+    "compute_mixing_length": 8,
+    "calc_Lscale_directly": 9,
+    "diagnose_Lscale_from_tau": 24,
+    "compute_coherent_mixing_length": 5,
+    "sat_mixrat_liq_flatau": 0
+  },
+  "all_native_lower_call_sequences_match": true,
+  "call_sequence_differences": [],
+  "literal_sampled_stats_fields": [
+    "rtpthlp_zt",
+    "Ri_zm",
+    "Lscale",
+    "Lscale_up",
+    "Lscale_down",
+    "tau_zm",
+    "invrs_tau_zm",
+    "invrs_tau_xp2_zm",
+    "invrs_tau_wp2_zm",
+    "invrs_tau_wpxp_zm",
+    "invrs_tau_wp3_zm",
+    "tau_zt",
+    "invrs_tau_no_N2_zm",
+    "invrs_tau_bkgnd",
+    "invrs_tau_sfc",
+    "invrs_tau_shear",
+    "Lscale_pert_1",
+    "Lscale_pert_2",
+    "bv_freq_pos",
+    "bv_freq_out_cloud"
+  ],
+  "stats_field_order_matches": true,
+  "device_kernel_count": 82,
+  "f2k_or_owning_udt_references_in_kernels": [],
+  "balanced_cpp_delimiters": true,
+  "all_cpp_header_lines_at_most100_columns": true,
+  "manual_review": [
+    "7 definitions/signatures/order and4 public APIs; required private procedures implemented rather than whole-native forwarding",
+    "Native52-argument parent call stages, fatal returns, constant flags, method dispatch, all stats field mappings and timer order",
+    "one-based internal indices map only at View accesses; parameter-index constants and parameter subviews remain C++ zero based",
+    "legacy first-layer saturation start indices, upward/downward entrainment, ordered TKE exhaustion, linear/quadratic partial-layer roots, endpoint extension, surfaces/lid/cap order",
+    "both dormant perturbation paths including PDF component swap and mean-call-last requirement; all unknown-method and plume/averaging errors",
+    "tau method background/surface/shear/stability/in-cloud rates, E3SM/default, Peskin/sharp Heaviside, smooth/default Ri limits, xp2/wp2/wp3/C1/C4/C6/C14 outputs",
+    "all coherent overwrite modes, both grid directions, PDF launch departures, ordered work/barrier/survival and crossing/arrival sums, cutoff layer included before exit, top-launch exclusion from downward sums",
+    "coherent aggregation recurrences, surface floors, real-power weighted geometric mean, combined-only cap and lid copy",
+    "Flatau full Horner polynomial, Native lower-temperature clamp and pressure-deficit branch",
+    "integer GPU error reductions with ordered host failure printing, debug-only Native length_check and every per-column dump, no global scratch",
+    "Native references and meaningful comments retained; explicit local language-boundary comments; 100-column cleanup; no speculative FMA or arithmetic reorder"
+  ],
+  "known_integration_dependencies": [
+    "device-callable public saturation.hpp scalar liquid API",
+    "2D liquid saturation explicit start-index surface or replacement by pending C++ View overload",
+    "Native public calc_Ri_zm, length_check, smooth_min/max and smooth_heaviside_peskin bridge overloads",
+    "model-flag generator constants Lscale_direct=1 and Lscale_coherence=3"
+  ],
+  "build_evidence": "PENDING: no build or syntax compilation requested; pending helper declarations intentionally prevent standalone production compilation.",
+  "numerical_evidence": "PENDING: no tests/model runs launched; root owns maintained comparisons after incremental promotion.",
+  "outstanding_source_findings": [],
+  "sha256": {
+    "mixing_length.cpp": "057186988dcafe83310dd9d6993b776a1a75d9d6cf9be53acd4f443a41e6f0fe",
+    "mixing_length.hpp": "f5920007004b66df0ea1c4a40fc433d8fd1dbf2d6eb9a6256021b73acf9522bb"
+  },
+  "source_format_cleanup": {
+    "evidence": "/tmp/clubb_mixing_format_token_audit.json",
+    "executable_tokens_unchanged": true,
+    "definitions": 7,
+    "private_prototypes": 3,
+    "public_prototypes": 4,
+    "ordinary_calls": 35,
+    "native_argument_descriptions": 168,
+    "public_header_argument_descriptions": 123,
+    "notes": "Full Native declaration continuations copied, gaps in diagnose_Lscale_from_tau filled from same named fields in parent declarations; stats generic context remainsInOut. Constant rationale restored and repeated index boilerplate consolidated.",
+    "runtime_status": "No build or model tests performed by owner.",
+    "unit_comment_correction": "brunt_vaisala_freq_clipped: squared frequency [s^-2], verified from Native smoothing/Richardson argument use."
+  }
+}

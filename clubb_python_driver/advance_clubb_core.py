@@ -301,7 +301,11 @@ def advance_clubb_core(
         # if both are omitted, rsat may not be computed, leading to a
         # floating-point exception when rel_humidity is written.
         if clubb_api.var_on_stats_list("rel_humidity") or clubb_api.var_on_stats_list("rsat"):
-            T_in_K = clubb_api.thlm2t_in_k(nzt, ngrdcol, thlm, exner, rcm)
+            T_in_K = np.empty((ngrdcol, nzt))
+            for i in range(ngrdcol):
+                T_in_K[i, :] = clubb_api.thlm2t_in_k(
+                    nzt, thlm[i, :], exner[i, :], rcm[i, :]
+                )
             rsat = clubb_api.sat_mixrat_liq(
                 nzt, ngrdcol, gr, p_in_Pa,
                 T_in_K,

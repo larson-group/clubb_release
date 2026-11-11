@@ -43,7 +43,7 @@ if __name__ == '__main__':
 
 import numpy as np
 from input.scripts.create_case_namelist import create_case_namelist_file
-from clubb_jax.src.clubb_case_initialization import (
+from clubb_jax.src.clubb_case_initalization import (
     init_clubb_case, set_case_initial_conditions, clean_up_clubb,
 )
 from clubb_jax.src.advance_clubb_to_end import advance_clubb_to_end

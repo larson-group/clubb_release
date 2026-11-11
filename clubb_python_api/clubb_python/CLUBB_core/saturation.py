@@ -14,7 +14,7 @@ def sat_mixrat_liq(nz: int, ngrdcol: int, gr: Grid, p_in_Pa, T_in_K,
     """Compute saturation mixing ratio for liquid water."""
     set_fortran_grid(gr)
     try:
-        return clubb_f2py.f2py_sat_mixrat_liq(
+        return clubb_f2py.f2py_sat_mixrat_liq_2d(
             p_in_Pa=f_arr(p_in_Pa),
             t_in_k=f_arr(T_in_K),
             saturation_formula=int(saturation_formula),
@@ -23,7 +23,7 @@ def sat_mixrat_liq(nz: int, ngrdcol: int, gr: Grid, p_in_Pa, T_in_K,
             ngrdcol=int(ngrdcol),
         )
     except TypeError:
-        return clubb_f2py.f2py_sat_mixrat_liq(
+        return clubb_f2py.f2py_sat_mixrat_liq_2d(
             p_in_Pa=f_arr(p_in_Pa),
             t_in_k=f_arr(T_in_K),
             saturation_formula=int(saturation_formula),
@@ -35,7 +35,7 @@ def sat_mixrat_liq(nz: int, ngrdcol: int, gr: Grid, p_in_Pa, T_in_K,
 def sat_mixrat_ice(nz: int, ngrdcol: int, p_in_Pa, T_in_K,
                    saturation_formula: int):
     """Compute saturation mixing ratio for ice."""
-    return clubb_f2py.f2py_sat_mixrat_ice(
+    return clubb_f2py.f2py_sat_mixrat_ice_2d(
         p_in_Pa=f_arr(p_in_Pa),
         t_in_k=f_arr(T_in_K),
         saturation_formula=int(saturation_formula),

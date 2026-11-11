@@ -1,0 +1,65 @@
+{
+  "state": "source-complete draft; NOT compiled or runtime validated",
+  "authority": "src/CLUBB_core/adg1_adg2_3d_luhar_pdf.F90 (all1537lines read)",
+  "routine_order": [
+    "ADG1_pdf_driver",
+    "ADG2_pdf_driver",
+    "Luhar_3D_pdf_driver",
+    "ADG1_w_closure",
+    "calc_Luhar_params",
+    "close_Luhar_pdf",
+    "ADG1_ADG2_responder_params",
+    "backsolve_Luhar_params",
+    "max_cubic_root"
+  ],
+  "argument_counts": {
+    "ADG1_pdf_driver": 58,
+    "ADG2_pdf_driver": 41,
+    "Luhar_3D_pdf_driver": 25,
+    "ADG1_w_closure": 16,
+    "calc_Luhar_params": 8,
+    "close_Luhar_pdf": 15,
+    "ADG1_ADG2_responder_params": 19,
+    "backsolve_Luhar_params": 6,
+    "max_cubic_root": 4
+  },
+  "all_required_no_optionals": true,
+  "call_counts_in_native_order": {
+    "ADG1_pdf_driver": 6,
+    "ADG2_pdf_driver": 5,
+    "Luhar_3D_pdf_driver": 18,
+    "ADG1_w_closure": 0,
+    "calc_Luhar_params": 0,
+    "close_Luhar_pdf": 0,
+    "ADG1_ADG2_responder_params": 0,
+    "backsolve_Luhar_params": 0,
+    "max_cubic_root": 0
+  },
+  "every_native_subroutine_call_argument": true,
+  "public_api_and_profile_adapter_order": true,
+  "token_balance_and_100cols": true,
+  "definedness_deviation": "close_Luhar_pdf initializes covariance sign for nonvarying normalized outputs, matching JAX; native leaves it undefined",
+  "pending_lower_dependencies": [
+    "f2k::cubic_solve returns host complex(nz,3)",
+    "f2k::quadratic_solve returns host complex(nz,2)"
+  ],
+  "manual_source_audit": [
+    "all nine routines source order/signatures/intents/calls",
+    "ADG1 debug all-column errors, parent fatal gate, field mappings/native wind thl_tol",
+    "ADG2 source column loop, sigma overwrite and scalar flags/tolerances",
+    "Luhar three setter branches/tie order and all covariance/tolerance/sequence associations",
+    "ADG1_w threshold, mixture clamp, signed normalized means, equal variances",
+    "calc_Luhar varying/nonvarying formulas and real power1/3",
+    "close_Luhar two branches, definedness boundary, unchanged physical means/variances",
+    "backsolve near-half/zero/ordinary cubic and inactive quadratic branches, Native HUGE",
+    "max-root coefficient thresholds, real/complex choice, quadratic and unguarded linear fallback",
+    "scientific descriptions/citations, inactive branch comments, local state ownership",
+    "profile host boundary/adapters and single-evaluation root/candidate temporaries classified"
+  ],
+  "runtime": "No builds/tests run; root owns hookup and model comparisons",
+  "sha256": {
+    "adg1_adg2_3d_luhar_pdf.cpp": "b91b57aa44a0d9c748db8cdd27aa79a0f6d5d5ec73f6c4b6111009b642a5d1fb",
+    "adg1_adg2_3d_luhar_pdf.hpp": "2ec28e92337db13739ace8d4ebf8e11d8cd3df490b3d5a426c5b2faada6c05d6",
+    "f2k_dependencies.hpp": "401b6567af1380c61f7d132841796868c927a7df8819088cccf311b51abd46ef"
+  }
+}

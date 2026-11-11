@@ -1,0 +1,57 @@
+{
+  "native": "src/CLUBB_core/calc_roots.F90",
+  "target": "clubb_kokkos/drafts/calc_roots/calc_roots.hpp",
+  "native_contracts": {
+    "cubic_solve": [
+      "nz",
+      "a_coef",
+      "b_coef",
+      "c_coef",
+      "d_coef"
+    ],
+    "quadratic_solve": [
+      "nz",
+      "a_coef",
+      "b_coef",
+      "c_coef"
+    ],
+    "cube_root": [
+      "x"
+    ]
+  },
+  "native_primary_definition_order": true,
+  "scalar_execution_overloads": {
+    "cubic_solve": [
+      "a_coef",
+      "b_coef",
+      "c_coef",
+      "d_coef"
+    ],
+    "quadratic_solve": [
+      "a_coef",
+      "b_coef",
+      "c_coef"
+    ]
+  },
+  "manual_separate_review": [
+    "all Q/R/discriminant and root equations, integer-power grouping and Native coefficient division placement",
+    "complex sqrt and complex exponent retained, including Native signed S/T pairing and negative-zero SIGN",
+    "all three root positions and no added leading-coefficient/discriminant guards",
+    "Native cube_root comparison/real-power behavior; JAX helper/gradient modifications not imported",
+    "profile API dimensions/argument order, (level,root) layout and caller-memory-space return ownership",
+    "forward declarations and only two necessary per-level scalar overloads for device composition",
+    "scientific description/reference, local scratch, Native routine order and formatting"
+  ],
+  "deviations": [
+    "Kokkos complex value type instead of Native intrinsic COMPLEX",
+    "two device scalar overloads own the per-level equations; Native-signature wrappers launch independent profile levels"
+  ],
+  "compile": "pending",
+  "numerical": "pending",
+  "bfb": "pending",
+  "no_shared_or_production_changes": true,
+  "sha256": {
+    "native": "f8c7cbb2061856c132d481c74359bd49477fdc58377a157a3c5241030a6b67c5",
+    "target": "ab10b2d5167437d094298be524bc5437994e0921f88a760a386a6d1c91cdc5ca"
+  }
+}

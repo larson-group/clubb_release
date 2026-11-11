@@ -11,8 +11,7 @@ subroutine f2py_cleanup_grid()
 
 end subroutine f2py_cleanup_grid
 
-subroutine f2py_zm2zt2zm( nzm, nzt, ngrdcol, azm, zm_min, & ! In
-                          azm_smoothed ) ! Out
+subroutine f2py_zm2zt2zm_2d(nzm, nzt, ngrdcol, azm, zm_min, azm_smoothed)
 
   use clubb_precision, only: core_rknd
   use derived_type_storage, only: stored_grid
@@ -27,10 +26,9 @@ subroutine f2py_zm2zt2zm( nzm, nzt, ngrdcol, azm, zm_min, & ! In
 
   azm_smoothed = zm2zt2zm(nzm, nzt, ngrdcol, stored_grid, azm, zm_min)
 
-end subroutine f2py_zm2zt2zm
+end subroutine f2py_zm2zt2zm_2d
 
-subroutine f2py_zt2zm2zt( nzm, nzt, ngrdcol, azt, zt_min, & ! In
-                          azt_smoothed ) ! Out
+subroutine f2py_zt2zm2zt_2d(nzm, nzt, ngrdcol, azt, zt_min, azt_smoothed)
 
   use clubb_precision, only: core_rknd
   use derived_type_storage, only: stored_grid
@@ -45,7 +43,7 @@ subroutine f2py_zt2zm2zt( nzm, nzt, ngrdcol, azt, zt_min, & ! In
 
   azt_smoothed = zt2zm2zt(nzm, nzt, ngrdcol, stored_grid, azt, zt_min)
 
-end subroutine f2py_zt2zm2zt
+end subroutine f2py_zt2zm2zt_2d
 
 subroutine f2py_setup_grid(nzmax, ngrdcol, sfc_elevation, &
     l_implemented, l_ascending_grid, grid_type, &
@@ -114,8 +112,7 @@ subroutine f2py_get_grid_shape(ngrdcol_out, nzm_out, nzt_out) &
 
 end subroutine f2py_get_grid_shape
 
-subroutine f2py_zt2zm( nzm, nzt, ngrdcol, azt, & ! In
-                       azm ) ! Out
+subroutine f2py_zt2zm_2d(nzm, nzt, ngrdcol, azt, azm)
 
   use clubb_precision, only: core_rknd
   use derived_type_storage, only: stored_grid
@@ -129,10 +126,9 @@ subroutine f2py_zt2zm( nzm, nzt, ngrdcol, azt, & ! In
 
   azm = zt2zm_api(nzm, nzt, ngrdcol, stored_grid, azt)
 
-end subroutine f2py_zt2zm
+end subroutine f2py_zt2zm_2d
 
-subroutine f2py_zm2zt( nzm, nzt, ngrdcol, azm, & ! In
-                       azt ) ! Out
+subroutine f2py_zm2zt_2d(nzm, nzt, ngrdcol, azm, azt)
 
   use clubb_precision, only: core_rknd
   use derived_type_storage, only: stored_grid
@@ -146,10 +142,9 @@ subroutine f2py_zm2zt( nzm, nzt, ngrdcol, azm, & ! In
 
   azt = zm2zt_api(nzm, nzt, ngrdcol, stored_grid, azm)
 
-end subroutine f2py_zm2zt
+end subroutine f2py_zm2zt_2d
 
-subroutine f2py_ddzm( nzm, nzt, ngrdcol, azm, & ! In
-                      d_azm_dzt ) ! Out
+subroutine f2py_ddzm_2d(nzm, nzt, ngrdcol, azm, d_azm_dzt)
 
   use clubb_precision, only: core_rknd
   use derived_type_storage, only: stored_grid
@@ -163,10 +158,9 @@ subroutine f2py_ddzm( nzm, nzt, ngrdcol, azm, & ! In
 
   d_azm_dzt = ddzm(nzm, nzt, ngrdcol, stored_grid, azm)
 
-end subroutine f2py_ddzm
+end subroutine f2py_ddzm_2d
 
-subroutine f2py_ddzt( nzm, nzt, ngrdcol, azt, & ! In
-                      d_azt_dzm ) ! Out
+subroutine f2py_ddzt_2d(nzm, nzt, ngrdcol, azt, d_azt_dzm)
 
   use clubb_precision, only: core_rknd
   use derived_type_storage, only: stored_grid
@@ -180,7 +174,7 @@ subroutine f2py_ddzt( nzm, nzt, ngrdcol, azt, & ! In
 
   d_azt_dzm = ddzt(nzm, nzt, ngrdcol, stored_grid, azt)
 
-end subroutine f2py_ddzt
+end subroutine f2py_ddzt_2d
 
 subroutine f2py_setup_grid_heights(nzm, nzt, ngrdcol, &
     l_implemented, l_ascending_grid, grid_type, deltaz, zm_init, &
@@ -188,7 +182,7 @@ subroutine f2py_setup_grid_heights(nzm, nzt, ngrdcol, &
 
   use clubb_precision, only: core_rknd
   use derived_type_storage, only: stored_grid, stored_err_info
-  use grid_class, only: setup_grid_heights_api
+  use grid_class, only: setup_grid_heights
 
   implicit none
 
@@ -198,11 +192,9 @@ subroutine f2py_setup_grid_heights(nzm, nzt, ngrdcol, &
   real(core_rknd), dimension(ngrdcol, nzm), intent(in) :: momentum_heights
   real(core_rknd), dimension(ngrdcol, nzt), intent(in) :: thermodynamic_heights
 
-  call setup_grid_heights_api( nzm, nzt, ngrdcol, & ! In
-                           l_implemented, l_ascending_grid, & ! In
-                           grid_type, deltaz, zm_init, & ! In
-                           momentum_heights, thermodynamic_heights, & ! In
-                           stored_grid, stored_err_info ) ! InOut
+  call setup_grid_heights(nzm, nzt, ngrdcol, l_implemented, l_ascending_grid, &
+    grid_type, deltaz, zm_init, momentum_heights, thermodynamic_heights, &
+    stored_grid, stored_err_info)
 
 end subroutine f2py_setup_grid_heights
 

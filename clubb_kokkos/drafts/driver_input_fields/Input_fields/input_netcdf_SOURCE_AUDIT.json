@@ -1,0 +1,33 @@
+{
+  "date_UTC": "2026-11-06T08:21:28.552216+00:00",
+  "attribution": "Owner source audit; no independent reviewer claim.",
+  "routines_in_source_order": [
+    "open_netcdf_read",
+    "get_netcdf_var",
+    "close_netcdf_read"
+  ],
+  "checks": [
+    "Complete Native source and relevant actual JAX bodies read before outline/implementation; final complete target reread separate from initial translation.",
+    "All scoped public definitions, source order, original formal names/order/intents and source branch/call order checked.",
+    "Only actual Native date globals become accepted const case-context arguments; ncf/arrays/IDs remain caller-owned.",
+    "No shared schema duplicate/global/thread_local storage or persistent Native UDT/registry; explicit close placement and Native early-error returns retained.",
+    "All GPU captures are component Views/scalars; only primitive raw NetCDF operations cross f2k on host; existing array owner handles host/strided profiles.",
+    "All10vertical aliases,4longitude,4latitude,3time,2column names and every rejection branch checked;3/4Dfloat/double andfirsthorizontalcolumn semantics retained.",
+    "Fixed80timeunits/fixed10variableunits buffers and raw nf90 error statuses retained; Fortran dimension/variable IDs and start/count remain one-based throughout primitive transport.",
+    "Date parse first/last hyphens/colons, singledigit month/day rules, seconds2character parse,29character guard, Gregorian date offset, time_precision double arithmetic and core-real write interval checked.",
+    "get_netcdf_var preserves output-size/time guards, Native prefix read and entire-output unit conversions; no new finite/masking/scale behavior.",
+    "All pure I/O services contain raw nf90 operations only; no coordinate/time/unit interpretation crosses bridge.",
+    "IntentOut descriptor releases allocatable fields only and resets actual nsamp default; no fabricated scalar metadata initialization."
+  ],
+  "sha256": {
+    "src/Input_fields/input_netcdf.F90": "ab126cba1e34ccf00cbca900109c407a26dda4bea9cb7bd9201e616aab5c6e4c",
+    "clubb_kokkos/drafts/driver_input_fields/Input_fields/input_netcdf.cpp": "b88c6203ab7be60c838c374ae53fbf883eec305c3f9876b05476900e2ca9e6a7",
+    "clubb_kokkos/drafts/driver_input_fields/Input_fields/input_netcdf.hpp": "a20eb1ec6a57841933912503c184232b41841b17eaca6665b8397076f4b45968",
+    "clubb_kokkos/drafts/driver_input_fields/f2k/input_netcdf_io_bridge.hpp": "f3be148276f52f3f08b069d13afbb344349745c498fe934fb5ccafca58c8bae6",
+    "clubb_kokkos/drafts/driver_input_fields/f2k/input_netcdf_io_bridge.F90": "d7f7cb2c36f6574f9886dc176b1490ac33384226f059ce85d2f23a536485220b",
+    "clubb_kokkos/drafts/driver_input_fields/Input_fields/stat_file_module.hpp": "0a0b001e649591b5bc17c244e5a16bd80df3237980fc94f2b2ce3edab1ca1e99",
+    "clubb_kokkos/drafts/driver_input_fields/Input_fields/inputfields_state.hpp": "f40f74853977cfc35d6cce2f3533ffbb07e2514b0582cae89afe0de0b24dbfc9"
+  },
+  "BFB_specific_adaptations": [],
+  "runtime_status": "UNCOMPILED/UNTESTED; CPU/CUDA/model/BFB evidence pending Root compatible-group integration."
+}

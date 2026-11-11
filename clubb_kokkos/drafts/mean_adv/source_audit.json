@@ -1,0 +1,50 @@
+{
+  "status": "Complete supported source draft; not compiled/runtime validated",
+  "source": "src/CLUBB_core/mean_adv.F90; all 519 lines read",
+  "routine_order": [
+    "term_ma_zt_lhs",
+    "term_ma_zm_lhs"
+  ],
+  "argument_counts": {
+    "term_ma_zt_lhs": 10,
+    "term_ma_zm_lhs": 7
+  },
+  "all_signature_names_order_optionals": true,
+  "source_order_call_counts": {
+    "term_ma_zt_lhs": 0,
+    "term_ma_zm_lhs": 0
+  },
+  "all_non_solver_call_arguments_checked": 0,
+  "grid_function_calls": {
+    "term_ma_zt_lhs": 0,
+    "term_ma_zm_lhs": 0
+  },
+  "stats_calls_by_routine": {
+    "term_ma_zt_lhs": 0,
+    "term_ma_zm_lhs": 0
+  },
+  "device_kernel_bodies_checked": 9,
+  "native_diagnostic_write_labels_in_order": {
+    "term_ma_zt_lhs": 0,
+    "term_ma_zm_lhs": 0
+  },
+  "all_diagnostic_payload_values_checked": 0,
+  "no_udt_capture_host_access_or_nested_launch_in_kernel": true,
+  "scope_exclusion": "None; all source options included",
+  "matrix_adapter": [],
+  "native_local_integer_constants_checked": 10,
+  "manual_source_review": [
+    "Native bands-first Out operator retained; no transpose or sign reversal at this boundary",
+    "Full numeric lower/interior/upper block order and all diagonal assignments",
+    "All local Native parameter constants, declaration descriptions and conservation/derivation diagrams",
+    "Centered/upwind thermo and signed zero/nonfinite flow branch choices",
+    "Momentum zero-band boundaries and centered-only interior retained",
+    "Native weight category bounds1:2 map directly to View category0:1"
+  ],
+  "runtime": "No builds/tests/numerical execution; root owns CPU BFB integration gate and occasional GPU milestone comparison",
+  "sha256": {
+    "mean_adv.cpp": "a5908c3c8a4dae65c03d2dd735ec9299b43a2ec2f94f069baa5b265411246a27",
+    "mean_adv.hpp": "e131020227a464fad2e309702557a585287ed2d783a6f3f474848764edff7d24"
+  },
+  "native_sha256": "9402f91c35cb7b2ca68260e7dda58beeea6b88b4b99d77a4aabb48cae8b67ac8"
+}

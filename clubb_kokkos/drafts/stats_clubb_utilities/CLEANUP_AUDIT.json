@@ -1,0 +1,24 @@
+{
+  "scope": "Separate final format/comment cleanup after successful first CPU object compile. Native argument groups restored after mechanical formatting; no executable changes.",
+  "files": [
+    {
+      "path": "stats_clubb_utilities.cpp",
+      "before_sha256": "3e4442fa51c769e44c48e56df08d82206481fabd583cf534e9ff621e29560638",
+      "after_sha256": "f4953904cd01f9a8d3158473c8124446ae1534890ea1fc3a1d2c739760df64f2",
+      "executable_tokens_identical": true,
+      "tokens": 5401,
+      "max_columns": 100,
+      "trailing_whitespace": false
+    },
+    {
+      "path": "stats_clubb_utilities.hpp",
+      "before_sha256": "4e261ecf13a2915e12bbe91f9de17c7175eb3a7c6e6548871cb5b9a8f0839088",
+      "after_sha256": "4e261ecf13a2915e12bbe91f9de17c7175eb3a7c6e6548871cb5b9a8f0839088",
+      "executable_tokens_identical": true,
+      "tokens": 1990,
+      "max_columns": 95,
+      "trailing_whitespace": false
+    }
+  ],
+  "numerical_status": "Pending Root integration; this token proof is not numerical BFB evidence."
+}

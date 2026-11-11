@@ -43,7 +43,7 @@ from clubb_jax.src.CLUBB_core.error_code import (
     CLUBB_FATAL_ERROR,
     clubb_at_least_debug_level,
 )
-from clubb_jax.src.CLUBB_core.stats_netcdf import JaxStats
+from clubb_jax.src.CLUBB_core.jax_stats import JaxStats
 from clubb_jax.src.CLUBB_core import ErrInfo, Grid, SclrIdx
 
 
@@ -97,85 +97,7 @@ def calc_sfc_varnce(
     err_info: ErrInfo,
 ):
     """This subroutine computes estimate of the surface thermodynamic and wind
-    component second order moments.
-
-    References:
-    Andre, J. C., G. De Moor, P. Lacarrere, G. Therry, and R. Du Vachat, 1978.
-      Modeling the 24-Hour Evolution of the Mean and Turbulent Structures of
-      the Planetary Boundary Layer.  J. Atmos. Sci., 35, 1861 -- 1883.
-
-    Returns:
-        (wp2, up2, vp2, thlp2, rtp2, rtpthlp, sclrp2, sclrprtp, sclrpthlp,
-          err_info, stats)
-
-    Fortran declarations (calc_sfc_varnce in src/CLUBB_core/sfc_varnce_module.F90):
-
-        !-------------------------- Input Variables --------------------------
-        integer, intent(in) :: &
-          nzm, &
-          nzt, &
-          ngrdcol, &
-          sclr_dim
-
-        type (sclr_idx_type), intent(in) :: &
-          sclr_idx
-
-        type(grid), intent(in) :: &
-          gr
-
-        real( kind = core_rknd ) :: &
-          dt
-
-        real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
-          sfc_elevation, &
-          upwp_sfc,         & ! Surface u momentum flux, <u'w'>|_sfc   [m^2/s^2]
-          vpwp_sfc,         & ! Surface v momentum flux, <v'w'>|_sfc   [m^2/s^2]
-          wprtp_sfc           ! Surface moisture flux, <w'rt'>|_sfc    [kg/kg m/s]
-
-        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) ::  &
-          wpthlp,        & ! Surface thetal flux, <w'thl'>|_sfc     [K m/s]
-          lhs_splat_wp2, &
-          !wp2_splat,    & ! Tendency of <w'^2> due to splatting of eddies at zm(1) [m^2/s^3]
-          tau_zm           ! Turbulent dissipation time at level zm(1)  [s]
-
-        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
-          um,            & ! Surface u wind component, <u>          [m/s]
-          vm,            & ! Surface v wind component, <v>          [m/s]
-          Lscale_up        ! Upward component of Lscale at surface  [m]
-
-        real( kind = core_rknd ), dimension(ngrdcol,sclr_dim), intent(in) :: &
-          wpsclrp_sfc    ! Passive scalar flux, <w'sclr'>|_sfc   [units m/s]
-
-        logical, intent(in) :: &
-          l_vary_convect_depth
-
-        real( kind = core_rknd ), intent(in) :: &
-          T0                ! Reference temperature (usually 300)  [K]
-
-        real( kind = core_rknd ), dimension(ngrdcol) :: &
-          up2_sfc_coef,   & ! CLUBB tunable parameter up2_sfc_coef   [-]
-          a_const           ! Coefficient in front of wp2, up2, and vp2
-
-        type(stats_type), intent(inout) :: &
-          stats
-
-        !-------------------------- InOut Variables --------------------------
-        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(inout) :: &
-          wp2,     & ! Surface variance of w, <w'^2>|_sfc            [m^2/s^2]
-          up2,     & ! Surface variance of u, <u'^2>|_sfc            [m^2/s^2]
-          vp2,     & ! Surface variance of v, <v'^2>|_sfc            [m^2/s^2]
-          thlp2,   & ! Surface variance of theta-l, <thl'^2>|_sfc    [K^2]
-          rtp2,    & ! Surface variance of rt, <rt'^2>|_sfc          [(kg/kg)^2]
-          rtpthlp    ! Surface covariance of rt and theta-l          [kg K/kg]
-
-        real( kind = core_rknd ), dimension(ngrdcol,nzm,sclr_dim), intent(inout) :: &
-          sclrp2,    & ! Surface variance of passive scalar            [units^2]
-          sclrprtp,  & ! Surface covariance of pssv scalar and rt  [units kg/kg]
-          sclrpthlp    ! Surface covariance of pssv scalar and theta-l [units K]
-
-        type(err_info_type), intent(inout) :: &
-          err_info      ! err_info struct containing err_code and err_header
-    """
+    component second order moments."""
     del nzt, um, vm, Lscale_up
 
     # Constant Parameters
@@ -191,18 +113,13 @@ def calc_sfc_varnce(
     #-------------------------- Begin Code --------------------------
 
     # Reflect surface varnce changes in budget
-    def accumulate_stats(stats):
-        """Collect this diagnostic block only on sampled timesteps."""
+    if stats.l_sample:
         stats = stats.begin_budget("thlp2_sf", thlp2 / dt)
         stats = stats.begin_budget("rtp2_sf", rtp2 / dt)
         stats = stats.begin_budget("rtpthlp_sf", rtpthlp / dt)
         stats = stats.begin_budget("up2_sf", up2 / dt)
         stats = stats.begin_budget("vp2_sf", vp2 / dt)
         stats = stats.begin_budget("wp2_sf", wp2 / dt)
-
-        return stats
-
-    stats = stats.sampled(accumulate_stats)
 
     level_idx = jnp.asarray(
         tuple(
@@ -455,18 +372,13 @@ def calc_sfc_varnce(
             jnp.where(not_at_surface, zero, sclrpthlp[:, gr.k_lb_zm, sclr])
         )
 
-    def accumulate_stats(stats):
-        """Collect this diagnostic block only on sampled timesteps."""
+    if stats.l_sample:
         stats = stats.finalize_budget("thlp2_sf", thlp2 / dt)
         stats = stats.finalize_budget("rtp2_sf", rtp2 / dt)
         stats = stats.finalize_budget("rtpthlp_sf", rtpthlp / dt)
         stats = stats.finalize_budget("up2_sf", up2 / dt)
         stats = stats.finalize_budget("vp2_sf", vp2 / dt)
         stats = stats.finalize_budget("wp2_sf", wp2 / dt)
-
-        return stats
-
-    stats = stats.sampled(accumulate_stats)
 
     if clubb_at_least_debug_level(2):
         nan_mask = (

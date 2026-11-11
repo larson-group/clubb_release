@@ -1,0 +1,60 @@
+{
+  "id": "BFB-024",
+  "status": "actual-input replay and combined CPU primary gate pass; live integration pending",
+  "routine": "PDF_integrals_covars::quadrivar_NNLL_covar first exponential only",
+  "configuration": "NVHPC 26.9, core8, -O0 -g, Serial CPU Kokkos versus CPU Native",
+  "cause": "The exponent is a sum of a normal-space mean pair and lognormal variance/cross terms. Native groups variance/cross separately before adding a separately fused mean pair. Ordinary C++ accumulates them as one prefix. Native also fuses the correlation complements/difference shown in the exact assembly.",
+  "inputs": "COVAR_FIRST_INPUT.json captures all43 actual Native-prefix covariance arguments in hex from DO step2; the 25-arg component dispatchers and19-arg primitive are replayed with the actual frozen Native object.",
+  "replay_counts": {
+    "Cxx_component_dispatch_matches_its_primitive": 2,
+    "Native_component_dispatch_matches_its_primitive": 2,
+    "candidate_matches_Native_components": 2,
+    "total_components": 2,
+    "original_full_covariance_reproduces_model_Cxx_and_Native": 1,
+    "total_full_covariances": 1
+  },
+  "values": {
+    "first_component_all": "-0x1.1cd4e055fe2f6p-11",
+    "second_component_Cxx": "0x1.bbfc58cade260p-14",
+    "second_component_Native_and_candidate": "0x1.bbfc58cade25ep-14",
+    "full_Cxx": "-0x1.546bf6688512ep-32",
+    "full_Native": "-0x1.546bf6688512fp-32"
+  },
+  "Native_assembly": "native_quadrivar_NNLL_assembly.txt:4a2 fused cross-correlation difference;4f6/54c fused 1-rho^2;565 variance-pair FMA;56a final cross-product FMA;583 mean-pair FMA;588 final addition before58c exp call. Only that first exponent is replaced.",
+  "candidate": "BFB-024_candidate.patch retains all other operands, second exponential, Dv/gamma calls, products and final subtraction. No new approximation/library/threshold or GPU diagnosis.",
+  "isolated_model_link": "KK_candidate_anchor.o emits the actual candidate inline scalar body, linked before the frozen Driver object so GNU weak symbol selection uses that body. It returns only a function address and holds no model state. Final live promotion must compile the ordinary header through the Driver source. Binary is verified free of all three temporary Native-replay/operand trace markers.",
+  "evidence_sha256": {
+    "COVAR_FIRST_INPUT.json": "84051c400972c30b3fc10e3a64ecaeaafd7fe68bb8969fd0b4e621f6dad4c81b",
+    "covar_same_input_replay.cpp": "83d7260b8c9d7020796a35b0d0f6bb4335475c2a06faa97b3724ebe90fc6a551",
+    "covar_same_input_candidate.o": "c40aeadc3b2a1b3bd174e10c04b2792f622e66746494f36c2d6a91e136849b3f",
+    "covar_candidate_result.log": "5c853e39f53ab7ca7cdd669c771d8735a21beb5e64605b6c2b634bbd05396e9e",
+    "native_quadrivar_NNLL_assembly.txt": "110471f788e6f0f2293c07951e05c3bd9ea15f834d13f434539d9db22e34e6e8",
+    "cpp_quadrivar_NNLL_assembly.txt": "7294fae26876136ad8bc9299378d0d4364c4037587760bc6bf396c75b3bc0d50",
+    "BFB-024_candidate.patch": "b5606f18247734f71dde033293d68a95ad2396dbdee5884baa92c5807493093e"
+  },
+  "model_boundary_evidence": "Combined023+024 five-step ALLstats has every numeric field equal at60/120s; independent later-step sedimentation/moment differences remain. BFB023024_allstats_results preserves this failing intermediate.",
+  "combined_primary_model_gate": {
+    "result": "passed strict raw-file equality 2/2",
+    "cases": [
+      "dycoms2_rf02_do",
+      "dycoms2_rf02_ds"
+    ],
+    "observed_steps_each_backend": 5,
+    "stats": "multi_col_stats",
+    "override": "debug_level=2",
+    "source": "isolated frozen microphysics batch plus five-index fix and BFB023\u2013026",
+    "log": "BFB023026_MC_model_gate.log",
+    "results_archive": "BFB023026_MC_results",
+    "no_tolerance_changes": true,
+    "repeat_retained_log": "BFB023026_MC_retain_model_gate.log"
+  },
+  "supplemental_ALL_gate": {
+    "result": "diff2/2 at180s",
+    "archive": "BFB023026_ALL_results",
+    "scope": "only w_KK_evap_covar_zt and its wprtp/wpthlp_mc and later forcing statistics; main state/means/variances/sedimentation fields exact for5steps",
+    "max_abs_moisture": 4.1359030627651384e-25,
+    "max_abs_heat": 1.6940658945086007e-21,
+    "no_acceptance_relaxation": true
+  },
+  "live_integration": "Promoted exact candidate patches in order; final combined live model acceptance pending. Detailed replay/assembly objects remain in the recorded local diagnosis lane."
+}

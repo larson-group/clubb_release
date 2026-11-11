@@ -1,0 +1,123 @@
+{
+  "status": "Supported-source draft complete; final separate self-audit/cleanup and independent full-source review complete. Compilation and numerical verification pending integration.",
+  "canonical_source": "src/CLUBB_core/advance_wp2_wp3_module.F90",
+  "canonical_sha256": "f58b3d0bc610faa8b9612d2a84f8afcd54c28a89e0911312fb8a75d3deb50c23",
+  "canonical_lines_read_before_code": 5682,
+  "source_inventory_and_order": [
+    "advance_wp2_wp3",
+    "wp23_solve",
+    "wp23_lhs",
+    "wp23_rhs",
+    "wp2_term_ta_lhs",
+    "wp2_terms_ac_pr2_lhs",
+    "wp2_term_dp1_lhs",
+    "wp2_term_pr1_lhs",
+    "wp2_terms_bp_pr2_rhs",
+    "wp2_term_dp1_rhs",
+    "wp2_term_pr3_rhs",
+    "wp2_term_pr1_rhs",
+    "wp2_term_pr_dfsn_rhs",
+    "wp3_term_ta_new_pdf_lhs",
+    "wp3_term_ta_ADG1_lhs",
+    "wp3_term_tp_lhs",
+    "wp3_terms_ac_pr2_lhs",
+    "wp3_term_pr1_lhs",
+    "wp3_term_ta_explicit_rhs",
+    "wp3_terms_bp1_pr2_rhs",
+    "wp3_term_pr_turb_rhs",
+    "wp3_term_pr_dfsn_rhs",
+    "wp3_term_pr1_rhs"
+  ],
+  "public_inventory": [
+    "advance_wp2_wp3"
+  ],
+  "public_required_arguments": 68,
+  "source_review": {
+    "all_routine_signatures_names_order_kinds_ranks_intents": true,
+    "native_argument_groups_and_intent_comments": "All23 declarations/definitions;37 continued callsites; type width can add continuation lines.",
+    "explicit_indexed_scientific_budget_assignment_expression_trees": 233,
+    "ordered_non_solver_native_calls": 100,
+    "mapped_call_argument_trees": 634,
+    "separately_reviewed_band_solver_language_adapter_calls": 2,
+    "safe_kernel_capture_and_local_first_use_bodies": 171,
+    "exact_Cpp_internal_call_spelling": true,
+    "manual_complete_body_review": [
+      "Whole-array initializations and grid-function result copies",
+      "All parent PDF/implicit/explicit/Crank-Nicholson/LMM branches and exact existing sponge exclusion",
+      "Native band-first local ownership, pack/restore, optional old solution/condition number and forced-descending reverse assignment",
+      "Fatal assertion ordering, all-column status, warning pre-limit payloads, complete input/solver dumps and early returns",
+      "All field-specific stats update/begin/update_budget/finalize callsites, immediate expression materializations and false count-sample option",
+      "Correlation-floor nary MAX and ceiling; debug3 first-nzm-element vertical_avg sequence association",
+      "Boundary loop bounds, integer offsets, true local scalar ownership and direction-sensitive RHS asymmetries",
+      "Native comments/citations/paragraphs/equations/dividers plus documented copied-comment corrections"
+    ],
+    "formatting": {
+      "column_limit": 100,
+      "tabs": false,
+      "trailing_whitespace": false,
+      "owning_UDT_device_capture": false,
+      "bridge_or_host_io_inside_kernel": false
+    }
+  },
+  "supported_scope_exclusion": {
+    "native_blocks": "Post-solve wp2/wp3 sponge damping and four sampled sponge-budget calls",
+    "accepted_by_parent": true,
+    "existing_live_guard": "clubb_kokkos/src/clubb_driver.cpp:713-720 rejects all relevant sponge settings before allocation",
+    "local_source_TODO_present": true
+  },
+  "necessary_language_adaptations": [
+    "Forward declarations retain Native body order",
+    "Physical column-first LayoutLeft fields; Native-shaped band scratch plus existing column-first solver boundary",
+    "Owned reverse snapshots preserve whole-array alias semantics",
+    "Component View/scalar captures; integer-only assertion reduction and host diagnostic staging",
+    "Call-local statistics expression Views and correct rank1 owner overload",
+    "Separate pre-limit wp2 warning snapshot then native ceiling",
+    "Explicit rank1 windows preserve Native bulk sequence association for debug3 vertical_avg",
+    "Native wp23_solve.wp3_pr3_lhs missing INTENT locally recorded as input after full body read"
+  ],
+  "BFB_arithmetic_status": "No mismatch-driven workaround, explicit FMA or forced rounding. Integer powers/MIN/MAX are ordinary language lowerings; CPU BFB evidence pending.",
+  "independent_review": {
+    "artifact": "INDEPENDENT_SOURCE_AUDIT.json",
+    "origin": "/tmp/clubb_wp23_independent_source_audit.json",
+    "reviewer": "/root/pdf_parent_outline",
+    "status": "Independent source review complete for exact stable Native/draft hashes. No unresolved source defect found in reviewed supported scope. Compilation, integration and numerical verification pending.",
+    "remaining_findings": [],
+    "resolved_concrete_findings": [
+      "Four kernel-local zero boundary indices shadowed assigned host values",
+      "Mutable rank1 stats View selected rank2 generic overload",
+      "Continuation cleanup lowercased Native ADG1 C++ callee; exact spelling restored"
+    ],
+    "resolved_source_cleanup": [
+      "Private native module constant comments",
+      "Native signature/call continuation groups and stranded intent comments"
+    ]
+  },
+  "dependency_contracts": "DEPENDENCIES.json",
+  "integration_notes": "INTEGRATION.md",
+  "source_audit_commands": [
+    "python clubb_kokkos/drafts/advance_wp2_wp3_module/source_audit.py",
+    "python clubb_kokkos/drafts/advance_wp2_wp3_module/call_audit.py",
+    "python clubb_kokkos/drafts/advance_wp2_wp3_module/parent_expression_audit.py"
+  ],
+  "verification": {
+    "builds_or_compilation": false,
+    "model_or_unit_tests": false,
+    "CPU_BFB": "Pending root-owned maintained CPU Fortran vs CPU Kokkos zero-tolerance model comparison",
+    "GPU": "Pending occasional milestone; differences documented separately",
+    "shared_production_CMake_generator_changes_by_draft_owner": false
+  },
+  "file_sha256": {
+    "SOURCE_OUTLINE.json": "297b9f75653747140939cbd3b56d88bfa2b2318b9e7d6b209fdae0e9b81e1eb3",
+    "source_audit.py": "218ebfbe40e7c2796c16881394f2e7e7c98f9faabe9111ac2599b284c7e0b9f1",
+    "expression_audit.json": "bcfaebe5380dca742fbe0b14fae5df38c1b9321b6f80c2e01b77be0ecac82ad9",
+    "call_audit.json": "5288d08c659332cc8acd054a6d90e6c96ca53e6bd4fe458d7d9c31ba12e463fc",
+    "parent_expression_audit.json": "f4e7d46a0c2e8816a410d6874d0e49f461e92b9cd9de3e49f8995dc60aa08fe1",
+    "advance_wp2_wp3_module.cpp": "159bb61dadfd6d087cd5a2c73b1b326136705f4ccedefe1011ffb1079653b371",
+    "advance_wp2_wp3_module.hpp": "cbb8bc4fd31538e21387a9b9ac5a2dfec091911fe7b4e39a52fbabb3930cf84a",
+    "DEPENDENCIES.json": "df816ecb561c4e6f8a24680e5e92fd73ad949e90ea386df24b4890409f1735b5",
+    "INTEGRATION.md": "a5d03de4cd0f8928e55eb9ec42347158b2d5d46a04c47016207eff3b917dcc92",
+    "call_audit.py": "a4124b7a886b847620383bccf5db70ab5016b7b2e7f71fa68986769f7799776a",
+    "parent_expression_audit.py": "202f5f0db24130253cf67c0fd8466cd2b83fb429c41eb8b727c4dee9df5f55d5",
+    "INDEPENDENT_SOURCE_AUDIT.json": "9ca145f4bf32764a8e3fe35b61872e976f2dabc26ab2dde5c1d02f1b21f45dcd"
+  }
+}

@@ -14,10 +14,10 @@ import jax.numpy as jnp
 
 from clubb_jax.src.CLUBB_core import model_flags, parameter_indices
 from clubb_jax.src.CLUBB_core.advance_xp2_xpyp_module import xp2_xpyp_single_lhs_valid
-from clubb_jax.src.CLUBB_core.err_info_type_module import ErrInfo
+from clubb_jax.src.CLUBB_core.err_info import ErrInfo
 from clubb_jax.src.CLUBB_core.grid_class import Grid
-from clubb_jax.src.CLUBB_core.parameters_tunable import NuVertResDep
-from clubb_jax.src.CLUBB_core.pdf_parameter_module import implicit_coefs_terms
+from clubb_jax.src.CLUBB_core.nu_vert_res_dep import NuVertResDep
+from clubb_jax.src.CLUBB_core.pdf_params import implicit_coefs_terms
 from clubb_jax.src.CLUBB_core.sclr_idx import SclrIdx
 
 

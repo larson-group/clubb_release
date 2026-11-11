@@ -1,0 +1,497 @@
+{
+  "preimplementation_outline": true,
+  "source": "src/CLUBB_core/matrix_operations.F90",
+  "native_lines": 565,
+  "jax": "clubb_jax/src/CLUBB_core/matrix_operations.py",
+  "native_active_inventory_and_order": [
+    "symm_covar_matrix_2_corr_matrix",
+    "row_mult_lower_tri_matrix",
+    "Cholesky_factor",
+    "Symm_matrix_eigenvalues",
+    "set_lower_triangular_matrix",
+    "get_lower_triangular_matrix",
+    "print_lower_triangular_matrix",
+    "mirror_lower_triangular_matrix"
+  ],
+  "routines": [
+    {
+      "name": "symm_covar_matrix_2_corr_matrix",
+      "module": "matrix_operations",
+      "source": "src/CLUBB_core/matrix_operations.F90",
+      "arguments": [
+        {
+          "name": "ndim",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "covar",
+          "kind": "real",
+          "dims": [
+            "ndim",
+            "ndim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "corr",
+          "kind": "real",
+          "dims": [
+            "ndim",
+            "ndim"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "ordered_control": [
+        "do i = 1, ndim",
+        "do j = 1, i"
+      ],
+      "ordered_calls": []
+    },
+    {
+      "name": "row_mult_lower_tri_matrix",
+      "module": "matrix_operations",
+      "source": "src/CLUBB_core/matrix_operations.F90",
+      "arguments": [
+        {
+          "name": "ndim",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "xvector",
+          "kind": "real",
+          "dims": [
+            "ndim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "tmatrix_in",
+          "kind": "real",
+          "dims": [
+            "ndim",
+            "ndim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "tmatrix_out",
+          "kind": "real",
+          "dims": [
+            "ndim",
+            "ndim"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "ordered_control": [
+        "do i = 1, ndim",
+        "do j = 1, i"
+      ],
+      "ordered_calls": []
+    },
+    {
+      "name": "Cholesky_factor",
+      "module": "matrix_operations",
+      "source": "src/CLUBB_core/matrix_operations.F90",
+      "arguments": [
+        {
+          "name": "ndim",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "a_input",
+          "kind": "real",
+          "dims": [
+            "ndim",
+            "ndim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "a_scaling",
+          "kind": "real",
+          "dims": [
+            "ndim"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "a_Cholesky",
+          "kind": "real",
+          "dims": [
+            "ndim",
+            "ndim"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "l_scaled",
+          "kind": "logical",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "ordered_control": [
+        "if ( info == 0 ) then",
+        "if ( equed == 'Y' ) then",
+        "else",
+        "do iter = 1, itermax",
+        "select case( info )",
+        "case( :-1 )",
+        "error stop",
+        "case( 0 )",
+        "if ( clubb_at_least_debug_level_api( 1 ) .and. iter > 1 ) then",
+        "do i = 1, ndim",
+        "do j = 1, i",
+        "case( 1: )",
+        "if ( clubb_at_least_debug_level_api( 1 ) ) then",
+        "do i = 1, ndim",
+        "do j = 1, i",
+        "do i = 1, ndim",
+        "do j = 1, i",
+        "if ( clubb_at_least_debug_level_api( 2 ) ) then",
+        "do i = 1, ndim",
+        "do i = 1, ndim",
+        "do j = 1, i",
+        "if ( iter == itermax ) then",
+        "else if ( clubb_at_least_debug_level_api( 1 ) ) then",
+        "if ( l_scaled ) then",
+        "else",
+        "do i = 2, ndim",
+        "if ( d_smallest > a_Cholesky(i,i) ) d_smallest = a_Cholesky(i,i)",
+        "do i = 1, ndim",
+        "do j = 1, ndim",
+        "if ( i == j ) then",
+        "else",
+        "if ( clubb_at_least_debug_level_api( 2 ) ) then",
+        "do i = 1, ndim"
+      ],
+      "ordered_calls": [
+        "call lapack_poequ( ndim, a_input, ndim, a_scaling, scond, amax, info )",
+        "call lapack_laqsy( 'Lower', ndim, a_scaled, ndim, a_scaling, scond, amax, equed )",
+        "call lapack_potrf( 'Lower', ndim, a_Cholesky, ndim, info )",
+        "call Symm_matrix_eigenvalues( ndim, a_input, a_eigenvalues )",
+        "call symm_covar_matrix_2_corr_matrix( ndim, a_input, a_corr )",
+        "call Symm_matrix_eigenvalues( ndim, a_Cholesky, a_eigenvalues )"
+      ]
+    },
+    {
+      "name": "Symm_matrix_eigenvalues",
+      "module": "matrix_operations",
+      "source": "src/CLUBB_core/matrix_operations.F90",
+      "arguments": [
+        {
+          "name": "ndim",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "a_input",
+          "kind": "real",
+          "dims": [
+            "ndim",
+            "ndim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "a_eigenvalues",
+          "kind": "real",
+          "dims": [
+            "ndim"
+          ],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "ordered_control": [
+        "select case( info )",
+        "case( :-1 )",
+        "case( 0 )",
+        "case( 1: )"
+      ],
+      "ordered_calls": [
+        "call lapack_syev( 'No eigenvectors', 'Lower', ndim, a_scratch, ndim, a_eigenvalues, work, lwork, info )"
+      ]
+    },
+    {
+      "name": "set_lower_triangular_matrix",
+      "module": "matrix_operations",
+      "source": "src/CLUBB_core/matrix_operations.F90",
+      "arguments": [
+        {
+          "name": "pdf_dim",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "index1",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "index2",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "xpyp",
+          "kind": "real",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "matrix",
+          "kind": "real",
+          "dims": [
+            "pdf_dim",
+            "pdf_dim"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "ordered_control": [
+        "if( i > 0 .and. j > 0 ) then"
+      ],
+      "ordered_calls": []
+    },
+    {
+      "name": "get_lower_triangular_matrix",
+      "module": "matrix_operations",
+      "source": "src/CLUBB_core/matrix_operations.F90",
+      "arguments": [
+        {
+          "name": "pdf_dim",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "index1",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "index2",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "matrix",
+          "kind": "real",
+          "dims": [
+            "pdf_dim",
+            "pdf_dim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "xpyp",
+          "kind": "real",
+          "dims": [],
+          "intent": "out",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "ordered_control": [],
+      "ordered_calls": []
+    },
+    {
+      "name": "print_lower_triangular_matrix",
+      "module": "matrix_operations",
+      "source": "src/CLUBB_core/matrix_operations.F90",
+      "arguments": [
+        {
+          "name": "iunit",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "ndim",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "matrix",
+          "kind": "real",
+          "dims": [
+            "ndim",
+            "ndim"
+          ],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "ordered_control": [
+        "do i = 1, ndim",
+        "do j = 1, i"
+      ],
+      "ordered_calls": []
+    },
+    {
+      "name": "mirror_lower_triangular_matrix",
+      "module": "matrix_operations",
+      "source": "src/CLUBB_core/matrix_operations.F90",
+      "arguments": [
+        {
+          "name": "nvars",
+          "kind": "integer",
+          "dims": [],
+          "intent": "in",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        },
+        {
+          "name": "matrix",
+          "kind": "real",
+          "dims": [
+            "nvars",
+            "nvars"
+          ],
+          "intent": "inout",
+          "optional": false,
+          "allocatable": false,
+          "character_length": ""
+        }
+      ],
+      "result": null,
+      "ordered_control": [
+        "if ( nvars > 1 ) then",
+        "do col=2, nvars",
+        "do row=1, col-1"
+      ],
+      "ordered_calls": []
+    }
+  ],
+  "numerical_evidence": "Uncompiled/untested; no CPU/GPU runtime or BFB claim.",
+  "supported_inventory": [
+    "symm_covar_matrix_2_corr_matrix",
+    "Cholesky_factor",
+    "Symm_matrix_eigenvalues",
+    "mirror_lower_triangular_matrix"
+  ],
+  "scope_decision": "Root approved four Native routines: JAX Cholesky+mirror plus source-required eigenvalue/covariance diagnostic helpers. Four unused public JAX-omitted operations excluded.",
+  "jax_exclusions": [
+    "row_mult_lower_tri_matrix",
+    "set_lower_triangular_matrix",
+    "get_lower_triangular_matrix",
+    "print_lower_triangular_matrix"
+  ],
+  "required_lower": [
+    "Existing host f2k debug-level API.",
+    "Extend existing core lapack_interfaces.hpp + transient f2k/lapack_bridge raw-library ABI owner with precision-dispatched potrf/poequ/laqsy/syev; exact declarations/argument intent in lapack_dependencies.hpp and integration notes."
+  ],
+  "behavior": [
+    "Host matrices retain first-index-fast LayoutLeft; owned scratch per call; no global cache.",
+    "Scale using Native poequ and conditional laqsy; choose scaled/original working array by returned equed.",
+    "Exactly ten total potrf attempts, Native info<0 fatal error-stop, info0 break, info>0 full ordered diagnostics and retry.",
+    "Debug2 eigen/correlation matrices and exact messages retained.",
+    "Retry restores original/scaled matrix, ordered smallest-diagonal scan, tau=d_smallest*d_coef*real(iter,core), then only diagonal additions; last failed iteration still modifies matrix and returns as Native does.",
+    "Private eigenvalues preserve lwork180 and full argument/convergence diagnostics.",
+    "Mirror copies lower to upper only when nvars>1, preserving diagonal and lower entries."
+  ]
+}

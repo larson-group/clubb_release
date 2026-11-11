@@ -19,8 +19,6 @@ EXACTLY the corresponding primitive called with the documented args (so a mis-wi
 directly). Oracle-independent; never SKIPs. (iter 549)
 """
 
-from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
-
 
 from clubb_jax.src.Microphys.KK_microphys.KK_upscaled_means import bivar_NL_mean_eq, CHI_TOL
 from clubb_jax.src.Microphys.KK_microphys.PDF_integrals_means import (
@@ -31,7 +29,7 @@ _ALPHA, _BETA = 2.39, 0.68     # KK-autoconversion-like exponents, both ≥ 0 (s
 
 
 def _f(mu_chi, mu_y, mu_y_n, sig_chi, sig_y, sig_y_n, rho):
-    return float(call_jax(bivar_NL_mean_eq, mu_chi, mu_y, mu_y_n, sig_chi, sig_y, sig_y_n, rho, _Y_TOL, _ALPHA, _BETA))
+    return float(bivar_NL_mean_eq(mu_chi, mu_y, mu_y_n, sig_chi, sig_y, sig_y_n, rho, _Y_TOL, _ALPHA, _BETA))
 
 
 def test_both_vary_selects_general():
@@ -40,7 +38,7 @@ def test_both_vary_selects_general():
     sig_chi, sig_y, sig_y_n, rho = 0.3, 2.0e-4, 0.5, 0.2
     got = _f(mu_chi, mu_y, mu_y_n, sig_chi, sig_y, sig_y_n, rho)
     sig1_safe = max(sig_chi, CHI_TOL)
-    ref = float(call_jax(bivar_NL_mean, mu_chi, mu_y_n, sig1_safe, sig_y_n, rho, _ALPHA, _BETA))
+    ref = float(bivar_NL_mean(mu_chi, mu_y_n, sig1_safe, sig_y_n, rho, _ALPHA, _BETA))
     assert abs(got - ref) <= 1e-12 * (abs(ref) + 1e-300), f"both-vary != bivar_NL_mean: {got} vs {ref}"
     print("  both vary -> bivar_NL_mean (general)  PASS")
 
@@ -61,7 +59,7 @@ def test_x2_const_selects_const_x2():
     sig_chi, sig_y, sig_y_n, rho = 0.3, 0.0, 0.5, 0.2
     got = _f(mu_chi, mu_y, mu_y_n, sig_chi, sig_y, sig_y_n, rho)
     sig1_safe = max(sig_chi, CHI_TOL)
-    ref = float(call_jax(bivar_NL_mean_const_x2, mu_chi, mu_y, sig1_safe, _ALPHA, _BETA))
+    ref = float(bivar_NL_mean_const_x2(mu_chi, mu_y, sig1_safe, _ALPHA, _BETA))
     assert abs(got - ref) <= 1e-12 * (abs(ref) + 1e-300), f"x2_const != const_x2: {got} vs {ref}"
     print("  sigma_y≤y_tol -> bivar_NL_mean_const_x2  PASS")
 

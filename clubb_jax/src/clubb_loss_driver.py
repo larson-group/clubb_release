@@ -33,10 +33,11 @@ from functools import partial
 import jax
 import jax.numpy as jnp
 import numpy as np
+from netCDF4 import Dataset
 
 from clubb_jax.view_profile import print_profile_commands
-from clubb_jax.src.CLUBB_core.file_functions import _read_namelist_groups, read_namelist
-from clubb_jax.src.clubb_case_initialization import (
+from clubb_jax.src.Input_fields.namelist import _read_namelist_groups, read_namelist
+from clubb_jax.src.clubb_case_initalization import (
     init_clubb_case,
     set_case_initial_conditions,
     clean_up_clubb,
@@ -46,14 +47,10 @@ from utilities.loss_metrics import (
     LOSS_METRIC_NAMES, LOSS_WEIGHT_NAMES, normalize_loss_weights, loss_metric_values_valid,
     profile_comparison, case_rmse,
 )
+from clubb_jax.src.CLUBB_core.constants_clubb import g_per_kg, sec_per_day
 from clubb_jax.src.CLUBB_core.advance_helper_module import sqrt_clipped
 from clubb_jax.src.CLUBB_core.interpolation import lin_interpolate_two_points
-from clubb_jax.src.CLUBB_core.stats_netcdf import JaxStats
-from clubb_jax.src.Input_fields.input_netcdf import (
-    close_netcdf_read,
-    get_netcdf_var,
-    open_netcdf_read,
-)
+from clubb_jax.src.CLUBB_core.jax_stats import JaxStats
 from clubb_jax.src.CLUBB_core.parameters_tunable import (
     PARAM_NAMES,
     PARAMETER_HARD_BOUNDS,
@@ -493,10 +490,8 @@ def evaluate_loss(clubb_params_all, *, grad=False, gradient_parameters=None, gra
     Gradients add a final selected-parameter axis. Independent candidate columns
     share output seeds without introducing cross-column blocks.
 
-    Forward directions use vmap; reverse mode differentiates only the selected
-    parameter columns, holding the remaining values fixed, and checkpoints the
-    full trajectory one timestep at a time. Omitting gradient_parameters selects
-    all parameters. progress receives (completed_parameters,total_parameters)
+    Forward directions use vmap; reverse mode checkpoints the full trajectory
+    one timestep at a time. progress receives (completed_parameters,total_parameters)
     at launch and completion. Primal
     diagnostics and statistics are returned as auxiliary data, without extra
     backward sweeps in scalar-loss mode.
@@ -539,11 +534,7 @@ def evaluate_loss(clubb_params_all, *, grad=False, gradient_parameters=None, gra
 
         values, derivatives, auxiliary = jax.vmap(differentiate, out_axes=(None, -1, None))(directions)
     else:
-        def score_selected(selected_params):
-            """Score selected parameter columns with the other model inputs fixed."""
-            return score(params.at[:, indices].set(selected_params))
-
-        values, pullback, auxiliary = jax.vjp(score_selected, params[:, indices], has_aux=True)
+        values, pullback, auxiliary = jax.vjp(score, params, has_aux=True)
         derivatives = []
         for output_idx, value in enumerate(values):
             gradients = []
@@ -552,7 +543,7 @@ def evaluate_loss(clubb_params_all, *, grad=False, gradient_parameters=None, gra
                 seed = [jnp.zeros_like(array) for array in values]
                 seed[output_idx] = seed[output_idx].at[prefix].set(1.)
                 gradient, = pullback(tuple(seed))
-                gradients.append(jax.block_until_ready(gradient))
+                gradients.append(jax.block_until_ready(gradient[:, indices]))
             derivatives.append(jnp.stack(gradients).reshape((*value.shape, len(parameters))))
         derivatives = tuple(derivatives)
     if gradient_target == 'metrics':
@@ -627,33 +618,42 @@ def prepare_loss_request_for_scoring(
 
     # Benchmark time setup
     # Open the benchmark dataset once for the whole request.
-    benchmark_file, l_error = open_netcdf_read(
-        request.fields[0].benchmark_var_name, request.les_stats_file,
-    )
-    if l_error:
-        if benchmark_file.iounit is not None:
-            close_netcdf_read(benchmark_file)
-        stop_with_error('Failed to open benchmark file: ' + str(request.les_stats_file))
+    with Dataset(request.les_stats_file) as benchmark_file:
+        # nf90_get_var reads raw values; Python must not mask valid zero fill
+        # values or apply scale_factor/add_offset attributes implicitly.
+        benchmark_file.set_auto_mask(False)
+        benchmark_file.set_auto_scale(False)
 
-    try:
-        time_name = benchmark_file.TimeVarId
+        # input_netcdf.F90 resolves coordinate names from the first field.
+        first_var = benchmark_file[request.fields[0].benchmark_var_name]
+        time_name = next(
+            (name for name in first_var.dimensions if name in ('T', 't', 'time')),
+            None,
+        )
+        z_name = next(
+            (name for name in first_var.dimensions if name in (
+                'Z', 'z', 'zt', 'zm', 'altitude', 'height', 'lev',
+                'lh_zt', 'rad_zt', 'rad_zm',
+            )),
+            None,
+        )
+        if time_name is None or z_name is None:
+            stop_with_error('Benchmark variable requires time and altitude coordinates')
 
         # Convert the benchmark time coordinate to seconds.
-        time_units = benchmark_file.iounit[time_name].units.split()[0]
+        time_units = benchmark_file[time_name].units.split()[0]
         multiplier = {'hours': 3600.0, 'minutes': 60.0, 'seconds': 1.0}.get(time_units)
         if multiplier is None:
             stop_with_error(f'Benchmark time units are unsupported: {time_units}')
 
-        raw_time_values = np.asarray(
-            benchmark_file.iounit[time_name][:benchmark_file.ntimes]
-        ).reshape(-1)
+        raw_time_values = np.asarray(benchmark_file[time_name][:]).reshape(-1)
         benchmark_time_values_seconds = raw_time_values * multiplier
         if (
             np.any(np.diff(benchmark_time_values_seconds) <= 0)
             or not np.isfinite(benchmark_time_values_seconds).all()
         ):
             stop_with_error('Benchmark times must be finite and strictly ascending')
-        z = benchmark_file.z
+        z = np.asarray(benchmark_file[z_name][:]).reshape(-1)
         if np.any(np.diff(z) <= 0) or not np.isfinite(z).all():
             stop_with_error('Benchmark altitudes must be finite and strictly ascending')
 
@@ -705,21 +705,61 @@ def prepare_loss_request_for_scoring(
                 upper_idx == lower_idx, z[lower_idx] + 1.0, z[upper_idx]
             )
 
-            # Read every benchmark record of this field.
-            # Adaptation: the records are read once and shared by all time windows.
-            l_convert_to_MKS = True
-            benchmark_profiles = []
-            for itime in range(1, benchmark_file.ntimes + 1):
-                benchmark_profile, l_error = get_netcdf_var(
-                    benchmark_file, field.benchmark_var_name, itime, l_convert_to_MKS,
+            var = benchmark_file[field.benchmark_var_name]
+            if (
+                var.ndim not in (3, 4)
+                or np.dtype(var.dtype).kind != 'f'
+                or np.dtype(var.dtype).itemsize not in (4, 8)
+            ):
+                stop_with_error(
+                    "input_netcdf.get_var: The netCDF data doesn't conform to "
+                    'expected precision, shape, or dimensions'
                 )
-                if l_error:
-                    stop_with_error(
-                        'Failed to read benchmark variable ' + field.benchmark_var_name
-                    )
-                # get_netcdf_var returns every column; the source reads the first.
-                benchmark_profiles.append(benchmark_profile[0])
-            profile = jnp.asarray(np.stack(benchmark_profiles))
+            if time_name not in var.dimensions or z_name not in var.dimensions:
+                stop_with_error(
+                    'Benchmark variable requires time/altitude dimensions: '
+                    + field.benchmark_var_name
+                )
+            if any(name not in (
+                time_name, z_name, 'col', 'column',
+                'X', 'x', 'longitude', 'lon', 'Y', 'y', 'latitude', 'lat',
+            ) for name in var.dimensions):
+                stop_with_error('Benchmark variable has an unsupported dimension')
+
+            # input_netcdf selects the first benchmark column. Host buffer
+            # normalization and MKS conversions are the NetCDF I/O boundary.
+            profile = np.moveaxis(
+                np.asarray(var[:]),
+                (var.dimensions.index(time_name), var.dimensions.index(z_name)),
+                (0, 1),
+            )
+            if (
+                not any(name in var.dimensions for name in ('col', 'column'))
+                and (
+                    np.prod(profile.shape[2:]) != 1
+                    or not any(name in var.dimensions for name in (
+                        'X', 'x', 'longitude', 'lon',
+                    ))
+                    or not any(name in var.dimensions for name in (
+                        'Y', 'y', 'latitude', 'lat',
+                    ))
+                )
+            ):
+                stop_with_error(
+                    'Benchmark file must be a normalized single-column profile dataset'
+                )
+            profile = jnp.asarray(
+                profile.reshape(len(benchmark_time_values_seconds), len(z), -1)[:, :, 0]
+            )
+            units = var.units.strip()
+            if units == 'g/kg':
+                profile = profile / g_per_kg
+            elif units == 'K/day':
+                profile = profile / sec_per_day
+            elif units == 'W/m2':
+                stop_with_error(
+                    'get_netcdf_var: Unable to convert variables of this type to MKS units'
+                )
 
             truth_profiles = []
             for window_idx, (start, end) in enumerate(request.time_window_ranges):
@@ -756,9 +796,7 @@ def prepare_loss_request_for_scoring(
                 truth_profiles.append(jnp.sum(interpolated, axis=0) / len(records))
             field.truth_profile = jnp.stack(truth_profiles)
 
-    finally:
-        # Close the shared benchmark file.
-        close_netcdf_read(benchmark_file)
+    # Close the shared benchmark file (owned by the context manager).
 
 
 def _field_profile(field, stats_snapshot):

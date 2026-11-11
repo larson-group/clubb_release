@@ -296,30 +296,6 @@ Loading a saved revision restores its runtime; Continue and leaderboard reruns
 use the immutable request rather than the current chooser. The broker owns
 result-run processes and terminal polling as well as tuning workers.
 
-Tune algorithm buttons and typed option panels are generated from
-[`tuner/algorithms/algorithms.json`](../tuner/algorithms/algorithms.json), read by
-[`tuner/algorithm_registry.py`](../tuner/algorithm_registry.py). Algorithm classes
-live under `tuner/algorithms/`; the Tune callbacks only map wildcard input
-values to canonical `strategy.options`. Saved requests hydrate those same
-controls. The Algorithm question-mark help reads
-[`tuner/algorithms/README.md`](../tuner/algorithms/README.md) on each open and renders it in the shared notecard; repository links point to
-the checkout commit on GitHub. Algorithm explanations stay in that README.
-The broker and typed service forward `strategy_options` through the
-registry, so a new algorithm file and JSON entry do not require Dash-specific
-validation or option callbacks. Algorithm requirements enable mandatory JAX
-gradients before launch; the shared runtime chooser still selects the backend.
-The native form derives gradient computation from that requirement and only
-enables its mode selector for gradient algorithms. Its preview validates the
-actual shared runtime selection: incompatible algorithms are red, their tooltip
-and summary explain the requirement, and Start is disabled. Running and readonly
-revisions validate their saved request's backend instead of the shared chooser.
-Numeric options use compact
-manual entries beside their labels. Shared notecards explain gradient modes,
-RMSE weights and across-case aggregation. The existing landscape signature
-tracks sample-history publication: the scheduler publishes the first completed
-set immediately, then pending rows after 500 samples or 20 seconds, whichever
-comes first, and flushes them on stopping.
-
 `clubb_jax/run_jax.py` owns the public selection interface: `runtime_selection`
 validates saved settings, `runtime_arguments` encodes one opaque selection value
 for `-options` or `-jax`, and `runtime_configuration` supplies launch provenance without

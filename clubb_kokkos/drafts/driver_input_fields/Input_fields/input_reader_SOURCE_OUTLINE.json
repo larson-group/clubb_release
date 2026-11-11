@@ -1,0 +1,41 @@
+{
+  "Native_file": "src/Input_fields/input_reader.F90",
+  "full_Native_read": 868,
+  "full_actual_JAX_read": 345,
+  "types": [
+    "one_dim_read_var(name,dim_name,values)",
+    "two_dim_read_var(name,dim1_name,dim2_name,values)"
+  ],
+  "procedures_in_order": [
+    "read_two_dim_file",
+    "read_one_dim_file",
+    "fill_blanks_one_dim_vars",
+    "fill_blanks_two_dim_vars",
+    "linear_fill_blanks(private)",
+    "deallocate_one_dim_vars",
+    "deallocate_two_dim_vars",
+    "read_x_table",
+    "read_x_profile",
+    "get_target_index",
+    "count_columns"
+  ],
+  "contracts": [
+    "records owned std::vector; input collections constvector&",
+    "get_target_index remainsNative1based1..n/-1",
+    "twoDim values(innerrow,outerrow), firstdimensioncontiguous; metadataorder retained",
+    "read_x_profile writes only sourceprefix, Nativeunusedtail remainsundefined",
+    "read_one/two/count arepureformattedfileI/O; thinlocalNativeprimitivearrayserviceallowed, no globalUDTs"
+  ],
+  "ordering": [
+    "fill1var1updatesgridbeforelaterfields",
+    "fill2perfield mainaxisalltimes first, otheraxisallheightssecond",
+    "linear_fill_compactionanddescendingdetectionsourceorder beforeexistingzlinterp",
+    "metadata lookup first matchingfield and Nativefatalmessageorder"
+  ],
+  "JAX_not_copied": [
+    "JAX0basedmetadataindex",
+    "JAXrequiresreadprofiledimexact; Nativewritesonlysourceprefix",
+    "JAXextra input shape/row checks not Native behavior"
+  ],
+  "runtime_status": "pending; no build/tests"
+}

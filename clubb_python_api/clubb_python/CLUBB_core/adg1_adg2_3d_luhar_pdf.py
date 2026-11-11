@@ -16,6 +16,10 @@ def _fa_2d(arr):
     return out
 
 
+def _stack_tuple_outputs(column_outputs):
+    return tuple(f_arr(np.stack(items, axis=0)) for items in zip(*column_outputs, strict=True))
+
+
 def _ensure_err_info(ngrdcol: int, err_info):
     if err_info is None:
         return init_err_info(int(ngrdcol))
@@ -24,16 +28,26 @@ def _ensure_err_info(ngrdcol: int, err_info):
     return err_info
 
 
-def calc_luhar_params(nz: int, ngrdcol: int, skx, wpxp, xp2, x_tol_sqd: float):
+def calc_luhar_params(nz: int, skx, wpxp, xp2, x_tol_sqd: float):
     """Compute Luhar closure mixture fraction and shape parameters (M, m)."""
     arrays = [_fa_2d(arg) for arg in (skx, wpxp, xp2)]
-    return clubb_f2py.f2py_calc_luhar_params(*arrays, float(x_tol_sqd), nz=int(nz), ngrdcol=int(ngrdcol))
+    ngrdcol = arrays[0].shape[0]
+    column_outputs = [
+        clubb_f2py.f2py_calc_luhar_params(*(arr[i, :] for arr in arrays), float(x_tol_sqd), nz=int(nz))
+        for i in range(ngrdcol)
+    ]
+    return _stack_tuple_outputs(column_outputs)
 
 
-def close_luhar_pdf(nz: int, ngrdcol: int, xm, xp2, mixt_frac, small_m, wpxp, x_tol_sqd: float):
+def close_luhar_pdf(nz: int, xm, xp2, mixt_frac, small_m, wpxp, x_tol_sqd: float):
     """Compute closed Luhar component moments and variances from (a, m)."""
     arrays = [_fa_2d(arg) for arg in (xm, xp2, mixt_frac, small_m, wpxp)]
-    return clubb_f2py.f2py_close_luhar_pdf(*arrays, float(x_tol_sqd), nz=int(nz), ngrdcol=int(ngrdcol))
+    ngrdcol = arrays[0].shape[0]
+    column_outputs = [
+        clubb_f2py.f2py_close_luhar_pdf(*(arr[i, :] for arr in arrays), float(x_tol_sqd), nz=int(nz))
+        for i in range(ngrdcol)
+    ]
+    return _stack_tuple_outputs(column_outputs)
 
 
 def adg1_w_closure(
@@ -77,7 +91,12 @@ def adg1_pdf_driver(
     )
 
 
-def luhar_3d_pdf_driver(nz: int, ngrdcol: int, wm, rtm, thlm, wp2, rtp2, thlp2, skw, skrt, skthl, wprtp, wpthlp):
+def luhar_3d_pdf_driver(nz: int, wm, rtm, thlm, wp2, rtp2, thlp2, skw, skrt, skthl, wprtp, wpthlp):
     """Compute 3D Luhar PDF component means/variances for w/rt/thl."""
     arrays = [_fa_2d(arg) for arg in (wm, rtm, thlm, wp2, rtp2, thlp2, skw, skrt, skthl, wprtp, wpthlp)]
-    return clubb_f2py.f2py_luhar_3d_pdf_driver(*arrays, nz=int(nz), ngrdcol=int(ngrdcol))
+    ngrdcol = arrays[0].shape[0]
+    column_outputs = [
+        clubb_f2py.f2py_luhar_3d_pdf_driver(*(arr[i, :] for arr in arrays), nz=int(nz))
+        for i in range(ngrdcol)
+    ]
+    return _stack_tuple_outputs(column_outputs)

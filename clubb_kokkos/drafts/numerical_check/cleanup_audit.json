@@ -1,0 +1,31 @@
+{
+  "status": "Separate source/comment/format cleanup completed; no builds or tests",
+  "executable_token_equality_after_cleanup": true,
+  "token_counts": {
+    "numerical_check.cpp": 17031,
+    "numerical_check.hpp": 719
+  },
+  "sha256": {
+    "numerical_check.cpp": {
+      "before_sha256": "e2816220bf2fb10d6e93f8683130b9117f7175181297e7fc9b9ee927e74cd6e6",
+      "after_sha256": "4a38744df59dd1923c10a5738a64f04b42bb110dc0d8af07cecc4ddc74b6d2d8"
+    },
+    "numerical_check.hpp": {
+      "before_sha256": "d2416d9a39532049783940b0933d1ac79fa0c6d99f9cbf4ba3450f08a15ea4ed",
+      "after_sha256": "2ef957a5d9bb17c4b890f811fa8e2baab275017a106c8b96ded1171c35bd64a7"
+    }
+  },
+  "reviewed": [
+    "Eight public routine descriptions/complete Native scalar residual description",
+    "Native continuation/intent groups and source call order; all arguments remain required",
+    "Existing four live definitions and public declaration protected byte-for-byte",
+    "Complete Native diagnostic labels and values, including literal percent and repeated spaces",
+    "Physical field units and hydrometeor names width/storage comments",
+    "Per-call scratch, finite reductions, host output only in failing/warning branches",
+    "No owning UDT capture, private/raw Native binding or scalar Native call from device",
+    "Pending exact public lower contracts/constant and Native CLUBB_GPU gate documented",
+    "Full supported scope and absence of numerical evidence stated without runtime claims",
+    "Prototype semicolons precede trailing intent comments; executable token order unchanged",
+    "Vapor scratch and conservation return carry verified physical meanings/units"
+  ]
+}

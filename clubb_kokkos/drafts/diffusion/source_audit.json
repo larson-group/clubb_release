@@ -1,0 +1,49 @@
+{
+  "status": "Complete supported source draft; not compiled/runtime validated",
+  "source": "src/CLUBB_core/diffusion.F90; all 1037 lines read",
+  "routine_order": [
+    "diffusion_zt_lhs",
+    "diffusion_zm_lhs"
+  ],
+  "argument_counts": {
+    "diffusion_zt_lhs": 10,
+    "diffusion_zm_lhs": 10
+  },
+  "all_signature_names_order_optionals": true,
+  "source_order_call_counts": {
+    "diffusion_zt_lhs": 0,
+    "diffusion_zm_lhs": 0
+  },
+  "all_non_solver_call_arguments_checked": 0,
+  "grid_function_calls": {
+    "diffusion_zt_lhs": 1,
+    "diffusion_zm_lhs": 1
+  },
+  "stats_calls_by_routine": {
+    "diffusion_zt_lhs": 0,
+    "diffusion_zm_lhs": 0
+  },
+  "device_kernel_bodies_checked": 23,
+  "native_diagnostic_write_labels_in_order": {
+    "diffusion_zt_lhs": 0,
+    "diffusion_zm_lhs": 0
+  },
+  "all_diagnostic_payload_values_checked": 0,
+  "no_udt_capture_host_access_or_nested_launch_in_kernel": true,
+  "scope_exclusion": "None; all source options included",
+  "matrix_adapter": [],
+  "native_local_integer_constants_checked": 6,
+  "manual_source_review": [
+    "Native bands-first Out operator retained; no transpose or sign reversal at this boundary",
+    "Full numeric lower/interior/upper block order and all diagonal assignments",
+    "All local Native parameter constants, declaration descriptions and conservation/derivation diagrams",
+    "Both diffusion options; momentum derivative/upwind scratch stays unconditional",
+    "Native main-diagonal expression and zero+upwind retained; no JAX factorization"
+  ],
+  "runtime": "No builds/tests/numerical execution; root owns CPU BFB integration gate and occasional GPU milestone comparison",
+  "sha256": {
+    "diffusion.cpp": "9bfbf4fb8f9fb2b363c5f8dfbb6d2cd42babffc0169f2bdb5a37fbab957e2552",
+    "diffusion.hpp": "607d8043bed0b78aaf81810fb4e64644b13b55c61a0dc85d50a6f7ffd9b14fff"
+  },
+  "native_sha256": "eb60047bb545ea86e181ba992e1458a03b9b3fe7427529e032e736fd34bae3d8"
+}

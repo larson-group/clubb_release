@@ -1,0 +1,124 @@
+{
+  "source_review": "All Native CALLs and full argument expression trees in order, excluding4 exact driver-scope sponge budget calls and2 manually reviewed solver language-adapter calls",
+  "routines": [
+    {
+      "name": "advance_wp2_wp3",
+      "ordered_calllists": 37,
+      "mapped_arguments": 386
+    },
+    {
+      "name": "wp23_solve",
+      "ordered_calllists": 35,
+      "mapped_arguments": 148
+    },
+    {
+      "name": "wp23_lhs",
+      "ordered_calllists": 0,
+      "mapped_arguments": 0
+    },
+    {
+      "name": "wp23_rhs",
+      "ordered_calllists": 28,
+      "mapped_arguments": 100
+    },
+    {
+      "name": "wp2_term_ta_lhs",
+      "ordered_calllists": 0,
+      "mapped_arguments": 0
+    },
+    {
+      "name": "wp2_terms_ac_pr2_lhs",
+      "ordered_calllists": 0,
+      "mapped_arguments": 0
+    },
+    {
+      "name": "wp2_term_dp1_lhs",
+      "ordered_calllists": 0,
+      "mapped_arguments": 0
+    },
+    {
+      "name": "wp2_term_pr1_lhs",
+      "ordered_calllists": 0,
+      "mapped_arguments": 0
+    },
+    {
+      "name": "wp2_terms_bp_pr2_rhs",
+      "ordered_calllists": 0,
+      "mapped_arguments": 0
+    },
+    {
+      "name": "wp2_term_dp1_rhs",
+      "ordered_calllists": 0,
+      "mapped_arguments": 0
+    },
+    {
+      "name": "wp2_term_pr3_rhs",
+      "ordered_calllists": 0,
+      "mapped_arguments": 0
+    },
+    {
+      "name": "wp2_term_pr1_rhs",
+      "ordered_calllists": 0,
+      "mapped_arguments": 0
+    },
+    {
+      "name": "wp2_term_pr_dfsn_rhs",
+      "ordered_calllists": 0,
+      "mapped_arguments": 0
+    },
+    {
+      "name": "wp3_term_ta_new_pdf_lhs",
+      "ordered_calllists": 0,
+      "mapped_arguments": 0
+    },
+    {
+      "name": "wp3_term_ta_ADG1_lhs",
+      "ordered_calllists": 0,
+      "mapped_arguments": 0
+    },
+    {
+      "name": "wp3_term_tp_lhs",
+      "ordered_calllists": 0,
+      "mapped_arguments": 0
+    },
+    {
+      "name": "wp3_terms_ac_pr2_lhs",
+      "ordered_calllists": 0,
+      "mapped_arguments": 0
+    },
+    {
+      "name": "wp3_term_pr1_lhs",
+      "ordered_calllists": 0,
+      "mapped_arguments": 0
+    },
+    {
+      "name": "wp3_term_ta_explicit_rhs",
+      "ordered_calllists": 0,
+      "mapped_arguments": 0
+    },
+    {
+      "name": "wp3_terms_bp1_pr2_rhs",
+      "ordered_calllists": 0,
+      "mapped_arguments": 0
+    },
+    {
+      "name": "wp3_term_pr_turb_rhs",
+      "ordered_calllists": 0,
+      "mapped_arguments": 0
+    },
+    {
+      "name": "wp3_term_pr_dfsn_rhs",
+      "ordered_calllists": 0,
+      "mapped_arguments": 0
+    },
+    {
+      "name": "wp3_term_pr1_rhs",
+      "ordered_calllists": 0,
+      "mapped_arguments": 0
+    }
+  ],
+  "total_calllists": 100,
+  "total_arguments": 634,
+  "target_sha256": "159bb61dadfd6d087cd5a2c73b1b326136705f4ccedefe1011ffb1079653b371",
+  "runtime_evidence": "None: source-only review."
+}
