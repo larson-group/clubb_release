@@ -58,6 +58,9 @@ For more information about the tuner, see section 3.3 below and
 in the tuner README: input_misc/tuner/README.  
 
 
+For archived tools and research code, see the
+[archive branch](https://github.com/larson-group/clubb/tree/archive) and its README.
+
 ***********************************************************************
 *                       CLUBB Quick Start Guide                       *
 ***********************************************************************
@@ -185,11 +188,11 @@ to create graphs.  One way is to use an included python3 script called pyplotgen
 Pyplotgen produces plots that allow CLUBB's output to be easily visualized.  
 
 Required packages to run pyplotgen --- e.g. pillow, netcdf4, and matplotlib ---
-are contained in postprocessing/pyplotgen/requirements.txt.
+are contained in pyplotgen/requirements.txt.
 
 pyplotgen.py can be called from the directory where it resides in 
-the clubb/postprocessing/pyplotgen directory.  For detailed instructions and options,
-please read clubb/postprocessing/pyplotgen/README.md.
+the clubb/pyplotgen directory.  For detailed instructions and options,
+please read clubb/pyplotgen/README.md.
 
 -------------------------------------------------------
 - SUMMARY FOR LINUX
@@ -208,7 +211,7 @@ follow the following steps:
     (in the clubb/run_scripts directory)
 - Run pyplotgen to create plots of the output from the benchmark case simulation
   - `python3 ./pyplotgen.py -clubb ~/clubb/output -output_dir ~/plots`
-    (in the clubb/postprocessing/pyplotgen directory, assuming CLUBB is checked
+    (in the clubb/pyplotgen directory, assuming CLUBB is checked
      out to ~/clubb)
 - View the pyplotgen plots using a web browser
   - `firefox ~/plots/index.html`
@@ -612,8 +615,8 @@ The randomization file (only needed for the tuner described below):
 - (2.3) Plotting output from a single-column run:
 -----------------------------------------------------------------------
 
-A plotting script, pyplotgen.py, is contained in the directory postprocessing/pyplotgen.
-See postprocessing/pyplotgen/README.md for more information on pyplotgen.py.
+A plotting script, pyplotgen.py, is contained in the directory pyplotgen.
+See pyplotgen/README.md for more information on pyplotgen.py.
 
 However, you can view the raw CLUBB output files in netCDF
 format using other available plotting programs.
@@ -643,7 +646,7 @@ Usage: ./run_bindiff_all.py output_directory output_directory_to_compare
 - Comparison using pyplotgen
 This method requires python as the plots are generated through python.
 For information on pyplotgen, including detailed usage and options see:
-postprocessing/pyplotgen/README.md in your CLUBB checkout.
+pyplotgen/README.md in your CLUBB checkout.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -831,17 +834,6 @@ Do steps 1, 2, & 3 as outlined in the description of a standalone run (Sec 2.1).
 Pre-tuning standalone runs are disabled by default. Use -initial_output to save
 those outputs. The native tuner writes optimized parameters and flags as JSON,
 which can be passed directly to run_scm.py using -params or -flags.
-
------------------------------------------------------------------------
-- (3.3.1) Executing an ensemble tuning run:
------------------------------------------------------------------------
-
-An ensemble tuning run generates a set ("ensemble") of optimal parameter
-values.  This is useful if you want to see the range of parameter values that
-will yield good results.
-
-Detailed instructions on how to execute an ensemble tuning run
-can be found in ens_tune/README.
 
 - (3.4) Running a convergence test:
 -----------------------------------------------------------------------

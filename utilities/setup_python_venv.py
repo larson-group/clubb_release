@@ -84,7 +84,7 @@ def prepare_profile(profile: str, uv: Path, env: dict[str, str]) -> None:
             "pydantic", "diskcache", "multiprocess", "psutil",
         ))
     elif profile == "plot":
-        requirements.append(ROOT / "postprocessing" / "pyplotgen" / "requirements.txt")
+        requirements.append(ROOT / "pyplotgen" / "requirements.txt")
         packages.extend(("matplotlib", "cycler", "seaborn", "Pillow", "fpdf", "opencv-python-headless"))
     for requirement in requirements:
         if not requirement.is_file():

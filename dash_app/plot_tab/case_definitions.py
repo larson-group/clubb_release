@@ -6,7 +6,7 @@ import os
 
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 CASE_DEFINITIONS_PATH = os.path.join(
-    REPO_ROOT, "postprocessing", "pyplotgen", "config", "Case_definitions.py"
+    REPO_ROOT, "pyplotgen", "config", "Case_definitions.py"
 )
 UNKNOWN = object()
 
@@ -14,7 +14,7 @@ UNKNOWN = object()
 def _benchmark_env():
     """Return benchmark root constants used by pyplotgen case definitions."""
     benchmark_root = os.path.join(REPO_ROOT, "input", "les_and_clubb_benchmark_runs")
-    local_root = os.path.join(REPO_ROOT, "postprocessing", "pyplotgen", "les_and_clubb_benchmark_runs")
+    local_root = os.path.join(REPO_ROOT, "pyplotgen", "les_and_clubb_benchmark_runs")
     if not (os.path.isdir(benchmark_root) or os.path.islink(benchmark_root)):
         benchmark_root = local_root
     benchmark_root = os.path.abspath(benchmark_root) + os.sep

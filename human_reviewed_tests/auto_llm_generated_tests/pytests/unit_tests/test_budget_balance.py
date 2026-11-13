@@ -10,7 +10,7 @@ import pytest
 from netCDF4 import Dataset
 
 
-CHECKER_PATH = Path(__file__).resolve().parents[4] / "postprocessing/check_budgets_balance/checkBudget.py"
+CHECKER_PATH = Path(__file__).resolve().parents[4] / "human_reviewed_tests/check_budget_balance.py"
 spec = importlib.util.spec_from_file_location("budget_checker", CHECKER_PATH)
 checker = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(checker)
@@ -47,10 +47,9 @@ def test_budget_components_and_completeness(tmp_path, monkeypatch, capsys):
         state[:] = 0
         state[1:, 1, 0] = 0.03
 
-    monkeypatch.setattr(checker, "FILEPATH", str(tmp_path) + "/")
     checker.numFails = 0
-    assert checker.checkNetcdfBudgets(path.name, 1)
-    assert not checker.checkNetcdfBudgets(path.name, 2)
+    assert checker.checkNetcdfBudgets(path, 1)
+    assert not checker.checkNetcdfBudgets(path, 2)
     output = capsys.readouterr().out
     assert "rtm completeness test fails at t= 2 and z= 2" in output
     assert "rtm fails at t= 2 and z= 3" in output
@@ -69,8 +68,6 @@ def test_budget_checker_detects_corruption(tmp_path):
     """The real CLI accepts a balanced budget and rejects two independent faults."""
     output_dir = tmp_path / "output"
     output_dir.mkdir()
-    checker_dir = tmp_path / "postprocessing" / "check_budgets_balance"
-    checker_dir.mkdir(parents=True)
     path = output_dir / "example_stats.nc"
 
     with Dataset(path, "w") as f:
@@ -92,7 +89,8 @@ def test_budget_checker_detects_corruption(tmp_path):
     def run_checker():
         """Run the checker on the isolated output and capture its status and messages."""
         return subprocess.run(
-            [sys.executable, str(CHECKER_PATH), "all", "0"], cwd=checker_dir,
+            [sys.executable, str(CHECKER_PATH), "-check_only", "-output_dir", str(output_dir)],
+            cwd=tmp_path,
             text=True, capture_output=True, check=False,
         )
 

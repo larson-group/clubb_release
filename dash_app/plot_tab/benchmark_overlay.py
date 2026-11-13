@@ -22,7 +22,7 @@ from input.scripts.benchmark_converter import (
 )
 
 
-PYPLOTGEN_ROOT = os.path.join(REPO_ROOT, "postprocessing", "pyplotgen")
+PYPLOTGEN_ROOT = os.path.join(REPO_ROOT, "pyplotgen")
 
 Z_DIM_NAMES = {"z", "zm", "zt", "altitude", "height", "lev"}
 T_DIM_NAMES = {"t", "time"}

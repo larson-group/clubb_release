@@ -1,2 +1,0 @@
-# $Id$
-sudo -u matlabuser /usr/local/bin/matlab -nodesktop -nodisplay -nosplash -r "PDF_integrate_fnc_driver,exit" > matlab_output.txt

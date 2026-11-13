@@ -21,9 +21,8 @@ def test_workers_and_cases_forwarded(tmp_path, monkeypatch, worker_args, expecte
     scripts = tmp_path / "run_scripts"
     scripts.mkdir()
     (scripts / "run_scm_all.py").touch()
-    budget = tmp_path / "postprocessing/check_budgets_balance"
-    budget.mkdir(parents=True)
     calls = []
+    checks = []
 
     def fake_run(cmd, **kwargs):
         calls.append((cmd, kwargs))
@@ -31,6 +30,7 @@ def test_workers_and_cases_forwarded(tmp_path, monkeypatch, worker_args, expecte
 
     monkeypatch.setattr(sys, "argv", [str(SCRIPT), str(tmp_path), *worker_args])
     monkeypatch.setattr(runner.subprocess, "run", fake_run)
+    monkeypatch.setattr(runner, "check_budgets", lambda *args: checks.append(args) or 0)
     assert runner.main() == 0
     command, options = calls[0]
     assert command[1] == str(scripts / "run_scm_all.py")
@@ -41,8 +41,8 @@ def test_workers_and_cases_forwarded(tmp_path, monkeypatch, worker_args, expecte
     assert command[command.index("-cases") + 1].split(",") == runner.CASES
     assert command[command.index("-override") + 1] == "l_lmm_stepping=.false.,stats_tsamp=300.0"
     assert options["check"] is True
-    assert calls[1][0][1:] == ["checkBudget.py", "all", "0"]
-    assert calls[1][1]["cwd"] == str(budget)
+    assert command[command.index("-output_dir") + 1] == str(tmp_path / "output")
+    assert checks == [(tmp_path / "output", 0)]
 
 
 def test_failed_cases_do_not_run_budget_checker(tmp_path, monkeypatch):
@@ -50,7 +50,6 @@ def test_failed_cases_do_not_run_budget_checker(tmp_path, monkeypatch):
     scripts = tmp_path / "run_scripts"
     scripts.mkdir()
     (scripts / "run_scm_all.py").touch()
-    (tmp_path / "postprocessing/check_budgets_balance").mkdir(parents=True)
     calls = []
 
     def fake_run(cmd, **kwargs):
@@ -59,6 +58,29 @@ def test_failed_cases_do_not_run_budget_checker(tmp_path, monkeypatch):
 
     monkeypatch.setattr(sys, "argv", [str(SCRIPT), str(tmp_path)])
     monkeypatch.setattr(runner.subprocess, "run", fake_run)
+    monkeypatch.setattr(runner, "check_budgets", lambda *args: pytest.fail("Checked failed case output"))
     with pytest.raises(subprocess.CalledProcessError):
         runner.main()
     assert len(calls) == 1
+
+
+def test_budget_failure_propagates(tmp_path, monkeypatch):
+    """Return the in-process checker failure after a successful SCM run."""
+    scripts = tmp_path / "run_scripts"
+    scripts.mkdir()
+    (scripts / "run_scm_all.py").touch()
+    monkeypatch.setattr(sys, "argv", [str(SCRIPT), str(tmp_path)])
+    monkeypatch.setattr(runner.subprocess, "run", lambda *args, **kwargs: SimpleNamespace(returncode=0))
+    monkeypatch.setattr(runner, "check_budgets", lambda *args: 1)
+    assert runner.main() == 1
+
+
+def test_check_only_selects_output_and_iteration(tmp_path, monkeypatch):
+    """Check existing output without requiring a source tree or launching cases."""
+    checks = []
+    monkeypatch.setattr(sys, "argv", [str(SCRIPT), "-check_only", "-output_dir", str(tmp_path),
+                                    "-iteration", "2"])
+    monkeypatch.setattr(runner.subprocess, "run", lambda *args, **kwargs: pytest.fail("Ran SCM cases"))
+    monkeypatch.setattr(runner, "check_budgets", lambda *args: checks.append(args) or 0)
+    assert runner.main() == 0
+    assert checks == [(tmp_path, 2)]

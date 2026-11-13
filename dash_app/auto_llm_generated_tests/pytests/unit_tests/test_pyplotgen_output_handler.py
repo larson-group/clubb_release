@@ -1,4 +1,4 @@
-from postprocessing.pyplotgen.src.OutputHandler import writeFinalErrorLog
+from pyplotgen.src.OutputHandler import writeFinalErrorLog
 
 
 def test_single_process_error_log_finishes_without_running_past_the_end(tmp_path):

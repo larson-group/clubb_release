@@ -40,6 +40,7 @@ requirements; selecting a child does not automatically load its parent.
 | **Add or Review Pytests**: focused checks, test placement and review status, test pruning, or pytest CI coverage. | [Pytest workflow](.agents/skills/clubb-pytests/SKILL.md) |
 | **Learn From a Session**: review recent corrections/decisions and improve their AGENTS, skill, shortcut or documentation owner. | [Session retrospective](.agents/skills/clubb-session-retrospective/SKILL.md) |
 | **Track Findings for Later**: log a verified out-of-scope issue instead of fixing it now, list the backlog, or work or remove an item. | [Backlog](.agents/skills/backlog/SKILL.md) |
+| **Archive Selected Material**: preserve explicitly requested code, experiments, files or documentation excerpts on the archive branch. Deletion alone does not request archiving. | [Archiving](.agents/skills/clubb-archive/SKILL.md) |
 | **Work Through CLUBB Dash**: connect/use/open/control Dash; compile/run, show profiles/contours/plots/console, tune, navigate pages, or create/update/view an investigation report. | [Dash workflow](.agents/skills/clubb-dash/SKILL.md) |
 
 ## Repository conventions

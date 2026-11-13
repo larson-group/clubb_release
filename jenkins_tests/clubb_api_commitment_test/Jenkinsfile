@@ -1,18 +1,77 @@
+// Verify that SAM, CAM and WRF host-owned Fortran imports CLUBB/SILHS only
+// through their public API modules. This is a source-policy check, not a build.
+// Requires Python 3, Git and GitHub read access, from the repository root.
+// Hosts run sequentially; a failure is recorded while the remaining hosts are checked.
+// Each host stage below is a copyable clone/revision/check command sequence.
+// The explicit branches match the previous test's remote defaults; print SHAs
+// so a build identifies both the CLUBB revision and each host revision.
 pipeline {
   agent any
+  options { disableConcurrentBuilds() }
   stages {
-    stage('Run the API Commitment Script') {
+    stage('Check import scanner') {
       steps {
-        sh 'utilities/api_analysis/run_full_api_diagnostics.bash'
+        sh "bash human_reviewed_tests/run_pytests.sh -unit -k host_api_imports -q"
       }
     }
-    //    stage('Display Tables') {
-    //      steps {
-    //        // These display the tables the script produces
-    //        sh 'cat utilities/api_analysis/log/apiCommitmentTable.txt'
-    //        sh 'cat utilities/api_analysis/log/usageAnalyzerTable.txt'
-    //      }
-    //    }
+    stage('Host API imports') {
+      stages {
+        stage('SAM') {
+          steps {
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+              ws("${env.WORKSPACE}@api_sam") {
+                checkout scm
+                // Only this disposable host clone is removed before a fresh checkout.
+                sh '''
+                  set -eu
+                  git log -1 --format="CLUBB %H %s"
+                  rm -rf output/api_import_host
+                  git clone --depth 1 --single-branch --branch master https://github.com/larson-group/sam_clubb.git output/api_import_host
+                  git -C output/api_import_host log -1 --format="SAM %H %s"
+                  python3 human_reviewed_tests/check_host_api_imports.py output/api_import_host -exclude_dir SRC/CLUBB SRC/SILHS
+                '''
+              }
+            }
+          }
+        }
+        stage('CAM') {
+          steps {
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+              ws("${env.WORKSPACE}@api_cam") {
+                checkout scm
+                // Only this disposable host clone is removed before a fresh checkout.
+                sh '''
+                  set -eu
+                  git log -1 --format="CLUBB %H %s"
+                  rm -rf output/api_import_host
+                  git clone --depth 1 --single-branch --branch clubb_silhs_devel https://github.com/larson-group/cam.git output/api_import_host
+                  git -C output/api_import_host log -1 --format="CAM %H %s"
+                  python3 human_reviewed_tests/check_host_api_imports.py output/api_import_host -exclude_dir cime src/physics/clubb
+                '''
+              }
+            }
+          }
+        }
+        stage('WRF') {
+          steps {
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+              ws("${env.WORKSPACE}@api_wrf") {
+                checkout scm
+                // Only this disposable host clone is removed before a fresh checkout.
+                sh '''
+                  set -eu
+                  git log -1 --format="CLUBB %H %s"
+                  rm -rf output/api_import_host
+                  git clone --depth 1 --single-branch --branch master https://github.com/larson-group/wrf.git output/api_import_host
+                  git -C output/api_import_host log -1 --format="WRF %H %s"
+                  python3 human_reviewed_tests/check_host_api_imports.py output/api_import_host/WRF -exclude_dir phys/clubb phys/silhs
+                '''
+              }
+            }
+          }
+        }
+      }
+    }
   }
   post {
     failure {

@@ -9,64 +9,93 @@ CLUBB_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 identifier_regex = re.compile(r"^[A-Za-z_]\w*$")
 
 
+def _strip_fortran_text(line, quote=None, *, comments=False):
+    """Return code and any open quote, optionally stopping at a Fortran comment."""
+    out = []
+    index = 0
+    while index < len(line):
+        char = line[index]
+        if quote:
+            if char == quote:
+                if line[index:index + 2] == quote * 2:
+                    index += 2
+                    continue
+                quote = None
+        elif comments and char == "!":
+            break
+        elif char in "\"'":
+            quote = char
+        else:
+            out.append(char)
+        index += 1
+    return "".join(out), quote
+
+
 def strip_strings(line: str) -> str:
     """Remove Fortran string literals delimited by ' or "."""
-    out = []
-    in_single = in_double = False
-    for ch in line:
-        if in_single:
-            if ch == "'":
-                in_single = False
-            continue
-        if in_double:
-            if ch == '"':
-                in_double = False
-            continue
-        if ch == "'":
-            in_single = True
-            continue
-        if ch == '"':
-            in_double = True
-            continue
-        out.append(ch)
-    return "".join(out)
+    return _strip_fortran_text(line)[0]
 
 def strip_comments_and_strings(line: str) -> str:
     """Remove string literals and trailing Fortran comments from a line."""
-    return strip_strings(line).split("!", 1)[0].rstrip("\n")
+    return _strip_fortran_text(line, comments=True)[0].rstrip("\n")
 
-def iter_logical_statements(lines):
-    """Yield free-form Fortran logical statements as (start_line, end_line, stmt)."""
+
+def iter_logical_statements(lines, *, fixed_form=False):
+    """Yield (start_line, end_line, code) without literals, comments or directives.
+
+    Join free-form ampersand continuations, or fixed-form column-six
+    continuations when fixed_form is true, and split semicolon statements.
+    Fixed-form labels occupy columns 1--5; no right-column limit is imposed.
+    Preprocessor branches are all scanned; directives themselves are skipped.
+    """
     buffer = []
     start_line = None
+    end_line = 0
+    quote = None
+    token_continued = False
 
     for linenum, raw_line in enumerate(lines, start=1):
-        code = strip_comments_and_strings(raw_line)
-        if not code.strip():
+        raw_line = raw_line.expandtabs(8).rstrip("\r\n")
+        if not raw_line.strip() or raw_line.lstrip().startswith(("!", "#")):
             continue
+        if fixed_form:
+            if raw_line[0] in "cC*":
+                continue
+            continuation = len(raw_line) > 5 and raw_line[5] not in " 0"
+            if not continuation:
+                if buffer:
+                    yield start_line, end_line, " ".join(buffer).strip()
+                buffer = []
+                quote = None
+            raw_line = raw_line[6:]
 
-        segment = code.rstrip()
-        continued = segment.endswith("&")
-        if continued:
-            segment = segment[:-1].rstrip()
+        code, quote = _strip_fortran_text(raw_line, quote, comments=True)
+        code = code.strip()
+        join_token = bool(buffer) and code.startswith("&") and token_continued
+        token_continued = code.endswith("&") and len(code) > 1 and not code[-2].isspace()
+        continued = code.endswith("&") or quote is not None
+        if code.endswith("&"):
+            code = code[:-1].rstrip()
+        if buffer and code.startswith("&"):
+            code = code[1:].lstrip()
 
-        if not buffer:
-            start_line = linenum
-        else:
-            segment = segment.lstrip()
-            if segment.startswith("&"):
-                segment = segment[1:].lstrip()
-
-        if segment:
-            buffer.append(segment)
-
-        if not continued:
-            yield start_line, linenum, " ".join(buffer).strip()
-            buffer = []
-            start_line = None
+        parts = code.split(";")
+        for index, part in enumerate(parts):
+            if part.strip():
+                if not buffer:
+                    start_line = linenum
+                if join_token and index == 0:
+                    buffer[-1] += part.strip()
+                else:
+                    buffer.append(part.strip())
+                end_line = linenum
+            if index < len(parts) - 1 or (not fixed_form and not continued):
+                if buffer:
+                    yield start_line, end_line, " ".join(buffer).strip()
+                buffer = []
 
     if buffer:
-        yield start_line, start_line, " ".join(buffer).strip()
+        yield start_line, end_line, " ".join(buffer).strip()
 
 def parse_use_only_imports(stmt):
     """Return imported local names for a `use ..., only:` statement."""

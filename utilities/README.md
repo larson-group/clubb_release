@@ -8,29 +8,6 @@ The [CLUBBStandardsCheck.py](https://github.com/larson-group/clubb/blob/bc8d7073
 source files to determine if they follow certain good software engineering 
 practices which are meant to be enforced for CLUBB source files. 
 
-[check_for_errors.py](https://github.com/larson-group/clubb/blob/bc8d70735e710ef36f81e42f58843908ae3ddcbc/utilities/check_for_errors.py) checks CLUBB source code files for common mistakes or
-CLUBB standards violations. It checks for uninitialized output variables,
-magic flags, and magic numbers. An output variable is only initialized if it
-is set in every part of an if or select case statement or if it is set outside
-of these statements. A magic number is any number that appears
-in a subroutine or function call or appears in an equation on the right-hand
-side of an equals sign. Integers from -6 to +6 are not considered magic numbers,
-and nothing in an if statement is considered a magic number. If the argument -w
-or --show-warnings is provided, warnings will be printed when a variable is set
-by a subroutine or function call. If no files are provided in the argument list,
-the script will check all .F90 files under the src directory (recursively).
-USAGE: "python3 check_for_errors.py [-w or --show-warnings] [<filename>.F90 ...]"
-
-[print_tunable_parameters_table.py](print_tunable_parameters_table.py) compares
-model parameter JSON files as a Markdown table. `-config` selects a named catalog
-config (default: `default`); snapshots are read directly. `-bare` shows only
-differences. `-format` writes resolved `-std.json` snapshots beside the inputs.
-
-```bash
-python utilities/print_tunable_parameters_table.py input/clubb_params.jsonc
-python utilities/print_tunable_parameters_table.py first.json second.json -bare -output_file /tmp/parameters.md
-```
-
 [port_fortran_declarations_to_jax_docstrings/](port_fortran_declarations_to_jax_docstrings/README.md) copies the argument
 declarations of each Fortran routine in src/CLUBB_core into the docstring of
 its JAX port and checks that they stay in step.
@@ -70,11 +47,7 @@ Fortran Python API and JAX standalone loss front ends.
 (and rejects ".."). Shared by [run_scm.py](https://github.com/larson-group/clubb/blob/bc8d70735e710ef36f81e42f58843908ae3ddcbc/run_scripts/run_scm.py), [run_scm_loss.py](https://github.com/larson-group/clubb/blob/bc8d70735e710ef36f81e42f58843908ae3ddcbc/run_scripts/run_scm_loss.py), and Dash.
 
 [sam_3d_reference.py](https://github.com/larson-group/clubb/blob/bc8d70735e710ef36f81e42f58843908ae3ddcbc/utilities/sam_3d_reference.py) reads raw 3D SAM snapshots from the shared benchmark-run
-directory for Dash diagnostics and experimental PDF analyses.
-
-[split_stats_to_legacy.py](https://github.com/larson-group/clubb/blob/bc8d70735e710ef36f81e42f58843908ae3ddcbc/utilities/split_stats_to_legacy.py) splits one combined stats NetCDF file into
-legacy-style per-grid files (e.g. <case>_zt.nc, <case>_zm.nc). Nothing in the
-repository calls it.
+directory for Dash diagnostics.
 
 ### Reusable case runners
 

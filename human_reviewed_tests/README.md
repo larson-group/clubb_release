@@ -90,9 +90,7 @@ own discovery and does not apply the wrappers' environment setup.
 
 Each generated suite has its own stage, so a suite can be skipped by
 commenting out its stage. The corresponding `clubb_branch_*` jobs use the same
-Jenkinsfiles and a `BRANCH` parameter. The legacy SensMatrix tests and their
-local configuration remain unchanged in `utilities/sens_matrix/`; these stages
-do not select them.
+Jenkinsfiles and a `BRANCH` parameter.
 
 The entry points prepare their owned Python environments automatically, except
 when `CLUBB_PYTHON` explicitly selects a prepared interpreter. Compilation is
@@ -143,10 +141,39 @@ This check is the first stage of
 driver reset/rerun comparisons. Jenkins builds GNU Fortran with the Python API,
 runs native and Python checks from that build, and runs CPU JAX independently.
 
+### `check_host_api_imports.py`
+
+[`check_host_api_imports.py`](check_host_api_imports.py) checks that host-owned
+Fortran uses the public CLUBB/SILHS API modules rather
+than importing private modules. It reads module declarations from the current
+CLUBB checkout and scans an existing host checkout without modifying either.
+No compilation or third-party Python packages are needed.
+
+```sh
+python3 human_reviewed_tests/check_host_api_imports.py /path/to/host
+python3 human_reviewed_tests/check_host_api_imports.py /path/to/sam \
+    -clubb_source /path/to/clubb -exclude_dir SRC/CLUBB SRC/SILHS
+```
+
+`-exclude_dir` names exact directories relative to the host root, typically
+vendored CLUBB/SILHS code. Diagnostics identify the file, line and private module.
+Exit status is 0 for a complete pass, 1 for forbidden imports and 2 for incomplete
+input. The script header describes supported source forms and scan limitations.
+
+The existing [API commitment Jenkins job](../jenkins_tests/clubb_api_commitment_test/Jenkinsfile)
+clones SAM `master`, CAM `clubb_silhs_devel` and WRF `master`, records their
+revisions and runs this same checker independently for each host. It also runs
+the generated parser/input-error checks, which can be run locally with:
+
+```sh
+bash human_reviewed_tests/run_pytests.sh -unit -k host_api_imports -q
+```
+
 ### `check_budget_balance.py`
 
-Runs a fixed list of SCM cases and then checks CLUBB budget closure with
-[`checkBudget.py`](../postprocessing/check_budgets_balance/checkBudget.py).
+Runs a fixed list of SCM cases and checks their NetCDF statistics for budget
+closure and consistency with state changes. Use a double-precision build;
+the script's header explains the checked column, levels and tolerances.
 Cases run concurrently with up to half the available logical CPUs by default;
 `-workers` changes the maximum number of concurrent cases.
 
@@ -157,6 +184,10 @@ Examples:
 
 - `python3 human_reviewed_tests/check_budget_balance.py /path/to/clubb -workers 4`
   Runs the same suite against an explicit CLUBB source tree with four workers.
+
+- `python3 human_reviewed_tests/check_budget_balance.py -check_only -output_dir /path/to/stats`
+  Checks existing `*_stats.nc` files without running cases. Add `-iteration 2`
+  to check only the second output sample; by default all samples are checked.
 
 The budget Jenkins job also runs focused pytests for the checker and case runner.
 These include a balanced synthetic NetCDF control and checks that an altered

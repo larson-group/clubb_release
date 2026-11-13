@@ -36,7 +36,7 @@ CASES = [
 # This is the default run name. It writes to output/NAME and output/pyplots_NAME.
 DEFAULT_RUN_NAME = "new"
 
-# Plotting options for pyplotgen (see postprocessing/pyplotgen/README.md)
+# Plotting options for pyplotgen (see pyplotgen/README.md)
 PYPLOTGEN_BASE_OPTIONS = ["-plot_budgets", "-les"]
 
 # Code begins ------------------------------------------------------
@@ -197,7 +197,7 @@ def main() -> int:
 
         # Create plots using pyplotgen.
         print("\nCreating plots using pyplotgen . . .\n", flush=True)
-        pyplotgen = clubb_root / "postprocessing" / "pyplotgen" / "pyplotgen.py"
+        pyplotgen = clubb_root / "pyplotgen" / "pyplotgen.py"
         plot_inputs = [*resolve_compare_output_dirs(output_root, args.compare), run_output_path]
         pyplotgen_options = [*PYPLOTGEN_BASE_OPTIONS, "-cases", *cases, "-clubb"]
         if not args.enable_plot_multithreading:

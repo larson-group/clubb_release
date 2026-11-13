@@ -15,7 +15,7 @@ from typing import Any
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-PYPLOTGEN_ROOT = REPO_ROOT / "postprocessing" / "pyplotgen"
+PYPLOTGEN_ROOT = REPO_ROOT / "pyplotgen"
 PYPLOTGEN_SCRIPT = PYPLOTGEN_ROOT / "pyplotgen.py"
 PYPLOTGEN_OUTPUT_ROOT = REPO_ROOT / "output" / "pyplotgen"
 _PROGRESS_RE = re.compile(rb"Progress:\s*(\d+)\s+of\s+(\d+)\s+total")

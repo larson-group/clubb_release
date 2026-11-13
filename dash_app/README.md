@@ -486,7 +486,7 @@ The plots tab can overlay LES benchmark data for cases that define SAM or
 COAMPS benchmark files in:
 
 ```text
-postprocessing/pyplotgen/config/Case_definitions.py
+pyplotgen/config/Case_definitions.py
 ```
 
 Currently those case definitions use the repository benchmark symlink:
