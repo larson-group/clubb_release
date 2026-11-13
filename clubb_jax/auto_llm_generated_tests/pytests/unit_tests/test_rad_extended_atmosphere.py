@@ -10,6 +10,7 @@ affects all 12 CGILS/cloud_feedback cases and previously had only end-to-end val
      o3l = the ozone column; all lengths equal; physical sanity).
   2. The thm[K] / thlm[K] branch: T_in_K = θ·exner with the level-1 exner from p_sfc (the Fortran quirk).
 """
+from pathlib import Path
 from utilities.output_paths import REPO_ROOT as _REPO_ROOT
 import os
 
@@ -30,11 +31,11 @@ def test_real_cgils_extended_atmosphere():
     if not (os.path.exists(snd_f) and os.path.exists(oz_f)):
         raise AssertionError("  real cgils extended atmosphere: required input missing (files absent)")
     n, z, theta, rt, _, _, _, _, p_in_Pa, _, _, _, _, retVars = read_sounding_file(
-        0, "cgils_s11", _CASE_DATA, 10000, _P_SFC, _SAT, 0.0)
+        0, Path(_CASE_DATA) / 'cgils_s11_sounding.in', 10000, _P_SFC, _SAT, 0.0)
     o3l = read_one_dim_file(0, 1, oz_f)[0].values
     assert len(o3l) == n, f"ozone levels {len(o3l)} != sounding levels {n}"
 
-    ext = convert_snd2extended_atm(0, "cgils_s11", _CASE_DATA, 8, _P_SFC, 0.0, retVars, _SAT)
+    ext = convert_snd2extended_atm(0, Path(_CASE_DATA) / 'cgils_s11_ozone_sounding.in', 8, _P_SFC, 0.0, retVars, _SAT)
     # Structure / convert_snd2extended_atm semantics
     for k in ('alt', 'T_in_K', 'sp_hmdty', 'p_in_mb', 'o3l'):
         assert k in ext and len(ext[k]) == n, f"ext['{k}'] missing or wrong length"
@@ -62,7 +63,7 @@ def test_theta_branch_exner_conversion(tmp_path):
     (tmp_path / "synthetic_ozone_sounding.in").write_text(
         "'o3[kg/kg]'\n" + "5.0e-8\n" * 12
     )
-    ext = convert_snd2extended_atm(0, "synthetic", tmp_path, 3, p_sfc, 0.0, retVars, _SAT)
+    ext = convert_snd2extended_atm(0, Path(tmp_path) / 'synthetic_ozone_sounding.in', 3, p_sfc, 0.0, retVars, _SAT)
     exner = (p / p0) ** kappa
     exner[0] = (p_sfc / p0) ** kappa                        # Fortran uses p_sfc for level 1
     assert np.allclose(ext['T_in_K'], theta * exner), "thm[K] branch: T_in_K != θ·exner (or wrong level-1 exner)"

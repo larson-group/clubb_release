@@ -22,7 +22,8 @@ module sounding
   contains
   !------------------------------------------------------------------------
   subroutine read_sounding( ngrdcol, sclr_dim, edsclr_dim, sclr_idx, & ! In
-                            gr, iunit, runtype, zm_init, & ! In
+                            gr, iunit, runtype, sounding_file, sclr_sounding_file, & ! In
+                            edsclr_sounding_file, ozone_sounding_file, iop_file, zm_init, & ! In
                             saturation_formula, & ! In
                             l_readiopdata, l_modify_ic_with_cubic_int, & ! In
                             p_sfc, & ! InOut
@@ -32,7 +33,7 @@ module sounding
                             rtm_sfc, thlm_sfc, sclrm, edsclrm ) ! Out
 
     ! Description:
-    !   Subroutine to initialize model variables from a namelist file
+    !   Read the configured sounding files and interpolate initial fields onto the model grid.
     ! References:
     !   None
     !------------------------------------------------------------------------
@@ -99,6 +100,13 @@ module sounding
 
     character(len=*), intent(in) ::  &
       runtype ! Used to determine if this in a DYCOMS II RF02 simulation
+
+    character(len=*), intent(in) :: &
+      sounding_file, & ! Main initial profile
+      sclr_sounding_file, & ! Higher-order passive scalar profiles
+      edsclr_sounding_file, & ! Eddy-diffusivity passive scalar profiles
+      ozone_sounding_file, & ! Ozone profile for the extended atmosphere
+      iop_file ! IOP NetCDF dataset
 
     real( kind = core_rknd ), intent(in) :: &
       zm_init ! Height at zm(1)         [m]
@@ -189,40 +197,40 @@ module sounding
 
     ! Determine which files exist ahead of time to allow for a graceful exit if
     ! one is missing.
-    inquire(file="../input/case_data/"//trim( runtype )//"_sounding.in", exist=l_sounding_exists)
+    inquire(file=sounding_file, exist=l_sounding_exists)
 
-    inquire(file="../input/case_data/"//trim( runtype )//"_sclr_sounding.in", &
+    inquire(file=sclr_sounding_file, &
       exist=l_sclr_sounding_exists)
 
-    inquire(file="../input/case_data/"//trim( runtype )//"_edsclr_sounding.in", &
+    inquire(file=edsclr_sounding_file, &
       exist=l_edsclr_sounding_exists)
 
     !---------------------------------------------------------------------------------------------
     ! Status Message
     if( clubb_at_least_debug_level_api( 1 ) ) then
-      print *, "Path to sounding: ", trim( runtype )//'_sounding.in'
+      print *, "Path to sounding: ", trim( sounding_file )
       print *, "File exists? ", l_sounding_exists
-      print *, "Path to sclr_sounding: ", trim( runtype )//'_sclr_sounding.in'
+      print *, "Path to sclr_sounding: ", trim( sclr_sounding_file )
       print *, "File exists? ", l_sclr_sounding_exists
-      print *, "Path to edsclr_sounding: ", trim( runtype )//'_edsclr_sounding.in'
+      print *, "Path to edsclr_sounding: ", trim( edsclr_sounding_file )
       print *, "File exists? ", l_edsclr_sounding_exists
     end if
     !----------------------------------------------------------------------------------------------
 
     if ( l_readiopdata ) then
-      call readiopdata_snd( zm_init, saturation_formula,       & ! Intent(in)
+      call readiopdata_snd( iop_file, zm_init, saturation_formula,       & ! Intent(in)
                             nlevels, u, v, theta, rt, p_in_Pa, & ! Intent(out)
                             p_sfc, z, ug, vg, subs, subs_type )  ! Intent(out)
     elseif( l_sounding_exists ) then
-      ! Read in SAM-Like <runtype>_sounding.in file
-      call read_sounding_file( iunit, runtype, nmaxsnd, p_sfc,             & ! Intent(in)
+      ! Read the configured main sounding.
+      call read_sounding_file( iunit, sounding_file, nmaxsnd, p_sfc,             & ! Intent(in)
                                saturation_formula, zm_init,                & ! Intent(in)
                                nlevels, z, theta, rt, u, v,                & ! Intent(out)
                                ug, vg, p_in_Pa, subs,                      & ! Intent(out)
                                temperature_type, altitude_type, subs_type, & ! Intent(out)
                                sounding_retVars )                            ! Intent(out)
     else
-      write(fstderr,*) 'Cannot open ' // trim( runtype ) // '_sounding.in file'
+      write(fstderr,*) 'Cannot open ' // trim( sounding_file ) // ' file'
       error stop 'Fatal error in read_sounding'
       ! sounding namelist is no longer used.
       ! Joshua Fasching April 2009
@@ -238,25 +246,26 @@ module sounding
       sclr_snd   = 0.0_core_rknd
       edsclr_snd = 0.0_core_rknd
 
-      ! Read in SAM-Like <runtype>_sclr_sounding.in and
-      !                  <runtype>_edsclr_sounding.in
+      ! Read the configured passive and eddy-diffusivity scalar soundings.
       if( sclr_dim > 0 ) then
         if( l_sclr_sounding_exists ) then
-          call read_sclr_sounding_file( sclr_dim, sclr_idx, iunit, runtype, nmaxsnd, &
+          call read_sclr_sounding_file( sclr_dim, sclr_idx, iunit, sclr_sounding_file, nmaxsnd, &
                                         sclr_snd, &
                                         sclr_sounding_retVars )
         else
-          error stop 'Cannot open <runtype>_sclr_sounding.in file'
+          write(fstderr,*) 'Cannot open ', trim(sclr_sounding_file)
+          error stop 'Cannot open passive scalar sounding'
         end if
 
       end if
 
       if( edsclr_dim > 0 ) then
         if( l_edsclr_sounding_exists  ) then
-          call read_edsclr_sounding_file( edsclr_dim, sclr_idx, iunit, runtype, nmaxsnd, &
+          call read_edsclr_sounding_file( edsclr_dim, sclr_idx, iunit, edsclr_sounding_file, nmaxsnd, &
                                           edsclr_snd )
         else
-          error stop 'Cannot open <runtype>_edsclr_sounding.in file'
+          write(fstderr,*) 'Cannot open ', trim(edsclr_sounding_file)
+          error stop 'Cannot open eddy scalar sounding'
         end if
       end if
 
@@ -578,7 +587,7 @@ module sounding
 
       else
 
-        call convert_snd2extended_atm( iunit, runtype, n_snd_var, p_sfc, zm_init, & ! Intent(in)
+        call convert_snd2extended_atm( iunit, ozone_sounding_file, n_snd_var, p_sfc, zm_init, & ! Intent(in)
                                        sounding_retVars, saturation_formula )   ! Intent(in)
       end if
     end if ! rad_scheme == "bugsrad"
@@ -601,14 +610,14 @@ module sounding
   end subroutine read_sounding
 
   !-----------------------------------------------------------------------------
-  subroutine read_sounding_file( iunit, runtype, nmaxsnd, p_sfc, &
+  subroutine read_sounding_file( iunit, sounding_file, nmaxsnd, p_sfc, &
                                  saturation_formula, zm_init, &
                                  nlevels, z, theta, rt, u, v, &
                                  ug, vg, p_in_Pa, subs, &
                                  temperature_type, altitude_type, subs_type, &
                                  retVars )
     !
-    !  Description: This subroutine reads in a <runtype>_sounding.in file and
+    !  Description: This subroutine reads in a configured sounding.in file and
     !  returns the values contained in that file.
 
     !-----------------------------------------------------------------------
@@ -640,7 +649,7 @@ module sounding
     integer, intent(in) :: iunit ! I/O unit
 
     character(len=*), intent(in) :: &
-      runtype ! String identifying the model case; e.g. bomex
+      sounding_file ! Path to the configured input file
 
     real( kind = core_rknd ), intent(in) :: &
       p_sfc, & ! Pressure at the surface [Pa]
@@ -677,7 +686,7 @@ module sounding
     ! ---- Begin Code ----
 
     call read_one_dim_file( iunit, n_snd_var, &
-    '../input/case_data/'//trim( runtype )//'_sounding.in', retVars )
+    trim( sounding_file ), retVars )
 
     call fill_blanks_one_dim_vars( n_snd_var, retVars )
 
@@ -705,11 +714,11 @@ module sounding
   end subroutine read_sounding_file
 
   !-------------------------------------------------------------------------------------------------
-  subroutine read_sclr_sounding_file( sclr_dim, sclr_idx, iunit, runtype, nmaxsnd, &
+  subroutine read_sclr_sounding_file( sclr_dim, sclr_idx, iunit, sclr_sounding_file, nmaxsnd, &
                                       sclr_snd, &
                                       retVars )
     !
-    ! Description: This subroutine reads in a <runtype>_sclr_sounding.in file and
+    ! Description: This subroutine reads in a configured sclr_sounding.in file and
     !   returns the values contained in that file.
 
     ! References:
@@ -745,7 +754,7 @@ module sounding
 
     integer, intent(in) :: iunit ! I/O unit
 
-    character(len=*), intent(in) :: runtype ! String identifying the model case;
+    character(len=*), intent(in) :: sclr_sounding_file ! String identifying the model case;
     !                                         e.g. bomex
 
     integer, intent(in) :: &
@@ -763,7 +772,7 @@ module sounding
     integer :: sclr
 
     call read_one_dim_file( iunit, sclr_dim, &
-      '../input/case_data/'//trim( runtype )//'_sclr_sounding.in', retVars )
+      trim( sclr_sounding_file ), retVars )
 
 !    call fill_blanks_one_dim_vars( sclr_dim, retVars )
 
@@ -789,10 +798,10 @@ module sounding
   end subroutine read_sclr_sounding_file
 
   !-------------------------------------------------------------------------------------------------
-  subroutine read_edsclr_sounding_file( edsclr_dim, sclr_idx, iunit, runtype, nmaxsnd, &
+  subroutine read_edsclr_sounding_file( edsclr_dim, sclr_idx, iunit, edsclr_sounding_file, nmaxsnd, &
                                         edsclr_snd )
     !
-    !  Description: This subroutine reads in a <runtype>_edsclr_sounding.in file and
+    !  Description: This subroutine reads in a configured edsclr_sounding.in file and
     !  returns the values contained in that file.
     !
     !-----------------------------------------------------------------------------------------------
@@ -824,7 +833,7 @@ module sounding
     integer, intent(in) :: iunit ! I/O unit
 
     character(len=*), intent(in) :: &
-      runtype ! String identifying the model case; e.g. bomex
+      edsclr_sounding_file ! Path to the configured input file
 
     integer, intent(in) :: &
       nmaxsnd   ! Maximum number of levels allowed in the sounding.in file
@@ -841,7 +850,7 @@ module sounding
     !--------------------- Begin Code ---------------------
 
     call read_one_dim_file( iunit, edsclr_dim, &
-      '../input/case_data/'//trim( runtype )//'_edsclr_sounding.in', retVars )
+      trim( edsclr_sounding_file ), retVars )
 
  !   call fill_blanks_one_dim_vars( edsclr_dim, retVars )
 
@@ -970,7 +979,7 @@ module sounding
 !   end subroutine read_profile
 
   !-------------------------------------------------------------------------------------------------
-  subroutine convert_snd2extended_atm( iunit, runtype, n_snd_var, p_sfc, zm_init, &
+  subroutine convert_snd2extended_atm( iunit, ozone_sounding_file, n_snd_var, p_sfc, zm_init, &
                                        sounding_profiles, saturation_formula )
     !
     !  Description: This subroutine converts information retrieved from the
@@ -1022,7 +1031,7 @@ module sounding
 
     integer, intent(in) :: iunit  ! Fortran file unit
 
-    character(len=*), intent(in) ::  runtype
+    character(len=*), intent(in) ::  ozone_sounding_file ! Ozone profile path
 
     integer, intent(in) :: n_snd_var   ! Number of variables from sounding [-]
 
@@ -1097,7 +1106,7 @@ module sounding
 
     ! Read in radiation scalars sounding (currently it only holds O3)
     call read_one_dim_file( iunit, n_rad_scalars, & ! In
-      '../input/case_data/'//trim( runtype )//'_ozone_sounding.in', & ! In
+      trim( ozone_sounding_file ), & ! In
       extended_rad_scalars ) ! Out
 
     ! Set the array holding the values of o3l (ozone)

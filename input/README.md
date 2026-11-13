@@ -200,3 +200,37 @@ those definitions does not modernize their physics or benchmark paths.
 The tables in [case_data/](case_data/), grids, atmospheric profiles and
 benchmark NetCDF files remain data inputs. Their `.in` or other suffixes do not
 make them model/parameter/flag/stats namelist definitions.
+
+
+## Case input files
+
+Cases select their data files explicitly in `model_setting` in
+[case_definitions.jsonc](case_definitions.jsonc). Several cases, or several input
+roles within one case, can reference the same file. For example, BOMEX uses one
+scalar profile for both passive and eddy-diffusivity scalars:
+
+```json
+"sounding_file": "../input/case_data/bomex_sounding.in",
+"sclr_sounding_file": "../input/case_data/bomex_sclr_sounding.in",
+"edsclr_sounding_file": "../input/case_data/bomex_sclr_sounding.in"
+```
+
+The filename settings are `sounding_file`, `sclr_sounding_file`,
+`edsclr_sounding_file`, `ozone_sounding_file`, `forcing_file`, `sfc_file`,
+`corr_file_cloud`, `corr_file_below`, and `iop_file`. Leave unused inputs empty.
+`forcings_file_path` remains the directory setting for cases that read specialized
+forcing tables, such as LBA and MPACE-A.
+
+Paths are absolute or relative to `run_scripts/`, matching the standalone's run
+directory. Python and JAX resolve these paths once during initialization,
+independently of where the generated namelist is stored. Readers receive the
+selected paths directly; `runtype` selects case behavior and does not select
+input filenames. Hand-written namelists must supply the paths needed by their
+enabled features.
+
+To use a different sounding without creating a new case preset, run from the
+repository root:
+
+```bash
+python3 run_scripts/run_scm.py -cases bomex -override 'model_setting.sounding_file=/path/to/my_profile.in'
+```

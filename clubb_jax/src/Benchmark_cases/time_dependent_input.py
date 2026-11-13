@@ -12,8 +12,6 @@ References:
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import jax
 import jax.numpy as jnp
 import numpy as np
@@ -91,18 +89,12 @@ l_input_xpwp_sfc = False
 l_ignore_forcings = False
 l_sfc_already_initialized = False
 
-# Resolve the source's ../input/case_data/ relative path independently of the
-# process working directory at this host file-I/O boundary.
-input_path = Path(__file__).parents[3] / "input" / "case_data"
-forcings_path = "_forcings.in"
-sfc_path = "_sfc.in"
-
 
 # ================================================================================================
 def initialize_t_dependent_input(
     ngrdcol,
     iunit,
-    runtype,
+    forcing_file, sfc_file, iop_file,
     nz,
     grid,
     p_in_Pa,
@@ -111,18 +103,40 @@ def initialize_t_dependent_input(
     """This subroutine reads in time dependent information about a
     case that is stored inside the module.
 
-    References:
-        None.
+    Fortran declarations (initialize_t_dependent_input in src/Benchmark_cases/time_dependent_input.F90):
+
+        ! Input Variable(s)
+        integer, intent(in) :: ngrdcol ! Number of model columns [-]
+        integer, intent(in) :: iunit ! File I/O
+
+        character(len=*), intent(in) :: &
+          forcing_file, & ! Time-dependent forcing profiles
+          sfc_file, & ! Time-dependent surface data
+          iop_file ! Optional IOP NetCDF dataset
+
+        integer, intent(in) :: nz ! Size of the model grid
+
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: grid ! Model grid
+
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: p_in_Pa ! Pressure[Pa]
+
+        logical, intent(in) :: &
+          l_add_dycore_grid, &     ! Flag to set remapping from dycore on or off
+          l_readiopdata            ! Flag whether or not we are using a netcdf file for input
+
+        real(kind=core_rknd), dimension(:,:), intent(in) :: rho
+
+        integer, intent(in) :: &
+          grid_adapt_in_time_method   ! flag that says whether the grid should be adapted over
     """
     global l_sfc_already_initialized
 
     # ----------------- Begin Code --------------------
     if not l_ignore_forcings:
-        input_file = input_path / f"{runtype}{forcings_path}"
         initialize_t_dependent_forcings(
             ngrdcol,
             iunit,
-            input_file,
+            forcing_file,
             nz,
             grid,
             p_in_Pa,
@@ -130,8 +144,7 @@ def initialize_t_dependent_input(
         )
 
     if not l_sfc_already_initialized:
-        input_file = input_path / f"{runtype}{sfc_path}"
-        initialize_t_dependent_sfc(iunit, input_file)
+        initialize_t_dependent_sfc(iunit, sfc_file)
 
 
 # ================================================================================================
@@ -150,8 +163,19 @@ def finalize_t_dependent_input():
 
 # ================================================================================================
 def initialize_t_dependent_sfc(iunit, input_file):
-    """This subroutine reads in a file that details time dependent input values
-    that vary in one dimension.
+    """This subroutine reads in a file that details time dependent
+      input values that vary in one dimension.
+
+    Fortran declarations (initialize_t_dependent_sfc in src/Benchmark_cases/time_dependent_input.F90):
+
+        ! Input Variable(s)
+        integer, intent(in) :: iunit ! File I/O unit
+
+        character(len=*), intent(in) :: input_file ! Path to surface input file
+        character(len=*), intent(in) :: iop_file ! Optional IOP NetCDF dataset
+
+        logical, intent(in) :: l_readiopdata
+        real(kind=core_rknd), dimension(:,:), intent(in) :: rho
     """
     global time_sfc_given, latent_ht_given, sens_ht_given
     global thlm_sfc_given, rtm_sfc_given, CO2_sfc_given
@@ -239,8 +263,28 @@ def initialize_t_dependent_forcings(
     p_in_Pa,
     grid_adapt_in_time_method,
 ):
-    """This subroutine reads in a file that details time dependent input values
-    that vary in two dimensions.
+    """This subroutine reads in a file that details time dependent
+      input values that vary in two dimensions.
+
+    Fortran declarations (initialize_t_dependent_forcings in src/Benchmark_cases/time_dependent_input.F90):
+
+        ! Input Variable(s)
+        integer, intent(in) :: ngrdcol ! Number of model columns [-]
+        integer, intent(in) :: iunit ! File I/O
+
+        character(len=*), intent(in) :: input_file ! Path to the input file
+
+        integer, intent(in) :: nz  ! Size of Model Grid [-]
+
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz) :: grid ! Altitudes of Grid [m]
+
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz) :: p_in_Pa ! Pressure [Pa]
+
+        logical, intent(in) :: &
+          l_add_dycore_grid     ! Flag to set remapping from dycore on or off
+
+        integer, intent(in) :: &
+          grid_adapt_in_time_method   ! flag that says whether the grid should be adapted over
     """
     global t_dependent_forcing_data, t_dependent_forcing_data_f_grid, dimension_var
 
@@ -356,8 +400,30 @@ def read_to_grid(
     two_dim_vars,
     target_name,
 ):
-    """This is a helper function for doing the translation from the forcing
-    grid to the model grid.
+    """This is a helper function for doing the translation from the
+      forcing grid to the model grid.
+
+    Returns:
+        var
+
+    Fortran declarations (read_to_grid in src/Benchmark_cases/time_dependent_input.F90):
+
+        integer, intent(in) :: &
+          ntwo_dim_vars, &
+          dim_size, &
+          other_dim_size, &
+          nz
+
+        real( kind = core_rknd ), dimension(nz), intent(in) :: &
+          grid
+
+        type(two_dim_read_var), dimension(ntwo_dim_vars), intent(in) :: &
+          two_dim_vars
+
+        character(len=*), intent(in) :: &
+          target_name
+
+        real( kind = core_rknd ), dimension(nz, other_dim_size) :: var
     """
     # ----------------- Begin Code --------------------
     temp_var = read_x_table(
@@ -404,8 +470,62 @@ def apply_time_dependent_forcings_from_array(
     sclrm_forcing,
     edsclrm_forcing,
 ):
-    """This helper subroutine takes the forcings in a 2D matrix and initializes
-    the forcing variables.
+    """This subroutine is a helper subroutine, that takes the forcings
+                   in a 3D array (one set of forcing profiles per column) and
+                   initializes the forcing variables.
+
+    Returns:
+        (thlm_f, rtm_f, um_ref, vm_ref, um_f, vm_f, wm_zt, wm_zm, ug, vg,
+          sclrm_forcing, edsclrm_forcing)
+
+    Fortran declarations (apply_time_dependent_forcings_from_array in src/Benchmark_cases/time_dependent_input.F90):
+
+        !--------------------- Input Variables ---------------------
+        integer, intent(in) :: &
+          ngrdcol, &
+          nzm, &
+          nzt, &
+          sclr_dim, &
+          edsclr_dim
+
+        type (sclr_idx_type), intent(in) :: &
+          sclr_idx
+
+        logical, intent(in) :: &
+          l_do_expldiff_rtm_thlm ! thlm/rtm eddy scalars are copies diffused in
+                                 ! advance_windm_edsclrm
+
+        type (grid), intent(in) :: &
+          gr
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+          exner,   & ! Exner Function                             [-]
+          rho,     & ! Air Density                                [kg/m^3]
+          rtm        ! Total Water Mixing Ratio                   [kg/kg]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nforcings,nzt), intent(in) :: &
+          forcings_array ! Forcing profiles for every column
+
+        !--------------------- Output Variables ---------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(inout) :: &
+          thlm_f, & ! Potential Temperature forcing     [K/s]
+          rtm_f,  & ! Total Water Mixing Ration forcing [kg/kg/s]
+          um_ref, & ! um reference                      [m/s]
+          vm_ref, & ! vm reference                      [m/s]
+          um_f,   & ! um tendency                       [m/s/s]
+          vm_f,   & ! vm tendency                       [m/s/s]
+          wm_zt,  & ! subsidence on zt grid             [m/s]
+          ug,     & ! u geostrophic wind                [m/s]
+          vg        ! v geostrophic wind                [m/s]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(inout) :: &
+          wm_zm     ! subsidense on zm grid             [m/s]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzt, sclr_dim), intent(inout) :: &
+          sclrm_forcing ! Scalar forcing [-]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzt, edsclr_dim), intent(inout) :: &
+          edsclrm_forcing ! Edscalar forcing [-]
     """
 
     # --------------------- Begin Code ---------------------
@@ -544,7 +664,56 @@ def apply_time_dependent_forcings(
     edsclrm_forcing,
 ):
     """This subroutine converts the time dependent information stored in
-    memory (time_dependent_forcing_data) into the format used by CLUBB.
+      memory (time_dependent_forcing_data) into the format used by CLUBB.
+
+    Fortran declarations (apply_time_dependent_forcings in src/Benchmark_cases/time_dependent_input.F90):
+
+        !--------------------- Input Variables ---------------------
+        integer, intent(in) :: &
+          ngrdcol, &
+          nzm, &
+          nzt, &
+          sclr_dim, &
+          edsclr_dim
+
+        type (sclr_idx_type), intent(in) :: &
+          sclr_idx
+
+        logical, intent(in) :: &
+          l_do_expldiff_rtm_thlm ! thlm/rtm eddy scalars are copies diffused in
+                                 ! advance_windm_edsclrm
+
+        type (grid), intent(in) :: &
+          gr
+
+        real(kind=time_precision), intent(in) :: &
+          time ! Model Time [s]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+          exner,   & ! Exner Function                             [-]
+          rho,     & ! Air Density                                [kg/m^3]
+          rtm        ! Total Water Mixing Ratio                   [kg/kg]
+
+        !--------------------- Output Variables ---------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(inout) :: &
+          thlm_f, & ! Potential Temperature forcing     [K/s]
+          rtm_f,  & ! Total Water Mixing Ration forcing [kg/kg/s]
+          um_ref, & ! um reference                      [m/s]
+          vm_ref, & ! vm reference                      [m/s]
+          um_f,   & ! um tendency                       [m/s/s]
+          vm_f,   & ! vm tendency                       [m/s/s]
+          wm_zt,  & ! subsidence on zt grid             [m/s]
+          ug,     & ! u geostrophic wind                [m/s]
+          vg        ! v geostrophic wind                [m/s]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(inout) :: &
+          wm_zm     ! subsidense on zm grid             [m/s]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzt, sclr_dim), intent(inout) :: &
+          sclrm_forcing ! Scalar forcing [-]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzt, edsclr_dim), intent(inout) :: &
+          edsclrm_forcing ! Edscalar forcing [-]
     """
 
     # --------------------- Begin Code ---------------------
@@ -598,11 +767,32 @@ def apply_time_dependent_forcings(
 
 # ================================================================================================
 def time_select(time, nvar, time_array):
-    """Determine which indexes of time_array should be used when interpolating
-    a value at the specified time and the location of time between them.
+    """This subroutine determines which indexes of the given
+    time_array should be used when interpolating a value
+    at the specified time and the location of time between
+    these indexes.
 
-    References:
-        None.
+    Returns:
+        (before_time, after_time, time_frac)
+
+    Fortran declarations (time_select in src/Benchmark_cases/time_dependent_input.F90):
+
+        ! Input Variable(s)
+
+        integer, intent(in) :: nvar                     ! Number of array elements [-]
+
+        real(kind=time_precision), intent(in) :: time   ! Target time              [s]
+
+        real( kind = core_rknd ), dimension(nvar), intent(in) :: time_array ! Array of times [s]
+
+        ! Output Variable(s)
+
+        integer, intent(out) :: &
+          after_time, &  ! Index of a time later than the target time [-]
+          before_time      ! Index of time before the target time       [-]
+
+        real( kind = core_rknd ), intent(out) :: &
+          time_frac      ! The fraction representing the point where time
     """
     times = jnp.asarray(time_array)
 

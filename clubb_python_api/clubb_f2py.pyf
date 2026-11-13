@@ -834,7 +834,7 @@ python module clubb_f2py
 
     subroutine f2py_prescribe_forcings( &
         nzm, nzt, ngrdcol, sclr_dim, edsclr_dim, sclr_dim_transport, edsclr_dim_transport, &
-        runtype, sfctype, time_current, time_initial, dt, &
+        runtype, forcing_file, sfc_file, iop_file, sfctype, time_current, time_initial, dt, &
         l_readiopdata, &
         um, vm, thlm, p_in_pa, exner, rho, rho_zm, thvm, zt_in, &
         l_t_dependent, l_ignore_forcings, l_input_xpwp_sfc, &
@@ -851,6 +851,7 @@ python module clubb_f2py
       integer, intent(in) :: nzm, nzt, ngrdcol, sclr_dim, edsclr_dim
       integer, intent(in), optional :: sclr_dim_transport, edsclr_dim_transport
       character(len=50), intent(in) :: runtype
+      character(len=*), intent(in) :: forcing_file, sfc_file, iop_file
       integer, intent(in) :: sfctype
       double precision, intent(in) :: time_current, time_initial, dt
       logical, intent(in) :: l_t_dependent, l_ignore_forcings, l_input_xpwp_sfc

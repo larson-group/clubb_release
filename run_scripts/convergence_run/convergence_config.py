@@ -34,7 +34,6 @@ if (sys.version_info.major < 3):
 # get CLUBB root directory (assumed to be two above the CWD) and set directories
 clubb_dir = os.path.join(os.getcwd(),'..')
 output_dir = os.path.join(clubb_dir, 'output')
-case_dir = os.path.join(clubb_dir, 'input', 'case_data')
 grid_dir = os.path.join(clubb_dir, 'input', 'grid')
 bin_dir = os.path.join(clubb_dir, 'install', 'latest')
 res_dir = os.path.join(clubb_dir, 'restart_ic') 
@@ -176,7 +175,8 @@ if ('modified_ic' in parameters):
     case_ref = 7 
   else:
     sys.exit('must specify grid spacing or refinement level info.....') 
-  modify_ic_profile(clubb_dir, case_dir, grid_dir, case_name, case_dz, case_ref)
+  sounding_file = str((Path(clubb_dir) / 'run_scripts' / model_config['model_setting']['sounding_file']).resolve())
+  modify_ic_profile(grid_dir, case_name, case_dz, case_ref, sounding_file)
 else:
   config_strings['l_modify_ic_with_cubic_int'] = '.false.,'
 
@@ -302,7 +302,7 @@ if ('godunov_xpyp' in parameters):
 # warn about Tsfc parameter
 if ('Tsfc' in parameters):
   print("WARNING: Specifying Tsfc doesn't change model parammeters...")
-  print("         this needs to be done in " + parameters['case'] + "_sounding.in")
+  print("         this needs to be done in " + model_config['model_setting']['sounding_file'])
   input("Press Enter to acknowledge")
 
 # Choose owning groups for optional convergence settings omitted by a case.

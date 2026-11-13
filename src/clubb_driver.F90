@@ -308,6 +308,18 @@ module clubb_driver
   character(len=256), public :: &
     output_dir             ! Output directory for setup/log/stats files
 
+  ! Case input paths are read together from model_setting.
+  character(len=1024), public :: &
+    sounding_file, & ! Main initial profile
+    sclr_sounding_file, & ! Higher-order passive scalar profiles
+    edsclr_sounding_file, & ! Eddy-diffusivity scalar profiles
+    ozone_sounding_file, & ! Ozone profile
+    forcing_file, & ! Time-dependent forcing profiles
+    sfc_file, & ! Time-dependent surface data
+    corr_file_cloud, & ! Within-cloud correlation matrix
+    corr_file_below, & ! Below-cloud correlation matrix
+    iop_file ! IOP NetCDF dataset
+
   character(len=400) :: &
     case_info_file, &     ! The filename for case info
     fname_grid_adaptation ! The filename for the grid adaptation file which stores
@@ -721,6 +733,8 @@ module clubb_driver
   !$omp  sclr_idx, hm_metadata, clubb_config_flags, silhs_config_flags, stats_tsamp, stats_tout, &
   !$omp  stats_tstart, stats_tend, &
   !$omp  time_restart, restart_path_case, forcings_file_path, fname_prefix, output_dir, &
+  !$omp  sounding_file, sclr_sounding_file, edsclr_sounding_file, ozone_sounding_file, &
+  !$omp  forcing_file, sfc_file, corr_file_cloud, corr_file_below, iop_file, &
   !$omp  case_info_file, fname_grid_adaptation, output_file_prefix, runtype, zt_grid_fname, &
   !$omp  zm_grid_fname, lat_vals, lon_vals, time_initial, time_final, time_current, dt_main, &
   !$omp  dt_rad, deltaz_nl, zm_init_nl, zm_top_nl, mixt_frac_max_mag, T0, ts_nudge, rtm_min, &
@@ -1190,6 +1204,8 @@ module clubb_driver
     ! Definition of namelists
     namelist /model_setting/ &
       runtype, nzmax, grid_type, deltaz_nl, zm_init_nl, zm_top_nl, &
+      sounding_file, sclr_sounding_file, edsclr_sounding_file, ozone_sounding_file, &
+      forcing_file, sfc_file, corr_file_cloud, corr_file_below, iop_file, &
       zt_grid_fname, zm_grid_fname, &
       day, month, year, lat_vals, lon_vals, sfc_elevation_nl, &
       time_initial, time_final, &
@@ -1284,6 +1300,15 @@ module clubb_driver
     dt_rad  = 600._core_rknd
 
     forcings_file_path = ''
+    sounding_file = ''
+    sclr_sounding_file = ''
+    edsclr_sounding_file = ''
+    ozone_sounding_file = ''
+    forcing_file = ''
+    sfc_file = ''
+    corr_file_cloud = ''
+    corr_file_below = ''
+    iop_file = ''
     l_t_dependent   = .false. 
     l_input_xpwp_sfc = .false. 
     l_ignore_forcings = .false. 
@@ -1806,6 +1831,16 @@ module clubb_driver
       call write_text( "ts_nudge = ", ts_nudge, l_write_to_file, iunit )
 
       call write_text( "forcings_file_path = " // forcings_file_path, l_write_to_file, iunit )
+      call write_text( "sounding_file = " // trim(sounding_file), l_write_to_file, iunit )
+      call write_text( "sclr_sounding_file = " // trim(sclr_sounding_file), l_write_to_file, iunit )
+      call write_text( "edsclr_sounding_file = " // trim(edsclr_sounding_file), l_write_to_file, iunit )
+      call write_text( "ozone_sounding_file = " // trim(ozone_sounding_file), l_write_to_file, iunit )
+      call write_text( "forcing_file = " // trim(forcing_file), l_write_to_file, iunit )
+      call write_text( "sfc_file = " // trim(sfc_file), l_write_to_file, iunit )
+      call write_text( "corr_file_cloud = " // trim(corr_file_cloud), l_write_to_file, iunit )
+      call write_text( "corr_file_below = " // trim(corr_file_below), l_write_to_file, iunit )
+      call write_text( "iop_file = " // trim(iop_file), l_write_to_file, iunit )
+
 
       call write_text( "l_t_dependent = ", l_t_dependent, l_write_to_file, iunit )
       call write_text( "l_ignore_forcings = ", l_ignore_forcings, l_write_to_file, iunit )
@@ -1996,7 +2031,8 @@ module clubb_driver
     dummy_dy = 1.0e6_core_rknd ! known magic number
 
     ! Setup microphysical fields
-    call init_microphys( iunit, trim( runtype ), runfile, case_info_file, & ! Intent(in)
+    call init_microphys( iunit, trim( runtype ), runfile, case_info_file, & ! In
+                         corr_file_cloud, corr_file_below, & ! In
                           dummy_dx(1), dummy_dy(1), &                        ! Intent(in)
                           clubb_params(1,:), &                               ! Intent(in)
                           l_diagnose_correlations, &                         ! Intent(in)
@@ -2550,10 +2586,16 @@ module clubb_driver
     ! Read and convert one sounding, then copy its initial fields across the
     ! runtime columns inside initialize_clubb.  Restart input overwrites these
     ! fields afterward; reference fields still need this initialization.
-    if ( l_readiopdata ) call readiopdata_dims( lat_vals, lon_vals ) ! Intent(out)
+    if ( l_readiopdata ) then
+      call readiopdata_dims( iop_file, & ! In
+                             lat_vals, lon_vals ) ! Out
+    end if
 
     call initialize_clubb( ngrdcol, sclr_dim, edsclr_dim, gr, iunit, & ! In
                            trim( forcings_file_path ), & ! In
+                           sounding_file, sclr_sounding_file, edsclr_sounding_file, & ! In
+                           ozone_sounding_file, & ! In
+                           forcing_file, sfc_file, iop_file, & ! In
                            zm_init, fcor_y, & ! In
                            sclr_idx, clubb_config_flags, l_modify_ic_with_cubic_int, & ! In
                            l_readiopdata, & ! In
@@ -4127,7 +4169,9 @@ module clubb_driver
           ! Refresh forcing interpolation on each column's current grid.
           call timer_start( "initialize_t_dependent_input" )
           call initialize_t_dependent_input &
-                        ( ngrdcol, iunit, runtype, l_readiopdata, rho, & ! In
+                        ( ngrdcol, iunit, & ! In
+                          forcing_file, sfc_file, iop_file, & ! In
+                          l_readiopdata, rho, & ! In
                           gr%nzt, & ! In
                           gr%zt, p_in_Pa, & ! In
                           clubb_config_flags%l_add_dycore_grid, & ! In
@@ -4731,6 +4775,9 @@ module clubb_driver
 
   subroutine initialize_clubb( ngrdcol, sclr_dim, edsclr_dim, gr, iunit, & ! In
                                forcings_file_path, & ! In
+                               sounding_file, sclr_sounding_file, edsclr_sounding_file, & ! In
+                               ozone_sounding_file, & ! In
+                               forcing_file, sfc_file, iop_file, & ! In
                                zm_init, fcor_y, & ! In
                                sclr_idx, clubb_config_flags, l_modify_ic_with_cubic_int, & ! In
                                l_readiopdata, & ! In
@@ -4828,6 +4875,15 @@ module clubb_driver
 
     character(len=*), intent(in) :: &
       forcings_file_path ! Path to the .dat files containing the forcings
+
+    character(len=*), intent(in) :: &
+      sounding_file, & ! Main initial profile
+      sclr_sounding_file, & ! Higher-order passive scalar profiles
+      edsclr_sounding_file, & ! Eddy-diffusivity scalar profiles
+      ozone_sounding_file, & ! Ozone profile
+      forcing_file, & ! Time-dependent forcing profiles
+      sfc_file, & ! Time-dependent surface data
+      iop_file ! IOP NetCDF dataset
 
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       zm_init, & ! Initial moment. level altitude [m]
@@ -4950,7 +5006,8 @@ module clubb_driver
     ! Sounding files specify a single column.  Read and convert it once before
     ! copying the resulting initial fields into the full column batch.
     call read_sounding( 1, sclr_dim, edsclr_dim, sclr_idx, & ! In
-                        gr, iunit, runtype, zm_init(1), & ! In
+                        gr, iunit, runtype, sounding_file, sclr_sounding_file, & ! In
+                        edsclr_sounding_file, ozone_sounding_file, iop_file, zm_init(1), & ! In
                         clubb_config_flags%saturation_formula, & ! In
                         l_readiopdata, l_modify_ic_with_cubic_int, & ! In
                         p_sfc, & ! InOut
@@ -5123,7 +5180,9 @@ module clubb_driver
         ! attention on how the forcings are read in from object t_dependent_forcing_data
         ! in time_dependent_input
         call initialize_t_dependent_input &
-                    ( ngrdcol, iunit, runtype, l_readiopdata, rho_zm, & ! In
+                    ( ngrdcol, iunit, & ! In
+                      forcing_file, sfc_file, iop_file, & ! In
+                      l_readiopdata, rho_zm, & ! In
                       gr_dycore%nzt, & ! In
                       gr_dycore%zt, p_in_Pa_dycore, & ! In
                       clubb_config_flags%l_add_dycore_grid, & ! In
@@ -5134,7 +5193,9 @@ module clubb_driver
         ! no simulating forcings input from host model on dycore grid
         ! l_add_dycore_grid=.false.
         call initialize_t_dependent_input &
-                      ( ngrdcol, iunit, runtype, l_readiopdata, rho, & ! In
+                      ( ngrdcol, iunit, & ! In
+                        forcing_file, sfc_file, iop_file, & ! In
+                        l_readiopdata, rho, & ! In
                         gr%nzt, & ! In
                         gr%zt, p_in_Pa, & ! In
                         clubb_config_flags%l_add_dycore_grid, & ! In

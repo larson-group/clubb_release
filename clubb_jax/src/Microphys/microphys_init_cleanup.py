@@ -54,30 +54,74 @@ _initialization_settings = None
 # -----------------------------------------------------------------------------
 def init_microphys(
     iunit, runtype, namelist_file, case_info_file,  # In
+    corr_file_cloud, corr_file_below,  # In
     host_dx, host_dy,                               # In
     clubb_params,                                   # In
     l_diagnose_correlations,                        # In
     l_const_Nc_in_cloud,                            # InOut
     l_fix_w_chi_eta_correlations,                   # InOut
 ):
-    """Initialize scheme metadata, correlation arrays and SILHS configuration.
+    """Set indices to the various hydrometeor species and define hydromet_dim for
+    the purposes of allocating memory. Restore namelist defaults on every
+    initialization so settings do not carry over from a previous case.
 
-    Host namelist input may be an already parsed mapping or a file path. Configuration remains
-    module owned, as in Fortran, and is captured at trace time. Return dimensions, metadata, flags
-    and correlation arrays.
+    Returns:
+        (hydromet_dim, pdf_dim, hm_metadata, silhs_config_flags,
+          vert_decorr_coef_out, corr_array_n_cloud, corr_array_n_below)
 
-    Arguments:
-        iunit: Fortran unit-number input retained for interface correspondence; Python opens
-            the path.
-        runtype: Benchmark case name; selects prescribed correlation input files.
-        namelist_file: File name
-        case_info_file: Existing simulation info file (plain text); None omits file output
-        host_dx: Host horizontal grid spacing in x [m].
-        host_dy: Host horizontal grid spacing in y [m].
-        clubb_params: Column-dependent tunable CLUBB parameters.
-        l_diagnose_correlations: Diagnose correlations instead of using fixed ones
-        l_const_Nc_in_cloud: Use a constant cloud droplet conc. within cloud (K&K)
-        l_fix_w_chi_eta_correlations: Use a fixed correlation for s and t Mellor(chi/eta)
+    Fortran declarations (init_microphys in src/Microphys/microphys_init_cleanup.F90):
+
+        !------------------------ Input Variables ------------------------
+        integer, intent(in) :: &
+          iunit ! File unit
+
+        character(len=*), intent(in) :: &
+          runtype
+
+        character(len=*), intent(in) :: &
+          namelist_file ! File name
+
+        character(len=*), intent(in) :: &
+          case_info_file ! Name of simulation info file (plain text)
+
+        character(len=*), intent(in) :: &
+          corr_file_cloud, & ! Correlation matrix within cloud
+          corr_file_below ! Correlation matrix below cloud
+
+        real( kind = core_rknd ), intent(in) :: &
+          host_dx, &
+          host_dy
+
+        real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+          clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
+
+        logical, intent(in) :: &
+          l_diagnose_correlations ! Diagnose correlations instead of using fixed ones
+
+        !------------------------ Input/Output Variables ------------------------
+        logical, intent(inout) :: &
+          l_const_Nc_in_cloud,          & ! Use a constant cloud droplet conc. within cloud (K&K)
+          l_fix_w_chi_eta_correlations    ! Use a fixed correlation for s and t Mellor(chi/eta)
+
+        !------------------------ Output Variables ------------------------
+        integer, intent(out) :: &
+          hydromet_dim ! Number of hydrometeor fields.
+
+        integer, intent(out) :: &
+          pdf_dim
+
+        type (hm_metadata_type), intent(out) :: &
+          hm_metadata
+
+        type (silhs_config_flags_type), intent(out) :: &
+          silhs_config_flags ! Flags for the SILHS sampling code
+
+        real( kind = core_rknd ), intent(out) :: &
+          vert_decorr_coef_out    ! Empirically defined de-correlation constant [-]
+
+        real( kind = core_rknd ), dimension(:,:), allocatable, intent(out) :: &
+          corr_array_n_cloud, &
+          corr_array_n_below
     """
     # Set default values, then read in the namelist.
     # Reset module state between independently initialized cases.
@@ -354,17 +398,20 @@ def init_microphys(
         hmp2_ip_on_hmm2_ip_slope_type(**slope),        # In
         hmp2_ip_on_hmm2_ip_intrcpt_type(**intercept),  # In
     )
-    corr_input_path = Path(__file__).resolve().parents[3] / "input/case_data"
-    corr_file_path_cloud = corr_input_path / f"{runtype}_corr_array_cloud.in"
-    corr_file_path_below = corr_input_path / f"{runtype}_corr_array_below.in"
-    if corr_file_path_cloud.exists() and corr_file_path_below.exists():
+    if corr_file_cloud or corr_file_below:
+        if not (corr_file_cloud and corr_file_below
+                and Path(corr_file_cloud).is_file() and Path(corr_file_below).is_file()):
+            raise FileNotFoundError(
+                f"Cannot open configured correlation files: {corr_file_cloud} and {corr_file_below}"
+            )
+    if corr_file_cloud and corr_file_below:
         corr_array_n_cloud_in = read_correlation_matrix(
-            iunit, corr_file_path_cloud,  # In
+            iunit, corr_file_cloud,  # In
             pdf_dim, hm_metadata,         # In
             None,                         # InOut
         )
         corr_array_n_below_in = read_correlation_matrix(
-            iunit, corr_file_path_below,  # In
+            iunit, corr_file_below,  # In
             pdf_dim, hm_metadata,         # In
             None,                         # InOut
         )
@@ -375,13 +422,6 @@ def init_microphys(
             corr_array_n_below_in,         # In
         )
     else:
-        if clubb_at_least_debug_level(1):
-            print(
-                f"Warning: missing correlation input file(s): {corr_file_path_cloud} "
-                f"and/or {corr_file_path_below}",
-                file=sys.stderr,
-            )
-            print("The default correlation arrays will be used.", file=sys.stderr)
         corr_array_n_cloud, corr_array_n_below = setup_corr_varnce_array_api(
             pdf_dim, hm_metadata, l_fix_w_chi_eta_correlations
         )

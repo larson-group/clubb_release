@@ -88,19 +88,14 @@ module time_dependent_input
                                                          ! variable were already initialized
 !$omp threadprivate( l_sfc_already_initialized )
 
-  ! File path constants
-  character(len=*), private, parameter :: input_path = "../input/case_data/"
-
-  character(len=*), private, parameter :: forcings_path = "_forcings.in"
-
-  character(len=*), private, parameter :: sfc_path = "_sfc.in"
-
   private
 
   contains
 
   !================================================================================================
-  subroutine initialize_t_dependent_input( ngrdcol, iunit, runtype, l_readiopdata, rho, & ! In
+  subroutine initialize_t_dependent_input( ngrdcol, iunit, & ! In
+                                           forcing_file, sfc_file, iop_file, & ! In
+                                           l_readiopdata, rho, & ! In
                                            nz, & ! In
                                            grid, p_in_Pa, & ! In
                                            l_add_dycore_grid, & ! In
@@ -123,7 +118,10 @@ module time_dependent_input
     integer, intent(in) :: ngrdcol ! Number of model columns [-]
     integer, intent(in) :: iunit ! File I/O
 
-    character(len=*), intent(in) :: runtype ! Runtype
+    character(len=*), intent(in) :: &
+      forcing_file, & ! Time-dependent forcing profiles
+      sfc_file, & ! Time-dependent surface data
+      iop_file ! Optional IOP NetCDF dataset
 
     integer, intent(in) :: nz ! Size of the model grid
 
@@ -146,7 +144,7 @@ module time_dependent_input
 
     if ( .not. l_ignore_forcings ) then
       call initialize_t_dependent_forcings &
-                   ( ngrdcol, iunit, input_path//trim(runtype)//forcings_path, nz, grid, & ! In
+                   ( ngrdcol, iunit, forcing_file, nz, grid, & ! In
                      p_in_Pa, & ! In
                      l_add_dycore_grid, & ! In
                      grid_adapt_in_time_method ) ! In
@@ -154,7 +152,7 @@ module time_dependent_input
 
     if ( .not. l_sfc_already_initialized ) then
       call initialize_t_dependent_sfc &
-                    ( iunit, l_readiopdata, rho, input_path//trim(runtype)//sfc_path ) ! Intent(in)
+                    ( iunit, l_readiopdata, rho, sfc_file, iop_file ) ! Intent(in)
     end if
 
   end subroutine initialize_t_dependent_input
@@ -183,7 +181,7 @@ module time_dependent_input
   end subroutine finalize_t_dependent_input
 
   !================================================================================================
-  subroutine initialize_t_dependent_sfc( iunit, l_readiopdata, rho, input_file )
+  subroutine initialize_t_dependent_sfc( iunit, l_readiopdata, rho, input_file, iop_file )
     !
     !  Description: This subroutine reads in a file that details time dependent
     !  input values that vary in one dimension.
@@ -219,7 +217,8 @@ module time_dependent_input
     ! Input Variable(s)
     integer, intent(in) :: iunit ! File I/O unit
 
-    character(len=*), intent(in) :: input_file ! Path to surface.in file
+    character(len=*), intent(in) :: input_file ! Path to surface input file
+    character(len=*), intent(in) :: iop_file ! Optional IOP NetCDF dataset
 
     logical, intent(in) :: l_readiopdata
     real(kind=core_rknd), dimension(:,:), intent(in) :: rho
@@ -240,7 +239,8 @@ module time_dependent_input
 
     ! ----------------- Begin Code --------------------
     if ( l_readiopdata ) then
-      call readiopdata_sfc( T_sfc_given, shsfc=sens_ht_given, & ! Intent(out)
+      call readiopdata_sfc( iop_file, & ! In
+                            T_sfc_given, shsfc=sens_ht_given, & ! Optional Out
                             lhsfc=latent_ht_given,            & ! Intent(out)
                             timesfc=time_sfc_given )            ! Intent(out)
       allocate( wpthlp_sfc_given(size(time_sfc_given)), wpqtp_sfc_given(size(time_sfc_given)) )
@@ -1298,8 +1298,7 @@ module time_dependent_input
 
             ! If times are not increasing then they aren't sorted properly.
             write(fstderr,*) "In subroutine time_select:"
-            write(fstderr,*) "times are not sorted. Check (case)_sfc.in "
-            write(fstderr,*) "and (case)_forcings.in, located in input/case_data."
+            write(fstderr,*) "Times are not sorted. Check the configured surface and forcing files."
             error stop
 
         end if 

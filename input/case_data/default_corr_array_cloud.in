@@ -20,10 +20,9 @@
 ! the matrix are 0.0, but they can be set to any number because they are
 ! ignored.
 !
-! Note:  For whatever crazy reason, the ARM97 correlation arrays are the default
-!        correlation arrays used in CLUBB.  Any changes made here also need to
-!        be made in ../../src/CLUBB_core/corr_matrix_module.F90 in subroutine
-!        init_default_corr_arrays.
+! This matrix matches corr_array_n_cloud_def in
+! ../../src/CLUBB_core/corr_varnce_module.F90. Keep this file and
+! the built-in matrix synchronized.
 !
 ! Note 2:  REMINDER, these are TRANSFORMED TO NORMAL SPACE correlation arrays!
 chi   eta    w       Ncn     rr      Nr      ri       Ni      rs      Ns      rg      Ng

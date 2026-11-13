@@ -8,12 +8,11 @@ Usage:
     read_sounding: read the sounding and any scalar soundings, and return the
         initial model profiles and surface values. Call it once when a case is
         initialized, after setting up the grid.
-    read_sounding_file: read <runtype>_sounding.in onto its own levels.
+    read_sounding_file: read the configured main sounding onto its own levels.
     read_sclr_sounding_file, read_edsclr_sounding_file: read the scalar
         soundings, which share the levels of the main sounding.
     convert_snd2extended_atm, load_extended_std_atm: build the extended
         atmosphere that BUGSrad uses above the model top.
-    case_input_path: find a case's input file.
 
 File format:
     Each file has a header naming its columns, followed by one row per level.
@@ -27,9 +26,6 @@ File format:
     w[m/s] or omega[Pa/s]. input_interpret.py interprets these columns.
 
 Porting deviations:
-    * Fortran opens files at ../input/case_data relative to the run directory.
-      Here the routines that open a case file also take namelist_dir, and
-      case_input_path searches there before input/case_data.
     * Fortran returns outputs through arguments and stores the extended
       atmosphere in module variables. These routines return them instead.
     * Fortran sizes its sounding arrays with nmaxsnd. Here they have nlevels
@@ -90,73 +86,88 @@ n_snd_var = 8  # Constant parameter
 sclr_max = 1000  # Maximum number of scalars
 
 
-# TODO(port-mirror): Fortran hardcodes ../input/case_data in each routine. This
-# helper stays until JAX runs from a directory where that relative path works.
-def case_input_path(namelist_dir, runtype, suffix):
-    """Find a case's input file, which may sit beside the namelist.
-
-    Args:
-        namelist_dir: directory holding the case namelist
-        runtype: string identifying the model case; e.g. bomex
-        suffix: end of the file name; e.g. _sounding.in
-
-    Returns:
-        Path of the file in namelist_dir if it exists there, otherwise its path
-        in input/case_data, which may not exist.
-    """
-    candidate = Path(namelist_dir) / f"{runtype}{suffix}"
-    if candidate.exists():
-        return candidate
-    return Path(__file__).resolve().parents[3] / "input" / "case_data" / f"{runtype}{suffix}"
-
-
-# ------------------------------------------------------------------------
 def read_sounding(ngrdcol, sclr_dim, edsclr_dim, sclr_idx,
-                  gr, iunit, runtype, namelist_dir, zm_init,
+                  gr, iunit, runtype, sounding_file, sclr_sounding_file,
+                  edsclr_sounding_file, ozone_sounding_file, iop_file, zm_init,
                   saturation_formula,
                   l_readiopdata, l_modify_ic_with_cubic_int,
                   p_sfc):
-    """Subroutine to initialize model variables from a namelist file
-
-    Args:
-        ngrdcol: number of grid columns
-        sclr_dim: number of passive scalars
-        edsclr_dim: number of eddy passive scalars
-        sclr_idx: scalar index mapping
-        gr: model grid
-        iunit: file unit to use for namelist, unused in Python
-        runtype: used to determine if this in a DYCOMS II RF02 simulation
-        namelist_dir: directory holding the case namelist
-        zm_init: height at zm(1) [m]
-        saturation_formula: integer that stores the saturation formula to be used
-        l_readiopdata: read the IOP file instead of the sounding, not supported
-        l_modify_ic_with_cubic_int: flag for interpolating the sounding profile
-            with Steffen's monotone cubic method to obtain smoother initial
-            condition profile, which is found to be beneficial to achive a better
-            numerical solution convergence. If this flag is turned off, the initial
-            conditions will be generated with linear interpolation. This is done on
-            a case-by-case basis, since using the monotone cubic method requires a
-            special sounding.in file with many additional sounding levels.
-        p_sfc: pressure at the surface [Pa]
+    """Read the configured sounding files and interpolate initial fields onto the model grid.
 
     Returns:
-        thlm: liquid water potential temperature, or the sounding's temperature
-            type, shape (ngrdcol, nzt) [K]
-        temperature_type: type of temperature sounding
-        rtm: total water mixing ratio, shape (ngrdcol, nzt) [kg/kg]
-        um: u wind component, shape (ngrdcol, nzt) [m/s]
-        vm: v wind component, shape (ngrdcol, nzt) [m/s]
-        ugm: u geostrophic wind component, shape (ngrdcol, nzt) [m/s]
-        vgm: v geostrophic wind component, shape (ngrdcol, nzt) [m/s]
-        altitude_type: type of independent coordinate
-        press: pressure, shape (ngrdcol, nzt) [Pa]
-        subs_type: type of subsidence
-        wm: subsidence, shape (ngrdcol, nzt) [m/s or Pa/s]
-        rtm_sfc: initial surface rtm, shape (ngrdcol,) [kg/kg]
-        thlm_sfc: initial surface thlm, shape (ngrdcol,) [K]
-        sclrm: passive scalar output, shape (ngrdcol, nzt, sclr_dim) [units vary]
-        edsclrm: eddy passive scalar output, shape (ngrdcol, nzt, edsclr_dim)
-            [units vary]
+        (thlm, temperature_type, rtm, um, vm, ugm, vgm, altitude_type, press,
+          subs_type, wm, rtm_sfc, thlm_sfc, sclrm, edsclrm)
+
+    Fortran declarations (read_sounding in src/Input_fields/sounding.F90):
+
+        !--------------------- Input Variables ---------------------
+        integer, intent(in) :: &
+          ngrdcol, &
+          sclr_dim, &
+          edsclr_dim
+
+        type (sclr_idx_type), intent(in) :: &
+          sclr_idx
+
+        type(grid), intent(in) :: &
+          gr
+
+        integer, intent(in) :: iunit ! File unit to use for namelist
+
+        character(len=*), intent(in) ::  &
+          runtype ! Used to determine if this in a DYCOMS II RF02 simulation
+
+        character(len=*), intent(in) :: &
+          sounding_file, & ! Main initial profile
+          sclr_sounding_file, & ! Higher-order passive scalar profiles
+          edsclr_sounding_file, & ! Eddy-diffusivity passive scalar profiles
+          ozone_sounding_file, & ! Ozone profile for the extended atmosphere
+          iop_file ! IOP NetCDF dataset
+
+        real( kind = core_rknd ), intent(in) :: &
+          zm_init ! Height at zm(1)         [m]
+
+        integer, intent(in) :: &
+          saturation_formula ! Integer that stores the saturation formula to be used
+
+        ! Flag for interpolating the sounding profile with Steffen's monotone cubic
+        ! method to obtain smoother initial condition profile, which is found to be
+        ! beneficial to achive a better numerical solution convergence. If this flag
+        ! is turned off, the initial conditions will be generated with linear interpolation.
+        ! This is done on a case-by-case basis, since using the monotone cubic method
+        ! requires a special sounding.in file with many additional sounding levels.
+        logical, intent(in) :: &
+          l_modify_ic_with_cubic_int, &
+          l_readiopdata
+
+        real( kind = core_rknd ), intent(inout) :: &
+          p_sfc ! Pressure at the surface [Pa]
+
+        !--------------------- Output Variables ---------------------
+        real( kind = core_rknd ), intent(out), dimension(ngrdcol,gr%nzt) ::  &
+          thlm,  & ! Liquid water potential temperature    [K]
+          rtm,   & ! Total water mixing ratio              [kg/kg]
+          um,    & ! u wind component                      [m/s]
+          vm,    & ! v wind component                      [m/s]
+          ugm,   & ! u geostrophic wind component          [m/s]
+          vgm,   & ! v geostrophic wind component          [m/s]
+          press, & ! Pressure                              [Pa]
+          wm       ! Subsidence                            [m/s or Pa/s]
+
+        real( kind = core_rknd ), dimension(ngrdcol), intent(out) ::  &
+          rtm_sfc,  & ! Initial surface rtm                [kg/kg]
+          thlm_sfc    ! Initial surface thlm               [K]
+
+        character(len=*), intent(out) :: &
+          temperature_type, &     ! Type of temperature sounding
+          altitude_type, &       ! Type of independent coordinate
+          subs_type         ! Type of subsidence
+
+        real( kind = core_rknd ), intent(out), dimension(ngrdcol, gr%nzt, sclr_dim) ::  &
+          sclrm   ! Passive scalar output      [units vary]
+
+        real( kind = core_rknd ), intent(out), dimension(ngrdcol, gr%nzt, edsclr_dim) ::  &
+          edsclrm ! Eddy Passive scalar output [units vary]
     """
     # Constant parameter
     nmaxsnd = 10000
@@ -172,20 +183,20 @@ def read_sounding(ngrdcol, sclr_dim, edsclr_dim, sclr_idx,
 
     # Determine which files exist ahead of time to allow for a graceful exit if
     # one is missing.
-    l_sounding_exists = case_input_path(namelist_dir, runtype, "_sounding.in").exists()
+    l_sounding_exists = bool(sounding_file) and Path(sounding_file).is_file()
 
-    l_sclr_sounding_exists = case_input_path(namelist_dir, runtype, "_sclr_sounding.in").exists()
+    l_sclr_sounding_exists = bool(sclr_sounding_file) and Path(sclr_sounding_file).is_file()
 
-    l_edsclr_sounding_exists = case_input_path(namelist_dir, runtype, "_edsclr_sounding.in").exists()
+    l_edsclr_sounding_exists = bool(edsclr_sounding_file) and Path(edsclr_sounding_file).is_file()
 
     # ---------------------------------------------------------------------------------------------
     # Status Message
     if clubb_at_least_debug_level(1):
-        print("Path to sounding: ", f"{runtype}_sounding.in")
+        print("Path to sounding: ", sounding_file)
         print("File exists? ", l_sounding_exists)
-        print("Path to sclr_sounding: ", f"{runtype}_sclr_sounding.in")
+        print("Path to sclr_sounding: ", sclr_sounding_file)
         print("File exists? ", l_sclr_sounding_exists)
-        print("Path to edsclr_sounding: ", f"{runtype}_edsclr_sounding.in")
+        print("Path to edsclr_sounding: ", edsclr_sounding_file)
         print("File exists? ", l_edsclr_sounding_exists)
     # ---------------------------------------------------------------------------------------------
 
@@ -194,14 +205,14 @@ def read_sounding(ngrdcol, sclr_dim, edsclr_dim, sclr_idx,
         # test_file_name_parity.py. Port it to support this branch.
         raise ValueError("l_readiopdata = true is not supported.")
     elif l_sounding_exists:
-        # Read in SAM-Like <runtype>_sounding.in file
+        # Read the configured main sounding.
         (nlevels, z, theta, rt, u, v,
          ug, vg, p_in_Pa, subs,
          temperature_type, altitude_type, subs_type,
-         sounding_retVars) = read_sounding_file(iunit, runtype, namelist_dir, nmaxsnd, p_sfc,
+         sounding_retVars) = read_sounding_file(iunit, sounding_file, nmaxsnd, p_sfc,
                                                 saturation_formula, zm_init)
     else:
-        raise ValueError(f"Cannot open {runtype}_sounding.in file")
+        raise ValueError(f"Cannot open {sounding_file}")
         # sounding namelist is no longer used.
         # Joshua Fasching April 2009
 
@@ -212,25 +223,24 @@ def read_sounding(ngrdcol, sclr_dim, edsclr_dim, sclr_idx,
         sclr_snd = np.zeros((nmaxsnd, sclr_dim))
         edsclr_snd = np.zeros((nmaxsnd, edsclr_dim))
 
-        # Read in SAM-Like <runtype>_sclr_sounding.in and
-        #                  <runtype>_edsclr_sounding.in
+        # Read the configured passive and eddy-diffusivity scalar soundings.
         if sclr_dim > 0:
             if l_sclr_sounding_exists:
                 sclr_snd, sclr_sounding_retVars = read_sclr_sounding_file(
-                    sclr_dim, sclr_idx, iunit, runtype, namelist_dir, nmaxsnd,
+                    sclr_dim, sclr_idx, iunit, sclr_sounding_file, nmaxsnd,
                     sclr_snd,
                 )
             else:
-                raise ValueError("Cannot open <runtype>_sclr_sounding.in file")
+                raise ValueError(f"Cannot open {sclr_sounding_file}")
 
         if edsclr_dim > 0:
             if l_edsclr_sounding_exists:
                 edsclr_snd = read_edsclr_sounding_file(
-                    edsclr_dim, sclr_idx, iunit, runtype, namelist_dir, nmaxsnd,
+                    edsclr_dim, sclr_idx, iunit, edsclr_sounding_file, nmaxsnd,
                     edsclr_snd,
                 )
             else:
-                raise ValueError("Cannot open <runtype>_edsclr_sounding.in file")
+                raise ValueError(f"Cannot open {edsclr_sounding_file}")
 
     if nlevels > nmaxsnd:
         raise ValueError(
@@ -504,43 +514,61 @@ def read_sounding(ngrdcol, sclr_dim, edsclr_dim, sclr_idx,
 
 
 # -----------------------------------------------------------------------------
-def read_sounding_file(iunit, runtype, namelist_dir, nmaxsnd, p_sfc,
+def read_sounding_file(iunit, sounding_file, nmaxsnd, p_sfc,
                        saturation_formula, zm_init):
-    """This subroutine reads in a <runtype>_sounding.in file and
-    returns the values contained in that file.
-
-    Args:
-        iunit: I/O unit, unused in Python
-        runtype: string identifying the model case; e.g. bomex
-        namelist_dir: directory holding the case namelist
-        nmaxsnd: maximum number of levels allowed in the sounding.in file,
-            which read_sounding checks
-        p_sfc: pressure at the surface [Pa]
-        saturation_formula: integer that stores the saturation formula to be used
-        zm_init: height at zm(1) [m]
+    """This subroutine reads in a configured sounding.in file and
+      returns the values contained in that file.
 
     Returns:
-        nlevels: number of levels from the sounding.in file
-        z: altitude [m]
-        theta: liquid potential temperature sounding [K]
-        rt: total water mixing ratio sounding [kg/kg]
-        u: u wind sounding [m/s]
-        v: v wind sounding [m/s]
-        ug: u geostrophic wind sounding [m/s]
-        vg: v geostrophic wind sounding [m/s]
-        p_in_Pa: pressure sounding [Pa]
-        subs: subsidence sounding [m/s or Pa/s]
-        temperature_type: type of temperature sounding
-        altitude_type: type of independent coordinate
-        subs_type: type of subsidence
-        retVars: structure containing sounding profile
+        (nlevels, z, theta, rt, u, v, ug, vg, p_in_Pa, subs, temperature_type,
+          altitude_type, subs_type, retVars)
+
+    Fortran declarations (read_sounding_file in src/Input_fields/sounding.F90):
+
+        ! Input Variable(s)
+        integer, intent(in) :: iunit ! I/O unit
+
+        character(len=*), intent(in) :: &
+          sounding_file ! Path to the configured input file
+
+        real( kind = core_rknd ), intent(in) :: &
+          p_sfc, & ! Pressure at the surface [Pa]
+          zm_init ! Height at zm(1)         [m]
+
+        integer, intent(in) :: &
+          nmaxsnd   ! Maximum number of levels allowed in the sounding.in file
+
+        integer, intent(in) :: &
+          saturation_formula ! Integer that stores the saturation formula to be used
+
+        ! Output Variable(s)
+        integer, intent(out) :: nlevels ! Number of levels from the sounding.in file
+
+        real( kind = core_rknd ), intent(out), dimension(nmaxsnd) :: &
+          z,      & ! Altitude                               [m]
+          theta,  & ! Liquid potential temperature sounding  [K]
+          rt,     & ! Total water mixing ratio sounding      [kg/kg]
+          u,      & ! u wind sounding                        [m/s]
+          v,      & ! v wind sounding                        [m/s]
+          ug,     & ! u geostrophic wind sounding            [m/s]
+          vg,     & ! v geostrophic wind sounding            [m/s]
+          p_in_Pa,& ! Pressure sounding                      [Pa]
+          subs      ! Subsidence sounding                    [m/s or Pa/s]
+
+        type(one_dim_read_var), intent(out), dimension(n_snd_var) :: &
+          retVars ! Structure containing sounding profile
+
+        character(len=*), intent(out) :: &
+          temperature_type, &     ! Type of temperature sounding
+          altitude_type, &       ! Type of independent coordinate
+          subs_type         ! Type of subsidence
     """
     del nmaxsnd
 
     # ---- Begin Code ----
 
     retVars = read_one_dim_file(iunit, n_snd_var,
-                                case_input_path(namelist_dir, runtype, "_sounding.in"))
+                                sounding_file)
 
     fill_blanks_one_dim_vars(n_snd_var, retVars)
 
@@ -571,28 +599,43 @@ def read_sounding_file(iunit, runtype, namelist_dir, nmaxsnd, p_sfc,
 
 
 # -------------------------------------------------------------------------------------------------
-def read_sclr_sounding_file(sclr_dim, sclr_idx, iunit, runtype, namelist_dir, nmaxsnd,
+def read_sclr_sounding_file(sclr_dim, sclr_idx, iunit, sclr_sounding_file, nmaxsnd,
                             sclr_snd):
-    """This subroutine reads in a <runtype>_sclr_sounding.in file and
-    returns the values contained in that file.
-
-    Args:
-        sclr_dim: number of passive scalars
-        sclr_idx: scalar index mapping
-        iunit: I/O unit, unused in Python
-        runtype: string identifying the model case; e.g. bomex
-        namelist_dir: directory holding the case namelist
-        nmaxsnd: maximum number of levels allowed in the sounding.in file
-        sclr_snd: scalar sounding to fill, shape (nmaxsnd, sclr_dim) [units vary]
+    """This subroutine reads in a configured sclr_sounding.in file and
+       returns the values contained in that file.
 
     Returns:
-        sclr_snd: the filled scalar sounding
-        retVars: structure containing scalar sounding
+        (sclr_snd, retVars)
+
+    Fortran declarations (read_sclr_sounding_file in src/Input_fields/sounding.F90):
+
+        !--------------------- Input Variables ---------------------
+        integer, intent(in) :: &
+          sclr_dim
+
+        type (sclr_idx_type), intent(in) :: &
+          sclr_idx
+
+        integer, intent(in) :: iunit ! I/O unit
+
+        character(len=*), intent(in) :: sclr_sounding_file ! String identifying the model case;
+        !                                         e.g. bomex
+
+        integer, intent(in) :: &
+          nmaxsnd   ! Maximum number of levels allowed in the sounding.in file
+
+        !--------------------- InOut Variables ---------------------
+        real( kind = core_rknd ), intent(inout), dimension(nmaxsnd,sclr_max) :: &
+          sclr_snd        ! Scalar sounding [?]
+
+        !--------------------- Output Variables --------------------
+        type(one_dim_read_var), dimension(sclr_dim), intent(out) :: &
+          retVars ! Structure containing scalar sounding
     """
     del nmaxsnd
 
     retVars = read_one_dim_file(iunit, sclr_dim,
-                                case_input_path(namelist_dir, runtype, "_sclr_sounding.in"))
+                                sclr_sounding_file)
 
     for sclr in range(sclr_dim):
         name = retVars[sclr].name
@@ -611,29 +654,41 @@ def read_sclr_sounding_file(sclr_dim, sclr_idx, iunit, runtype, namelist_dir, nm
 
 
 # -------------------------------------------------------------------------------------------------
-def read_edsclr_sounding_file(edsclr_dim, sclr_idx, iunit, runtype, namelist_dir, nmaxsnd,
+def read_edsclr_sounding_file(edsclr_dim, sclr_idx, iunit, edsclr_sounding_file, nmaxsnd,
                               edsclr_snd):
-    """This subroutine reads in a <runtype>_edsclr_sounding.in file and
-    returns the values contained in that file.
-
-    Args:
-        edsclr_dim: number of eddy passive scalars
-        sclr_idx: scalar index mapping
-        iunit: I/O unit, unused in Python
-        runtype: string identifying the model case; e.g. bomex
-        namelist_dir: directory holding the case namelist
-        nmaxsnd: maximum number of levels allowed in the sounding.in file
-        edsclr_snd: eddy scalars to fill, shape (nmaxsnd, edsclr_dim) [units vary]
+    """This subroutine reads in a configured edsclr_sounding.in file and
+      returns the values contained in that file.
 
     Returns:
-        edsclr_snd: the filled eddy scalars
+        edsclr_snd
+
+    Fortran declarations (read_edsclr_sounding_file in src/Input_fields/sounding.F90):
+
+        !--------------------- Input Variables ---------------------
+        integer, intent(in) :: &
+          edsclr_dim
+
+        type (sclr_idx_type), intent(in) :: &
+          sclr_idx
+
+        integer, intent(in) :: iunit ! I/O unit
+
+        character(len=*), intent(in) :: &
+          edsclr_sounding_file ! Path to the configured input file
+
+        integer, intent(in) :: &
+          nmaxsnd   ! Maximum number of levels allowed in the sounding.in file
+
+        !--------------------- Output Variables ---------------------
+        real( kind = core_rknd ), intent(inout), dimension(nmaxsnd,sclr_max) :: &
+        edsclr_snd ! Eddy Scalars [?]
     """
     del nmaxsnd
 
     # ---- Begin Code ----
 
     retVars = read_one_dim_file(iunit, edsclr_dim,
-                                case_input_path(namelist_dir, runtype, "_edsclr_sounding.in"))
+                                edsclr_sounding_file)
 
     for edsclr in range(edsclr_dim):
 
@@ -659,32 +714,31 @@ def read_edsclr_sounding_file(edsclr_dim, sclr_idx, iunit, runtype, namelist_dir
 
 
 # -------------------------------------------------------------------------------------------------
-def convert_snd2extended_atm(iunit, runtype, namelist_dir, n_snd_var, p_sfc, zm_init,
+def convert_snd2extended_atm(iunit, ozone_sounding_file, n_snd_var, p_sfc, zm_init,
                              sounding_profiles, saturation_formula):
     """This subroutine converts information retrieved from the
-    sounding files of a case into a format usable for an extended atmosphere.
+        sounding files of a case into a format usable for an extended atmosphere.
+        The extended atmosphere profile is stored in module variables.
 
-    Args:
-        iunit: Fortran file unit, unused in Python
-        runtype: string identifying the model case; e.g. bomex
-        namelist_dir: directory holding the case namelist
-        n_snd_var: number of variables from sounding [-]
-        p_sfc: pressure at the surface [Pa]
-        zm_init: height at zm(1) [m]
-        sounding_profiles: sounding profile from read_sounding_file
-        saturation_formula: integer that stores the saturation formula to be used
+    Fortran declarations (convert_snd2extended_atm in src/Input_fields/sounding.F90):
 
-    Returns:
-        dict in place of Fortran's module variables, with arrays over the
-        sounding levels:
-            alt: altitude, increases with array index [m]
-            T_in_K: temperature [K]
-            sp_hmdty: specific humidity [kg/kg]
-            p_in_mb: pressure [mb]
-            o3l: ozone [kg/kg]
+        ! Input Variable(s)
 
-    References:
-        none
+        integer, intent(in) :: iunit  ! Fortran file unit
+
+        character(len=*), intent(in) ::  ozone_sounding_file ! Ozone profile path
+
+        integer, intent(in) :: n_snd_var   ! Number of variables from sounding [-]
+
+        real( kind = core_rknd ), intent(in) :: p_sfc  ! Pressure at the surface [Pa]
+
+        real( kind = core_rknd ), intent(in) :: zm_init ! Height at zm(1) [m]
+
+        type(one_dim_read_var), dimension(n_snd_var), intent(in) :: &
+          sounding_profiles ! Sounding profile
+
+        integer, intent(in) :: &
+          saturation_formula ! Integer that stores the saturation formula to be used
     """
     # Constant Parameters
     n_rad_scalars = 1
@@ -724,7 +778,7 @@ def convert_snd2extended_atm(iunit, runtype, namelist_dir, n_snd_var, p_sfc, zm_
 
     # Read in radiation scalars sounding (currently it only holds O3)
     extended_rad_scalars = read_one_dim_file(iunit, n_rad_scalars,
-                                             case_input_path(namelist_dir, runtype, "_ozone_sounding.in"))
+                                             ozone_sounding_file)
 
     # Set the array holding the values of o3l (ozone)
     extended_o3l = read_x_profile(1, extended_atmos_dim, ozone_name,
@@ -740,20 +794,14 @@ def convert_snd2extended_atm(iunit, runtype, namelist_dir, n_snd_var, p_sfc, zm_
 def load_extended_std_atm(iunit):
     """Loads in the U.S. Standard atmosphere data from a file.
 
-    Args:
-        iunit: file I/O unit, unused in Python
-
-    Returns:
-        dict in place of Fortran's module variables, with arrays of 50 levels:
-            alt: altitude, increases with array index [m]
-            T_in_K: temperature [K]
-            sp_hmdty: specific humidity [kg/kg]
-            p_in_mb: pressure [mb]
-            o3l: ozone [kg/kg]
-
     References:
-        McClatchey, et al., (1972) _Environmental Research Papers_,
-        No. 411, p.94
+    McClatchey, et al., (1972) _Environmental Research Papers_,
+    No. 411, p.94
+
+    Fortran declarations (load_extended_std_atm in src/Input_fields/sounding.F90):
+
+        ! Input Variable(s)
+        integer, intent(in) :: iunit ! File I/O unit [-]
     """
     # Constant Parameters
     nCol = 5  # Number of columns in the text file

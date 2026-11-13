@@ -6,7 +6,7 @@
 
 subroutine f2py_prescribe_forcings( &
     nzm, nzt, ngrdcol, sclr_dim, edsclr_dim, sclr_dim_transport, edsclr_dim_transport, &
-    runtype, sfctype, time_current, time_initial, dt, &
+    runtype, forcing_file, sfc_file, iop_file, sfctype, time_current, time_initial, dt, &
     l_readiopdata, &
     um, vm, thlm, p_in_pa, exner, rho, rho_zm, thvm, zt_in, &
     l_t_dependent, l_ignore_forcings, l_input_xpwp_sfc, &
@@ -38,6 +38,8 @@ subroutine f2py_prescribe_forcings( &
   integer, intent(in) :: nzm, nzt, ngrdcol, sclr_dim, edsclr_dim
   integer, intent(in) :: sclr_dim_transport, edsclr_dim_transport
   character(len=50), intent(in) :: runtype
+  ! These paths initialize time-dependent input before the first forcing call.
+  character(len=*), intent(in) :: forcing_file, sfc_file, iop_file
   integer, intent(in) :: sfctype
   real(time_precision), intent(in) :: time_current, time_initial
   real(core_rknd), intent(in) :: dt
@@ -86,7 +88,9 @@ subroutine f2py_prescribe_forcings( &
   l_input_xpwp_sfc_mod = l_input_xpwp_sfc
 
   if ( l_t_dependent .and. (.not. l_tdep_initialized) ) then
-    call initialize_t_dependent_input( ngrdcol, iunit, trim(runtype), l_readiopdata, rho, & ! In
+    call initialize_t_dependent_input( ngrdcol, iunit, & ! In
+                                       forcing_file, sfc_file, iop_file, & ! In
+                                       l_readiopdata, rho, & ! In
                                        nzt, & ! In
                                        zt_in, p_in_pa, & ! In
                                        l_add_dycore_grid, & ! In

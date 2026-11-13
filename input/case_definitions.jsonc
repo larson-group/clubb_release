@@ -77,6 +77,18 @@
                                                 // latent_ht = lhflx / (rho_sfc_flux * Lv) [(m/s) * (kg/kg)] and
                                                 // sens_ht = shflx / (rho_sfc_flux * Cp) [(m/s) * K].
 
+
+      // Case input paths are relative to run_scripts; empty means unused.
+      "sounding_file": "",
+      "sclr_sounding_file": "",
+      "edsclr_sounding_file": "",
+      "ozone_sounding_file": "",
+      "forcing_file": "",
+      "sfc_file": "",
+      "corr_file_cloud": "",
+      "corr_file_below": "",
+      "iop_file": "",
+
       //================================= Restart/Input_Fields =================================
       "l_input_fields": false,                  // Enable replacing fields from the setfields dataset.
       "l_restart": false,                       // Flag for whether this is a restart run.
@@ -95,7 +107,7 @@
       "t0": 300.0,                              // Reference temperature (usually 300) [K]
 
       //================================= Standalone Flags =================================
-      "l_t_dependent": false,                   // Read *_sfc.in and, unless ignored, *_forcings.in.
+      "l_t_dependent": false,                   // Read sfc_file and, unless ignored, forcing_file.
       "l_ignore_forcings": false,               // Skip forcing-file input when l_t_dependent is true.
       "l_input_xpwp_sfc": false,                // Read the surface momentum fluxes upwp_sfc/vpwp_sfc.
       "l_modify_ic_with_cubic_int": false,      // Interpolate the initial sounding cubically.
@@ -105,13 +117,13 @@
       //================================= Scalar Settings =================================
       "sclr_dim": 0,                            // Total number of scalars that are computed using higher-order closure
                                                 // 0 to shut off all scalar computations
-                                                // > 0 the specifies the number of columns in <runtype>_sclr_sounding.in
+                                                // > 0 specifies the number of columns in sclr_sounding_file.
       "iisclr_rt": -1,                          // Location in the array to place a scalar like total water
       "iisclr_thl": -2,                         // Location in the array to place a scalar like thetal
       "sclr_tol_nl": [0.01, 1e-08],             // Tolerances below which we consider scalar to be 0.
       "edsclr_dim": 0,                          // Add scalars that are computed using simple eddy diffusivity
                                                 // 0 to shut off all scalar computations
-                                                // > 0 the specifies the number of columns in <runtype>_edsclr_sounding.in
+                                                // > 0 specifies the number of columns in edsclr_sounding_file.
       "iiedsclr_rt": -1,                        // Location in the edsclrm array to place total water
       "iiedsclr_thl": -2,                       // Location in the edsclrm array to place a scalar like thetal
 
@@ -301,6 +313,11 @@
     "arm": {                                    // GCSS ARM Cu over land case
       "model_setting": {
         "runtype": "arm",                       // Case name.
+        "sounding_file": "../input/case_data/arm_sounding.in",
+        "sclr_sounding_file": "../input/case_data/arm_sclr_sounding.in",
+        "edsclr_sounding_file": "../input/case_data/arm_sclr_sounding.in",
+        "forcing_file": "../input/case_data/arm_forcings.in",
+        "sfc_file": "../input/case_data/arm_sfc.in",
         "day": 21,
         "month": 6,
         "year": 1997,
@@ -328,6 +345,11 @@
     "arm_0003": {                               // GCSS ARM 0003 deep convective case
       "model_setting": {
         "runtype": "arm_0003",
+        "sounding_file": "../input/case_data/arm_0003_sounding.in",
+        "sclr_sounding_file": "../input/case_data/arm_0003_sclr_sounding.in",
+        "edsclr_sounding_file": "../input/case_data/arm_0003_sclr_sounding.in",
+        "forcing_file": "../input/case_data/arm_0003_forcings.in",
+        "sfc_file": "../input/case_data/arm_0003_sfc.in",
         "day": 1,
         "month": 3,
         "year": 2000,
@@ -363,6 +385,11 @@
     "arm_3year": {                              // GCSS ARM 3 year deep convective case
       "model_setting": {
         "runtype": "arm_3year",
+        "forcing_file": "../input/case_data/arm_3year_forcings.in",
+        "sounding_file": "../input/case_data/arm_3year_sounding.in",
+        "sclr_sounding_file": "../input/case_data/arm_3year_sclr_sounding.in",
+        "edsclr_sounding_file": "../input/case_data/arm_3year_sclr_sounding.in",
+        "sfc_file": "../input/case_data/arm_3year_sfc.in",
         "day": 1,
         "month": 1,
         "year": 2001,
@@ -394,6 +421,13 @@
     "arm_97": {                                 // ARM IOP Case A: 26-30 June 1997
       "model_setting": {
         "runtype": "arm_97",
+        "sounding_file": "../input/case_data/arm_97_sounding.in",
+        "sclr_sounding_file": "../input/case_data/arm_97_sclr_sounding.in",
+        "edsclr_sounding_file": "../input/case_data/arm_97_edsclr_sounding.in",
+        "forcing_file": "../input/case_data/arm_97_forcings.in",
+        "sfc_file": "../input/case_data/arm_97_sfc.in",
+        "corr_file_cloud": "../input/case_data/default_corr_array_cloud.in",
+        "corr_file_below": "../input/case_data/default_corr_array_below.in",
         "day": 26,
         "month": 6,
         "year": 1997,
@@ -451,6 +485,12 @@
     "astex_a209": {                             // ASTEX intermediate regime
       "model_setting": {
         "runtype": "astex_a209",
+        "sounding_file": "../input/case_data/astex_a209_sounding.in",
+        "ozone_sounding_file": "../input/case_data/astex_a209_ozone_sounding.in",
+        "forcing_file": "../input/case_data/astex_a209_forcings.in",
+        "sfc_file": "../input/case_data/astex_a209_sfc.in",
+        "corr_file_cloud": "../input/case_data/astex_a209_corr_array_cloud.in",
+        "corr_file_below": "../input/case_data/astex_a209_corr_array_below.in",
         "day": 13,
         "month": 6,
         "year": 1992,
@@ -506,6 +546,10 @@
     "atex": {                                   // ATEX intermediate regime
       "model_setting": {
         "runtype": "atex",
+        "sounding_file": "../input/case_data/atex_sounding.in",
+        "sclr_sounding_file": "../input/case_data/atex_sclr_sounding.in",
+        "edsclr_sounding_file": "../input/case_data/atex_sclr_sounding.in",
+        "sfc_file": "../input/case_data/atex_sfc.in",
         "day": 7,
         "month": 2,
         "year": 1969,
@@ -542,6 +586,10 @@
     "atex_long": {                              // ATEX intermediate regime
       "model_setting": {
         "runtype": "atex_long",
+        "sounding_file": "../input/case_data/atex_long_sounding.in",
+        "sclr_sounding_file": "../input/case_data/atex_sclr_sounding.in",
+        "edsclr_sounding_file": "../input/case_data/atex_sclr_sounding.in",
+        "sfc_file": "../input/case_data/atex_sfc.in",
         "day": 7,
         "month": 2,
         "year": 1969,
@@ -586,6 +634,10 @@
     "bomex": {                                  // GCSS BOMEX tradewind Cu case
       "model_setting": {
         "runtype": "bomex",
+        "sounding_file": "../input/case_data/bomex_sounding.in",
+        "sclr_sounding_file": "../input/case_data/bomex_sclr_sounding.in",
+        "edsclr_sounding_file": "../input/case_data/bomex_sclr_sounding.in",
+        "sfc_file": "../input/case_data/bomex_sfc.in",
         "day": 22,
         "month": 6,
         "year": 1969,
@@ -621,6 +673,7 @@
     "bomex_5day_4scam": {                       // GCSS BOMEX tradewind Cu case
       "model_setting": {
         "runtype": "bomex_5day_4scam",
+        "iop_file": "../input/case_data/BOMEX_5day_4scam.nc",
         // This dataset-driven setup intentionally leaves date/location unspecified.
         "time_initial": 0.0,
         "time_final": 14400.0,
@@ -651,6 +704,10 @@
     "cgils_s11": {
       "model_setting": {
         "runtype": "cgils_s11",
+        "sounding_file": "../input/case_data/cgils_s11_sounding.in",
+        "ozone_sounding_file": "../input/case_data/cgils_s11_ozone_sounding.in",
+        "forcing_file": "../input/case_data/cgils_s11_forcings.in",
+        "sfc_file": "../input/case_data/cgils_s11_sfc.in",
         "day": 15,
         "month": 7,
         "year": 2003,
@@ -711,6 +768,10 @@
     "cgils_s11_p2k": {
       "model_setting": {
         "runtype": "cgils_s11_p2k",
+        "sounding_file": "../input/case_data/cgils_s11_p2k_sounding.in",
+        "ozone_sounding_file": "../input/case_data/cgils_s11_ozone_sounding.in",
+        "forcing_file": "../input/case_data/cgils_s11_p2k_forcings.in",
+        "sfc_file": "../input/case_data/cgils_s11_p2k_sfc.in",
         "day": 15,
         "month": 7,
         "year": 2003,
@@ -766,6 +827,10 @@
     "cgils_s12": {
       "model_setting": {
         "runtype": "cgils_s12",
+        "sounding_file": "../input/case_data/cgils_s12_sounding.in",
+        "ozone_sounding_file": "../input/case_data/cgils_s12_ozone_sounding.in",
+        "forcing_file": "../input/case_data/cgils_s12_forcings.in",
+        "sfc_file": "../input/case_data/cgils_s12_sfc.in",
         "day": 15,
         "month": 7,
         "year": 2003,
@@ -828,6 +893,10 @@
     "cgils_s12_p2k": {
       "model_setting": {
         "runtype": "cgils_s12_p2k",
+        "sounding_file": "../input/case_data/cgils_s12_p2k_sounding.in",
+        "ozone_sounding_file": "../input/case_data/cgils_s12_ozone_sounding.in",
+        "forcing_file": "../input/case_data/cgils_s12_p2k_forcings.in",
+        "sfc_file": "../input/case_data/cgils_s12_p2k_sfc.in",
         "day": 15,
         "month": 7,
         "year": 2003,
@@ -883,6 +952,10 @@
     "cgils_s6": {
       "model_setting": {
         "runtype": "cgils_s6",
+        "sounding_file": "../input/case_data/cgils_s6_sounding.in",
+        "ozone_sounding_file": "../input/case_data/cgils_s6_ozone_sounding.in",
+        "forcing_file": "../input/case_data/cgils_s6_forcings.in",
+        "sfc_file": "../input/case_data/cgils_s6_sfc.in",
         "day": 15,
         "month": 7,
         "year": 2003,
@@ -944,6 +1017,10 @@
     "cgils_s6_p2k": {
       "model_setting": {
         "runtype": "cgils_s6_p2k",
+        "sounding_file": "../input/case_data/cgils_s6_p2k_sounding.in",
+        "ozone_sounding_file": "../input/case_data/cgils_s6_ozone_sounding.in",
+        "forcing_file": "../input/case_data/cgils_s6_forcings.in",
+        "sfc_file": "../input/case_data/cgils_s6_p2k_sfc.in",
         "day": 15,
         "month": 7,
         "year": 2003,
@@ -999,6 +1076,11 @@
     "clex9_nov02": {                            // CLEX-9: November 02 altocumulus case
       "model_setting": {
         "runtype": "clex9_nov02",
+        "sounding_file": "../input/case_data/clex9_nov02_sounding.in",
+        "sclr_sounding_file": "../input/case_data/clex9_nov02_sclr_sounding.in",
+        "edsclr_sounding_file": "../input/case_data/clex9_nov02_sclr_sounding.in",
+        "forcing_file": "../input/case_data/clex9_nov02_forcings.in",
+        "sfc_file": "../input/case_data/clex9_nov02_sfc.in",
         "day": 2,
         "month": 11,
         "year": 2001,
@@ -1041,6 +1123,11 @@
     "clex9_oct14": {                            // CLEX-9: October 14 altocumulus case
       "model_setting": {
         "runtype": "clex9_oct14",
+        "sounding_file": "../input/case_data/clex9_oct14_sounding.in",
+        "sclr_sounding_file": "../input/case_data/clex9_oct14_sclr_sounding.in",
+        "edsclr_sounding_file": "../input/case_data/clex9_oct14_sclr_sounding.in",
+        "forcing_file": "../input/case_data/clex9_oct14_forcings.in",
+        "sfc_file": "../input/case_data/clex9_oct14_sfc.in",
         "day": 14,
         "month": 10,
         "year": 2001,
@@ -1084,6 +1171,10 @@
     "cloud_feedback_s11": {
       "model_setting": {
         "runtype": "cloud_feedback_s11",
+        "sounding_file": "../input/case_data/cloud_feedback_s11_sounding.in",
+        "ozone_sounding_file": "../input/case_data/cgils_s11_ozone_sounding.in",
+        "forcing_file": "../input/case_data/cloud_feedback_s11_forcings.in",
+        "sfc_file": "../input/case_data/cgils_s11_sfc.in",
         "day": 15,
         "month": 7,
         "year": 2003,
@@ -1139,6 +1230,10 @@
     "cloud_feedback_s11_p2k": {
       "model_setting": {
         "runtype": "cloud_feedback_s11_p2k",
+        "sounding_file": "../input/case_data/cloud_feedback_s11_p2k_sounding.in",
+        "ozone_sounding_file": "../input/case_data/cgils_s11_ozone_sounding.in",
+        "forcing_file": "../input/case_data/cloud_feedback_s11_p2k_forcings.in",
+        "sfc_file": "../input/case_data/cgils_s11_p2k_sfc.in",
         "day": 15,
         "month": 7,
         "year": 2003,
@@ -1193,6 +1288,10 @@
     "cloud_feedback_s12": {
       "model_setting": {
         "runtype": "cloud_feedback_s12",
+        "sounding_file": "../input/case_data/cloud_feedback_s12_sounding.in",
+        "ozone_sounding_file": "../input/case_data/cgils_s12_ozone_sounding.in",
+        "forcing_file": "../input/case_data/cloud_feedback_s12_forcings.in",
+        "sfc_file": "../input/case_data/cgils_s12_sfc.in",
         "day": 15,
         "month": 7,
         "year": 2003,
@@ -1248,6 +1347,10 @@
     "cloud_feedback_s12_p2k": {
       "model_setting": {
         "runtype": "cloud_feedback_s12_p2k",
+        "sounding_file": "../input/case_data/cloud_feedback_s12_p2k_sounding.in",
+        "ozone_sounding_file": "../input/case_data/cgils_s12_ozone_sounding.in",
+        "forcing_file": "../input/case_data/cloud_feedback_s12_p2k_forcings.in",
+        "sfc_file": "../input/case_data/cgils_s12_p2k_sfc.in",
         "day": 15,
         "month": 7,
         "year": 2003,
@@ -1303,6 +1406,10 @@
     "cloud_feedback_s6": {
       "model_setting": {
         "runtype": "cloud_feedback_s6",
+        "sounding_file": "../input/case_data/cloud_feedback_s6_sounding.in",
+        "ozone_sounding_file": "../input/case_data/cgils_s6_ozone_sounding.in",
+        "forcing_file": "../input/case_data/cloud_feedback_s6_forcings.in",
+        "sfc_file": "../input/case_data/cgils_s6_sfc.in",
         "day": 15,
         "month": 7,
         "year": 2003,
@@ -1358,6 +1465,10 @@
     "cloud_feedback_s6_p2k": {
       "model_setting": {
         "runtype": "cloud_feedback_s6_p2k",
+        "sounding_file": "../input/case_data/cloud_feedback_s6_p2k_sounding.in",
+        "ozone_sounding_file": "../input/case_data/cgils_s6_ozone_sounding.in",
+        "forcing_file": "../input/case_data/cloud_feedback_s6_p2k_forcings.in",
+        "sfc_file": "../input/case_data/cgils_s6_p2k_sfc.in",
         "day": 15,
         "month": 7,
         "year": 2003,
@@ -1417,6 +1528,11 @@
       // The downwind flights took place at ~2100 GMT (1700 EDT).
       "model_setting": {
         "runtype": "cobra",
+        "sounding_file": "../input/case_data/cobra_sounding.in",
+        "sclr_sounding_file": "../input/case_data/cobra_sclr_sounding.in",
+        "edsclr_sounding_file": "../input/case_data/cobra_edsclr_sounding.in",
+        "forcing_file": "../input/case_data/cobra_forcings.in",
+        "sfc_file": "../input/case_data/cobra_sfc.in",
         "day": 11,
         "month": 6,
         "year": 2004,
@@ -1465,6 +1581,10 @@
       // "src/clubb_driver.F90", change, and then compile.
       "model_setting": {
         "runtype": "coriolis_test",
+        "sounding_file": "../input/case_data/coriolis_test_sounding.in",
+        "sclr_sounding_file": "../input/case_data/coriolis_test_sclr_sounding.in",
+        "edsclr_sounding_file": "../input/case_data/coriolis_test_sclr_sounding.in",
+        "sfc_file": "../input/case_data/coriolis_test_sfc.in",
         "day": 1,
         "month": 1,
         "year": 1,
@@ -1498,6 +1618,10 @@
     "dycoms2_rf01": {                           // DYCOMS II RF01 Sc case
       "model_setting": {
         "runtype": "dycoms2_rf01",
+        "sounding_file": "../input/case_data/dycoms2_rf01_sounding.in",
+        "sclr_sounding_file": "../input/case_data/dycoms2_rf01_sclr_sounding.in",
+        "edsclr_sounding_file": "../input/case_data/dycoms2_rf01_sclr_sounding.in",
+        "sfc_file": "../input/case_data/dycoms2_rf01_sfc.in",
         "day": 10,
         "month": 7,
         "year": 2001,
@@ -1531,6 +1655,10 @@
     "dycoms2_rf01_fixed_sst": {                 // DYCOMS II RF01 Sc case with fixed sea-surface temperature
       "model_setting": {
         "runtype": "dycoms2_rf01",
+        "sounding_file": "../input/case_data/dycoms2_rf01_sounding.in",
+        "sclr_sounding_file": "../input/case_data/dycoms2_rf01_sclr_sounding.in",
+        "edsclr_sounding_file": "../input/case_data/dycoms2_rf01_sclr_sounding.in",
+        "sfc_file": "../input/case_data/dycoms2_rf01_sfc.in",
         "day": 10,
         "month": 7,
         "year": 2001,
@@ -1575,6 +1703,12 @@
     "dycoms2_rf02_do": {                        // DYCOMS2 RF02 Sc case with drizzle and no cloud water sedimentation.
       "model_setting": {
         "runtype": "dycoms2_rf02",
+        "sounding_file": "../input/case_data/dycoms2_rf02_sounding.in",
+        "sclr_sounding_file": "../input/case_data/dycoms2_rf02_sclr_sounding.in",
+        "edsclr_sounding_file": "../input/case_data/dycoms2_rf02_sclr_sounding.in",
+        "sfc_file": "../input/case_data/dycoms2_rf02_sfc.in",
+        "corr_file_cloud": "../input/case_data/dycoms2_rf02_corr_array_cloud.in",
+        "corr_file_below": "../input/case_data/dycoms2_rf02_corr_array_below.in",
         "day": 11,
         "month": 7,
         "year": 2001,
@@ -1659,6 +1793,12 @@
     "dycoms2_rf02_ds": {                        // DYCOMS2 RF02 Sc case with drizzle and cloud water sedimentation.
       "model_setting": {
         "runtype": "dycoms2_rf02",
+        "sounding_file": "../input/case_data/dycoms2_rf02_sounding.in",
+        "sclr_sounding_file": "../input/case_data/dycoms2_rf02_sclr_sounding.in",
+        "edsclr_sounding_file": "../input/case_data/dycoms2_rf02_sclr_sounding.in",
+        "sfc_file": "../input/case_data/dycoms2_rf02_sfc.in",
+        "corr_file_cloud": "../input/case_data/dycoms2_rf02_corr_array_cloud.in",
+        "corr_file_below": "../input/case_data/dycoms2_rf02_corr_array_below.in",
         "day": 11,
         "month": 7,
         "year": 2001,
@@ -1703,6 +1843,12 @@
     "dycoms2_rf02_morr": {                      // DYCOMS2 RF02 Sc case with drizzle and cloud water sedimentation.
       "model_setting": {
         "runtype": "dycoms2_rf02",
+        "sounding_file": "../input/case_data/dycoms2_rf02_sounding.in",
+        "sclr_sounding_file": "../input/case_data/dycoms2_rf02_sclr_sounding.in",
+        "edsclr_sounding_file": "../input/case_data/dycoms2_rf02_sclr_sounding.in",
+        "sfc_file": "../input/case_data/dycoms2_rf02_sfc.in",
+        "corr_file_cloud": "../input/case_data/dycoms2_rf02_corr_array_cloud.in",
+        "corr_file_below": "../input/case_data/dycoms2_rf02_corr_array_below.in",
         "day": 11,
         "month": 7,
         "year": 2001,
@@ -1743,6 +1889,12 @@
     "dycoms2_rf02_nd": {                        // DYCOMS2 RF02 Sc case with no drizzle and no cloud water sedimentation.
       "model_setting": {
         "runtype": "dycoms2_rf02",
+        "sounding_file": "../input/case_data/dycoms2_rf02_sounding.in",
+        "sclr_sounding_file": "../input/case_data/dycoms2_rf02_sclr_sounding.in",
+        "edsclr_sounding_file": "../input/case_data/dycoms2_rf02_sclr_sounding.in",
+        "sfc_file": "../input/case_data/dycoms2_rf02_sfc.in",
+        "corr_file_cloud": "../input/case_data/dycoms2_rf02_corr_array_cloud.in",
+        "corr_file_below": "../input/case_data/dycoms2_rf02_corr_array_below.in",
         "day": 11,
         "month": 7,
         "year": 2001,
@@ -1779,6 +1931,12 @@
     "dycoms2_rf02_so": {                        // DYCOMS2 RF02 Sc case with no drizzle but with cloud water sedimentation.
       "model_setting": {
         "runtype": "dycoms2_rf02",
+        "sounding_file": "../input/case_data/dycoms2_rf02_sounding.in",
+        "sclr_sounding_file": "../input/case_data/dycoms2_rf02_sclr_sounding.in",
+        "edsclr_sounding_file": "../input/case_data/dycoms2_rf02_sclr_sounding.in",
+        "sfc_file": "../input/case_data/dycoms2_rf02_sfc.in",
+        "corr_file_cloud": "../input/case_data/dycoms2_rf02_corr_array_cloud.in",
+        "corr_file_below": "../input/case_data/dycoms2_rf02_corr_array_below.in",
         "day": 11,
         "month": 7,
         "year": 2001,
@@ -1823,6 +1981,10 @@
       // develops in a dry and statically neutral atmosphere with constant geostrophic wind.
       "model_setting": {
         "runtype": "ekman",
+        "sounding_file": "../input/case_data/ekman_sounding.in",
+        "sclr_sounding_file": "../input/case_data/ekman_sclr_sounding.in",
+        "edsclr_sounding_file": "../input/case_data/ekman_sclr_sounding.in",
+        "sfc_file": "../input/case_data/ekman_sfc.in",
         "day": 1,
         "month": 1,
         "year": 1,
@@ -1868,6 +2030,10 @@
     "fire": {                                   // GCSS FIRE Sc case
       "model_setting": {
         "runtype": "fire",
+        "sounding_file": "../input/case_data/fire_sounding.in",
+        "sclr_sounding_file": "../input/case_data/fire_sclr_sounding.in",
+        "edsclr_sounding_file": "../input/case_data/fire_sclr_sounding.in",
+        "sfc_file": "../input/case_data/fire_sfc.in",
         "day": 7,
         "month": 7,
         "year": 1987,
@@ -1947,6 +2113,9 @@
     "gabls2": {                                 // GABLS2 case Edited by Michael Falk, 28 December 2006
       "model_setting": {
         "runtype": "gabls2",
+        "sounding_file": "../input/case_data/gabls2_sounding.in",
+        "sclr_sounding_file": "../input/case_data/gabls2_sclr_sounding.in",
+        "edsclr_sounding_file": "../input/case_data/gabls2_sclr_sounding.in",
         "day": 22,
         "month": 10,
         "year": 1999,
@@ -2025,6 +2194,11 @@
     "gabls3": {                                 // GABLS3 case
       "model_setting": {
         "runtype": "gabls3",
+        "sounding_file": "../input/case_data/gabls3_sounding.in",
+        "sclr_sounding_file": "../input/case_data/gabls3_sclr_sounding.in",
+        "edsclr_sounding_file": "../input/case_data/gabls3_sclr_sounding.in",
+        "forcing_file": "../input/case_data/gabls3_forcings.in",
+        "sfc_file": "../input/case_data/gabls3_sfc.in",
         "day": 1,
         "month": 7,
         "year": 2006,
@@ -2062,6 +2236,9 @@
     "gabls3_night": {                           // GABLS3 Night case
       "model_setting": {
         "runtype": "gabls3_night",
+        "sounding_file": "../input/case_data/gabls3_night_sounding.in",
+        "forcing_file": "../input/case_data/gabls3_night_forcings.in",
+        "sfc_file": "../input/case_data/gabls3_night_sfc.in",
         "day": 1,
         "month": 7,
         "year": 2006,
@@ -2105,6 +2282,11 @@
     "jun25_altocu": {                           // June 25 altocumulus case
       "model_setting": {
         "runtype": "jun25_altocu",
+        "sounding_file": "../input/case_data/jun25_altocu_sounding.in",
+        "sclr_sounding_file": "../input/case_data/jun25_altocu_sclr_sounding.in",
+        "edsclr_sounding_file": "../input/case_data/jun25_altocu_sclr_sounding.in",
+        "forcing_file": "../input/case_data/jun25_altocu_forcings.in",
+        "sfc_file": "../input/case_data/jun25_altocu_sfc.in",
         "day": 25,
         "month": 6,
         "year": 1996,
@@ -2144,6 +2326,12 @@
     "lba": {                                    // the 23 Feb 1999 TRMM-LBA case
       "model_setting": {
         "runtype": "lba",
+        "sounding_file": "../input/case_data/lba_sounding.in",
+        "sclr_sounding_file": "../input/case_data/lba_sclr_sounding.in",
+        "edsclr_sounding_file": "../input/case_data/lba_sclr_sounding.in",
+        "sfc_file": "../input/case_data/lba_sfc.in",
+        "corr_file_cloud": "../input/case_data/default_corr_array_cloud.in",
+        "corr_file_below": "../input/case_data/default_corr_array_below.in",
         "day": 23,
         "month": 2,
         "year": 1999,
@@ -2192,6 +2380,11 @@
     "mc3e": {
       "model_setting": {
         "runtype": "mc3e",
+        "sounding_file": "../input/case_data/mc3e_sounding.in",
+        "forcing_file": "../input/case_data/mc3e_forcings.in",
+        "sfc_file": "../input/case_data/mc3e_sfc.in",
+        "corr_file_cloud": "../input/case_data/mc3e_corr_array_cloud.in",
+        "corr_file_below": "../input/case_data/mc3e_corr_array_below.in",
         "day": 22,
         "month": 4,
         "year": 2011,
@@ -2254,6 +2447,11 @@
     "mpace_a": {                                // MPACE-A case
       "model_setting": {
         "runtype": "mpace_a",
+        "sounding_file": "../input/case_data/mpace_a_sounding.in",
+        "sclr_sounding_file": "../input/case_data/mpace_a_sclr_sounding.in",
+        "edsclr_sounding_file": "../input/case_data/mpace_a_sclr_sounding.in",
+        "forcing_file": "../input/case_data/mpace_a_forcings.in",
+        "sfc_file": "../input/case_data/mpace_a_sfc.in",
         "day": 5,
         "month": 10,
         "year": 2004,
@@ -2311,6 +2509,12 @@
     "mpace_b": {                                // MPACE-B case
       "model_setting": {
         "runtype": "mpace_b",
+        "sounding_file": "../input/case_data/mpace_b_sounding.in",
+        "sclr_sounding_file": "../input/case_data/mpace_b_sclr_sounding.in",
+        "edsclr_sounding_file": "../input/case_data/mpace_b_sclr_sounding.in",
+        "sfc_file": "../input/case_data/mpace_b_sfc.in",
+        "corr_file_cloud": "../input/case_data/mpace_b_corr_array_cloud.in",
+        "corr_file_below": "../input/case_data/mpace_b_corr_array_below.in",
         "day": 9,
         "month": 10,
         "year": 2004,
@@ -2356,6 +2560,12 @@
     "mpace_b_silhs": {                          // MPACE-B case
       "model_setting": {
         "runtype": "mpace_b",
+        "sounding_file": "../input/case_data/mpace_b_sounding.in",
+        "sclr_sounding_file": "../input/case_data/mpace_b_sclr_sounding.in",
+        "edsclr_sounding_file": "../input/case_data/mpace_b_sclr_sounding.in",
+        "sfc_file": "../input/case_data/mpace_b_sfc.in",
+        "corr_file_cloud": "../input/case_data/mpace_b_corr_array_cloud.in",
+        "corr_file_below": "../input/case_data/mpace_b_corr_array_below.in",
         "day": 9,
         "month": 10,
         "year": 2004,
@@ -2408,6 +2618,10 @@
     "neutral": {                                // Neutral, shear-driven case (Moeng and Sullivan 1994), following George Bryan's CM1 LES case.
       "model_setting": {
         "runtype": "neutral",
+        "sounding_file": "../input/case_data/neutral_sounding.in",
+        "sclr_sounding_file": "../input/case_data/neutral_sclr_sounding.in",
+        "edsclr_sounding_file": "../input/case_data/neutral_sclr_sounding.in",
+        "sfc_file": "../input/case_data/neutral_sfc.in",
         "day": 15,
         "month": 5,
         "year": 2009,
@@ -2454,6 +2668,11 @@
     "nov11_altocu": {                           // November 11 altocumulus case
       "model_setting": {
         "runtype": "nov11_altocu",
+        "sounding_file": "../input/case_data/nov11_altocu_sounding.in",
+        "sclr_sounding_file": "../input/case_data/nov11_altocu_sclr_sounding.in",
+        "edsclr_sounding_file": "../input/case_data/nov11_altocu_sclr_sounding.in",
+        "forcing_file": "../input/case_data/nov11_altocu_forcings.in",
+        "sfc_file": "../input/case_data/nov11_altocu_sfc.in",
         "day": 11,
         "month": 11,
         "year": 1999,
@@ -2503,6 +2722,12 @@
     "rico": {                                   // GCSS RICO case Edited by Michael Falk, 12 December 2006
       "model_setting": {
         "runtype": "rico",
+        "sounding_file": "../input/case_data/rico_sounding.in",
+        "sclr_sounding_file": "../input/case_data/rico_sclr_sounding.in",
+        "edsclr_sounding_file": "../input/case_data/rico_sclr_sounding.in",
+        "sfc_file": "../input/case_data/rico_sfc.in",
+        "corr_file_cloud": "../input/case_data/rico_corr_array_cloud.in",
+        "corr_file_below": "../input/case_data/rico_corr_array_below.in",
         "day": 16,
         "month": 12,
         "year": 2004,
@@ -2549,6 +2774,12 @@
     "rico_silhs": {                             // GCSS RICO case Edited by Michael Falk, 12 December 2006
       "model_setting": {
         "runtype": "rico",
+        "sounding_file": "../input/case_data/rico_sounding.in",
+        "sclr_sounding_file": "../input/case_data/rico_sclr_sounding.in",
+        "edsclr_sounding_file": "../input/case_data/rico_sclr_sounding.in",
+        "sfc_file": "../input/case_data/rico_sfc.in",
+        "corr_file_cloud": "../input/case_data/rico_corr_array_cloud.in",
+        "corr_file_below": "../input/case_data/rico_corr_array_below.in",
         "day": 16,
         "month": 12,
         "year": 2004,
@@ -2597,6 +2828,13 @@
     "twp_ice": {                                // the TWP_ICE case
       "model_setting": {
         "runtype": "twp_ice",
+        "sounding_file": "../input/case_data/twp_ice_sounding.in",
+        "sclr_sounding_file": "../input/case_data/twp_ice_sclr_sounding.in",
+        "ozone_sounding_file": "../input/case_data/twp_ice_ozone_sounding.in",
+        "forcing_file": "../input/case_data/twp_ice_forcings.in",
+        "sfc_file": "../input/case_data/twp_ice_sfc.in",
+        "corr_file_cloud": "../input/case_data/default_corr_array_cloud.in",
+        "corr_file_below": "../input/case_data/default_corr_array_below.in",
         "day": 19,
         "month": 1,
         "year": 2006,
@@ -2657,6 +2895,10 @@
     "wangara": {                                // Wangara day 33 dry convective boundary layer Observed soundings
       "model_setting": {
         "runtype": "wangara",
+        "sounding_file": "../input/case_data/wangara_sounding.in",
+        "sclr_sounding_file": "../input/case_data/wangara_sclr_sounding.in",
+        "edsclr_sounding_file": "../input/case_data/wangara_sclr_sounding.in",
+        "sfc_file": "../input/case_data/wangara_sfc.in",
         "day": 15,
         "month": 8,
         "year": 1967,

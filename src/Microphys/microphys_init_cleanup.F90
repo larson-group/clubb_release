@@ -26,6 +26,7 @@ module microphys_init_cleanup
 
   !=============================================================================
   subroutine init_microphys( iunit, runtype, namelist_file, case_info_file, &
+                             corr_file_cloud, corr_file_below, &
                              host_dx, host_dy, &
                              clubb_params, &
                              l_diagnose_correlations, &
@@ -194,10 +195,6 @@ module microphys_init_cleanup
     logical, parameter :: &
       l_write_to_file = .true. ! If true, will write case information to a file.
 
-    character(len=*), parameter :: &
-      corr_input_path = "../input/case_data/", & ! Path to correlation files
-      cloud_file_ext  = "_corr_array_cloud.in", & ! File extensions for correlation files
-      below_file_ext  = "_corr_array_below.in"
 
     ! External
     intrinsic :: trim
@@ -214,6 +211,10 @@ module microphys_init_cleanup
 
     character(len=*), intent(in) :: &
       case_info_file ! Name of simulation info file (plain text)
+
+    character(len=*), intent(in) :: &
+      corr_file_cloud, & ! Correlation matrix within cloud
+      corr_file_below ! Correlation matrix below cloud
     
     real( kind = core_rknd ), intent(in) :: &
       host_dx, &
@@ -253,9 +254,6 @@ module microphys_init_cleanup
 
     !------------------------ Local variables ------------------------
     character(len=30) :: lh_microphys_type
-    character(len=128) :: &
-     corr_file_path_cloud, &
-     corr_file_path_below
 
     type( hmp2_ip_on_hmm2_ip_slope_type ) :: &
         hmp2_ip_on_hmm2_ip_slope        ! [1/m]
@@ -927,22 +925,28 @@ module microphys_init_cleanup
     allocate(corr_array_n_cloud(pdf_dim,pdf_dim))
     allocate(corr_array_n_below(pdf_dim,pdf_dim))
 
-    corr_file_path_cloud = corr_input_path//trim( runtype )//cloud_file_ext
-    corr_file_path_below = corr_input_path//trim( runtype )//below_file_ext
 
-    inquire( file = corr_file_path_cloud, exist = l_corr_file_1_exist )
-    inquire( file = corr_file_path_below, exist = l_corr_file_2_exist )
+    inquire( file = corr_file_cloud, exist = l_corr_file_1_exist )
+    inquire( file = corr_file_below, exist = l_corr_file_2_exist )
+
+    if ( len_trim(corr_file_cloud) > 0 .or. len_trim(corr_file_below) > 0 ) then
+      if ( .not. (l_corr_file_1_exist .and. l_corr_file_2_exist) ) then
+        write(fstderr,*) 'Cannot open configured correlation files: ', &
+                         trim(corr_file_cloud), ' and ', trim(corr_file_below)
+        error stop 'Missing configured correlation input'
+      end if
+    end if
 
     if ( l_corr_file_1_exist .and. l_corr_file_2_exist ) then
 
       allocate( corr_array_n_cloud_in(pdf_dim,pdf_dim) )
       allocate( corr_array_n_below_in(pdf_dim,pdf_dim) )
 
-      call read_correlation_matrix( iunit, trim( corr_file_path_cloud ), & ! In
+      call read_correlation_matrix( iunit, trim( corr_file_cloud ), & ! In
                                     pdf_dim, hm_metadata,                & ! In
                                     corr_array_n_cloud_in )                ! Out
 
-      call read_correlation_matrix( iunit, trim( corr_file_path_below ), & ! In
+      call read_correlation_matrix( iunit, trim( corr_file_below ), & ! In
                                     pdf_dim, hm_metadata,                & ! In
                                     corr_array_n_below_in )                ! Out
 
@@ -955,12 +959,6 @@ module microphys_init_cleanup
       deallocate( corr_array_n_cloud_in, corr_array_n_below_in )
 
     else
-
-      if ( clubb_at_least_debug_level_api( 1 ) ) then
-        write(fstderr,*) "Warning: missing correlation input file(s): " // &
-                         trim( corr_file_path_cloud ) // " and/or " // trim( corr_file_path_below )
-        write(fstderr,*) "The default correlation arrays will be used."
-      end if
 
       call setup_corr_varnce_array_api( pdf_dim, hm_metadata,                  & ! In
                                         l_fix_w_chi_eta_correlations,           & ! In

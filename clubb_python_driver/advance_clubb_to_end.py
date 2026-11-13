@@ -552,7 +552,9 @@ def _prescribe_forcings(state: dict, itime: int, l_sample: bool = False):
     set_fortran_sclr_idx(state['sclr_idx'])
     set_fortran_err_info(state['err_info'])
     result = clubb_f2py.f2py_prescribe_forcings(
-        int(state['sclr_dim']), int(state['edsclr_dim']), str(state['runtype']), int(state['sfctype']),
+        int(state['sclr_dim']), int(state['edsclr_dim']), str(state['runtype']),
+        state['cfg']['forcing_file'], state['cfg']['sfc_file'], state['cfg']['iop_file'],
+        int(state['sfctype']),
         float(state['time_initial'] + (itime - 1) * state['dt_main']),
         float(state['time_initial']), float(state['dt_main']), False,   # Using False for l_readiopdata
         f_arr(state['um']), f_arr(state['vm']), f_arr(state['thlm']), f_arr(state['p_in_Pa']),

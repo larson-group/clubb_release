@@ -180,22 +180,6 @@ def _resolve_stats_registry_path(namelist_path: str, cfg: dict) -> Path:
     return Path(namelist_path).resolve()
 
 
-def _resolve_case_input_path(namelist_dir: Path, runtype: str, suffix: str) -> Path:
-    """Resolve case input files for either model.in or aggregated CASE.in runs."""
-    candidate = namelist_dir / f"{runtype}{suffix}"
-    if candidate.exists():
-        return candidate
-
-    repo_root = Path(__file__).resolve().parents[1]
-    fallback = repo_root / "input" / "case_data" / f"{runtype}{suffix}"
-    if fallback.exists():
-        return fallback
-
-    raise FileNotFoundError(
-        f"Required case input file not found: {candidate} (also checked {fallback})"
-    )
-
-
 def _clean_namelist_path(path_value) -> str:
     """Normalize namelist path strings (strip quotes and whitespace)."""
     return str(path_value).strip().strip("'\"")
@@ -355,6 +339,8 @@ def init_clubb_case(namelist_path: str) -> dict:
     Returns a dict containing all model state arrays and config.
     """
     cfg = read_namelist(namelist_path)
+    from input.scripts.namelist import resolve_case_input_paths
+    resolve_case_input_paths(cfg, Path(__file__).resolve().parents[1] / 'run_scripts')
     namelist_dir = Path(namelist_path).resolve().parent
 
     # Unpack key config values
@@ -411,7 +397,7 @@ def init_clubb_case(namelist_path: str) -> dict:
     )
 
     # ── 3. Read sounding ────────────────────────────────────────────────
-    snd_path = _resolve_case_input_path(namelist_dir, runtype, "_sounding.in")
+    snd_path = cfg['sounding_file']
     snd = read_sounding(str(snd_path))
     temperature_type = snd['temperature_type']
     subs_type = snd['subs_type']
@@ -715,7 +701,7 @@ def init_clubb_case(namelist_path: str) -> dict:
 
     # Initialize scalar means from dedicated scalar sounding files.
     if sclr_dim > 0:
-        sclr_path = _resolve_case_input_path(namelist_dir, runtype, "_sclr_sounding.in")
+        sclr_path = cfg['sclr_sounding_file']
         sclr_raw = read_scalar_sounding(str(sclr_path), sclr_dim)
         _validate_scalar_column_names(
             sclr_raw['names'], iisclr_rt, iisclr_thl, iisclr_co2, label='sclr_sounding'
@@ -726,7 +712,7 @@ def init_clubb_case(namelist_path: str) -> dict:
         sclrm[:, :, :sclr_dim] = np.tile(sclr_zt[None, :, :], (ngrdcol, 1, 1))
 
     if edsclr_dim > 0:
-        edsclr_path = _resolve_case_input_path(namelist_dir, runtype, "_edsclr_sounding.in")
+        edsclr_path = cfg['edsclr_sounding_file']
         edsclr_raw = read_scalar_sounding(str(edsclr_path), edsclr_dim)
         _validate_scalar_column_names(
             edsclr_raw['names'], iiedsclr_rt, iiedsclr_thl, iiedsclr_co2, label='edsclr_sounding'
@@ -743,13 +729,9 @@ def init_clubb_case(namelist_path: str) -> dict:
         edsclrm[:, :, iiedsclr_thl - 1] = thlm
 
     # ── 11. Read surface file ───────────────────────────────────────────
-    sfc_path = None
-    try:
-        sfc_path = _resolve_case_input_path(namelist_dir, runtype, "_sfc.in")
-    except FileNotFoundError:
-        sfc_path = None
+    sfc_path = cfg['sfc_file']
     sfc_data = None
-    if sfc_path is not None and sfc_path.exists():
+    if sfc_path:
         sfc_data = read_surface(str(sfc_path))
 
     # ── 12. Time controls ───────────────────────────────────────────────

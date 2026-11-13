@@ -13,6 +13,7 @@ thermodynamics, so CGILS/cloud_feedback cases can interpolate onto the height gr
      looked up at the model's own pressures.
   5. Case initialization converts a T[K] sounding to potential temperature first, and stops on z[m] with T[K].
 """
+from pathlib import Path
 
 from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
 from utilities.output_paths import REPO_ROOT as _REPO_ROOT
@@ -46,7 +47,7 @@ def test_real_cgils_sounding():
     if not os.path.exists(_CGILS):
         raise AssertionError("  real cgils_s11 sounding: required input missing (file absent)")
     _, z, _, _, _, _, _, _, _, _, _, altitude_type, _, _ = read_sounding_file(
-        0, "cgils_s11", _ROOT + "/input/case_data", 10000, _P_SFC, _SAT, _ZM_INIT)
+        0, Path(_ROOT + "/input/case_data") / 'cgils_s11_sounding.in', 10000, _P_SFC, _SAT, _ZM_INIT)
     assert np.isfinite(z).all(), "non-finite altitudes"
     assert np.all(np.diff(z) > 0.0), "altitudes not strictly increasing"
     assert abs(z[0] - _ZM_INIT) < 200.0, f"surface altitude {z[0]:.1f} not near zm_init"
@@ -106,7 +107,7 @@ def test_case_initialization_uses_sounding_altitudes(tmp_path):
     p_model = np.asarray(state['p_in_Pa'])[0]
     thlm_model = np.asarray(state['thlm'])[0]
     _, _, theta, _, _, _, _, _, p_snd, _, _, _, _, _ = read_sounding_file(
-        0, "mc3e", _ROOT + "/input/case_data", 10000, _P_SFC, _SAT, _ZM_INIT)
+        0, Path(_ROOT + "/input/case_data") / 'mc3e_sounding.in', 10000, _P_SFC, _SAT, _ZM_INIT)
     # np.interp needs ascending coordinates, and pressure falls with height.
     thlm_snd = np.interp(-p_model, -p_snd, theta)
     # Higher up the sounding levels are far apart, so interpolating linearly in
@@ -117,7 +118,7 @@ def test_case_initialization_uses_sounding_altitudes(tmp_path):
 
 
 def _write_temperature_sounding(directory, height_column):
-    """Write a dry T[K] sounding beside the namelist, which initialization reads first."""
+    """Write the dry T[K] sounding explicitly selected by the test namelist."""
     levels = np.linspace(102000.0, 10000.0, 30)
     temperature = 300.0 - (102000.0 - levels) * 7.0e-4
     if height_column:
@@ -134,7 +135,8 @@ def _write_temperature_sounding(directory, height_column):
 
 def test_temperature_sounding_initializes_potential_temperature(tmp_path):
     p_snd, T_snd = _write_temperature_sounding(tmp_path, height_column=False)
-    path = create_case_namelist_file("bomex", tmp_path, max_iters=1, stats="none", debug="0")
+    path = create_case_namelist_file("bomex", tmp_path, max_iters=1, stats="none", debug="0",
+                                     override=f"model_setting.sounding_file={tmp_path / 'bomex_sounding.in'}")
     state = init_clubb_case(str(path))
     p_model = np.asarray(state['p_in_Pa'])[0]
     # The sounding is dry, so thlm is potential temperature and thlm * exner recovers T.
@@ -145,6 +147,7 @@ def test_temperature_sounding_initializes_potential_temperature(tmp_path):
 
 def test_height_sounding_with_temperature_stops(tmp_path):
     _write_temperature_sounding(tmp_path, height_column=True)
-    path = create_case_namelist_file("bomex", tmp_path, max_iters=1, stats="none", debug="0")
+    path = create_case_namelist_file("bomex", tmp_path, max_iters=1, stats="none", debug="0",
+                                     override=f"model_setting.sounding_file={tmp_path / 'bomex_sounding.in'}")
     with pytest.raises(ValueError, match="absolute temperature"):
         init_clubb_case(str(path))

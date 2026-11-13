@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 
 import pytest
 
@@ -57,7 +56,6 @@ def test_invalid_solar_date_uses_the_source_calendar_failure():
         initialize_radiation_parameters(
             {"l_sw_radiation": True, "day": 32, "month": 12, "year": 2023},
             "simplified",
-            Path("."),
         )
 
 

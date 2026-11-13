@@ -349,3 +349,19 @@ def setting_entries(settings):
     """Return scalar JSON settings as editable UI strings, preserving their order."""
     return [{"name": name, "value": json.dumps(value)}
             for name, value in settings.items()]
+
+
+def resolve_case_input_paths(settings, run_directory):
+    """Resolve configured case inputs once against the standalone run directory.
+
+    Absolute paths pass through; empty paths remain unused. Readers receive the
+    resolved paths and never infer filenames from a case name.
+    """
+    for key in (
+        'sounding_file', 'sclr_sounding_file', 'edsclr_sounding_file', 'ozone_sounding_file',
+        'forcing_file', 'sfc_file', 'corr_file_cloud', 'corr_file_below',
+        'iop_file', 'forcings_file_path',
+    ):
+        value = str(settings.get(key, '')).strip()
+        settings[key] = str((Path(run_directory) / value).resolve()) if value else ''
+    return settings

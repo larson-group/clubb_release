@@ -58,7 +58,7 @@ def test_full_radht_vs_literal():
     zrad, krad = simple_rad_lba_init(_FORCINGS)
     gr = setup_grid(ngrdcol=1, deltaz=400.0, zm_init=0.0, zm_top=24000.0, grid_type=1)
     zt = np.asarray(gr.zt[0])
-    radiation_parameters = initialize_radiation_parameters({}, "lba", os.path.dirname(_FORCINGS))
+    radiation_parameters = initialize_radiation_parameters({"forcings_file_path": _FORCINGS}, "lba")
     worst = 0.0
     for time in (300.0, 1500.0, 12345.0, 25000.0):
         got = np.asarray(simple_rad_lba(gr, 1, time, 0.0, radiation_parameters))[0]

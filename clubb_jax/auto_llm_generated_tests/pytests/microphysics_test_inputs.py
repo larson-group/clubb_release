@@ -89,7 +89,7 @@ def kk_evaporation_mean(mu_chi_1, mu_chi_2, sigma_chi_1, sigma_chi_2,
 
 
 def initialize(**config):
-    return init_microphys(0, 'synthetic', config, None, 1000., 1000.,
+    return init_microphys(0, 'synthetic', config, None, '', '', 1000., 1000.,
                           jnp.zeros((1, 1)), False, True, True)
 
 

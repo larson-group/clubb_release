@@ -31,7 +31,6 @@ Excluded source field comments:
 from __future__ import annotations
 
 from dataclasses import dataclass
-from pathlib import Path
 
 import jax
 import jax.numpy as jnp
@@ -136,7 +135,7 @@ class RadiationParameters:
         )
 
 
-def initialize_radiation_parameters(cfg: dict, rad_scheme: str, case_setups_dir: Path) -> RadiationParameters:
+def initialize_radiation_parameters(cfg: dict, rad_scheme: str) -> RadiationParameters:
     """Construct immutable radiation-module values at the host I/O boundary.
 
     This target-only constructor replaces source namelist/module assignment.
@@ -145,7 +144,6 @@ def initialize_radiation_parameters(cfg: dict, rad_scheme: str, case_setups_dir:
     """
     from clubb_jax.src.Radiation.simple_rad_module import simple_rad_lba_init
 
-    case_setups_dir = Path(case_setups_dir)
     Fs_values = _float_array(cfg.get("fs_values", 0.0), _RADIATION_LIST_SIZE, "Fs_values")
     cos_solar_zen_times = _float_array(
         cfg.get("cos_solar_zen_times", 0.0), _RADIATION_LIST_SIZE, "cos_solar_zen_times",
@@ -169,20 +167,8 @@ def initialize_radiation_parameters(cfg: dict, rad_scheme: str, case_setups_dir:
             raise ValueError("Problem with Julian day conversion in gregorian2julian_day.")
 
     if rad_scheme == "lba":
-        # The source driver passes forcings_file_path to simple_rad_lba_init.
-        # Aggregated namelists live in the output directory, not beside these
-        # tables. Preserve explicit paths and the SCM's run_scripts-relative
-        # convention, also allowing paths relative to a standalone namelist.
-        forcings_path = Path(str(cfg.get(
-            "forcings_file_path", case_setups_dir / "lba_forcings"
-        )).strip().strip("'\""))
-        if not forcings_path.is_absolute():
-            candidates = (
-                Path.cwd() / forcings_path,
-                case_setups_dir / forcings_path,
-                Path(__file__).resolve().parents[3] / "run_scripts" / forcings_path,
-            )
-            forcings_path = next((p for p in candidates if p.is_dir()), candidates[0])
+        # Initialization has already resolved the configured forcing directory.
+        forcings_path = cfg['forcings_file_path']
         lba_zrad, lba_krad = simple_rad_lba_init(forcings_path)
     else:
         lba_zrad = jnp.zeros((33,))

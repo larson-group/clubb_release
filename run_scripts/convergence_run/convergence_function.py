@@ -12,7 +12,8 @@ if __name__ == "__main__":
 
 import numpy as np
 
-def modify_ic_profile(clubb_dir, case_dir, grid_dir, case, dz, refine): 
+def modify_ic_profile(grid_dir, case, dz, refine, sounding_file):
+  """Refine the explicitly selected sounding in place for a convergence run."""
 
   print('construct initial condition file for ' + case)
 
@@ -22,8 +23,7 @@ def modify_ic_profile(clubb_dir, case_dir, grid_dir, case, dz, refine):
     #       we do not attempt to change the original sounding profiles 
     #       the purpose is to have denser height levels so that the cubic 
     #       spline interpolation does not generate strange profiles 
-    input_file_name = case + '_sounding.in'
-    input_file  = open(os.path.join(case_dir, input_file_name), 'r')
+    input_file = open(sounding_file, 'r')
     input_lines = input_file.readlines()
     input_file.close()
     line_collections = []
@@ -63,8 +63,7 @@ def modify_ic_profile(clubb_dir, case_dir, grid_dir, case, dz, refine):
           line = line_data[j]
       line_collections.append(line)
 
-    out_file_name = case + '_sounding.in'
-    output_file = open(os.path.join(case_dir, out_file_name), 'w')
+    output_file = open(sounding_file, 'w')
     for line in line_collections:
       output_file.write(line)
     output_file.close()
@@ -134,8 +133,7 @@ def modify_ic_profile(clubb_dir, case_dir, grid_dir, case, dz, refine):
         rtm[i]  = rtm1  + H0*(rtm2 - rtm1)
   
     #write out the sounding profile 
-    input_file_name = case + '_sounding.in'
-    input_file = open(os.path.join(case_dir, input_file_name), 'r')
+    input_file = open(sounding_file, 'r')
     input_lines = input_file.readlines()
     input_file.close()
     line_collections = []
@@ -167,8 +165,7 @@ def modify_ic_profile(clubb_dir, case_dir, grid_dir, case, dz, refine):
            line = line.replace(item, str("{:.5f}".format(vg[i])))
       line_collections.append(line)
      
-    out_file_name = case + '_sounding.in' 
-    output_file = open(os.path.join(case_dir, out_file_name), 'w')
+    output_file = open(sounding_file, 'w')
     for line in line_collections:
       output_file.write(line)
     output_file.close()

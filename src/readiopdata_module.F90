@@ -32,7 +32,6 @@ module readiopdata_module
     ! Module level
     logical :: masterproc = .true.
     logical :: scamiop_from_global_cam = .false.
-    character(len=120) :: iopfilepath = "../input/case_data/BOMEX_5day_4scam.nc"
 
     ! Loading flags
     logical :: l_dims = .false.
@@ -51,8 +50,11 @@ module readiopdata_module
 
 contains
 
-subroutine readiopdata_dims( lat_val, lon_val )
+subroutine readiopdata_dims( iop_file, lat_val, lon_val )
+    ! Description: Read dimensions and coordinates from the configured IOP dataset.
     implicit none
+
+    character(len=*), intent(in) :: iop_file ! Configured IOP NetCDF dataset
 
     ! Outputs
     real( kind=core_rknd ), intent(out) :: lat_val, lon_val
@@ -61,7 +63,7 @@ subroutine readiopdata_dims( lat_val, lon_val )
     real, allocatable :: lat_in(:), lon_in(:)
     integer :: bdate, nlat, nlon
 
-    call readiopdata_core_dims( masterproc, iopfilepath, scamiop_from_global_cam, & ! Intent(in)
+    call readiopdata_core_dims( masterproc, iop_file, scamiop_from_global_cam, & ! Intent(in)
                                 ntime, nlev, nlat, nlon, tsec,                    & ! Intent(out)
                                 bdate, dplevs, lat_in, lon_in )                     ! Intent(out)
 
@@ -74,8 +76,9 @@ subroutine readiopdata_dims( lat_val, lon_val )
 end subroutine readiopdata_dims
 
 ! This needs to return only one timestep for the soundings
-subroutine readiopdata_snd( zm_init, saturation_formula, &
+subroutine readiopdata_snd( iop_file, zm_init, saturation_formula, &
                             nlevels, u, v, thlm, rtm, p, psfc, z, ug, vg, subs, subs_type )
+    ! Description: Read the initial sounding from the configured IOP dataset.
     use constants_clubb, only: Rd, Cp, Lv, Ls, kappa, p0, zero_threshold, one, ep2, &
                                 g_per_kg, pascal_per_mb
     use hydrostatic_module, only: inverse_hydrostatic
@@ -84,6 +87,8 @@ subroutine readiopdata_snd( zm_init, saturation_formula, &
         sat_mixrat_liq_api
 
     implicit none
+
+    character(len=*), intent(in) :: iop_file ! Configured IOP NetCDF dataset
 
     ! Needed for pressure -> altitude conversion
     real(kind=core_rknd), intent(in) :: zm_init
@@ -113,7 +118,7 @@ subroutine readiopdata_snd( zm_init, saturation_formula, &
         error stop "readiopdata_dims was not called before readiopdata_snd"
     end if
 
-    call readiopdata_core_snd( masterproc, iopfilepath,                            & ! Intent(in)
+    call readiopdata_core_snd( masterproc, iop_file,                            & ! Intent(in)
                              scamiop_from_global_cam, ntime, nlev,                 & ! Intent(in)
                              dplevs, real(Rd), real(Cp), real(Lv/Cp), real(Ls/Cp), & ! Intent(in)
                              zsnd, usnd, vsnd, tsnd, qsnd, psnd, ugls, vgls, wgls, & ! Intent(out)
@@ -197,8 +202,11 @@ subroutine readiopdata_snd( zm_init, saturation_formula, &
     deallocate( usnd, vsnd, tsnd, qsnd, psnd, zsnd, ugls, vgls, wgls, theta, exner, rcm, thvm )
 end subroutine readiopdata_snd
 
-subroutine readiopdata_sfc( tsfc, ubar, shsfc, lhsfc, timesfc )
+subroutine readiopdata_sfc( iop_file, tsfc, ubar, shsfc, lhsfc, timesfc )
+    ! Description: Read surface time series from the configured IOP dataset.
     implicit none
+
+    character(len=*), intent(in) :: iop_file ! Configured IOP NetCDF dataset
 
     real(kind=core_rknd), optional, allocatable, intent(out) :: tsfc(:), ubar(:), &
         shsfc(:), lhsfc(:), timesfc(:)
@@ -210,7 +218,7 @@ subroutine readiopdata_sfc( tsfc, ubar, shsfc, lhsfc, timesfc )
         error stop "readiopdata_dims or readiopdata_snd was not called before readiopdata_sfc"
     end if
 
-    call readiopdata_core_sfc( masterproc, iopfilepath,        & ! Intent(in)
+    call readiopdata_core_sfc( masterproc, iop_file,        & ! Intent(in)
                              scamiop_from_global_cam, .false., & ! Intent(in)
                              get_add_surface_data, ntime,      & ! Intent(in)
                              sstsfc, shsfc_, lhsfc_, tausfc )    ! Intent(out)

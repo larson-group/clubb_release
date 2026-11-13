@@ -18,6 +18,15 @@ except ModuleNotFoundError:
 _DEFAULTS = dict(
     # model_setting
     runtype="bomex",
+    sounding_file="",
+    sclr_sounding_file="",
+    edsclr_sounding_file="",
+    ozone_sounding_file="",
+    forcing_file="",
+    sfc_file="",
+    corr_file_cloud="",
+    corr_file_below="",
+    iop_file="",
     nzmax=75,
     grid_type=1,
     deltaz_nl=40.0,

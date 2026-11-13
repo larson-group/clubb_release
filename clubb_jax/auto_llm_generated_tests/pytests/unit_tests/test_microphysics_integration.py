@@ -396,7 +396,7 @@ def test_initialization_appends_source_configuration_and_correlations(
     }
     init_microphys(
         0, "rico_silhs", config, case_info,  # In
-        1000.0, 1000.0,                      # In
+        '', '', 1000.0, 1000.0,                      # In
         clubb_params,                        # In
         False,                               # In
         True,                                # InOut
@@ -425,3 +425,11 @@ def test_initialization_appends_source_configuration_and_correlations(
             matrix = np.array([[float(value) for value in row.split()] for row in rows])
             np.testing.assert_array_equal(np.diag(matrix), 1.0)
             np.testing.assert_array_equal(matrix, matrix.T)
+
+
+def test_missing_explicit_correlation_file_is_rejected(tmp_path):
+    """A selected missing matrix must not silently select default correlations."""
+    missing = str(tmp_path / 'missing_matrix.dat')
+    with pytest.raises(FileNotFoundError, match='configured correlation files'):
+        init_microphys(0, 'synthetic', {}, None, missing, missing,
+                       1000., 1000., jnp.zeros((1, 1)), False, True, True)

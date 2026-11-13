@@ -46,7 +46,7 @@ def prescribe_forcings(
     set_fortran_err_info(err_info)
 
     result = clubb_f2py.f2py_prescribe_forcings(
-        int(sclr_dim), int(edsclr_dim), str(runtype), int(sfctype),
+        int(sclr_dim), int(edsclr_dim), str(runtype), '', '', '', int(sfctype),
         float(time_current), float(time_initial), float(dt),
         bool(l_readiopdata), 
         f_arr(um), f_arr(vm), f_arr(thlm), f_arr(p_in_Pa), f_arr(exner), f_arr(rho), f_arr(rho_zm), f_arr(thvm), f_arr(zt_in),

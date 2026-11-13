@@ -4,6 +4,7 @@ Each test writes a sounding into a temporary directory and builds a minimal grid
 then checks one behavior of the port: the interpolation, the surface values, a
 fatal check, blank filling, scalar soundings or the DYCOMS II RF02 profiles.
 """
+from pathlib import Path
 
 from types import SimpleNamespace
 
@@ -37,7 +38,7 @@ def _read(directory, gr, runtype="testcase", sclr_dim=0, edsclr_dim=0, sclr_idx=
           l_cubic=False):
     """Call read_sounding with the arguments these tests do not vary."""
     return read_sounding(1, sclr_dim, edsclr_dim, sclr_idx,
-                         gr, 0, runtype, directory, 0.0,
+                         gr, 0, runtype, Path(directory) / (runtype + '_sounding.in'), Path(directory) / (runtype + '_sclr_sounding.in'), Path(directory) / (runtype + '_edsclr_sounding.in'), Path(directory) / (runtype + '_ozone_sounding.in'), '', 0.0,
                          1,
                          False, l_cubic,
                          1.0e5)
@@ -91,7 +92,7 @@ def test_sounding_below_grid_top_stops(tmp_path):
 
 def test_missing_sounding_file_stops(tmp_path):
     """A case with no sounding file stops with a clear message."""
-    with pytest.raises(ValueError, match="Cannot open no_such_case_sounding.in"):
+    with pytest.raises(ValueError, match="Cannot open .*no_such_case_sounding.in"):
         _read(tmp_path, _grid(np.array([500.0])), runtype="no_such_case")
 
 
@@ -99,7 +100,7 @@ def test_readiopdata_is_rejected(tmp_path):
     """The unported IOP path fails instead of silently reading the sounding."""
     _write_sounding(tmp_path)
     with pytest.raises(ValueError, match="l_readiopdata"):
-        read_sounding(1, 0, 0, _NO_SCALARS, _grid(np.array([500.0])), 0, "testcase", tmp_path,
+        read_sounding(1, 0, 0, _NO_SCALARS, _grid(np.array([500.0])), 0, "testcase", Path(tmp_path) / ("testcase" + '_sounding.in'), Path(tmp_path) / ("testcase" + '_sclr_sounding.in'), Path(tmp_path) / ("testcase" + '_edsclr_sounding.in'), Path(tmp_path) / ("testcase" + '_ozone_sounding.in'), '',
                       0.0, 1, True, False, 1.0e5)
 
 
@@ -120,8 +121,8 @@ def test_blanks_are_filled_before_pressure_conversion(tmp_path):
         header + "".join(template.format(p=a, th=-999.9 if a == 80000.0 else b)
                          for a, b in zip(p, theta))
     )
-    z_full = read_sounding_file(0, "full", tmp_path, 10000, 1.0e5, 1, 0.0)[1]
-    z_blank = read_sounding_file(0, "blank", tmp_path, 10000, 1.0e5, 1, 0.0)[1]
+    z_full = read_sounding_file(0, Path(tmp_path) / 'full_sounding.in', 10000, 1.0e5, 1, 0.0)[1]
+    z_blank = read_sounding_file(0, Path(tmp_path) / 'blank_sounding.in', 10000, 1.0e5, 1, 0.0)[1]
     assert np.allclose(z_blank, z_full)
     assert np.all(np.diff(z_blank) > 0.0)
 
@@ -163,3 +164,14 @@ def test_dycoms2_rf02_uses_the_analytic_profiles(tmp_path):
     assert np.allclose(rtm[0], [9.45 / g_per_kg,
                                 (5.0 - 3.0 * (1.0 - np.exp((795.0 - 1000.0) / 500.0))) / g_per_kg])
     assert np.all(wm == 0.0)
+
+
+def test_explicit_sounding_filename_is_independent_of_case(tmp_path):
+    """Read a profile whose filename differs from the scientific runtype."""
+    _write_sounding(tmp_path)
+    selected = tmp_path / "observed profile.dat"
+    (tmp_path / "testcase_sounding.in").rename(selected)
+    result = read_sounding(1, 0, 0, _NO_SCALARS,
+                           _grid(np.array([500.0])), 0, "bomex", selected, '', '', '', '',
+                           0.0, 1, False, False, 1.0e5)
+    assert np.allclose(result[0], [[302.5]])

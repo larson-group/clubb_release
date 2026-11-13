@@ -339,6 +339,8 @@ def init_clubb_case(namelist_path: str) -> dict:
     timer_start("init_clubb_case")
     timer_start("read_namelists")
     cfg = read_namelist(namelist_path)
+    from input.scripts.namelist import resolve_case_input_paths
+    resolve_case_input_paths(cfg, Path(__file__).resolve().parents[2] / 'run_scripts')
     timer_stop("read_namelists")
     # Invalidate compiled functions before initialization can capture changed
     # module settings; identical cases keep their in-memory compiled programs.
@@ -502,7 +504,8 @@ def init_clubb_case(namelist_path: str) -> dict:
      altitude_type, p_in_Pa, subs_type, wm_zt,
      rtm_sfc, thlm_sfc, sclrm_snd, edsclrm_snd) = read_sounding(
         ngrdcol, sclr_dim, edsclr_dim, sclr_idx,
-        gr, iunit, runtype, namelist_dir, cfg['zm_init_nl'],
+        gr, iunit, runtype, cfg['sounding_file'], cfg['sclr_sounding_file'],
+        cfg['edsclr_sounding_file'], cfg['ozone_sounding_file'], cfg['iop_file'], cfg['zm_init_nl'],
         saturation_formula,
         bool(cfg.get('l_readiopdata', False)), bool(cfg.get('l_modify_ic_with_cubic_int', False)),
         cfg['p_sfc_nl'],
@@ -722,6 +725,7 @@ def init_clubb_case(namelist_path: str) -> dict:
         corr_array_n_cloud, corr_array_n_below,
     ) = init_microphys(
         0, runtype, cfg, case_info_file,      # In
+        cfg['corr_file_cloud'], cfg['corr_file_below'],  # In
         dummy_dx, dummy_dy,                  # In
         clubb_params,                        # In
         flags.l_diagnose_correlations,       # In
@@ -898,7 +902,7 @@ def init_clubb_case(namelist_path: str) -> dict:
     # timestep loop; prescribe_forcings therefore receives veg_T_in_K even when
     # the selected case does not use the interactive soil/vegetation scheme.
     deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K = initialize_soil_veg(ngrdcol)
-    radiation_parameters = initialize_radiation_parameters(cfg, rad_scheme, namelist_dir)
+    radiation_parameters = initialize_radiation_parameters(cfg, rad_scheme)
 
     # ── Build state dict ────────────────────────────────────────────────
     state = dict(
@@ -1069,7 +1073,7 @@ def init_clubb_case(namelist_path: str) -> dict:
         time_dependent_input.initialize_t_dependent_input(
             ngrdcol,
             0,
-            runtype,
+            cfg['forcing_file'], cfg['sfc_file'], cfg['iop_file'],
             nzt,
             np.asarray(gr.zt),
             np.asarray(p_in_Pa),
@@ -1077,7 +1081,7 @@ def init_clubb_case(namelist_path: str) -> dict:
         )
 
     if runtype == 'mpace_a':
-        mpace_a_init(0, _repo_root() / 'input' / 'case_data' / 'mpace_a_forcings')
+        mpace_a_init(0, cfg['forcings_file_path'])
 
     if bool(cfg.get('l_restart', False)):
         # initialize_clubb includes reference-profile setup as well as sounding

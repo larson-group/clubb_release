@@ -106,7 +106,7 @@ def build_case_editor():
                           styled_dropdown(id="run-case-source", options=[], value="__defaults__", clearable=False)]),
                 html.Div([html.Label("Case name", htmlFor="run-case-name"),
                           dcc.Input(id="run-case-name", value="", placeholder="e.g. bomex_30s", type="text", debounce=False)]),
-                html.Div("Choosing another starting point replaces this draft. The physical runtype supplies soundings and forcings; the case name identifies saved settings and output.",
+                html.Div("Choosing another starting point replaces this draft. The input paths select soundings and forcings; runtype selects case behavior. The case name identifies saved settings and output.",
                          className="run-case-source-note run-stats-editor-note"),
             ], className="run-case-top"),
             html.Div([

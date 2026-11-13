@@ -30,7 +30,7 @@ def test_radiation_errors_print_on_each_failed_runtime_call(fixed_solar_angle, c
             cos_solar_zen_times=[0., 10.], cos_solar_zen_values=[0.2, 0.4],
             day=1, month=1, year=2020,
         ),
-        "none", tmp_path,
+        "none",
     )
     info = ErrInfo.initialized(gr.ngrdcol)
     stats = JaxStats.empty(l_sample=False, names=(), ncol=gr.ngrdcol, max_nlev=gr.nzm)
