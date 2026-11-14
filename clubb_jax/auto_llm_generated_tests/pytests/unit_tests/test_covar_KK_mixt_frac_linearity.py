@@ -4,8 +4,7 @@
 The 9 top-level KK covariance functions `covar_{rt,thl,x}_KK_{auto,accr,evap}` (KK_upscaled_covariances.py) all share
 the outer structure `covar = mixt_frac·c1 + (1−mixt_frac)·c2`, where c1/c2 are per-PDF-component covariances
 (`_covar_x_comp` / `_covar_x_evap_comp` over the now-dispatch-tested trivar/quadrivar integrals, iters 553/554) that do
-NOT depend on mixt_frac. So each is EXACTLY linear in mixt_frac. The inner per-component routing is end-to-end-validated
-(clubb_jax/auto_llm_generated_tests/integration_tests/run_rico_microphysics_oracle_test.py) and tautology-prone to isolate, but the outer weighting was never pinned. This drives a
+NOT depend on mixt_frac. So each is EXACTLY linear in mixt_frac. This drives a
 representative function (`covar_rt_KK_auto`) across mixt_frac and asserts exact linearity:
 `covar(m) == m·covar(1) + (1−m)·covar(0)`, which holds iff the m-weighted combination of the two m-independent
 component covariances is correctly wired (a swapped/miscoefficiented combination breaks it). + finite grad.

@@ -1087,7 +1087,7 @@ def init_clubb_case(namelist_path: str) -> dict:
         # initialize_clubb includes reference-profile setup as well as sounding
         # reads. Execute it first; the restart overwrites the initial sounding.
         # The source reader omits scalar state and some frozen hydrometeors;
-        # see RESTART_PORT_NOTES.md for exact-continuation limits.
+        # see clubb_jax/README.md#restarts for exact-continuation limits.
         from clubb_jax.src.Input_fields import input_fields, input_netcdf
 
         input_netcdf.clubb_day = state['day']

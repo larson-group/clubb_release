@@ -150,7 +150,7 @@ FORTRAN_ONLY_ALLOWED_FILES = {
     "SILHS/mt95": "Mersenne Twister random number generator. SILHS/generate_uniform_sample_module.py draws "
                   "with jax.random keys seeded by Fortran's lh_seed * itime convention, so random streams "
                   "differ from Fortran on purpose. l_lh_deterministic_test gives both codes the same "
-                  "hard-coded sampling inputs for comparisons (see clubb_jax/SILHS_PORT_NOTES.md).",
+                  "hard-coded sampling inputs for comparisons (see clubb_jax/README.md#silhs).",
 }
 
 # JAX files (path relative to clubb_jax/src/, without extension) with no Fortran source to mirror.

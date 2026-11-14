@@ -4,9 +4,8 @@
 `trivar_NLL_mean_eq` (KK_upscaled_means.py ↔ KK_upscaled_means.F90:586) computes <chi^alpha · r_r^beta · N_r^gamma>_i
 by selecting among the trivariate PDF-integral primitives per the (near-)zero-variance pattern of x1=chi, x2=r_r,
 x3=N_r — an 8-way if/elseif ladder. The subtle part is ARG-SWAPPING: the chi+Nr-const case reuses `const_x1x2` with
-(x2,x3) swapped, and the Nr-only-const case reuses `const_x2` with (x2,x3) swapped. The primitives are validated by
-test_pdf_integrals_all_mm.py and the KK rate path is bit-exact vs rico (clubb_jax/auto_llm_generated_tests/integration_tests/run_rico_microphysics_oracle_test.py), but this dispatch
-wiring (incl. the swaps) was never pinned. This drives each of the 8 regimes and asserts `trivar_NLL_mean_eq` returns
+(x2,x3) swapped, and the Nr-only-const case reuses `const_x2` with (x2,x3) swapped.
+This drives each of the 8 regimes and asserts `trivar_NLL_mean_eq` returns
 EXACTLY the corresponding primitive with the documented (possibly swapped) args — companion to iter-549's bivariate
 dispatch test; a mis-wired branch or wrong-swap bug is caught directly. Oracle-independent; never SKIPs. (iter 550)
 """

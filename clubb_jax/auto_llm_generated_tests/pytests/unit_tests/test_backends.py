@@ -26,7 +26,7 @@ from clubb_jax.backends.common import GpuSelection
 def test_backend_runtime_paths(accelerator, requirements, venv, platform):
     paths = run_jax.runtime_paths(accelerator)
     assert paths == (
-        run_jax.SCRIPT_DIR / requirements,
+        run_jax.SCRIPT_DIR / "backends" / requirements,
         run_jax.REPO_ROOT / venv,
         platform,
     )

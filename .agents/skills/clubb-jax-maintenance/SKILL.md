@@ -1,52 +1,32 @@
 ---
-name: clubb-jax-port
-description: Port or audit Fortran-derived JAX code in CLUBB, including driver integration and structural fidelity.
+name: clubb-jax-maintenance
+description: Maintain the existing CLUBB JAX implementation, runtime/support contracts, generated documentation, comparisons and tuning behavior.
 ---
 
-Its referenced standards are part of the workflow when applicable.
+# Maintain the CLUBB JAX implementation
 
-Respect the user's current scope and prior authorization. A discussion or
-review request remains a discussion or review; selecting this skill does not
-approve broader changes, external writes, or creating a goal.
+Use for work in the existing `clubb_jax/` backend: repairs, source updates,
+configuration/runtime questions, comparisons, tuning and supported feature work.
+This skill owns implementation-specific requirements. Read
+[clubb_jax/README.md](../../../clubb_jax/README.md) for current runtime,
+architecture and support limits; verify claims against current gates.
+Historical ignored file plans are optional evidence, not prerequisites.
 
-# Port or audit JAX code
+For translating, expanding, synchronizing or auditing a port, also use the
+[language-neutral porting strategy](../clubb-porting/SKILL.md) and its fidelity
+checklist. Resume this completed backend at the relevant gap; do not recreate
+its former Fortran bridge or repeat initial migration milestones. Current
+Fortran is the source/numerical authority for this implementation, while other
+ports are secondary references. A different port must name its own authority.
 
-Use for translating Fortran into `clubb_jax/src`, wiring a port into the JAX
-driver, or auditing such a port. Use
-[the faithful-port standards](../clubb-fortran-port/SKILL.md)
-for routine names/order, signatures, calls, comments, formatting, branches and
-acceptance. Existing JAX or external CLUBB-JAX files are secondary references;
-current source Fortran is the authority.
+Generic JAX representation, compiled loops, batching, state and autodiff advice
+lives in the [JAX language subskill](../clubb-porting/languages/jax/SKILL.md).
+Use it when those concerns matter; current options, commands and generated-code
+rules stay here or in their implementation owners. Scope follows the user's
+request; maintenance does not authorize unrelated cleanup, broad tuning, goals,
+external writes or expansion into other mirrors.
 
-## Scope and source outline
-
-Infer the requested files, integration path and validation scope from the
-current conversation. Ask only about unresolved choices that materially change
-the work. A discussion-only request remains discussion. Do not create a goal,
-set a token budget, clone an external repo, or expand into all mirrors merely
-because this workflow is selected.
-
-Before editing, outline the full Fortran routines, signatures, call ordering,
-branches, stats/error behavior and ownership of returned/inout data. Include
-module lifecycle and callers when changing the driver. Read
-[clubb_jax/README.md](../../../clubb_jax/README.md) for normal runtime use and
-[clubb_jax/JAX_CONVERSION_PLAN.md](../../../clubb_jax/JAX_CONVERSION_PLAN.md) for
-whole-core architecture and acceptance. Confirm support claims against current
-initialization gates and tests; file-specific historical/ignored notes are
-optional examples, not a competing current plan.
-
-Prefer one integrated call-tree branch at a time: replace a meaningful node,
-validate the runnable model path, resolve that branch's shape/tracing/compilation
-issues for the intended support level, then reuse its leaves elsewhere. Avoid
-breadth-first disconnected ports. In mature JAX-owned standalone code, this
-method does not recreate the old transitional Fortran delegation.
-
-Identify strict interface/public-contract files and any explicitly relaxed
-numerical cores at the start. Retain the public file/routine/argument/call
-surface required for those cores; local helper freedom does not spread into
-their strict interface or waive numerical coverage.
-
-## JAX implementation boundaries
+## Current implementation contracts
 
 - Mirror source-tree/file layout under `clubb_jax/src/`; keep routine names,
   order, arguments, meaningful comments, dividers and readable spacing.
@@ -74,12 +54,6 @@ their strict interface or waive numerical coverage.
   Its `-check` must pass; the clubb_jax Jenkins job runs it.
 - Use current JAX state/types/grid infrastructure and same-named source types.
   Reuse shared infrastructure rather than creating per-file conversion layers.
-- Keep physics array math in JAX. Use fixed shapes, functional updates, masks
-  and appropriate JAX control flow. Preserve source semantics and BFB-sensitive
-  ordering; explain necessary indexing, batching or immutable-state adaptations.
-- Inspect non-default, debug, disabled and error paths rather than assuming the
-  smoke case covers them. Preserve supported behavior and document unsupported
-  branches next to their explicit gates; avoid silent stubs or fallback paths.
 - The supported standalone is JAX-owned and requires no compiled Fortran library.
   Do not introduce a Fortran/F2PY fallback into that path. The original Fortran
   executable is the numerical comparison reference. A task explicitly scoped to
@@ -100,12 +74,12 @@ requirements for Python code. These rules do not apply to external code such as
 `clubb_jax/src/Microphys/Morrison_microphys/` and
 `clubb_jax/src/Radiation/BUGSrad/`.
 
-Apply them to the code you add or change, not as a reason to reformat or clean
-up other code. In ported code, the faithful-port rules win: do not rename,
-reorder or restructure against the Fortran to satisfy a rule, and keep a Fortran
-`known magic number` or `known magic flag` comment with its value. Follow these
-rules where the Fortran does not decide, such as in JAX-only code and new
-adaptations.
+Apply them to code you add or change, not as a reason to clean up other code.
+Preserve source file/routine/argument/comment correspondence and existing
+`known magic number` or `known magic flag` comments. Use the
+[source-fidelity rules](../clubb-porting/fidelity/SKILL.md) for intentional
+index/layout/control-flow/state adaptations. These coding conventions govern
+where the source and an approved adaptation do not already decide.
 
 Names:
 
@@ -146,11 +120,8 @@ Data flow:
 
 Expressions and output:
 
-- `jnp.where` evaluates both branches, unlike a Fortran `if` or `where` (#41).
-  An unselected branch that divides by zero or takes a power of zero or a
-  negative number can still produce NaN or infinite gradients. Make its input
-  safe with an inner `jnp.where`, as `_pos_pow` does in
-  `clubb_jax/src/Microphys/KK_microphys/PDF_integrals_means.py`.
+- For masking/compiled-control/gradient safety, use the generic
+  [JAX language guidance](../clubb-porting/languages/jax/SKILL.md).
 - Put non-fatal messages inside a `clubb_at_least_debug_level` check, and write
   fatal messages to `sys.stderr` (#35). A plain `print` in traced code runs only
   during tracing, so print traced values with `jax.debug.callback`.
@@ -205,7 +176,8 @@ from random-stream identity and record the deterministic test mode and limits.
 Use [testing and reporting](../clubb-testing-and-reporting/SKILL.md) for final
 check selection and reporting Jenkins links, extra local coverage and failures.
 
-Finish with the faithful-port completion audit, including comments, spacing,
+For changed source-derived files, finish the
+[source-fidelity audit](../clubb-porting/fidelity/SKILL.md), including comments, spacing,
 argument grouping, every new helper, no new failures of the filename-parity test
 and a passing `port_fortran_declarations_to_jax_docstrings.py -check`.
 Check the code you added or changed against the "CLUBB coding standards in
@@ -213,9 +185,3 @@ Python" section above. Report structural and numerical results separately, remai
 and untested configurations. Do not declare
 complete while known in-scope structural defects remain. Do not redesign output,
 optimize hardware performance, or refactor unrelated files just to polish a port.
-
-## Scope boundaries
-
-- For JAX work, the JAX workflow is primary and the faithful-port standards
-  supply source matching. Existing/external JAX files are secondary references;
-  selecting this skill does not create a file-level goal or require cloning.

@@ -4,10 +4,9 @@
 `trivar_NNL_covar_eq` (KK_upscaled_covariances.py ↔ KK_upscaled_covariances.F90) computes Cov_i(x, chi^α y^β)
 (x=w|eta normal, chi normal, y=Ncn|rr lognormal) by selecting among the trivariate covariance primitives per which
 of σ_x1/σ_x2/σ_x3 are (near-)zero — a 7-way ladder with one subtlety: the all-const case maps to `const_x2x3`
-(documented equivalence const_all == const_x2x3 for the covariance). The covar primitives (PDF_integrals_covar) are
-parabolic-cylinder-based and validated only end-to-end (clubb_jax/auto_llm_generated_tests/integration_tests/run_rico_microphysics_oracle_test.py), but the DISPATCH wiring — which
-primitive + arg subset (incl. the σ_x2 denominator guard `s2g` and `x2a = mc_tndcy_mean/mc_coef`) per regime — was
-never pinned. Companion to iter-549/550's mean dispatches: drives each regime and asserts `trivar_NNL_covar_eq`
+(documented equivalence const_all == const_x2x3 for the covariance). This checks the primitive
+and argument subset selected per regime, including the σ_x2 denominator guard `s2g` and
+`x2a = mc_tndcy_mean/mc_coef`. It drives each regime and asserts `trivar_NNL_covar_eq`
 returns EXACTLY the corresponding primitive with the documented args, so a mis-wired branch / wrong-arg / wrong
 all-const-equivalence bug is caught directly. Oracle-independent; never SKIPs. (iter 553)
 """

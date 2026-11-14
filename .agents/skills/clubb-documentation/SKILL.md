@@ -24,8 +24,10 @@ require a documentation edit.
 
 For source documentation, also review the applicable language or porting
 standards listed in AGENTS.md: [Fortran formatting](../clubb-fortran-format/SKILL.md),
-[JAX porting](../clubb-jax-port/SKILL.md), and
-[faithful ports](../clubb-fortran-port/SKILL.md) for Fortran-derived code.
+[source fidelity](../clubb-porting/fidelity/SKILL.md) for ported code, and
+[JAX maintenance](../clubb-jax-maintenance/SKILL.md) for its generated descriptions.
+Use the [porting strategy](../clubb-porting/SKILL.md) when translating/expanding
+code; its relevant language subskills cover target representations.
 Read and apply the parts relevant to the documentation task, including comment
 placement, section markers, and dividers, within the requested scope.
 

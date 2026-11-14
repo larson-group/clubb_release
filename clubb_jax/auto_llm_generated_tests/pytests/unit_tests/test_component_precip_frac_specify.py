@@ -3,9 +3,8 @@
 
 `component_precip_frac_specify` (precipitation_fraction.py ↔ precipitation_fraction.F90, precip_frac_calc_type=2,
 the fixed default) splits the overall precip fraction `pf` into the two PDF-component fractions (pf1, pf2) via the
-specified-upsilon method. Its GENERAL (0<upsilon<1) branch is bit-exact-validated end-to-end vs the rico oracle at
-upsilon=0.55 (test_precip_fraction.py), but the `upsilon==1` branch (rico uses 0.55) was never exercised, and the
-branches carry intricate clip + recompute-and-double-check sub-cases (too conditional to faithfully transcribe).
+specified-upsilon method. The general (0<upsilon<1) and `upsilon==1` branches
+include clipping and recomputation sub-cases.
 
 Instead of transcribing, this pins the DEFINING property — component-fraction CONSERVATION: a weighted average of the
 component fractions returns the overall fraction, `mixt_frac·pf1 + (1−mixt_frac)·pf2 == pf`, which holds EXACTLY in the

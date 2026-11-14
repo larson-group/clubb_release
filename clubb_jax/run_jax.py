@@ -282,7 +282,7 @@ def resolve_accelerator(values: dict[str, object]) -> tuple[str, str]:
 
 def runtime_paths(accelerator: str) -> tuple[Path, Path, str]:
     backend = backends.get_backend(accelerator)
-    return SCRIPT_DIR / backend.REQUIREMENTS, REPO_ROOT / backend.VENV, backend.PLATFORM
+    return SCRIPT_DIR / "backends" / backend.REQUIREMENTS, REPO_ROOT / backend.VENV, backend.PLATFORM
 
 
 def _runtime_environment(

@@ -8,7 +8,7 @@ differences), so they can be composed into differentiable pipelines.
 
 Scope: the pure-JAX building blocks (saturation, the tridiagonal solver, the PDF
 cloud-fraction core, Brunt-Vaisala). Whole-core differentiation is covered by
-`clubb_jax/auto_llm_generated_tests/integration_tests/run_jax_timestep_gradient_test.py`.
+`clubb_jax/human_reviewed_tests/run_jax_timestep_gradient_test.py`.
 
 Run from the repo root: bash human_reviewed_tests/run_pytests.sh -jax -k test_differentiability
 """

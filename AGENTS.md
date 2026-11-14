@@ -26,8 +26,9 @@ requirements; selecting a child does not automatically load its parent.
 | **Write Documentation or Change Messages**: create or revise READMEs, file and procedure descriptions, code comments, PR titles/descriptions, or commit messages. | [Documentation](.agents/skills/clubb-documentation/SKILL.md) |
 | **Update Host Models After CLUBB Changes**: a host-consumed Fortran/C API signature, semantics, public type/constant, generated wrapper, flag or configuration changed. E3SM is excluded unless explicitly requested. | [Host compatibility](.agents/skills/clubb-host-compatibility/SKILL.md) |
 | **Fix Python API**: repair F2PY/wrappers, update Python drivers after Fortran changes, make Python/JAX drivers match Fortran, or repair `run_python_vs_fortran_cases.py` / `run_jax_vs_fortran_cases.py`. | [API and drivers](.agents/skills/clubb-python-api/SKILL.md) |
-| **Port Underlying Fortran**: port, re-port, audit or “similarize” a target file; align routines, calls, comments, argument lists; remove target-only helpers/aliases/optionals/reordered logic. | [Faithful port](.agents/skills/clubb-fortran-port/SKILL.md) |
-| **JAXize CLUBB Core File**: translate `src/CLUBB_core` into `clubb_jax/src`, replace a `clubb_api` call, wire `advance_clubb_core_module.py`, or continue a file port such as `advance_xm_wpxp`. | [JAX workflow](.agents/skills/clubb-jax-port/SKILL.md), with the faithful-port standards |
+| **Port, Expand or Synchronize CLUBB Between Languages**: plan a new backend, translate/audit source, or carry changes into a port. | [Ordered porting strategy](.agents/skills/clubb-porting/SKILL.md), with fidelity, execution, validation and relevant language subskills |
+| **Maintain the Existing JAX Backend**: runtime/support, source repairs, generated descriptions, comparisons or tuning in `clubb_jax/`. | [JAX maintenance](.agents/skills/clubb-jax-maintenance/SKILL.md); also use the porting strategy for translation/expansion |
+| **Maintain the Existing C++/Kokkos Backend**: build/run, repair, compare or profile `clubb_kokkos/`. | [Kokkos maintenance](.agents/skills/clubb-kokkos-maintenance/SKILL.md); also use the porting strategy for translation/expansion |
 | **Format Fortran Routines**: format interfaces/calls, extract a helper, document arguments/local variables, or apply routine formatting. | [Fortran formatting](.agents/skills/clubb-fortran-format/SKILL.md) |
 | **Refactor Column Loops**: move computation/column loops into routines, change multi-column interfaces or stats dimensions. | [Column refactor](.agents/skills/clubb-column-refactor/SKILL.md), with routine formatting |
 | **Change Script Arguments**: options, forwarding, worker defaults, multicolumn settings, or Jenkins/documentation callers. | [CLI workflow](.agents/skills/clubb-script-cli/SKILL.md) |
@@ -53,8 +54,11 @@ requirements; selecting a child does not automatically load its parent.
   READMEs, change messages, file and procedure descriptions, and code comments,
   including documentation needed by new or changed code. It selects the
   relevant writing and language guidance.
-- Fortran is the authority for faithful ports. Passing tests does not replace
-  the routine/branch/signature/comment/formatting audit in the porting workflow.
+- For existing Fortran-derived CLUBB mirrors, current Fortran is the authority.
+  A new port names its source and trusted numerical reference during planning;
+  neither language is fixed by the strategy. Passing tests does not replace
+  the source-fidelity audit. Use the ordered porting milestones: all required
+  non-statistics types early, statistics backend last, then full hookup.
 - For script/CLI work, use
   [clubb-script-cli](.agents/skills/clubb-script-cli/SKILL.md): single-dash
   descriptive options, `output_*`, and `-workers` for process concurrency with

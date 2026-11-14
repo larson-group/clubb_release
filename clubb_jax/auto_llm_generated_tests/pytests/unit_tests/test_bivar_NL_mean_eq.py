@@ -12,9 +12,8 @@ according to whether chi and/or y have (near-)zero variance — mirroring the Fo
       x2_const            -> bivar_NL_mean_const_x2
       else                -> bivar_NL_mean   (both vary)
 
-The four primitives are themselves validated by test_pdf_integrals_all_mm.py, and the whole KK rate path is bit-exact
-vs the rico oracle (clubb_jax/auto_llm_generated_tests/integration_tests/run_rico_microphysics_oracle_test.py) — but the DISPATCH wiring (which primitive + with which arg subset for
-each regime) was never pinned in isolation. This drives each of the 4 regimes and asserts `bivar_NL_mean_eq` returns
+This checks the dispatch wiring: which primitive and argument subset each regime selects.
+It drives each of the 4 regimes and asserts `bivar_NL_mean_eq` returns
 EXACTLY the corresponding primitive called with the documented args (so a mis-wired branch / wrong-arg bug is caught
 directly). Oracle-independent; never SKIPs. (iter 549)
 """

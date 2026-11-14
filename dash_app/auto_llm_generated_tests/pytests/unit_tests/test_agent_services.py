@@ -43,13 +43,14 @@ def test_jax_build_identity_tracks_repository_runtime_not_fortran_install(tmp_pa
     (jax_root / "src").mkdir(parents=True)
     wrapper = jax_root / "run_jax.py"
     driver = jax_root / "src" / "clubb_standalone.py"
-    requirements = jax_root / (
+    requirements = jax_root / "backends" / (
         "requirements-metal.txt"
         if platform.system() == "Darwin"
         else "requirements-cuda13.txt"
     )
     wrapper.write_text("#!/usr/bin/env bash\n", encoding="utf-8")
     driver.write_text("def main(): pass\n", encoding="utf-8")
+    requirements.parent.mkdir()
     requirements.write_text("jax GPU requirements\n", encoding="utf-8")
     monkeypatch.setattr(actions, "REPO_ROOT", tmp_path)
     monkeypatch.setenv("CLUBB_JAX_ACCELERATOR", "cpu")

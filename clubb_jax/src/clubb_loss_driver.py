@@ -24,7 +24,8 @@ Adaptations: derived types are dataclasses, output arguments are return values,
 indices are zero based, and driver globals live in the JAX state dictionary.
 Host I/O and lifecycle surround JAX profile arithmetic and shared jitted model
 kernels. Short candidate batches are padded to the initialized runtime shape.
-See ``clubb_jax/TUNER_PORT.md`` for these boundaries and supported combinations.
+See ``clubb_jax/README.md#standalone-loss-evaluation`` for these boundaries
+and supported combinations.
 """
 from dataclasses import dataclass, field
 from pathlib import Path

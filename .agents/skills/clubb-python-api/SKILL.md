@@ -10,7 +10,9 @@ The broad goal is to make the Python API, Python driver, and JAX driver structur
 Do not automatically apply this prompt after every Fortran change that might affect Python. If you are doing other Fortran work and notice that argument lists for cross-module public routines have changed, remind the user that the Python API and Python/JAX drivers may need follow-up updates, then ask whether they want that fix-up done now. Apply this prompt only when the user has asked for Python API/driver work, has agreed to the follow-up, or the current task explicitly includes keeping Python wrappers and drivers in sync.
 
 Use [numerical diagnosis](../clubb-numerical-diagnosis/SKILL.md) for comparison
-failures and [the JAX workflow](../clubb-jax-port/SKILL.md) for JAX-owned ports.
+failures and [JAX maintenance](../clubb-jax-maintenance/SKILL.md) for the
+existing JAX-owned backend. For actual translation/expansion, also use the
+[porting strategy](../clubb-porting/SKILL.md).
 Executable dependency setup belongs in the existing script bootstrap/launcher,
 not a caller-specific hard-coded venv. For model-parameter bounds/flag changes,
 update the canonical validator and existing Python mirror together as documented

@@ -2,8 +2,8 @@
 """Check derivatives of one normal CLUBB driver timestep for BOMEX and ATEX.
 
 Usage (repository root):
-    python3 clubb_jax/auto_llm_generated_tests/integration_tests/run_jax_timestep_gradient_test.py
-    python3 clubb_jax/auto_llm_generated_tests/integration_tests/run_jax_timestep_gradient_test.py -cases bomex
+    python3 clubb_jax/human_reviewed_tests/run_jax_timestep_gradient_test.py
+    python3 clubb_jax/human_reviewed_tests/run_jax_timestep_gradient_test.py -cases bomex
 
 main(cases) initializes each requested case, calls check_driver_step(state),
 and cleans up. Both cases use the configured default mixing-length method;
@@ -30,7 +30,7 @@ import argparse
 import sys
 import tempfile
 
-ROOT = Path(__file__).resolve().parents[3]
+ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__, add_help=False)

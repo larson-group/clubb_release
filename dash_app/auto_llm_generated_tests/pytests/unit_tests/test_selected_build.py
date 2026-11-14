@@ -206,7 +206,8 @@ def test_build_capabilities_follow_installed_runtime_contents(tmp_path):
     jax_driver.touch()
     wrapper = jax_root / "run_jax.py"
     wrapper.touch(mode=0o755)
-    (jax_root / "requirements.txt").touch()
+    (jax_root / "backends").mkdir()
+    (jax_root / "backends" / "requirements.txt").touch()
     assert build_implementation_capability(install, "jax", tmp_path)[0] is True
 
 
@@ -214,7 +215,8 @@ def test_jax_launch_target_does_not_require_a_compiled_install(tmp_path):
     jax_root = tmp_path / "clubb_jax"
     (jax_root / "src").mkdir(parents=True)
     (jax_root / "src" / "clubb_standalone.py").touch()
-    (jax_root / "requirements.txt").touch()
+    (jax_root / "backends").mkdir()
+    (jax_root / "backends" / "requirements.txt").touch()
     (jax_root / "run_jax.py").touch(mode=0o755)
 
     target = selected_launch_target("jax", tmp_path)
@@ -416,7 +418,8 @@ def test_jax_gpu_capability_and_launch_target_use_native_requirements(tmp_path):
     jax_root = tmp_path / "clubb_jax"
     (jax_root / "src").mkdir(parents=True)
     (jax_root / "src" / "clubb_standalone.py").touch()
-    (jax_root / "requirements.txt").touch()
+    (jax_root / "backends").mkdir()
+    (jax_root / "backends" / "requirements.txt").touch()
     (jax_root / "run_jax.py").touch(mode=0o755)
 
     available, reason = build_implementation_capability(
@@ -430,7 +433,7 @@ def test_jax_gpu_capability_and_launch_target_use_native_requirements(tmp_path):
         if platform.system() == "Darwin"
         else "requirements-cuda13.txt"
     )
-    (jax_root / requirements_name).touch()
+    (jax_root / "backends" / requirements_name).touch()
     target = selected_launch_target("jax", tmp_path, jax_profile="GPU")
     assert target["jax_profile"] == "gpu"
     assert target["build_name"] == "GPU environment"

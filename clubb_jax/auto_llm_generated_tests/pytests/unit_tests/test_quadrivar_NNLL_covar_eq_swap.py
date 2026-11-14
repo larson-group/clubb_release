@@ -4,8 +4,7 @@
 `quadrivar_NNLL_covar_eq` (KK_upscaled_covariances.py) dispatches Cov_i(x, chi^α r_r^β N_r^γ) over the full 15-way
 variance-regime ladder. Its UNIQUE, most bug-prone feature (vs the trivariate dispatch pinned iter 553) is the
 (x3=r_r, β) ↔ (x4=N_r, γ) SYMMETRY: an N_r-const (c4) branch reuses the corresponding r_r-const (x3) primitive with
-the x3↔x4 args and β↔γ exponents SWAPPED (v_x3s, v123s, …). The covar primitives are end-to-end-covered
-(clubb_jax/auto_llm_generated_tests/integration_tests/run_rico_microphysics_oracle_test.py) but this swap wiring was never pinned — and rico may not exercise the N_r-const regimes. This
+the x3↔x4 args and β↔γ exponents SWAPPED (v_x3s, v123s, …). This
 focuses on the swap branches (+ a non-swap contrast and the base/all-const sanity) and asserts each returns EXACTLY
 the documented primitive with the (possibly swapped) args. A wrong-swap bug — easy to introduce, hard to catch
 end-to-end — is now caught directly. Oracle-independent; never SKIPs. (iter 554)

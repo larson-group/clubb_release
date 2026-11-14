@@ -175,7 +175,7 @@ def build_implementation_capability(
         jax_root = Path(repo_root) / "clubb_jax"
         wrapper = jax_root / "run_jax.py"
         driver = jax_root / "src" / "clubb_standalone.py"
-        requirements = jax_root / (
+        requirements = jax_root / "backends" / (
             "requirements-metal.txt"
             if profile == "gpu" and platform.system() == "Darwin"
             else "requirements-cuda13.txt"

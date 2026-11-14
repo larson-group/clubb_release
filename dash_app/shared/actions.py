@@ -1317,7 +1317,7 @@ def _scm_build_identity(cli_options: dict[str, Any] | None = None) -> dict[str, 
         )
         wrapper = jax_root / "run_jax.py"
         driver = jax_root / "src" / "clubb_standalone.py"
-        requirements = jax_root / Path(runtime["requirements"]).name
+        requirements = jax_root / "backends" / Path(runtime["requirements"]).name
 
         def source_identity(path: Path) -> dict[str, Any]:
             return {

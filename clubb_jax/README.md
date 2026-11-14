@@ -24,12 +24,12 @@ and translated source lives under [`src/`](./src/):
   incomplete.
 - `src/SILHS/` contains native JAX Latin-hypercube sampling and its KK/Morrison
   microphysics hookup. Interactive and non-interactive modes are enabled;
-  random-stream matching with Fortran is deferred. See
-  [`SILHS_PORT_NOTES.md`](./SILHS_PORT_NOTES.md) for configuration and validation.
+  random-stream matching with Fortran is deferred. See [SILHS](#silhs) for
+  configuration and comparison limits.
 - `src/Radiation/BUGSrad/` remains disconnected from the supported standalone path.
 
-The detailed support boundary and conversion workflow are documented in
-[`JAX_CONVERSION_PLAN.md`](./JAX_CONVERSION_PLAN.md).
+The [JAX maintenance skill](../.agents/skills/clubb-jax-maintenance/SKILL.md)
+owns the development workflow and source-correspondence checks.
 
 Numerical kernels expect JAX arrays for array-valued arguments. Convert NumPy arrays
 or Python sequences with `jnp.asarray(value)` before calling a kernel. Array
@@ -288,14 +288,14 @@ and memory trade-offs.
 
 ## Differentiability
 
-[`run_jax_timestep_gradient_test.py`](auto_llm_generated_tests/integration_tests/run_jax_timestep_gradient_test.py)
+[`run_jax_timestep_gradient_test.py`](human_reviewed_tests/run_jax_timestep_gradient_test.py)
 checks forward and reverse derivatives of one normal driver timestep for
 BOMEX and ATEX, using an artificial scalar loss. Run both cases or select one,
 from the repository root:
 
 ```bash
-python3 clubb_jax/auto_llm_generated_tests/integration_tests/run_jax_timestep_gradient_test.py
-python3 clubb_jax/auto_llm_generated_tests/integration_tests/run_jax_timestep_gradient_test.py -cases bomex
+python3 clubb_jax/human_reviewed_tests/run_jax_timestep_gradient_test.py
+python3 clubb_jax/human_reviewed_tests/run_jax_timestep_gradient_test.py -cases bomex
 ```
 
 The test checks finite gradients, agreement between forward and reverse
@@ -420,26 +420,59 @@ See [human_reviewed_tests/README.md](../human_reviewed_tests/README.md) for the 
 
 JAX-specific case checks live in
 [`auto_llm_generated_tests/integration_tests/`](auto_llm_generated_tests/integration_tests/).
-Run them explicitly from the repository root; they prepare the JAX environment
-and are separate from the focused Jenkins pytest stages.
+The human-reviewed timestep gradient check lives in
+[`human_reviewed_tests/`](human_reviewed_tests/). Run these checks explicitly
+from the repository root; they prepare the JAX environment and are separate
+from the focused Jenkins pytest stages.
 
 | Check | Command |
 | --- | --- |
 | SILHS initialization, feedback modes and multicolumn sampling | `python3 clubb_jax/auto_llm_generated_tests/integration_tests/run_silhs_driver_test.py` |
-| BOMEX/ATEX driver gradients, JVPs and finite differences | `python3 clubb_jax/auto_llm_generated_tests/integration_tests/run_jax_timestep_gradient_test.py` |
-| Neutral/ARM initialization and timesteps with binding imports blocked | `python3 clubb_jax/auto_llm_generated_tests/integration_tests/run_standalone_no_bindings_test.py` |
+| BOMEX/ATEX driver gradients, JVPs and finite differences | `python3 clubb_jax/human_reviewed_tests/run_jax_timestep_gradient_test.py` |
 | Morrison eager/JIT species interfaces and compiled fatal diagnostics | `python3 clubb_jax/auto_llm_generated_tests/integration_tests/run_morrison_interface_test.py` |
 | Mixed-moment PDF integrals against large Monte Carlo samples | `python3 clubb_jax/auto_llm_generated_tests/integration_tests/run_pdf_monte_carlo_test.py` |
-| Rico microphysics and precipitation against Fortran statistics | `python3 clubb_jax/auto_llm_generated_tests/integration_tests/run_rico_microphysics_oracle_test.py -stats_file output/tests/rico_oracle/rico_stats.nc` |
 
 The Morrison and Monte Carlo checks can take several minutes. They retain the
 expensive validation removed from focused pytest; they are manual checks and
 are not added to the nightly Jenkins job.
 
-The Rico check requires fresh `all` output from a ten-step Fortran Rico
-run; it does not generate the reference run. Missing input or a failed
-numerical assertion fails the check. The gradient check's settings and limits
-are described in [Differentiability](#differentiability).
+The gradient check's settings and limits are described in
+[Differentiability](#differentiability).
+
+## SILHS
+
+Select sampled microphysics with `lh_microphys_type="interactive"` to feed
+sampled tendencies back to CLUBB, `"non-interactive"` for sampled diagnostics,
+or `"disabled"` for the ordinary path. KK and Morrison are supported;
+interactive KK requires `l_local_kk=.true.`. For a short run:
+
+```bash
+./run_scripts/run_scm.py -jax -max_iters 3 -stats none rico_silhs
+```
+
+`lh_num_samples` and `lh_sequence_length` must be positive. Importance sampling
+requires `lh_sequence_length=1`. Without importance sampling, longer sequences
+retain their permutation between reshuffles. SILHS radiation remains unsupported,
+and the existing Morrison restrictions, including Arctic nucleation and
+predicted-Nc aerosol activation, still apply.
+
+Native JAX random streams differ from Fortran. The comparison setting
+`configurable_silhs_flags_nl.l_lh_deterministic_test=.true.` supplies common
+ordered strata and repeating draws to both implementations. It requires
+`l_lh_importance_sampling=.false.` and `l_random_k_lh_start=.false.`. These
+comparisons check sampling transformations and model feedback with common
+inputs; they do not establish native random-stream identity.
+
+Run the curated deterministic comparisons with:
+
+```bash
+./human_reviewed_tests/run_jax_vs_fortran_cases.py \
+  -cases rico_silhs lba_kk_silhs -workers 1
+```
+
+The harness owns case durations and tolerances. Its LBA checks use bounded
+runs; passing them does not establish full-duration LBA agreement. Long-run
+SILHS gradients and GPU execution remain unvalidated.
 
 ## Reusable cases and runtime batches
 
@@ -470,8 +503,7 @@ the human-reviewed
 which checks that splitting a run into successive windows (as the loss driver
 does) gives bit-identical results and that selecting a runtime batch loads the
 right parameter sets:
-`python3 clubb_jax/human_reviewed_tests/run_driver_extensions_test.py`. Restart input and
-loss/tuning interfaces are separate functionality changes.
+`python3 clubb_jax/human_reviewed_tests/run_driver_extensions_test.py`.
 
 ## Restarts
 
@@ -479,8 +511,31 @@ Use `python3 human_reviewed_tests/run_restart_test.py bomex -jax -multicol 4` or
 `python3 human_reviewed_tests/run_restart_test.py rico_silhs -jax` to test the existing NetCDF
 restart format through JAX. Initialization restores source-selected state and
 absolute iteration/seeds, including retained SILHS permutations. Jenkins adds
-separate normal and sequence-restart CPU stages. See
-[RESTART_PORT_NOTES.md](./RESTART_PORT_NOTES.md) for reader/state limits.
+separate normal and sequence-restart CPU stages.
+
+Restart input can use split `_zt.nc`/`_zm.nc`/`_sfc.nc` files or unified
+`_stats.nc` files. Relative `restart_path_case` prefixes use the repository
+root; absolute prefixes are also accepted. The restart time must align with a
+model timestep and identify a saved record. Restarts retain the initialized
+full column count; smaller runtime batches are rejected.
+
+Exact continuation requires instantaneous statistics containing all fields
+selected by the source restart reader. Use `standard_stats.in` or `all_stats.in`
+with `stats_tsamp=stats_tout=dt_main`; reduced registries can omit required
+fields and fail to load. Averaged or remapped profiles provide initialization
+state, without guaranteeing exact continuation.
+
+The source reader omits passive/eddy scalars and frozen number concentrations
+such as `Nsm` and `Ngm`; exact continuation for those configurations is not
+established. Radiation fluxes and separate shortwave/longwave heating caches
+are also omitted. Use `dt_rad=dt_main` for the established exact restart checks;
+longer radiation intervals can change diagnostics until the next update.
+General LES `l_input_fields`, active frozen-phase Morrison restart parity,
+soil/vegetation feedback with longer radiation intervals, and GPU restart
+execution remain outside established validation.
+
+The shared restart test compares the selected final statistic bit for bit in
+every JAX column. It does not compare every field or saved record.
 
 ## Standalone loss evaluation
 
@@ -490,7 +545,7 @@ small front end mirrors `src/clubb_standalone_loss.F90` and calls the loss
 implementation directly; runtime setup remains in `run_jax.py`. For repeated
 calls, import `clubb_jax.src.clubb_loss_driver` directly. Its five arrays have shape
 (window, field, candidate). Runtime batches reuse initialized state and
-compiled shapes. Shared tuner orchestration is a separate functionality PR.
+compiled shapes.
 
 Run `python3 human_reviewed_tests/run_loss_output_consistency.py bomex -jax -fields thlm wp2`
 for saved-profile and independently recomputed metric checks. Jenkins adds this
@@ -502,7 +557,18 @@ workflow requires `CLUBB_TEST_LOSS_EXE` or the installed loss executable:
   clubb_jax/auto_llm_generated_tests/integration_tests/test_silhs_loss_driver.py
 ```
 
-See [TUNER_PORT.md](./TUNER_PORT.md) for loss-window and batch restrictions.
+Loss evaluation requires enabled statistics. The loss averaging range must
+match `stats_tstart` and `stats_tend`, and each loss subwindow must match one
+`stats_tout` interval. Benchmark records use `(window_start, window_end]`, and
+successive windows continue from the previous model state.
+
+Short candidate batches are padded to the initialized runtime shape and trimmed
+on return. Changing the total candidate count requires in-memory statistics
+(`stats_output_filename=""`), because output files retain their initialized
+column dimension. Invalid candidates receive finite penalties while healthy
+columns continue. Configuration errors still stop evaluation. Loss evaluation
+with `l_restart` is rejected; standalone restart support is separate. Existing
+standalone physics restrictions also apply, and GPU loss execution is unvalidated.
 
 ## Managed JAX tuning
 
@@ -516,9 +582,11 @@ See [tuner/README.md](../tuner/README.md) for examples and request fields.
 ## Requirements And Environments
 
 No Fortran build is required for a JAX-only run. Runtime and test dependencies
-are declared in [`requirements.txt`](./requirements.txt) for CPU and
-[`requirements-cuda13.txt`](./requirements-cuda13.txt) for NVIDIA CUDA 13.
-Apple Silicon uses the isolated [`requirements-metal.txt`](./requirements-metal.txt)
+are declared in [`requirements.txt`](./backends/requirements.txt) for CPU and
+[`requirements-cuda13.txt`](./backends/requirements-cuda13.txt) for NVIDIA CUDA 13.
+AMD ROCm uses [`requirements-rocm.txt`](./backends/requirements-rocm.txt)
+with plugin wheels provisioned by the ROCm backend. Apple Silicon uses the
+isolated [`requirements-metal.txt`](./backends/requirements-metal.txt)
 profile with Python 3.11 or 3.12 and JAX/JAXLIB 0.4.34 because Apple's experimental
 plugin requires its own compatible JAX line. CPU and CUDA use JAX/JAXLIB 0.11.0
 on Python 3.12 or newer; Python 3.11 is supported with JAX/JAXLIB 0.10.0.
@@ -589,7 +657,7 @@ To create the environment yourself with `uv`:
 uv venv --python 3.12 /path/to/clubb-jax-venv
 uv pip install \
   --python /path/to/clubb-jax-venv/bin/python \
-  -r clubb_jax/requirements.txt
+  -r clubb_jax/backends/requirements.txt
 
 CLUBB_JAX_VENV=/path/to/clubb-jax-venv \
   ./run_scripts/run_scm.py -jax arm
@@ -605,7 +673,7 @@ A virtualenv created without `uv` can also be used:
 ```bash
 python3.12 -m venv /path/to/clubb-jax-venv
 /path/to/clubb-jax-venv/bin/python -m pip install \
-  -r clubb_jax/requirements.txt
+  -r clubb_jax/backends/requirements.txt
 
 CLUBB_JAX_VENV=/path/to/clubb-jax-venv \
   ./run_scripts/run_scm.py -jax arm
