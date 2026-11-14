@@ -1,9 +1,5 @@
 """Filesystem and config discovery helpers for the run tab."""
 
-import ast
-import os
-
-from .state import RUN_SCM_ALL
 from input.scripts.create_case_namelist import available_case_names
 
 
@@ -18,37 +14,9 @@ def load_available_cases():
 
 
 def load_case_groups(available_cases):
-    """Parse run_scm_all.py case groups and keep only cases present in this repo."""
-    groups = {
-        "all": [],
-        "standard": [],
-        "priority": [],
-        "minimum": [],
-        "short": [],
-    }
-    if not os.path.isfile(RUN_SCM_ALL):
-        return groups
-    try:
-        with open(RUN_SCM_ALL, "r", encoding="utf-8") as handle:
-            tree = ast.parse(handle.read(), filename=RUN_SCM_ALL)
-    except Exception:
-        return groups
-    mapping = {
-        "ALL_CASES": "all",
-        "STANDARD_CASES": "standard",
-        "PRIORITY_CASES": "priority",
-        "MIN_CASES": "minimum",
-        "SHORT_CASES": "short",
-    }
-    for node in tree.body:
-        if not isinstance(node, ast.Assign):
-            continue
-        for target in node.targets:
-            if isinstance(target, ast.Name) and target.id in mapping:
-                try:
-                    value = ast.literal_eval(node.value)
-                except Exception:
-                    continue
-                if isinstance(value, list):
-                    groups[mapping[target.id]] = [case for case in value if case in available_cases]
-    return groups
+    """Resolve catalog run lists for the Run tab's established selection buttons."""
+    from input.scripts.input_catalog import resolve_selection
+    mapping = {"all": "all_cases", "standard": "standard_cases", "priority": "priority_cases",
+               "minimum": "min_cases", "short": "short_cases"}
+    return {label: [case for case in resolve_selection("cases", name) if case in available_cases]
+            for label, name in mapping.items()}

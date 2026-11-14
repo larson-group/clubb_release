@@ -1168,7 +1168,7 @@ module sounding
       std_atmos_dim = 50 ! Dimension of the standard atmosphere table
 
     character(len=*), parameter :: &
-      atm_input_file = "../input/std_atmosphere/atmosphere.in"
+      atm_input_file = "../src/Radiation/BUGSrad/atmosphere.in"
 
     ! Input Variable(s)
     integer, intent(in) :: iunit ! File I/O unit [-]

@@ -621,9 +621,9 @@ be covered briefly in this section.
 This script takes two output directories as arguments and will compare the
 contents of those directories to determine if the binary outputs differ.  
 Note that
-run_scm_all.py must be run prior to this script to create the output to be
+run_scm.py -cases standard_cases must be run prior to this script to create the output to be
 compared.  The script will compare the .nc files for each
-case specified in run_scm_all.py.  This is the most exact way to detect
+case selected by the standard_cases list in input/case_definitions.jsonc.  This is the most exact way to detect
 differences between two output directories.
 
 This script can be found in "clubb/run_scripts".

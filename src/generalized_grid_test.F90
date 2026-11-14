@@ -106,13 +106,12 @@ module generalized_grid_test
   ! *** When the generalized vertical grid test fails:
   !
   ! 1) Check which flagset number or numbers fail. The flag changes
-  !    associated with each flagset can be found in input/flag_sets:
-  !    run_bindiff_w_flags_config_core_flags.json (core-flag workflow) or
-  !    run_bindiff_w_flags_config_host_flags.json (host-flag workflow) in
-  !    clubb_branch_generalized_grid. Note that the test script
-  !    automatically runs the unaltered default flag set as the final flagset.
-  !    (The .json file might list 17 flagsets, and then the default
-  !    configuration is run as flagset 18.)
+  !    associated with each flagset can be found in the groups in
+  !    input/clubb_config_flags.jsonc:
+  !    run_bindiff_w_flags_config_core_flags_group (core-flag workflow) or
+  !    run_bindiff_w_flags_config_host_flags_group (host-flag workflow) in
+  !    clubb_branch_generalized_grid. The comparison runners prepend an
+  !    unaltered default run unless -skip_default_flags is supplied.
   !
   ! 2) Within a test for a flag set, all CLUBB test cases are run. Note which
   !    cases fail and pick a single case to use to debug. When there's a choice,

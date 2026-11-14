@@ -3,8 +3,9 @@
 
 parameter_settings(selection, json_file=None, config=None) reads defaults,
 shared-config settings and an explicit preset or override file, then validates
-numeric types and column dimensions. parameters_to_namelist(settings) serializes
-final model/SILHS groups for create_case_namelist.py. The convenience function
+numeric types and column dimensions through validate_parameter_settings().
+parameters_to_namelist(settings) serializes
+model/SILHS groups for standalone section exports. The convenience function
 parameters_json_to_namelist() resolves and serializes a selection in memory.
 
 Custom files have the same model/silhs override objects as preset entries.
@@ -17,7 +18,7 @@ import math
 from pathlib import Path
 import re
 
-from input.scripts.namelist import load_json
+from input.scripts.input_catalog import resolve_input_settings
 from input.scripts.namelist import namelists_to_text
 
 DEFAULT_PARAMETERS_JSON = Path(__file__).resolve().parents[1] / "clubb_params.jsonc"
@@ -26,8 +27,12 @@ SETTING_NAME = re.compile(r"[A-Za-z_]\w*\Z")
 
 def parameter_settings(selection=None, json_file=None, *, config=None):
     """Resolve numeric model/SILHS parameters and optional multicolumn dimensions."""
-    from input.scripts.create_case_namelist import resolve_input_settings
     settings = resolve_input_settings("parameters", selection, config=config, json_file=json_file)
+    return validate_parameter_settings(settings)
+
+
+def validate_parameter_settings(settings):
+    """Check resolved numeric parameters and column dimensions; return settings."""
     if set(settings) - {"model", "silhs", "multicol"} or not {"model", "silhs"} <= settings.keys():
         raise ValueError("Parameters JSON requires model and silhs objects; only multicol is optional")
     for category in ("model", "silhs"):

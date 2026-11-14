@@ -807,7 +807,7 @@ def load_extended_std_atm(iunit):
     nCol = 5  # Number of columns in the text file
     std_atmos_dim = 50  # Dimension of the standard atmosphere table
 
-    atm_input_file = Path(__file__).resolve().parents[3] / "input" / "std_atmosphere" / "atmosphere.in"
+    atm_input_file = Path(__file__).resolve().parents[3] / "src" / "Radiation" / "BUGSrad" / "atmosphere.in"
 
     # -- Begin Code --
 

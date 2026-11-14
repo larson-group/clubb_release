@@ -9,6 +9,7 @@ from dash_app.shared.components import styled_dropdown
 from .state import MAX_RUN_PROCS
 from .stats import build_stats_editor
 from .cases import build_case_editor
+from input.scripts.input_catalog import catalog_presets
 from input.scripts.case_json_to_namelist import load_case_catalog
 
 
@@ -115,7 +116,7 @@ def build_select_actions(case_groups):
 
 def build_case_buttons(cases, *, custom=False):
     """Render either catalog or saved case buttons with shared selection IDs."""
-    catalog_names = load_case_catalog()["presets"]
+    catalog_names = catalog_presets("cases", load_case_catalog())
     def button(case_name):
         return html.Button(
             case_name,

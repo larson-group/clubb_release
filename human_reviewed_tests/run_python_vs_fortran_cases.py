@@ -48,7 +48,7 @@ HR_SPEC = "C8/0.2:0.8/4" # used to run multicol mode by varying C8
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from tuner.system_defaults import default_max_workers as default_workers
 from input.scripts.create_case_namelist import parse_forwarded_args
-from run_scripts.run_scm_all import positive_int, split_values
+from input.scripts.input_catalog import positive_int, split_values
 
 @dataclass
 class CaseResult:

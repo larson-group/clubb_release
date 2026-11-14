@@ -13,7 +13,7 @@ TUNABLE_PARAMETER_RENAMES: dict[str, str] = {}
 
 def available_tunable_configs():
     """List the built-in baseline and parameter/flag preset names."""
-    from input.scripts.create_case_namelist import DEFAULT_CONFIG, load_catalog
+    from input.scripts.input_catalog import DEFAULT_CONFIG, load_catalog
     names = {DEFAULT_CONFIG} | set(load_catalog("parameters")["presets"]) | set(load_catalog("flags")["presets"])
     return [{"label": name, "value": name, "path": str(TUNABLE_CONFIG_ROOT)}
             for name in sorted(names, key=lambda name: (name != "default", name))]
@@ -21,7 +21,7 @@ def available_tunable_configs():
 
 def config_settings(config_name, kind):
     """Return resolved JSON for a shared config and input kind."""
-    from input.scripts.create_case_namelist import resolve_input_settings
+    from input.scripts.input_catalog import resolve_input_settings
     return resolve_input_settings(kind, config=config_name or "default")
 
 

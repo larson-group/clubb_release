@@ -1,4 +1,5 @@
 """Provisional checks of the actual case form and browser draft callback."""
+from input.scripts.input_catalog import catalog_presets
 import json
 from pathlib import Path
 import shutil
@@ -178,7 +179,7 @@ def test_every_catalog_case_round_trips_through_the_actual_cell_parser():
         pytest.skip("Node is required to exercise the shipped case editor callback")
     catalog = load_case_catalog()
     samples = []
-    for name in catalog["presets"]:
+    for name in catalog_presets("cases", catalog):
         settings = resolved_case_settings(name)
         schema = cases.field_schema(settings, catalog)
         actual = dict(cases.setting_leaves(settings))

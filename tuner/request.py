@@ -179,7 +179,7 @@ def load_request(request_path: Path) -> dict:
 def _normalize_config(raw_config) -> str:
     """Validate and normalize the tunable config name/path in a tuning request."""
     config = str(raw_config or "default").strip() or "default"
-    from input.scripts.create_case_namelist import available_configs
+    from input.scripts.input_catalog import available_configs
     if config not in available_configs():
         raise RuntimeError(f"Unknown config {config!r}")
     return config

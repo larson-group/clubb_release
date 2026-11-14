@@ -30,7 +30,7 @@ def test_namelist_updater_rejects_unknown_settings():
         write_temp_settings({"model": {}, "silhs": {}}, {"unknown_setting": "1"}, "clubb_flags_test_")
 
 
-from input.scripts.create_case_namelist import available_configs
+from input.scripts.input_catalog import available_configs
 
 
 @pytest.mark.parametrize("config", available_configs())

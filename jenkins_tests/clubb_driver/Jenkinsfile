@@ -20,8 +20,8 @@
 //   python3 human_reviewed_tests/case_runner_lifecycle_test.py -jax=cpu -output_dir output/driver_test/case_runner_jax
 // Reproduce the GPU comparison with the same NVHPC and NetCDF modules:
 //   ./compile.py -gpu openacc -openacc_bfb
-//   run_scripts/run_scm_all.py -workers 1 -min_cases -multicol 8 -max_iters 200 -output_dir driver_test/standalone_nvhpc -override l_lh_straight_mc=.true.
-//   run_scripts/run_scm_all.py -workers 1 -min_cases -multicol 8 -max_iters 200 -output_dir driver_test/driver_nvhpc -driver_test -override l_lh_straight_mc=.true.
+//   run_scripts/run_scm.py -workers 1 -cases min_cases -multicol 8 -max_iters 200 -output_dir driver_test/standalone_nvhpc -override l_lh_straight_mc=.true.
+//   run_scripts/run_scm.py -workers 1 -cases min_cases -multicol 8 -max_iters 200 -output_dir driver_test/driver_nvhpc -driver_test -override l_lh_straight_mc=.true.
 //   run_scripts/run_bindiff_all.py output/driver_test/standalone_nvhpc output/driver_test/driver_nvhpc
 // Elsewhere, provide the GNU/NetCDF build environment described in BUILD.md.
 // Python dependencies and the JAX CPU environment use the existing bootstraps.
@@ -74,11 +74,11 @@ pipeline {
               catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
                 sh '''
                   # Compare the same namelists through the normal and reset/rerun frontends.
-                  run_scripts/run_scm_all.py -jax -cases bomex,atex -workers 1 \
+                  run_scripts/run_scm.py -jax -cases bomex,atex -workers 1 \
                     -multicol C8/0.2:0.8/4 -batch_size 2 -max_iters 8 \
                     -dt_main 60 -dt_rad 60 -tout 60 -override 'stats_tsamp=60.' \
                     -output_dir driver_test/standalone_jax
-                  run_scripts/run_scm_all.py -jax -driver_test -cases bomex,atex -workers 1 \
+                  run_scripts/run_scm.py -jax -driver_test -cases bomex,atex -workers 1 \
                     -multicol C8/0.2:0.8/4 -batch_size 2 -max_iters 8 \
                     -dt_main 60 -dt_rad 60 -tout 60 -override 'stats_tsamp=60.' \
                     -output_dir driver_test/driver_jax
@@ -107,8 +107,8 @@ pipeline {
                   module load intel netcdf-fortran
                   ./compile.py
                   ulimit -s 8388608
-                  run_scripts/run_scm_all.py -workers 4 -multicol 4 -max_iters 500 -output_dir driver_test/standalone_ifx
-                  run_scripts/run_scm_all.py -workers 4 -multicol 4 -max_iters 500 -output_dir driver_test/driver_ifx -driver_test
+                  run_scripts/run_scm.py -cases standard_cases -workers 4 -multicol 4 -max_iters 500 -output_dir driver_test/standalone_ifx
+                  run_scripts/run_scm.py -cases standard_cases -workers 4 -multicol 4 -max_iters 500 -output_dir driver_test/driver_ifx -driver_test
                   run_scripts/run_bindiff_all.py output/driver_test/standalone_ifx output/driver_test/driver_ifx
                 '''
               }
@@ -131,8 +131,8 @@ pipeline {
                   sh '''
                     # Allow the large Fortran automatic arrays used by these cases.
                     ulimit -s 8388608
-                    run_scripts/run_scm_all.py -workers 1 -min_cases -multicol 8 -max_iters 200 -output_dir driver_test/standalone_nvhpc -override l_lh_straight_mc=.true.
-                    run_scripts/run_scm_all.py -workers 1 -min_cases -multicol 8 -max_iters 200 -output_dir driver_test/driver_nvhpc -driver_test -override l_lh_straight_mc=.true.
+                    run_scripts/run_scm.py -workers 1 -cases min_cases -multicol 8 -max_iters 200 -output_dir driver_test/standalone_nvhpc -override l_lh_straight_mc=.true.
+                    run_scripts/run_scm.py -workers 1 -cases min_cases -multicol 8 -max_iters 200 -output_dir driver_test/driver_nvhpc -driver_test -override l_lh_straight_mc=.true.
                   '''
                 }
                 sh '''run_scripts/run_bindiff_all.py output/driver_test/standalone_nvhpc output/driver_test/driver_nvhpc'''

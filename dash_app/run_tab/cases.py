@@ -5,6 +5,7 @@ import json
 from dash import ALL, ClientsideFunction, Input, Output, State, callback_context, dcc, html, no_update
 from dash.exceptions import PreventUpdate
 
+from input.scripts.input_catalog import catalog_presets
 from input.scripts.case_json_to_namelist import (
     available_case_names, case_definition_record, load_case_catalog,
     save_case_definition,
@@ -29,7 +30,7 @@ def field_schema(baseline, catalog=None):
     """Describe editable case fields and their inherited catalog defaults."""
     catalog = catalog if catalog is not None else load_case_catalog()
     definitions = [catalog["defaults"], baseline]
-    definitions.extend(catalog["presets"].values())
+    definitions.extend(catalog_presets("cases", catalog).values())
     values = {}
     for definition in definitions:
         for path, value in setting_leaves(definition):
@@ -164,8 +165,9 @@ def register_case_callbacks(app):
             raise PreventUpdate
         catalog = load_case_catalog()
         names = available_case_names()
+        catalog_names = catalog_presets("cases", catalog)
         options = [{"label": "Defaults", "value": "__defaults__"}] + [
-            {"label": f"{'Case' if name in catalog['presets'] else 'Saved'} · {name}", "value": name} for name in names]
+            {"label": f"{'Case' if name in catalog_names else 'Saved'} · {name}", "value": name} for name in names]
         record = (case_definition_record(source) if source != "__defaults__" else
                   {"namelists": copy.deepcopy(catalog["defaults"]), "benchmark_case": None})
         baseline = {"key": source, **record}

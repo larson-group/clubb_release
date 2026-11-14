@@ -86,31 +86,16 @@ def test_python_comparison_keeps_control_of_backend_and_output(option):
         comparison.parse_args([option])
 
 
-def test_branch_comparison_translates_only_option_tokens_for_old_clones(tmp_path):
-    import importlib.util
-    spec = importlib.util.spec_from_file_location(
-        "arg_branch_compare", Path(__file__).resolve().parents[4] / "human_reviewed_tests/run_bindiff_w_flags.py"
-    )
-    branch = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(branch)
-    scripts = ["run_scripts/run_clubb_w_varying_flags.py", "run_scripts/run_scm.py"]
-    for file, declarations in zip(scripts, [
-        ["--flag-config-file", "--priority-cases", "-nproc"],
-        ["-params", "-out_dir", "-override"],
-    ]):
-        path = tmp_path / file
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text("import argparse\np = argparse.ArgumentParser()\n" +
-                        "\n".join(f"p.add_argument({name!r})" for name in declarations))
-    arguments = ["-flag_config_file", "clubb_config_flags.jsonc", "-priority_cases", "-workers=2",
-                 "-params_file", "parameters.in", "-output_dir=/tmp/output",
-                 "-override", '{"name":"-workers"}']
-    assert branch.clone_arguments(tmp_path, arguments, scripts) == [
-        "--flag-config-file", "clubb_config_flags.jsonc", "--priority-cases", "-nproc=2",
-        "-params", "parameters.in", "-out_dir=/tmp/output", "-override", '{"name":"-workers"}',
-    ]
-    current = Path(__file__).resolve().parents[4]
-    assert branch.clone_arguments(current, arguments, [*scripts, "input/scripts/create_case_namelist.py"]) == arguments
+def test_branch_comparison_uses_current_catalog_resolver_for_old_clones(tmp_path):
+    """Resolve new catalog groups locally while executing each clone's model runner."""
+    from types import SimpleNamespace
+    from human_reviewed_tests import run_bindiff_w_flags as branch
+    args = SimpleNamespace(flag_group="core_group", skip_default_flags=True,
+                           run_args=["-cases", "priority_cases", "-workers", "2"])
+    command = branch.build_varying_flags_command(tmp_path, args)
+    assert command[1] == str(branch.REPO_ROOT / "run_scripts/run_clubb_w_varying_flags.py")
+    assert command[2:6] == ["-clubb_root", str(tmp_path), "-flag_group", "core_group"]
+    assert command[6:] == ["-skip_default_flags", *args.run_args]
 
 
 def test_python_comparison_rejects_empty_explicit_case_list():

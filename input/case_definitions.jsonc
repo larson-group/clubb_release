@@ -2,7 +2,11 @@
   // Named simulation cases for CLUBB.
   //
   // "defaults" holds the shared starting settings. Each entry under "presets"
-  // describes one experiment and supplies its own details and overrides. The run
+  // describes one experiment and supplies its own details and overrides.
+  // "groups" defines inherited family settings; group names end in _group and
+  // their leaf case names remain globally unique. "lists" selects existing
+  // cases/groups without changing settings. See input/README.md.
+  // The run
   // scripts and Dash combine these settings into the model's input.
   //
   // Run a named case from the repository root, for example:
@@ -36,47 +40,46 @@
       "dt_rad": 60.0,                           // Radiation timestep [s]
 
       "debug_level": 2,                         // Select debug level:
-                                                //    0 => Print no debug messages to the screen
-                                                //    1 => Print lightweight debug messages, e.g. print statements
-                                                //    2 => Print debug messages that require extra testing,
-                                                //         e.g. checks for NaNs and spurious negative values.
+      //    0 => Print no debug messages to the screen
+      //    1 => Print lightweight debug messages, e.g. print statements
+      //    2 => Print debug messages that require extra testing,
+      //         e.g. checks for NaNs and spurious negative values.
 
       //================================= Grid Settings =================================
       "deltaz_nl": 50.0,                        // Distance between grid levels on evenly-spaced grid.      [m]
-                                                // Note:  For this option, both zt_grid_fname and zm_grid_fname must be ''.
+      // Note:  For this option, both zt_grid_fname and zm_grid_fname must be ''.
 
       "grid_type": 1,                           // Select grid type:
-                                                //    1 ==> evenly-spaced grid levels.
-                                                //    2 ==> stretched (unevenly-spaced) grid entered on thermodynamic grid levels;
-                                                //          momentum levels halfway between thermo. levels (style of SAM stretched grid).
-                                                //    3 ==> stretched (unevenly-spaced) grid entered on momentum grid levels;
-                                                //          thermo. levels halfway between mom. levels (style of WRF stretched grid).
+      //    1 ==> evenly-spaced grid levels.
+      //    2 ==> stretched (unevenly-spaced) grid entered on thermodynamic grid levels;
+      //          momentum levels halfway between thermo. levels (style of SAM stretched grid).
+      //    3 ==> stretched (unevenly-spaced) grid entered on momentum grid levels;
+      //          thermo. levels halfway between mom. levels (style of WRF stretched grid).
 
       "nzmax": 128,                             // Number of vertical levels.
-                                                // For grid_type = 1 nzmax can be any number
+      // For grid_type = 1 nzmax can be any number
 
       "zm_init_nl":   0.0,                      // Minimum Altitude of lowest momentum level on any grid. [m]
       "zm_top_nl": 6950.0,                      // Maximum Altitude of highest momentum level on any grid. [m]
 
       "zt_grid_fname": "",                      // Stretched grid on thermodynamic levels (grid_type = 2).
-                                                // Path (from ../run_scripts/) and filename of data file that contains
-                                                // thermodynamic level altitudes (in meters).
-                                                // Note:  For this option, zm_grid_fname must be ''.
+      // Path (from ../run_scripts/) and filename of data file that contains
+      // thermodynamic level altitudes (in meters).
+      // Note:  For this option, zm_grid_fname must be ''.
 
       "zm_grid_fname": "",                      // Stretched grid on momentum levels (grid_type = 3).
-                                                // Path (from ../run_scripts/) and filename to data file that contains
-                                                // momentum level altitudes (in meters).
-                                                // Note:  For this option, zt_grid_fname must be ''.
+      // Path (from ../run_scripts/) and filename to data file that contains
+      // momentum level altitudes (in meters).
+      // Note:  For this option, zt_grid_fname must be ''.
 
       //================================= Surface Settings =================================
       "sfc_elevation_nl": 0.0,                  // Elevation of ground level [meters above mean sea level]
       "l_soil_veg": false,                      // Enable the soil/vegetation surface model.
       "sfctype": 1,                             // Surface scheme for cases without specified surface fluxes.
-                                                // 0: fixed sens_ht and latent_ht; 1: ocean bulk formula using t_sfc_nl.
-                                                // Convert case specifications in W/m^2 to fixed flux units with
-                                                // latent_ht = lhflx / (rho_sfc_flux * Lv) [(m/s) * (kg/kg)] and
-                                                // sens_ht = shflx / (rho_sfc_flux * Cp) [(m/s) * K].
-
+      // 0: fixed sens_ht and latent_ht; 1: ocean bulk formula using t_sfc_nl.
+      // Convert case specifications in W/m^2 to fixed flux units with
+      // latent_ht = lhflx / (rho_sfc_flux * Lv) [(m/s) * (kg/kg)] and
+      // sens_ht = shflx / (rho_sfc_flux * Cp) [(m/s) * K].
 
       // Case input paths are relative to run_scripts; empty means unused.
       "sounding_file": "",
@@ -93,7 +96,7 @@
       "l_input_fields": false,                  // Enable replacing fields from the setfields dataset.
       "l_restart": false,                       // Flag for whether this is a restart run.
       "time_restart": 0.0,                      // Time of model restart.
-                                                // [seconds since start time listed in netCDF file]
+      // [seconds since start time listed in netCDF file]
 
       //================================= Probably should be flags/params =================================
       "l_calc_w_corr": false,                   // Calculate vertical-velocity/hydrometeor correlations.
@@ -116,14 +119,14 @@
 
       //================================= Scalar Settings =================================
       "sclr_dim": 0,                            // Total number of scalars that are computed using higher-order closure
-                                                // 0 to shut off all scalar computations
-                                                // > 0 specifies the number of columns in sclr_sounding_file.
+      // 0 to shut off all scalar computations
+      // > 0 specifies the number of columns in sclr_sounding_file.
       "iisclr_rt": -1,                          // Location in the array to place a scalar like total water
       "iisclr_thl": -2,                         // Location in the array to place a scalar like thetal
       "sclr_tol_nl": [0.01, 1e-08],             // Tolerances below which we consider scalar to be 0.
       "edsclr_dim": 0,                          // Add scalars that are computed using simple eddy diffusivity
-                                                // 0 to shut off all scalar computations
-                                                // > 0 specifies the number of columns in edsclr_sounding_file.
+      // 0 to shut off all scalar computations
+      // > 0 specifies the number of columns in edsclr_sounding_file.
       "iiedsclr_rt": -1,                        // Location in the edsclrm array to place total water
       "iiedsclr_thl": -2,                       // Location in the edsclrm array to place a scalar like thetal
 
@@ -170,9 +173,9 @@
     "stats_setting": {
       "l_stats": true,                          // Flag for statistical output.
       "stats_tsamp": 60.0,                      // Frequency of statistical sampling [s]
-                                                // For most complete sampling, let
-                                                // stats_tsamp = dt_main
-                                                // (stats_tsamp must multiply evenly into stats_tout)
+      // For most complete sampling, let
+      // stats_tsamp = dt_main
+      // (stats_tsamp must multiply evenly into stats_tout)
       "stats_tout": 60.0                        // Frequency of statistical output.  [s]
     },
 
@@ -700,826 +703,6 @@
       }
     },
 
-    //================================= cgils_s11 =================================
-    "cgils_s11": {
-      "model_setting": {
-        "runtype": "cgils_s11",
-        "sounding_file": "../input/case_data/cgils_s11_sounding.in",
-        "ozone_sounding_file": "../input/case_data/cgils_s11_ozone_sounding.in",
-        "forcing_file": "../input/case_data/cgils_s11_forcings.in",
-        "sfc_file": "../input/case_data/cgils_s11_sfc.in",
-        "day": 15,
-        "month": 7,
-        "year": 2003,
-        "lat_vals": 32.0,
-        "lon_vals": -129.0,
-        "time_initial": 0.0,
-        "time_final": 864000.0,
-        "grid_type": 2,
-        "zt_grid_fname": "../input/grid/deep_convection_128lev_27km_zt_grid.grd",
-        "dt_main": 300.0,
-        "dt_rad": 900.0,
-        "p_sfc_nl": 102078.5,
-        "fcor_nl": 7.728e-05,
-        "forcings_file_path": "../input/case_data/cgils_s11_forcings/",
-        "l_uv_nudge": true,
-        "thlm_sponge_damp_settings": {
-          "l_sponge_damping": true
-        },
-        "rtm_sponge_damp_settings": {
-          "l_sponge_damping": true
-        },
-        "uv_sponge_damp_settings": {
-          "tau_sponge_damp_min": 10800.0,
-          "tau_sponge_damp_max": 86400.0
-        },
-        "restart_path_case": "restart/cgils_s11",
-        "debug_level": 0,
-        "sclr_tol_nl": 1e-08,
-        "l_t_dependent": true
-      },
-      "microphysics_setting": {
-        "microphys_scheme": "morrison",
-        "l_ice_microphys": true,
-        "hmp2_ip_on_hmm2_ip_intrcpt": {"rr": 1.0, "nr": 1.0, "ri": 1.0, "ni": 1.0, "rs": 1.0, "ns": 1.0, "rg": 1.0, "ng": 1.0},
-        "hmp2_ip_on_hmm2_ip_slope": {"ri": 0.0, "ni": 0.0, "rs": 0.0, "ns": 0.0, "rg": 0.0, "ng": 0.0}
-      },
-      "radiation_setting": {
-        "rad_scheme": "bugsrad",
-        "l_fix_cos_solar_zen": true,
-        "l_sw_radiation": true,
-        "cos_solar_zen_values": 0.616,          // cos(52 degrees).
-        "cos_solar_zen_times": 2592001.0,
-        "slr": 0.58,
-        "l_calc_thlp2_rad": true
-      },
-      "stats_setting": {
-        "fname_prefix": "cgils_s11",
-        "stats_tsamp": 300.0,                   // stats_tsamp  = 60
-        "stats_tout": 3600.0
-      },
-      "setfields": {
-        "datafile": "../les_and_clubb_benchmark_runs/sam_benchmark_runs/SAM6.6/CLOUD_FEEDBACK_s11/ctl_s11_96x96x320_50m_DRZ_N100_ref.nc",
-        "input_type": "sam"
-      }
-    },
-
-    //================================= cgils_s11_p2k =================================
-    "cgils_s11_p2k": {
-      "model_setting": {
-        "runtype": "cgils_s11_p2k",
-        "sounding_file": "../input/case_data/cgils_s11_p2k_sounding.in",
-        "ozone_sounding_file": "../input/case_data/cgils_s11_ozone_sounding.in",
-        "forcing_file": "../input/case_data/cgils_s11_p2k_forcings.in",
-        "sfc_file": "../input/case_data/cgils_s11_p2k_sfc.in",
-        "day": 15,
-        "month": 7,
-        "year": 2003,
-        "lat_vals": 32.0,
-        "lon_vals": -129.0,
-        "time_initial": 0.0,
-        "time_final": 864000.0,
-        "grid_type": 2,
-        "zt_grid_fname": "../input/grid/deep_convection_128lev_27km_zt_grid.grd",
-        "dt_main": 300.0,
-        "dt_rad": 900.0,
-        "p_sfc_nl": 102078.5,
-        "fcor_nl": 7.728e-05,
-        "forcings_file_path": "../input/case_data/cgils_s11_p2k_forcings/",
-        "l_uv_nudge": true,
-        "thlm_sponge_damp_settings": {
-          "l_sponge_damping": true
-        },
-        "rtm_sponge_damp_settings": {
-          "l_sponge_damping": true
-        },
-        "uv_sponge_damp_settings": {
-          "tau_sponge_damp_min": 10800.0,
-          "tau_sponge_damp_max": 86400.0
-        },
-        "restart_path_case": "restart/cgils_s11_p2k",
-        "debug_level": 0,
-        "sclr_tol_nl": 1e-08,
-        "l_t_dependent": true
-      },
-      "microphysics_setting": {
-        "microphys_scheme": "morrison",
-        "l_ice_microphys": true,
-        "hmp2_ip_on_hmm2_ip_slope": {"rr": 2.12e-05, "nr": 2.12e-05}
-      },
-      "radiation_setting": {
-        "rad_scheme": "bugsrad",
-        "l_fix_cos_solar_zen": true,
-        "l_sw_radiation": true,
-        "cos_solar_zen_values": 0.616,
-        "cos_solar_zen_times": 2592001.0,
-        "slr": 0.58,
-        "l_calc_thlp2_rad": true
-      },
-      "stats_setting": {
-        "fname_prefix": "cgils_s11_p2k",
-        "stats_tsamp": 300.0,                   // stats_tsamp  = 60
-        "stats_tout": 3600.0
-      }
-    },
-
-    //================================= cgils_s12 =================================
-    "cgils_s12": {
-      "model_setting": {
-        "runtype": "cgils_s12",
-        "sounding_file": "../input/case_data/cgils_s12_sounding.in",
-        "ozone_sounding_file": "../input/case_data/cgils_s12_ozone_sounding.in",
-        "forcing_file": "../input/case_data/cgils_s12_forcings.in",
-        "sfc_file": "../input/case_data/cgils_s12_sfc.in",
-        "day": 15,
-        "month": 7,
-        "year": 2003,
-        "lat_vals": 35.0,
-        "lon_vals": -125.0,
-        "time_initial": 0.0,
-        "time_final": 864000.0,
-        "grid_type": 2,
-        "zt_grid_fname": "../input/grid/deep_convection_128lev_27km_zt_grid.grd",
-        "dt_main": 300.0,
-        "dt_rad": 900.0,
-        "p_sfc_nl": 101864.6,
-        "fcor_nl": 8.365e-05,
-        "forcings_file_path": "../input/case_data/cgils_s12_forcings/",
-        "l_uv_nudge": true,
-        "l_rtm_nudge": true,
-        "rtm_min": 0.003581839,
-        "thlm_sponge_damp_settings": {
-          "l_sponge_damping": true
-        },
-        "rtm_sponge_damp_settings": {
-          "l_sponge_damping": true
-        },
-        "uv_sponge_damp_settings": {
-          "tau_sponge_damp_min": 10800.0,
-          "tau_sponge_damp_max": 86400.0
-        },
-        "restart_path_case": "restart/cgils_s12",
-        "debug_level": 0,
-        "sclr_tol_nl": 1e-08,
-        "l_t_dependent": true
-      },
-      "microphysics_setting": {
-        "microphys_scheme": "morrison",
-        "l_ice_microphys": true,
-        "hmp2_ip_on_hmm2_ip_intrcpt": {"rr": 1.0, "nr": 1.0, "ri": 1.0, "ni": 1.0, "rs": 1.0, "ns": 1.0, "rg": 1.0, "ng": 1.0},
-        "hmp2_ip_on_hmm2_ip_slope": {"ri": 0.0, "ni": 0.0, "rs": 0.0, "ns": 0.0, "rg": 0.0, "ng": 0.0}
-      },
-      "radiation_setting": {
-        "rad_scheme": "bugsrad",
-        "l_fix_cos_solar_zen": true,
-        "l_sw_radiation": true,
-        "cos_solar_zen_values": 0.606,
-        "cos_solar_zen_times": 2592001.0,
-        "slr": 0.59,
-        "l_calc_thlp2_rad": true
-      },
-      "stats_setting": {
-        "fname_prefix": "cgils_s12",
-        "stats_tsamp": 300.0,
-        "stats_tout": 3600.0
-      },
-      "setfields": {
-        "datafile": "../les_and_clubb_benchmark_runs/sam_benchmark_runs/SAM6.6/CLOUD_FEEDBACK_s12/ctl_s12_96x96x192_25m_DRZ_N100_fixnudge.nc",
-        "input_type": "sam"
-      }
-    },
-
-    //================================= cgils_s12_p2k =================================
-    "cgils_s12_p2k": {
-      "model_setting": {
-        "runtype": "cgils_s12_p2k",
-        "sounding_file": "../input/case_data/cgils_s12_p2k_sounding.in",
-        "ozone_sounding_file": "../input/case_data/cgils_s12_ozone_sounding.in",
-        "forcing_file": "../input/case_data/cgils_s12_p2k_forcings.in",
-        "sfc_file": "../input/case_data/cgils_s12_p2k_sfc.in",
-        "day": 15,
-        "month": 7,
-        "year": 2003,
-        "lat_vals": 35.0,
-        "lon_vals": -125.0,
-        "time_initial": 0.0,
-        "time_final": 864000.0,
-        "grid_type": 2,
-        "zt_grid_fname": "../input/grid/deep_convection_128lev_27km_zt_grid.grd",
-        "dt_main": 300.0,
-        "dt_rad": 900.0,
-        "p_sfc_nl": 101864.6,
-        "fcor_nl": 8.365e-05,
-        "forcings_file_path": "../input/case_data/cgils_s12_p2k_forcings/",
-        "l_uv_nudge": true,
-        "thlm_sponge_damp_settings": {
-          "l_sponge_damping": true
-        },
-        "rtm_sponge_damp_settings": {
-          "l_sponge_damping": true
-        },
-        "uv_sponge_damp_settings": {
-          "tau_sponge_damp_min": 10800.0,
-          "tau_sponge_damp_max": 86400.0
-        },
-        "restart_path_case": "restart/cgils_s12_p2k",
-        "debug_level": 0,
-        "sclr_tol_nl": 1e-08,
-        "l_t_dependent": true
-      },
-      "microphysics_setting": {
-        "microphys_scheme": "morrison",
-        "l_ice_microphys": true,
-        "hmp2_ip_on_hmm2_ip_slope": {"rr": 2.12e-05, "nr": 2.12e-05}
-      },
-      "radiation_setting": {
-        "rad_scheme": "bugsrad",
-        "l_fix_cos_solar_zen": true,
-        "l_sw_radiation": true,
-        "cos_solar_zen_values": 0.606,
-        "cos_solar_zen_times": 2592001.0,
-        "slr": 0.59,
-        "l_calc_thlp2_rad": true
-      },
-      "stats_setting": {
-        "fname_prefix": "cgils_s12_p2k",
-        "stats_tsamp": 300.0,
-        "stats_tout": 3600.0
-      }
-    },
-
-    //================================= cgils_s6 =================================
-    "cgils_s6": {
-      "model_setting": {
-        "runtype": "cgils_s6",
-        "sounding_file": "../input/case_data/cgils_s6_sounding.in",
-        "ozone_sounding_file": "../input/case_data/cgils_s6_ozone_sounding.in",
-        "forcing_file": "../input/case_data/cgils_s6_forcings.in",
-        "sfc_file": "../input/case_data/cgils_s6_sfc.in",
-        "day": 15,
-        "month": 7,
-        "year": 2003,
-        "lat_vals": 17.0,
-        "lon_vals": -149.0,
-        "time_initial": 0.0,
-        "time_final": 864000.0,
-        "grid_type": 2,
-        "zm_top_nl": 10000.0,
-        "zt_grid_fname": "../input/grid/deep_convection_128lev_27km_zt_grid.grd",
-        "dt_main": 300.0,
-        "dt_rad": 600.0,
-        "p_sfc_nl": 101407.8,
-        "fcor_nl": 4.264e-05,
-        "forcings_file_path": "../input/case_data/cgils_s6_forcings/",
-        "l_uv_nudge": true,
-        "thlm_sponge_damp_settings": {
-          "l_sponge_damping": true
-        },
-        "rtm_sponge_damp_settings": {
-          "l_sponge_damping": true
-        },
-        "uv_sponge_damp_settings": {
-          "tau_sponge_damp_min": 10800.0,
-          "tau_sponge_damp_max": 86400.0
-        },
-        "restart_path_case": "restart/cgils_s6",
-        "sclr_tol_nl": 1e-08,
-        "l_t_dependent": true
-      },
-      "microphysics_setting": {
-        "microphys_scheme": "morrison",
-        "l_ice_microphys": true,
-        "l_predict_nc": true,
-        "hmp2_ip_on_hmm2_ip_intrcpt": {"rr": 1.0, "nr": 1.0, "ri": 1.0, "ni": 1.0, "rs": 1.0, "ns": 1.0, "rg": 1.0, "ng": 1.0},
-        "hmp2_ip_on_hmm2_ip_slope": {"ri": 0.0, "ni": 0.0, "rs": 0.0, "ns": 0.0, "rg": 0.0, "ng": 0.0}
-      },
-      "radiation_setting": {
-        "rad_scheme": "bugsrad",
-        "l_fix_cos_solar_zen": true,
-        "l_sw_radiation": true,
-        "cos_solar_zen_values": 0.629,
-        "cos_solar_zen_times": 2592001.0,
-        "slr": 0.539,
-        "l_calc_thlp2_rad": true
-      },
-      "stats_setting": {
-        "fname_prefix": "cgils_s6",
-        "stats_tsamp": 300.0,
-        "stats_tout": 3600.0
-      },
-      "setfields": {
-        "datafile": "../les_and_clubb_benchmark_runs/sam_benchmark_runs/SAM6.6/CLOUD_FEEDBACK_s6/ctl_s6_96x96x128_100m_DRZ_N100_tqndg.nc",
-        "input_type": "sam"
-      }
-    },
-
-    //================================= cgils_s6_p2k =================================
-    "cgils_s6_p2k": {
-      "model_setting": {
-        "runtype": "cgils_s6_p2k",
-        "sounding_file": "../input/case_data/cgils_s6_p2k_sounding.in",
-        "ozone_sounding_file": "../input/case_data/cgils_s6_ozone_sounding.in",
-        "forcing_file": "../input/case_data/cgils_s6_forcings.in",
-        "sfc_file": "../input/case_data/cgils_s6_p2k_sfc.in",
-        "day": 15,
-        "month": 7,
-        "year": 2003,
-        "lat_vals": 17.0,
-        "lon_vals": -149.0,
-        "time_initial": 0.0,
-        "time_final": 864000.0,
-        "grid_type": 2,
-        "zm_top_nl": 10000.0,
-        "zt_grid_fname": "../input/grid/deep_convection_128lev_27km_zt_grid.grd",
-        "dt_main": 300.0,
-        "dt_rad": 600.0,
-        "p_sfc_nl": 101407.8,
-        "fcor_nl": 4.264e-05,
-        "forcings_file_path": "../input/case_data/cgils_s6_p2k_forcings/",
-        "l_uv_nudge": true,
-        "thlm_sponge_damp_settings": {
-          "l_sponge_damping": true
-        },
-        "rtm_sponge_damp_settings": {
-          "l_sponge_damping": true
-        },
-        "uv_sponge_damp_settings": {
-          "tau_sponge_damp_min": 10800.0,
-          "tau_sponge_damp_max": 86400.0
-        },
-        "restart_path_case": "restart/cgils_s6_p2k",
-        "sclr_tol_nl": 1e-08,
-        "l_t_dependent": true
-      },
-      "microphysics_setting": {
-        "microphys_scheme": "morrison",
-        "l_ice_microphys": true,
-        "hmp2_ip_on_hmm2_ip_slope": {"rr": 2.12e-05, "nr": 2.12e-05}
-      },
-      "radiation_setting": {
-        "rad_scheme": "bugsrad",
-        "l_fix_cos_solar_zen": true,
-        "l_sw_radiation": true,
-        "cos_solar_zen_values": 0.629,
-        "cos_solar_zen_times": 2592001.0,
-        "slr": 0.539,
-        "l_calc_thlp2_rad": true
-      },
-      "stats_setting": {
-        "fname_prefix": "cgils_s6_p2k",
-        "stats_tsamp": 300.0,
-        "stats_tout": 3600.0
-      }
-    },
-
-    //================================= clex9_nov02 =================================
-    "clex9_nov02": {                            // CLEX-9: November 02 altocumulus case
-      "model_setting": {
-        "runtype": "clex9_nov02",
-        "sounding_file": "../input/case_data/clex9_nov02_sounding.in",
-        "sclr_sounding_file": "../input/case_data/clex9_nov02_sclr_sounding.in",
-        "edsclr_sounding_file": "../input/case_data/clex9_nov02_sclr_sounding.in",
-        "forcing_file": "../input/case_data/clex9_nov02_forcings.in",
-        "sfc_file": "../input/case_data/clex9_nov02_sfc.in",
-        "day": 2,
-        "month": 11,
-        "year": 2001,
-        "lat_vals": 41.085,
-        "lon_vals": -100.3552,
-        "time_initial": 47811.0,
-        "time_final": 69411.0,
-        "nzmax": 120,
-        "deltaz_nl": 25.0,
-        "zm_init_nl": 3097.0,
-        "zm_top_nl": 6601.0,
-        "p_sfc_nl": 70000.0,
-        "restart_path_case": "restart/clex9_nov02",
-        "sfctype": 0,
-        "l_t_dependent": true
-      },
-      "microphysics_setting": {
-        "microphys_scheme": "morrison",
-        "microphys_start_time": 51411.0,
-        "l_ice_microphys": true,
-        "l_predict_nc": true,
-        "hmp2_ip_on_hmm2_ip_intrcpt": {"rr": 1.0, "nr": 1.0, "ri": 1.0, "ni": 1.0, "rs": 1.0, "ns": 1.0, "rg": 1.0, "ng": 1.0},
-        "hmp2_ip_on_hmm2_ip_slope": {"ri": 0.0, "ni": 0.0, "rs": 0.0, "ns": 0.0, "rg": 0.0, "ng": 0.0}
-      },
-      "radiation_setting": {
-        "rad_scheme": "simplified",
-        "f0": 104.0,
-        "f1": 62.0,
-        "kappa": 94.2,
-        "cos_solar_zen_values": [0.0, 0.01, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],  // Cosine of the solar zenith angle	[-]
-        "fs_values": [0.0, 715.86, 1073.577, 1165.0905, 1204.7033, 1227.6898, 1243.1772, 1254.5893, 1263.5491, 1270.8668, 1277.0474, 1282.3994],  // Incoming shortwave insolation at cloud top along the beam [W/m^2].
-        "l_calc_thlp2_rad": true
-      },
-      "stats_setting": {
-        "fname_prefix": "clex9_nov02"
-      }
-    },
-
-    //================================= clex9_oct14 =================================
-    "clex9_oct14": {                            // CLEX-9: October 14 altocumulus case
-      "model_setting": {
-        "runtype": "clex9_oct14",
-        "sounding_file": "../input/case_data/clex9_oct14_sounding.in",
-        "sclr_sounding_file": "../input/case_data/clex9_oct14_sclr_sounding.in",
-        "edsclr_sounding_file": "../input/case_data/clex9_oct14_sclr_sounding.in",
-        "forcing_file": "../input/case_data/clex9_oct14_forcings.in",
-        "sfc_file": "../input/case_data/clex9_oct14_sfc.in",
-        "day": 14,
-        "month": 10,
-        "year": 2001,
-        "lat_vals": 41.675,
-        "lon_vals": -101.61,
-        "time_initial": 51262.5,
-        "time_final": 72862.5,
-        "nzmax": 180,
-        "deltaz_nl": 25.0,
-        "zm_init_nl": 2213.0,
-        "zm_top_nl": 6816.0,
-        "p_sfc_nl": 77170.0,
-        "restart_path_case": "restart/clex9_oct14",
-        "sfctype": 0,
-        "l_t_dependent": true
-      },
-      "microphysics_setting": {
-        "microphys_scheme": "morrison",
-        "l_ice_microphys": true,
-        "microphys_start_time": 54862.5,
-        "hmp2_ip_on_hmm2_ip_intrcpt": {"rr": 1.0, "nr": 1.0, "ri": 1.0, "ni": 1.0, "rs": 1.0, "ns": 1.0, "rg": 1.0, "ng": 1.0},
-        "hmp2_ip_on_hmm2_ip_slope": {"ri": 0.0, "ni": 0.0, "rs": 0.0, "ns": 0.0, "rg": 0.0, "ng": 0.0}
-      },
-      "radiation_setting": {
-        "rad_scheme": "simplified",
-        "f0": 104.0,
-        "f1": 62.0,
-        "kappa": 94.2,
-        "cos_solar_zen_values": [0.0, 0.01, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],  // Cosine of the solar zenith angle	[-]
-        "fs_values": [0.0, 715.86, 1073.577, 1165.0905, 1204.7033, 1227.6898, 1243.1772, 1254.5893, 1263.5491, 1270.8668, 1277.0474, 1282.3994],  // Incoming shortwave insolation at cloud top along the beam [W/m^2].
-        "l_sw_radiation": true,
-        "l_calc_thlp2_rad": true,
-        "alvdr": 0.1
-      },
-      "stats_setting": {
-        "fname_prefix": "clex9_oct14"
-      }
-    },
-
-    //================================= cloud_feedback_s11 =================================
-    "cloud_feedback_s11": {
-      "model_setting": {
-        "runtype": "cloud_feedback_s11",
-        "sounding_file": "../input/case_data/cloud_feedback_s11_sounding.in",
-        "ozone_sounding_file": "../input/case_data/cgils_s11_ozone_sounding.in",
-        "forcing_file": "../input/case_data/cloud_feedback_s11_forcings.in",
-        "sfc_file": "../input/case_data/cgils_s11_sfc.in",
-        "day": 15,
-        "month": 7,
-        "year": 2003,
-        "lat_vals": 32.0,
-        "lon_vals": -129.0,
-        "time_initial": 0.0,
-        "time_final": 864000.0,
-        "grid_type": 2,
-        "zt_grid_fname": "../input/grid/deep_convection_128lev_27km_zt_grid.grd",
-        "dt_main": 300.0,
-        "dt_rad": 900.0,
-        "p_sfc_nl": 102078.5,
-        "fcor_nl": 7.728e-05,
-        "forcings_file_path": "../input/case_data/cloud_feedback_s11_forcings/",
-        "l_uv_nudge": true,
-        "thlm_sponge_damp_settings": {
-          "l_sponge_damping": true
-        },
-        "rtm_sponge_damp_settings": {
-          "l_sponge_damping": true
-        },
-        "uv_sponge_damp_settings": {
-          "tau_sponge_damp_min": 10800.0,
-          "tau_sponge_damp_max": 86400.0
-        },
-        "restart_path_case": "restart/cloud_feedback_s11",
-        "debug_level": 0,
-        "sclr_tol_nl": 1e-08,
-        "l_t_dependent": true
-      },
-      "microphysics_setting": {
-        "microphys_scheme": "morrison",
-        "l_ice_microphys": true,
-        "hmp2_ip_on_hmm2_ip_slope": {"rr": 2.12e-05, "nr": 2.12e-05}
-      },
-      "radiation_setting": {
-        "rad_scheme": "bugsrad",
-        "l_fix_cos_solar_zen": true,
-        "l_sw_radiation": true,
-        "cos_solar_zen_values": 0.616,
-        "cos_solar_zen_times": 2592001.0,
-        "slr": 0.58,
-        "l_calc_thlp2_rad": true
-      },
-      "stats_setting": {
-        "fname_prefix": "cloud_feedback_s11",
-        "stats_tsamp": 300.0,                   // stats_tsamp  = 60
-        "stats_tout": 3600.0
-      }
-    },
-
-    //================================= cloud_feedback_s11_p2k =================================
-    "cloud_feedback_s11_p2k": {
-      "model_setting": {
-        "runtype": "cloud_feedback_s11_p2k",
-        "sounding_file": "../input/case_data/cloud_feedback_s11_p2k_sounding.in",
-        "ozone_sounding_file": "../input/case_data/cgils_s11_ozone_sounding.in",
-        "forcing_file": "../input/case_data/cloud_feedback_s11_p2k_forcings.in",
-        "sfc_file": "../input/case_data/cgils_s11_p2k_sfc.in",
-        "day": 15,
-        "month": 7,
-        "year": 2003,
-        "lat_vals": 32.0,
-        "lon_vals": -129.0,
-        "time_initial": 0.0,
-        "time_final": 864000.0,
-        "grid_type": 2,
-        "zt_grid_fname": "../input/grid/deep_convection_128lev_27km_zt_grid.grd",
-        "dt_main": 300.0,
-        "dt_rad": 900.0,
-        "p_sfc_nl": 102078.5,
-        "fcor_nl": 7.728e-05,
-        "forcings_file_path": "../input/case_data/cloud_feedback_s11_p2k_forcings/",
-        "l_uv_nudge": true,
-        "thlm_sponge_damp_settings": {
-          "l_sponge_damping": true
-        },
-        "rtm_sponge_damp_settings": {
-          "l_sponge_damping": true
-        },
-        "uv_sponge_damp_settings": {
-          "tau_sponge_damp_min": 10800.0,
-          "tau_sponge_damp_max": 86400.0
-        },
-        "restart_path_case": "restart/cloud_feedback_s11_p2k",
-        "sclr_tol_nl": 1e-08,
-        "l_t_dependent": true
-      },
-      "microphysics_setting": {
-        "microphys_scheme": "morrison",
-        "l_ice_microphys": true,
-        "hmp2_ip_on_hmm2_ip_slope": {"rr": 2.12e-05, "nr": 2.12e-05}
-      },
-      "radiation_setting": {
-        "rad_scheme": "bugsrad",
-        "l_fix_cos_solar_zen": true,
-        "l_sw_radiation": true,
-        "cos_solar_zen_values": 0.616,
-        "cos_solar_zen_times": 2592001.0,
-        "slr": 0.58,
-        "l_calc_thlp2_rad": true
-      },
-      "stats_setting": {
-        "fname_prefix": "cloud_feedback_s11_p2k",
-        "stats_tsamp": 300.0,
-        "stats_tout": 3600.0
-      }
-    },
-
-    //================================= cloud_feedback_s12 =================================
-    "cloud_feedback_s12": {
-      "model_setting": {
-        "runtype": "cloud_feedback_s12",
-        "sounding_file": "../input/case_data/cloud_feedback_s12_sounding.in",
-        "ozone_sounding_file": "../input/case_data/cgils_s12_ozone_sounding.in",
-        "forcing_file": "../input/case_data/cloud_feedback_s12_forcings.in",
-        "sfc_file": "../input/case_data/cgils_s12_sfc.in",
-        "day": 15,
-        "month": 7,
-        "year": 2003,
-        "lat_vals": 35.0,
-        "lon_vals": -125.0,
-        "time_initial": 0.0,
-        "time_final": 864000.0,
-        "grid_type": 2,
-        "zt_grid_fname": "../input/grid/deep_convection_128lev_27km_zt_grid.grd",
-        "dt_main": 300.0,
-        "dt_rad": 900.0,
-        "p_sfc_nl": 101864.6,
-        "fcor_nl": 8.365e-05,
-        "forcings_file_path": "../input/case_data/cloud_feedback_s12_forcings/",
-        "l_uv_nudge": true,
-        "thlm_sponge_damp_settings": {
-          "l_sponge_damping": true
-        },
-        "rtm_sponge_damp_settings": {
-          "l_sponge_damping": true
-        },
-        "uv_sponge_damp_settings": {
-          "tau_sponge_damp_min": 10800.0,
-          "tau_sponge_damp_max": 86400.0
-        },
-        "restart_path_case": "restart/cloud_feedback_s12",
-        "debug_level": 0,
-        "sclr_tol_nl": 1e-08,
-        "l_t_dependent": true
-      },
-      "microphysics_setting": {
-        "microphys_scheme": "morrison",
-        "l_ice_microphys": true,
-        "hmp2_ip_on_hmm2_ip_slope": {"rr": 2.12e-05, "nr": 2.12e-05}
-      },
-      "radiation_setting": {
-        "rad_scheme": "bugsrad",
-        "l_fix_cos_solar_zen": true,
-        "l_sw_radiation": true,
-        "cos_solar_zen_values": 0.606,
-        "cos_solar_zen_times": 2592001.0,
-        "slr": 0.59,
-        "l_calc_thlp2_rad": true
-      },
-      "stats_setting": {
-        "fname_prefix": "cloud_feedback_s12",
-        "stats_tsamp": 300.0,
-        "stats_tout": 3600.0
-      }
-    },
-
-    //================================= cloud_feedback_s12_p2k =================================
-    "cloud_feedback_s12_p2k": {
-      "model_setting": {
-        "runtype": "cloud_feedback_s12_p2k",
-        "sounding_file": "../input/case_data/cloud_feedback_s12_p2k_sounding.in",
-        "ozone_sounding_file": "../input/case_data/cgils_s12_ozone_sounding.in",
-        "forcing_file": "../input/case_data/cloud_feedback_s12_p2k_forcings.in",
-        "sfc_file": "../input/case_data/cgils_s12_p2k_sfc.in",
-        "day": 15,
-        "month": 7,
-        "year": 2003,
-        "lat_vals": 35.0,
-        "lon_vals": -125.0,
-        "time_initial": 0.0,
-        "time_final": 864000.0,
-        "grid_type": 2,
-        "zt_grid_fname": "../input/grid/deep_convection_128lev_27km_zt_grid.grd",
-        "dt_main": 300.0,
-        "dt_rad": 900.0,
-        "p_sfc_nl": 101864.6,
-        "fcor_nl": 8.365e-05,
-        "forcings_file_path": "../input/case_data/cloud_feedback_s12_p2k_forcings/",
-        "l_uv_nudge": true,
-        "thlm_sponge_damp_settings": {
-          "l_sponge_damping": true
-        },
-        "rtm_sponge_damp_settings": {
-          "l_sponge_damping": true
-        },
-        "uv_sponge_damp_settings": {
-          "tau_sponge_damp_min": 10800.0,
-          "tau_sponge_damp_max": 86400.0
-        },
-        "restart_path_case": "restart/cloud_feedback_s12_p2k",
-        "debug_level": 0,
-        "sclr_tol_nl": 1e-08,
-        "l_t_dependent": true
-      },
-      "microphysics_setting": {
-        "microphys_scheme": "morrison",
-        "l_ice_microphys": true,
-        "hmp2_ip_on_hmm2_ip_slope": {"rr": 2.12e-05, "nr": 2.12e-05}
-      },
-      "radiation_setting": {
-        "rad_scheme": "bugsrad",
-        "l_fix_cos_solar_zen": true,
-        "l_sw_radiation": true,
-        "cos_solar_zen_values": 0.606,
-        "cos_solar_zen_times": 2592001.0,
-        "slr": 0.59,
-        "l_calc_thlp2_rad": true
-      },
-      "stats_setting": {
-        "fname_prefix": "cloud_feedback_s12_p2k",
-        "stats_tsamp": 300.0,
-        "stats_tout": 3600.0
-      }
-    },
-
-    //================================= cloud_feedback_s6 =================================
-    "cloud_feedback_s6": {
-      "model_setting": {
-        "runtype": "cloud_feedback_s6",
-        "sounding_file": "../input/case_data/cloud_feedback_s6_sounding.in",
-        "ozone_sounding_file": "../input/case_data/cgils_s6_ozone_sounding.in",
-        "forcing_file": "../input/case_data/cloud_feedback_s6_forcings.in",
-        "sfc_file": "../input/case_data/cgils_s6_sfc.in",
-        "day": 15,
-        "month": 7,
-        "year": 2003,
-        "lat_vals": 17.0,
-        "lon_vals": -149.0,
-        "time_initial": 0.0,
-        "time_final": 864000.0,
-        "grid_type": 2,
-        "zm_top_nl": 10000.0,
-        "zt_grid_fname": "../input/grid/deep_convection_128lev_27km_zt_grid.grd",
-        "dt_main": 300.0,
-        "dt_rad": 600.0,
-        "p_sfc_nl": 101407.8,
-        "fcor_nl": 4.264e-05,
-        "forcings_file_path": "../input/case_data/cloud_feedback_s6_forcings/",
-        "l_uv_nudge": true,
-        "thlm_sponge_damp_settings": {
-          "l_sponge_damping": true
-        },
-        "rtm_sponge_damp_settings": {
-          "l_sponge_damping": true
-        },
-        "uv_sponge_damp_settings": {
-          "tau_sponge_damp_min": 10800.0,
-          "tau_sponge_damp_max": 86400.0
-        },
-        "restart_path_case": "restart/cloud_feedback_s6",
-        "sclr_tol_nl": 1e-08,
-        "l_t_dependent": true
-      },
-      "microphysics_setting": {
-        "microphys_scheme": "morrison",
-        "l_ice_microphys": true,
-        "hmp2_ip_on_hmm2_ip_slope": {"rr": 2.12e-05, "nr": 2.12e-05}
-      },
-      "radiation_setting": {
-        "rad_scheme": "bugsrad",
-        "l_fix_cos_solar_zen": true,
-        "l_sw_radiation": true,
-        "cos_solar_zen_values": 0.629,
-        "cos_solar_zen_times": 2592001.0,
-        "slr": 0.539,
-        "l_calc_thlp2_rad": true
-      },
-      "stats_setting": {
-        "fname_prefix": "cloud_feedback_s6",
-        "stats_tsamp": 300.0,
-        "stats_tout": 3600.0
-      }
-    },
-
-    //================================= cloud_feedback_s6_p2k =================================
-    "cloud_feedback_s6_p2k": {
-      "model_setting": {
-        "runtype": "cloud_feedback_s6_p2k",
-        "sounding_file": "../input/case_data/cloud_feedback_s6_p2k_sounding.in",
-        "ozone_sounding_file": "../input/case_data/cgils_s6_ozone_sounding.in",
-        "forcing_file": "../input/case_data/cloud_feedback_s6_p2k_forcings.in",
-        "sfc_file": "../input/case_data/cgils_s6_p2k_sfc.in",
-        "day": 15,
-        "month": 7,
-        "year": 2003,
-        "lat_vals": 17.0,
-        "lon_vals": -149.0,
-        "time_initial": 0.0,
-        "time_final": 864000.0,
-        "grid_type": 2,
-        "zt_grid_fname": "../input/grid/deep_convection_128lev_27km_zt_grid.grd",
-        "dt_main": 300.0,
-        "dt_rad": 600.0,
-        "p_sfc_nl": 101407.8,
-        "fcor_nl": 4.264e-05,
-        "forcings_file_path": "../input/case_data/cloud_feedback_s6_p2k_forcings/",
-        "l_uv_nudge": true,
-        "thlm_sponge_damp_settings": {
-          "l_sponge_damping": true
-        },
-        "rtm_sponge_damp_settings": {
-          "l_sponge_damping": true
-        },
-        "uv_sponge_damp_settings": {
-          "tau_sponge_damp_min": 10800.0,
-          "tau_sponge_damp_max": 86400.0
-        },
-        "restart_path_case": "restart/cloud_feedback_s6_p2k",
-        "debug_level": 0,
-        "sclr_tol_nl": 1e-08,
-        "l_t_dependent": true
-      },
-      "microphysics_setting": {
-        "microphys_scheme": "morrison",
-        "l_ice_microphys": true,
-        "hmp2_ip_on_hmm2_ip_slope": {"rr": 2.12e-05, "nr": 2.12e-05}
-      },
-      "radiation_setting": {
-        "rad_scheme": "bugsrad",
-        "l_fix_cos_solar_zen": true,
-        "l_sw_radiation": true,
-        "cos_solar_zen_values": 0.629,
-        "cos_solar_zen_times": 2592001.0,
-        "slr": 0.539,
-        "l_calc_thlp2_rad": true
-      },
-      "stats_setting": {
-        "fname_prefix": "cloud_feedback_s6_p2k",
-        "stats_tsamp": 300.0,
-        "stats_tout": 3600.0
-      }
-    },
-
     //================================= cobra =================================
     "cobra": {                                  // the COBRA CO2 case.
       // Howland observation tower
@@ -1596,8 +779,8 @@
         "zm_top_nl": 10000.0,
         "l_ignore_forcings": true,
         "l_input_xpwp_sfc": true,               // Flag used to determine whether or not to
-                                                // read in the surface momentum fluxes,
-                                                // upwp_sfc and vpwp_sfc
+        // read in the surface momentum fluxes,
+        // upwp_sfc and vpwp_sfc
         "l_uv_nudge": true,
         "ts_nudge": 60.0,
         "p_sfc_nl": 100000.0,
@@ -1696,282 +879,6 @@
       },
       "setfields": {
         "datafile": "../les_and_clubb_benchmark_runs/sam_benchmark_runs/SAM6.6/DYCOMS_RF01_fixed_sst/DYCOMS_RF01_96x96x320_LES_fixed_sst.nc"
-      }
-    },
-
-    //================================= dycoms2_rf02_do =================================
-    "dycoms2_rf02_do": {                        // DYCOMS2 RF02 Sc case with drizzle and no cloud water sedimentation.
-      "model_setting": {
-        "runtype": "dycoms2_rf02",
-        "sounding_file": "../input/case_data/dycoms2_rf02_sounding.in",
-        "sclr_sounding_file": "../input/case_data/dycoms2_rf02_sclr_sounding.in",
-        "edsclr_sounding_file": "../input/case_data/dycoms2_rf02_sclr_sounding.in",
-        "sfc_file": "../input/case_data/dycoms2_rf02_sfc.in",
-        "corr_file_cloud": "../input/case_data/dycoms2_rf02_corr_array_cloud.in",
-        "corr_file_below": "../input/case_data/dycoms2_rf02_corr_array_below.in",
-        "day": 11,
-        "month": 7,
-        "year": 2001,
-        "lat_vals": 31.5,
-        "lon_vals": -122.0,
-        "time_initial": 0.0,
-        "time_final": 21600.0,
-        "deltaz_nl": 10.0,
-        "zm_top_nl": 1600.0,
-        "l_ignore_forcings": true,
-        "l_modify_ic_with_cubic_int": true,
-        "l_modify_bc_for_cnvg_test": true,
-        "t_sfc_nl": 292.0,                      // Temperature of underlying surface (e.g. SST)           [K]
-        "fcor_nl": 7.6e-05,
-        "restart_path_case": "restart/dycoms2_rf02_do",
-        "nzmax": 75,
-        "sfctype": 0,
-        "l_t_dependent": true
-      },
-      "microphysics_setting": {
-        "microphys_scheme": "khairoutdinov_kogan",
-        "nc0_in_cloud": 55000000.0,
-        "l_const_nc_in_cloud": true,
-        "l_var_covar_src": true,
-        "hmp2_ip_on_hmm2_ip_intrcpt": {"rr": 1.0, "nr": 1.0},
-        "ncnp2_on_ncnm2": 0.003
-      },
-      "radiation_setting": {
-        "rad_scheme": "simplified",
-        "l_rad_above_cloud": true,
-        "l_calc_thlp2_rad": true
-      },
-      "stats_setting": {
-        "fname_prefix": "dycoms2_rf02_do"
-      },
-      "setfields": {
-        "datafile": "../les_and_clubb_benchmark_runs/sam_benchmark_runs/DYCOMS_RF02_128x128x96_dr_nosed/DYCOMS_RF02_128x128x96_dr_nosed.nc",
-        "l_input_ug": false,
-        "l_input_vg": false,
-        "l_input_wm_zt": false,
-        "l_input_exner": false,
-        "l_input_rho": true,
-        "l_input_rho_zm": false,
-        "l_input_lscale": false,
-        "l_input_lscale_up": false,
-        "l_input_lscale_down": false,
-        "l_input_kh_zt": false,
-        "l_input_kh_zm": false,
-        "l_input_tau_zm": false,
-        "l_input_tau_zt": false,
-        "l_input_wpthvp": false,
-        "l_input_thl_1": false,
-        "l_input_thl_2": false,
-        "l_input_mixt_frac": false,
-        "l_input_chi_1": false,
-        "l_input_chi_2": false,
-        "l_input_stdev_chi_1": false,
-        "l_input_stdev_chi_2": false,
-        "l_input_rc_1": false,
-        "l_input_rc_2": false,
-        "l_input_thvm": false,
-        "l_input_rrm": false,
-        "l_input_nrm": false,
-        "l_input_ncm": false,
-        "l_input_rsm": false,
-        "l_input_rim": false,
-        "l_input_rgm": false,
-        "l_input_nccnm": false,
-        "l_input_nim": false,
-        "l_input_thlm_forcing": false,
-        "l_input_rtm_forcing": false,
-        "l_input_sigma_sqd_w": false,
-        "l_input_cloud_frac": false,
-        "l_input_sigma_sqd_w_zt": false,
-        "l_input_veg_t_in_k": false,
-        "l_input_deep_soil_t_in_k": false,
-        "l_input_sfc_soil_t_in_k": false
-      }
-    },
-
-    //================================= dycoms2_rf02_ds =================================
-    "dycoms2_rf02_ds": {                        // DYCOMS2 RF02 Sc case with drizzle and cloud water sedimentation.
-      "model_setting": {
-        "runtype": "dycoms2_rf02",
-        "sounding_file": "../input/case_data/dycoms2_rf02_sounding.in",
-        "sclr_sounding_file": "../input/case_data/dycoms2_rf02_sclr_sounding.in",
-        "edsclr_sounding_file": "../input/case_data/dycoms2_rf02_sclr_sounding.in",
-        "sfc_file": "../input/case_data/dycoms2_rf02_sfc.in",
-        "corr_file_cloud": "../input/case_data/dycoms2_rf02_corr_array_cloud.in",
-        "corr_file_below": "../input/case_data/dycoms2_rf02_corr_array_below.in",
-        "day": 11,
-        "month": 7,
-        "year": 2001,
-        "lat_vals": 31.5,
-        "lon_vals": -122.0,
-        "time_initial": 0.0,
-        "time_final": 21600.0,
-        "deltaz_nl": 10.0,
-        "zm_top_nl": 1600.0,
-        "l_ignore_forcings": true,
-        "l_modify_ic_with_cubic_int": true,
-        "l_modify_bc_for_cnvg_test": true,
-        "t_sfc_nl": 292.0,
-        "fcor_nl": 7.6e-05,
-        "restart_path_case": "restart/dycoms2_rf02_ds",
-        "nzmax": 75,
-        "sfctype": 0,
-        "l_t_dependent": true
-      },
-      "microphysics_setting": {
-        "microphys_scheme": "khairoutdinov_kogan",
-        "l_cloud_sed": true,
-        "nc0_in_cloud": 55000000.0,
-        "l_var_covar_src": true,
-        "hmp2_ip_on_hmm2_ip_intrcpt": {"rr": 1.0, "nr": 1.0},
-        "ncnp2_on_ncnm2": 0.003
-      },
-      "radiation_setting": {
-        "rad_scheme": "simplified",
-        "l_rad_above_cloud": true,
-        "l_calc_thlp2_rad": true
-      },
-      "stats_setting": {
-        "fname_prefix": "dycoms2_rf02_ds"
-      },
-      "setfields": {
-        "datafile": "../les_and_clubb_benchmark_runs/sam_benchmark_runs/DYCOMS_RF02_128x128x96_dr_sed/DYCOMS_RF02_128x128x96_dr_sed.nc"
-      }
-    },
-
-    //================================= dycoms2_rf02_morr =================================
-    "dycoms2_rf02_morr": {                      // DYCOMS2 RF02 Sc case with drizzle and cloud water sedimentation.
-      "model_setting": {
-        "runtype": "dycoms2_rf02",
-        "sounding_file": "../input/case_data/dycoms2_rf02_sounding.in",
-        "sclr_sounding_file": "../input/case_data/dycoms2_rf02_sclr_sounding.in",
-        "edsclr_sounding_file": "../input/case_data/dycoms2_rf02_sclr_sounding.in",
-        "sfc_file": "../input/case_data/dycoms2_rf02_sfc.in",
-        "corr_file_cloud": "../input/case_data/dycoms2_rf02_corr_array_cloud.in",
-        "corr_file_below": "../input/case_data/dycoms2_rf02_corr_array_below.in",
-        "day": 11,
-        "month": 7,
-        "year": 2001,
-        "lat_vals": 31.5,
-        "lon_vals": -122.0,
-        "time_initial": 0.0,
-        "time_final": 21600.0,
-        "nzmax": 97,
-        "grid_type": 2,
-        "deltaz_nl": 10.0,
-        "zm_top_nl": 1460.0,
-        "zt_grid_fname": "../input/grid/dycoms2_rf02_97lev_grid.grd",
-        "l_ignore_forcings": true,
-        "l_modify_ic_with_cubic_int": true,
-        "l_modify_bc_for_cnvg_test": true,
-        "t_sfc_nl": 292.0,
-        "fcor_nl": 7.6e-05,
-        "restart_path_case": "restart/dycoms2_rf02_ds",
-        "sfctype": 0,
-        "l_t_dependent": true
-      },
-      "microphysics_setting": {
-        "microphys_scheme": "morrison",
-        "nc0_in_cloud": 55000000.0,
-        "hmp2_ip_on_hmm2_ip_slope": {"rr": 2.12e-05, "nr": 2.12e-05}
-      },
-      "radiation_setting": {
-        "rad_scheme": "simplified",
-        "l_rad_above_cloud": true,
-        "l_calc_thlp2_rad": true
-      },
-      "stats_setting": {
-        "fname_prefix": "dycoms2_rf02_morr"
-      }
-    },
-
-    //================================= dycoms2_rf02_nd =================================
-    "dycoms2_rf02_nd": {                        // DYCOMS2 RF02 Sc case with no drizzle and no cloud water sedimentation.
-      "model_setting": {
-        "runtype": "dycoms2_rf02",
-        "sounding_file": "../input/case_data/dycoms2_rf02_sounding.in",
-        "sclr_sounding_file": "../input/case_data/dycoms2_rf02_sclr_sounding.in",
-        "edsclr_sounding_file": "../input/case_data/dycoms2_rf02_sclr_sounding.in",
-        "sfc_file": "../input/case_data/dycoms2_rf02_sfc.in",
-        "corr_file_cloud": "../input/case_data/dycoms2_rf02_corr_array_cloud.in",
-        "corr_file_below": "../input/case_data/dycoms2_rf02_corr_array_below.in",
-        "day": 11,
-        "month": 7,
-        "year": 2001,
-        "lat_vals": 31.5,
-        "lon_vals": -122.0,
-        "time_initial": 0.0,
-        "time_final": 21600.0,
-        "deltaz_nl": 40.0,
-        "zm_top_nl": 1600.0,
-        "l_ignore_forcings": true,
-        "l_modify_ic_with_cubic_int": true,
-        "l_modify_bc_for_cnvg_test": true,
-        "t_sfc_nl": 292.0,
-        "fcor_nl": 7.6e-05,
-        "restart_path_case": "restart/dycoms2_rf02_nd",
-        "nzmax": 75,
-        "sfctype": 0,
-        "l_t_dependent": true
-      },
-      "radiation_setting": {
-        "rad_scheme": "simplified",
-        "l_rad_above_cloud": true,
-        "l_calc_thlp2_rad": true
-      },
-      "stats_setting": {
-        "fname_prefix": "dycoms2_rf02_nd"
-      },
-      "setfields": {
-        "datafile": "../les_and_clubb_benchmark_runs/sam_benchmark_runs/DYCOMS_RF02_128x128x96_nodr_nosed/DYCOMS_RF02_128x128x96_nodr_nosed.nc"
-      }
-    },
-
-    //================================= dycoms2_rf02_so =================================
-    "dycoms2_rf02_so": {                        // DYCOMS2 RF02 Sc case with no drizzle but with cloud water sedimentation.
-      "model_setting": {
-        "runtype": "dycoms2_rf02",
-        "sounding_file": "../input/case_data/dycoms2_rf02_sounding.in",
-        "sclr_sounding_file": "../input/case_data/dycoms2_rf02_sclr_sounding.in",
-        "edsclr_sounding_file": "../input/case_data/dycoms2_rf02_sclr_sounding.in",
-        "sfc_file": "../input/case_data/dycoms2_rf02_sfc.in",
-        "corr_file_cloud": "../input/case_data/dycoms2_rf02_corr_array_cloud.in",
-        "corr_file_below": "../input/case_data/dycoms2_rf02_corr_array_below.in",
-        "day": 11,
-        "month": 7,
-        "year": 2001,
-        "lat_vals": 31.5,
-        "lon_vals": -122.0,
-        "time_initial": 0.0,
-        "time_final": 21600.0,
-        "nzmax": 97,
-        "grid_type": 3,
-        "deltaz_nl": 10.0,
-        "zm_top_nl": 1600.0,
-        "zm_grid_fname": "../input/grid/dycoms2_rf02_gcss_zm_grid.grd",
-        "l_ignore_forcings": true,
-        "l_modify_ic_with_cubic_int": true,
-        "l_modify_bc_for_cnvg_test": true,
-        "t_sfc_nl": 292.0,
-        "fcor_nl": 7.6e-05,
-        "restart_path_case": "restart/dycoms2_rf02_so",
-        "sfctype": 0,
-        "l_t_dependent": true
-      },
-      "microphysics_setting": {
-        "l_cloud_sed": true,
-        "nc0_in_cloud": 55000000.0
-      },
-      "radiation_setting": {
-        "rad_scheme": "simplified",
-        "l_rad_above_cloud": true,
-        "l_calc_thlp2_rad": true
-      },
-      "stats_setting": {
-        "fname_prefix": "dycoms2_rf02_so"
-      },
-      "setfields": {
-        "datafile": "../les_and_clubb_benchmark_runs/sam_benchmark_runs/DYCOMS_RF02_128x128x96_nodr_sed/DYCOMS_RF02_128x128x96_nodr_sed.nc"
       }
     },
 
@@ -2254,8 +1161,8 @@
         "p_sfc_nl": 102440.0,
         "fcor_nl": 0.000114566338,
         "l_input_xpwp_sfc": true,               // Flag used to determine whether or not to
-                                                // read in the surface momentum fluxes,
-                                                // upwp_sfc and vpwp_sfc
+        // read in the surface momentum fluxes,
+        // upwp_sfc and vpwp_sfc
         "restart_path_case": "restart/gabls3_night",
         "l_t_dependent": true
       },
@@ -2702,11 +1609,11 @@
         "f1": 62.0,
         "kappa": 94.2,
         "cos_solar_zen_values": 0.4329,         // The Nov.11 case uses a constant value for the cosine of the solar
-                                                // zenith angle.  Because the simulation is only 4 hours long, and it
-                                                // starts at 18Z (11am local time), we have rather constant sunlight
-                                                // through the entire simulation period.  As a result, we will use a
-                                                // constant value of xi_abs = 0.4329.  Adam Smith
-                                                // Cosine of the solar zenith angle	[-]
+        // zenith angle.  Because the simulation is only 4 hours long, and it
+        // starts at 18Z (11am local time), we have rather constant sunlight
+        // through the entire simulation period.  As a result, we will use a
+        // constant value of xi_abs = 0.4329.  Adam Smith
+        // Cosine of the solar zenith angle	[-]
         "fs_values": 1212.75,                   // Incoming shortwave insolation at cloud top along the beam [W/m^2].
         "l_fix_cos_solar_zen": true,
         "l_sw_radiation": true,
@@ -2735,7 +1642,7 @@
         "lon_vals": -61.5,
         "time_initial": 0.0,
         "time_final": 259200.0,                 // time_final   = 60.0      ! Model end time [seconds since midnight on start date]
-                                                // time_final   = 86400.0   ! Model end time [seconds since midnight on start date]
+        // time_final   = 86400.0   ! Model end time [seconds since midnight on start date]
         "grid_type": 2,
         "deltaz_nl": 40.0,
         "zm_top_nl": 10000.0,
@@ -2787,7 +1694,7 @@
         "lon_vals": -61.5,
         "time_initial": 0.0,
         "time_final": 259200.0,                 // time_final   = 60.0      ! Model end time [seconds since midnight on start date]
-                                                // time_final   = 86400.0   ! Model end time [seconds since midnight on start date]
+        // time_final   = 86400.0   ! Model end time [seconds since midnight on start date]
         "grid_type": 2,
         "deltaz_nl": 40.0,
         "zm_top_nl": 10000.0,
@@ -2938,5 +1845,1066 @@
         "l_input_p": false
       }
     }
+  },
+  "groups": {
+    // CLEX-9 shares mixed-phase microphysics and cloud-top radiation.
+    "clex_group": {
+      "settings": {
+        "model_setting": {
+          "deltaz_nl": 25.0,
+          "sfctype": 0,
+          "l_t_dependent": true
+        },
+        "microphysics_setting": {
+          "microphys_scheme": "morrison",
+          "l_ice_microphys": true,
+          "hmp2_ip_on_hmm2_ip_intrcpt": {
+            "rr": 1.0,
+            "nr": 1.0,
+            "ri": 1.0,
+            "ni": 1.0,
+            "rs": 1.0,
+            "ns": 1.0,
+            "rg": 1.0,
+            "ng": 1.0
+          },
+          "hmp2_ip_on_hmm2_ip_slope": {
+            "ri": 0.0,
+            "ni": 0.0,
+            "rs": 0.0,
+            "ns": 0.0,
+            "rg": 0.0,
+            "ng": 0.0
+          }
+        },
+        "radiation_setting": {
+          "rad_scheme": "simplified",
+          "f0": 104.0,
+          "f1": 62.0,
+          "kappa": 94.2,
+          "cos_solar_zen_values": [ // Cosine of the solar zenith angle [-]
+            0.0,
+            0.01,
+            0.1,
+            0.2,
+            0.3,
+            0.4,
+            0.5,
+            0.6,
+            0.7,
+            0.8,
+            0.9,
+            1.0
+          ],
+          "fs_values": [ // Incoming cloud-top shortwave along the beam [W/m^2]
+            0.0,
+            715.86,
+            1073.577,
+            1165.0905,
+            1204.7033,
+            1227.6898,
+            1243.1772,
+            1254.5893,
+            1263.5491,
+            1270.8668,
+            1277.0474,
+            1282.3994
+          ],
+          "l_calc_thlp2_rad": true
+        }
+      },
+      "presets": {
+        "clex9_nov02": {                            // CLEX-9: November 02 altocumulus case
+          "model_setting": {
+            "runtype": "clex9_nov02",
+            "sounding_file": "../input/case_data/clex9_nov02_sounding.in",
+            "sclr_sounding_file": "../input/case_data/clex9_nov02_sclr_sounding.in",
+            "edsclr_sounding_file": "../input/case_data/clex9_nov02_sclr_sounding.in",
+            "forcing_file": "../input/case_data/clex9_nov02_forcings.in",
+            "sfc_file": "../input/case_data/clex9_nov02_sfc.in",
+            "day": 2,
+            "month": 11,
+            "year": 2001,
+            "lat_vals": 41.085,
+            "lon_vals": -100.3552,
+            "time_initial": 47811.0,
+            "time_final": 69411.0,
+            "nzmax": 120,
+
+            "zm_init_nl": 3097.0,
+            "zm_top_nl": 6601.0,
+            "p_sfc_nl": 70000.0,
+            "restart_path_case": "restart/clex9_nov02"
+
+          },
+          "microphysics_setting": {
+
+            "microphys_start_time": 51411.0,
+
+            "l_predict_nc": true
+
+          },
+
+          "stats_setting": {
+            "fname_prefix": "clex9_nov02"
+          }
+        },
+        "clex9_oct14": {                            // CLEX-9: October 14 altocumulus case
+          "model_setting": {
+            "runtype": "clex9_oct14",
+            "sounding_file": "../input/case_data/clex9_oct14_sounding.in",
+            "sclr_sounding_file": "../input/case_data/clex9_oct14_sclr_sounding.in",
+            "edsclr_sounding_file": "../input/case_data/clex9_oct14_sclr_sounding.in",
+            "forcing_file": "../input/case_data/clex9_oct14_forcings.in",
+            "sfc_file": "../input/case_data/clex9_oct14_sfc.in",
+            "day": 14,
+            "month": 10,
+            "year": 2001,
+            "lat_vals": 41.675,
+            "lon_vals": -101.61,
+            "time_initial": 51262.5,
+            "time_final": 72862.5,
+            "nzmax": 180,
+
+            "zm_init_nl": 2213.0,
+            "zm_top_nl": 6816.0,
+            "p_sfc_nl": 77170.0,
+            "restart_path_case": "restart/clex9_oct14"
+
+          },
+          "microphysics_setting": {
+
+            "microphys_start_time": 54862.5
+
+          },
+          "radiation_setting": {
+            "l_sw_radiation": true,
+
+            "alvdr": 0.1
+          },
+          "stats_setting": {
+            "fname_prefix": "clex9_oct14"
+          }
+        }
+      }
+    },
+    // CGILS sites share the grid, nudging, schemes and output cadence.
+    "cgils_group": {
+      "settings": {
+        "model_setting": {
+          "grid_type": 2,
+          "zt_grid_fname": "../input/grid/deep_convection_128lev_27km_zt_grid.grd",
+          "dt_main": 300.0,
+          "l_uv_nudge": true,
+          "thlm_sponge_damp_settings": {
+            "l_sponge_damping": true
+          },
+          "rtm_sponge_damp_settings": {
+            "l_sponge_damping": true
+          },
+          "uv_sponge_damp_settings": {
+            "tau_sponge_damp_min": 10800.0,
+            "tau_sponge_damp_max": 86400.0
+          },
+          "sclr_tol_nl": 1e-08,
+          "l_t_dependent": true
+        },
+        "microphysics_setting": {
+          "microphys_scheme": "morrison",
+          "l_ice_microphys": true
+        },
+        "radiation_setting": {
+          "rad_scheme": "bugsrad",
+          "l_fix_cos_solar_zen": true,
+          "l_sw_radiation": true,
+          "cos_solar_zen_times": 2592001.0,
+          "l_calc_thlp2_rad": true
+        },
+        "stats_setting": {
+          "stats_tsamp": 300.0,
+          "stats_tout": 3600.0
+        }
+      },
+      "presets": {
+        "cgils_s11": {
+          "model_setting": {
+            "runtype": "cgils_s11",
+            "sounding_file": "../input/case_data/cgils_s11_sounding.in",
+            "ozone_sounding_file": "../input/case_data/cgils_s11_ozone_sounding.in",
+            "forcing_file": "../input/case_data/cgils_s11_forcings.in",
+            "sfc_file": "../input/case_data/cgils_s11_sfc.in",
+            "day": 15,
+            "month": 7,
+            "year": 2003,
+            "lat_vals": 32.0,
+            "lon_vals": -129.0,
+            "time_initial": 0.0,
+            "time_final": 864000.0,
+
+            "dt_rad": 900.0,
+            "p_sfc_nl": 102078.5,
+            "fcor_nl": 7.728e-05,
+            "forcings_file_path": "../input/case_data/cgils_s11_forcings/",
+
+            "restart_path_case": "restart/cgils_s11",
+            "debug_level": 0
+
+          },
+          "microphysics_setting": {
+
+            "hmp2_ip_on_hmm2_ip_intrcpt": {"rr": 1.0, "nr": 1.0, "ri": 1.0, "ni": 1.0, "rs": 1.0, "ns": 1.0, "rg": 1.0, "ng": 1.0},
+            "hmp2_ip_on_hmm2_ip_slope": {"ri": 0.0, "ni": 0.0, "rs": 0.0, "ns": 0.0, "rg": 0.0, "ng": 0.0}
+          },
+          "radiation_setting": {
+
+            "cos_solar_zen_values": 0.616,          // cos(52 degrees).
+
+            "slr": 0.58
+
+          },
+          "stats_setting": {
+            "fname_prefix": "cgils_s11"
+            // stats_tsamp  = 60
+
+          },
+          "setfields": {
+            "datafile": "../les_and_clubb_benchmark_runs/sam_benchmark_runs/SAM6.6/CLOUD_FEEDBACK_s11/ctl_s11_96x96x320_50m_DRZ_N100_ref.nc",
+            "input_type": "sam"
+          }
+        },
+        "cgils_s11_p2k": {
+          "model_setting": {
+            "runtype": "cgils_s11_p2k",
+            "sounding_file": "../input/case_data/cgils_s11_p2k_sounding.in",
+            "ozone_sounding_file": "../input/case_data/cgils_s11_ozone_sounding.in",
+            "forcing_file": "../input/case_data/cgils_s11_p2k_forcings.in",
+            "sfc_file": "../input/case_data/cgils_s11_p2k_sfc.in",
+            "day": 15,
+            "month": 7,
+            "year": 2003,
+            "lat_vals": 32.0,
+            "lon_vals": -129.0,
+            "time_initial": 0.0,
+            "time_final": 864000.0,
+
+            "dt_rad": 900.0,
+            "p_sfc_nl": 102078.5,
+            "fcor_nl": 7.728e-05,
+            "forcings_file_path": "../input/case_data/cgils_s11_p2k_forcings/",
+
+            "restart_path_case": "restart/cgils_s11_p2k",
+            "debug_level": 0
+
+          },
+          "microphysics_setting": {
+
+            "hmp2_ip_on_hmm2_ip_slope": {"rr": 2.12e-05, "nr": 2.12e-05}
+          },
+          "radiation_setting": {
+
+            "cos_solar_zen_values": 0.616,
+
+            "slr": 0.58
+
+          },
+          "stats_setting": {
+            "fname_prefix": "cgils_s11_p2k"
+            // stats_tsamp  = 60
+
+          }
+        },
+        "cgils_s12": {
+          "model_setting": {
+            "runtype": "cgils_s12",
+            "sounding_file": "../input/case_data/cgils_s12_sounding.in",
+            "ozone_sounding_file": "../input/case_data/cgils_s12_ozone_sounding.in",
+            "forcing_file": "../input/case_data/cgils_s12_forcings.in",
+            "sfc_file": "../input/case_data/cgils_s12_sfc.in",
+            "day": 15,
+            "month": 7,
+            "year": 2003,
+            "lat_vals": 35.0,
+            "lon_vals": -125.0,
+            "time_initial": 0.0,
+            "time_final": 864000.0,
+
+            "dt_rad": 900.0,
+            "p_sfc_nl": 101864.6,
+            "fcor_nl": 8.365e-05,
+            "forcings_file_path": "../input/case_data/cgils_s12_forcings/",
+
+            "l_rtm_nudge": true,
+            "rtm_min": 0.003581839,
+
+            "restart_path_case": "restart/cgils_s12",
+            "debug_level": 0
+
+          },
+          "microphysics_setting": {
+
+            "hmp2_ip_on_hmm2_ip_intrcpt": {"rr": 1.0, "nr": 1.0, "ri": 1.0, "ni": 1.0, "rs": 1.0, "ns": 1.0, "rg": 1.0, "ng": 1.0},
+            "hmp2_ip_on_hmm2_ip_slope": {"ri": 0.0, "ni": 0.0, "rs": 0.0, "ns": 0.0, "rg": 0.0, "ng": 0.0}
+          },
+          "radiation_setting": {
+
+            "cos_solar_zen_values": 0.606,
+
+            "slr": 0.59
+
+          },
+          "stats_setting": {
+            "fname_prefix": "cgils_s12"
+
+          },
+          "setfields": {
+            "datafile": "../les_and_clubb_benchmark_runs/sam_benchmark_runs/SAM6.6/CLOUD_FEEDBACK_s12/ctl_s12_96x96x192_25m_DRZ_N100_fixnudge.nc",
+            "input_type": "sam"
+          }
+        },
+        "cgils_s12_p2k": {
+          "model_setting": {
+            "runtype": "cgils_s12_p2k",
+            "sounding_file": "../input/case_data/cgils_s12_p2k_sounding.in",
+            "ozone_sounding_file": "../input/case_data/cgils_s12_ozone_sounding.in",
+            "forcing_file": "../input/case_data/cgils_s12_p2k_forcings.in",
+            "sfc_file": "../input/case_data/cgils_s12_p2k_sfc.in",
+            "day": 15,
+            "month": 7,
+            "year": 2003,
+            "lat_vals": 35.0,
+            "lon_vals": -125.0,
+            "time_initial": 0.0,
+            "time_final": 864000.0,
+
+            "dt_rad": 900.0,
+            "p_sfc_nl": 101864.6,
+            "fcor_nl": 8.365e-05,
+            "forcings_file_path": "../input/case_data/cgils_s12_p2k_forcings/",
+
+            "restart_path_case": "restart/cgils_s12_p2k",
+            "debug_level": 0
+
+          },
+          "microphysics_setting": {
+
+            "hmp2_ip_on_hmm2_ip_slope": {"rr": 2.12e-05, "nr": 2.12e-05}
+          },
+          "radiation_setting": {
+
+            "cos_solar_zen_values": 0.606,
+
+            "slr": 0.59
+
+          },
+          "stats_setting": {
+            "fname_prefix": "cgils_s12_p2k"
+
+          }
+        },
+        "cgils_s6": {
+          "model_setting": {
+            "runtype": "cgils_s6",
+            "sounding_file": "../input/case_data/cgils_s6_sounding.in",
+            "ozone_sounding_file": "../input/case_data/cgils_s6_ozone_sounding.in",
+            "forcing_file": "../input/case_data/cgils_s6_forcings.in",
+            "sfc_file": "../input/case_data/cgils_s6_sfc.in",
+            "day": 15,
+            "month": 7,
+            "year": 2003,
+            "lat_vals": 17.0,
+            "lon_vals": -149.0,
+            "time_initial": 0.0,
+            "time_final": 864000.0,
+
+            "zm_top_nl": 10000.0,
+
+            "dt_rad": 600.0,
+            "p_sfc_nl": 101407.8,
+            "fcor_nl": 4.264e-05,
+            "forcings_file_path": "../input/case_data/cgils_s6_forcings/",
+
+            "restart_path_case": "restart/cgils_s6"
+
+          },
+          "microphysics_setting": {
+
+            "l_predict_nc": true,
+            "hmp2_ip_on_hmm2_ip_intrcpt": {"rr": 1.0, "nr": 1.0, "ri": 1.0, "ni": 1.0, "rs": 1.0, "ns": 1.0, "rg": 1.0, "ng": 1.0},
+            "hmp2_ip_on_hmm2_ip_slope": {"ri": 0.0, "ni": 0.0, "rs": 0.0, "ns": 0.0, "rg": 0.0, "ng": 0.0}
+          },
+          "radiation_setting": {
+
+            "cos_solar_zen_values": 0.629,
+
+            "slr": 0.539
+
+          },
+          "stats_setting": {
+            "fname_prefix": "cgils_s6"
+
+          },
+          "setfields": {
+            "datafile": "../les_and_clubb_benchmark_runs/sam_benchmark_runs/SAM6.6/CLOUD_FEEDBACK_s6/ctl_s6_96x96x128_100m_DRZ_N100_tqndg.nc",
+            "input_type": "sam"
+          }
+        },
+        "cgils_s6_p2k": {
+          "model_setting": {
+            "runtype": "cgils_s6_p2k",
+            "sounding_file": "../input/case_data/cgils_s6_p2k_sounding.in",
+            "ozone_sounding_file": "../input/case_data/cgils_s6_ozone_sounding.in",
+            "forcing_file": "../input/case_data/cgils_s6_forcings.in",
+            "sfc_file": "../input/case_data/cgils_s6_p2k_sfc.in",
+            "day": 15,
+            "month": 7,
+            "year": 2003,
+            "lat_vals": 17.0,
+            "lon_vals": -149.0,
+            "time_initial": 0.0,
+            "time_final": 864000.0,
+
+            "zm_top_nl": 10000.0,
+
+            "dt_rad": 600.0,
+            "p_sfc_nl": 101407.8,
+            "fcor_nl": 4.264e-05,
+            "forcings_file_path": "../input/case_data/cgils_s6_p2k_forcings/",
+
+            "restart_path_case": "restart/cgils_s6_p2k"
+
+          },
+          "microphysics_setting": {
+
+            "hmp2_ip_on_hmm2_ip_slope": {"rr": 2.12e-05, "nr": 2.12e-05}
+          },
+          "radiation_setting": {
+
+            "cos_solar_zen_values": 0.629,
+
+            "slr": 0.539
+
+          },
+          "stats_setting": {
+            "fname_prefix": "cgils_s6_p2k"
+
+          }
+        }
+      }
+    },
+    // Cloud-feedback sites share the same experiment machinery and droplet slopes.
+    "cloud_feedback_group": {
+      "settings": {
+        "model_setting": {
+          "grid_type": 2,
+          "zt_grid_fname": "../input/grid/deep_convection_128lev_27km_zt_grid.grd",
+          "dt_main": 300.0,
+          "l_uv_nudge": true,
+          "thlm_sponge_damp_settings": {
+            "l_sponge_damping": true
+          },
+          "rtm_sponge_damp_settings": {
+            "l_sponge_damping": true
+          },
+          "uv_sponge_damp_settings": {
+            "tau_sponge_damp_min": 10800.0,
+            "tau_sponge_damp_max": 86400.0
+          },
+          "sclr_tol_nl": 1e-08,
+          "l_t_dependent": true
+        },
+        "microphysics_setting": {
+          "microphys_scheme": "morrison",
+          "l_ice_microphys": true,
+          "hmp2_ip_on_hmm2_ip_slope": {
+            "rr": 2.12e-05,
+            "nr": 2.12e-05
+          }
+        },
+        "radiation_setting": {
+          "rad_scheme": "bugsrad",
+          "l_fix_cos_solar_zen": true,
+          "l_sw_radiation": true,
+          "cos_solar_zen_times": 2592001.0,
+          "l_calc_thlp2_rad": true
+        },
+        "stats_setting": {
+          "stats_tsamp": 300.0,
+          "stats_tout": 3600.0
+        }
+      },
+      "presets": {
+        "cloud_feedback_s11": {
+          "model_setting": {
+            "runtype": "cloud_feedback_s11",
+            "sounding_file": "../input/case_data/cloud_feedback_s11_sounding.in",
+            "ozone_sounding_file": "../input/case_data/cgils_s11_ozone_sounding.in",
+            "forcing_file": "../input/case_data/cloud_feedback_s11_forcings.in",
+            "sfc_file": "../input/case_data/cgils_s11_sfc.in",
+            "day": 15,
+            "month": 7,
+            "year": 2003,
+            "lat_vals": 32.0,
+            "lon_vals": -129.0,
+            "time_initial": 0.0,
+            "time_final": 864000.0,
+
+            "dt_rad": 900.0,
+            "p_sfc_nl": 102078.5,
+            "fcor_nl": 7.728e-05,
+            "forcings_file_path": "../input/case_data/cloud_feedback_s11_forcings/",
+
+            "restart_path_case": "restart/cloud_feedback_s11",
+            "debug_level": 0
+
+          },
+
+          "radiation_setting": {
+
+            "cos_solar_zen_values": 0.616,
+
+            "slr": 0.58
+
+          },
+          "stats_setting": {
+            "fname_prefix": "cloud_feedback_s11"
+            // stats_tsamp  = 60
+
+          }
+        },
+        "cloud_feedback_s11_p2k": {
+          "model_setting": {
+            "runtype": "cloud_feedback_s11_p2k",
+            "sounding_file": "../input/case_data/cloud_feedback_s11_p2k_sounding.in",
+            "ozone_sounding_file": "../input/case_data/cgils_s11_ozone_sounding.in",
+            "forcing_file": "../input/case_data/cloud_feedback_s11_p2k_forcings.in",
+            "sfc_file": "../input/case_data/cgils_s11_p2k_sfc.in",
+            "day": 15,
+            "month": 7,
+            "year": 2003,
+            "lat_vals": 32.0,
+            "lon_vals": -129.0,
+            "time_initial": 0.0,
+            "time_final": 864000.0,
+
+            "dt_rad": 900.0,
+            "p_sfc_nl": 102078.5,
+            "fcor_nl": 7.728e-05,
+            "forcings_file_path": "../input/case_data/cloud_feedback_s11_p2k_forcings/",
+
+            "restart_path_case": "restart/cloud_feedback_s11_p2k"
+
+          },
+
+          "radiation_setting": {
+
+            "cos_solar_zen_values": 0.616,
+
+            "slr": 0.58
+
+          },
+          "stats_setting": {
+            "fname_prefix": "cloud_feedback_s11_p2k"
+
+          }
+        },
+        "cloud_feedback_s12": {
+          "model_setting": {
+            "runtype": "cloud_feedback_s12",
+            "sounding_file": "../input/case_data/cloud_feedback_s12_sounding.in",
+            "ozone_sounding_file": "../input/case_data/cgils_s12_ozone_sounding.in",
+            "forcing_file": "../input/case_data/cloud_feedback_s12_forcings.in",
+            "sfc_file": "../input/case_data/cgils_s12_sfc.in",
+            "day": 15,
+            "month": 7,
+            "year": 2003,
+            "lat_vals": 35.0,
+            "lon_vals": -125.0,
+            "time_initial": 0.0,
+            "time_final": 864000.0,
+
+            "dt_rad": 900.0,
+            "p_sfc_nl": 101864.6,
+            "fcor_nl": 8.365e-05,
+            "forcings_file_path": "../input/case_data/cloud_feedback_s12_forcings/",
+
+            "restart_path_case": "restart/cloud_feedback_s12",
+            "debug_level": 0
+
+          },
+
+          "radiation_setting": {
+
+            "cos_solar_zen_values": 0.606,
+
+            "slr": 0.59
+
+          },
+          "stats_setting": {
+            "fname_prefix": "cloud_feedback_s12"
+
+          }
+        },
+        "cloud_feedback_s12_p2k": {
+          "model_setting": {
+            "runtype": "cloud_feedback_s12_p2k",
+            "sounding_file": "../input/case_data/cloud_feedback_s12_p2k_sounding.in",
+            "ozone_sounding_file": "../input/case_data/cgils_s12_ozone_sounding.in",
+            "forcing_file": "../input/case_data/cloud_feedback_s12_p2k_forcings.in",
+            "sfc_file": "../input/case_data/cgils_s12_p2k_sfc.in",
+            "day": 15,
+            "month": 7,
+            "year": 2003,
+            "lat_vals": 35.0,
+            "lon_vals": -125.0,
+            "time_initial": 0.0,
+            "time_final": 864000.0,
+
+            "dt_rad": 900.0,
+            "p_sfc_nl": 101864.6,
+            "fcor_nl": 8.365e-05,
+            "forcings_file_path": "../input/case_data/cloud_feedback_s12_p2k_forcings/",
+
+            "restart_path_case": "restart/cloud_feedback_s12_p2k",
+            "debug_level": 0
+
+          },
+
+          "radiation_setting": {
+
+            "cos_solar_zen_values": 0.606,
+
+            "slr": 0.59
+
+          },
+          "stats_setting": {
+            "fname_prefix": "cloud_feedback_s12_p2k"
+
+          }
+        },
+        "cloud_feedback_s6": {
+          "model_setting": {
+            "runtype": "cloud_feedback_s6",
+            "sounding_file": "../input/case_data/cloud_feedback_s6_sounding.in",
+            "ozone_sounding_file": "../input/case_data/cgils_s6_ozone_sounding.in",
+            "forcing_file": "../input/case_data/cloud_feedback_s6_forcings.in",
+            "sfc_file": "../input/case_data/cgils_s6_sfc.in",
+            "day": 15,
+            "month": 7,
+            "year": 2003,
+            "lat_vals": 17.0,
+            "lon_vals": -149.0,
+            "time_initial": 0.0,
+            "time_final": 864000.0,
+
+            "zm_top_nl": 10000.0,
+
+            "dt_rad": 600.0,
+            "p_sfc_nl": 101407.8,
+            "fcor_nl": 4.264e-05,
+            "forcings_file_path": "../input/case_data/cloud_feedback_s6_forcings/",
+
+            "restart_path_case": "restart/cloud_feedback_s6"
+
+          },
+
+          "radiation_setting": {
+
+            "cos_solar_zen_values": 0.629,
+
+            "slr": 0.539
+
+          },
+          "stats_setting": {
+            "fname_prefix": "cloud_feedback_s6"
+
+          }
+        },
+        "cloud_feedback_s6_p2k": {
+          "model_setting": {
+            "runtype": "cloud_feedback_s6_p2k",
+            "sounding_file": "../input/case_data/cloud_feedback_s6_p2k_sounding.in",
+            "ozone_sounding_file": "../input/case_data/cgils_s6_ozone_sounding.in",
+            "forcing_file": "../input/case_data/cloud_feedback_s6_p2k_forcings.in",
+            "sfc_file": "../input/case_data/cgils_s6_p2k_sfc.in",
+            "day": 15,
+            "month": 7,
+            "year": 2003,
+            "lat_vals": 17.0,
+            "lon_vals": -149.0,
+            "time_initial": 0.0,
+            "time_final": 864000.0,
+
+            "dt_rad": 600.0,
+            "p_sfc_nl": 101407.8,
+            "fcor_nl": 4.264e-05,
+            "forcings_file_path": "../input/case_data/cloud_feedback_s6_p2k_forcings/",
+
+            "restart_path_case": "restart/cloud_feedback_s6_p2k",
+            "debug_level": 0
+
+          },
+
+          "radiation_setting": {
+
+            "cos_solar_zen_values": 0.629,
+
+            "slr": 0.539
+
+          },
+          "stats_setting": {
+            "fname_prefix": "cloud_feedback_s6_p2k"
+
+          }
+        }
+      }
+    },
+    // RF02 variants share observations and forcing; their physics differences stay below.
+    "dycoms2_rf02_group": {
+      "settings": {
+        "model_setting": {
+          "runtype": "dycoms2_rf02",
+          "sounding_file": "../input/case_data/dycoms2_rf02_sounding.in",
+          "sclr_sounding_file": "../input/case_data/dycoms2_rf02_sclr_sounding.in",
+          "edsclr_sounding_file": "../input/case_data/dycoms2_rf02_sclr_sounding.in",
+          "sfc_file": "../input/case_data/dycoms2_rf02_sfc.in",
+          "corr_file_cloud": "../input/case_data/dycoms2_rf02_corr_array_cloud.in",
+          "corr_file_below": "../input/case_data/dycoms2_rf02_corr_array_below.in",
+          "l_ignore_forcings": true,
+          "l_modify_ic_with_cubic_int": true,
+          "l_modify_bc_for_cnvg_test": true,
+          "t_sfc_nl": 292.0,
+          "fcor_nl": 7.6e-05,
+          "sfctype": 0,
+          "l_t_dependent": true
+        },
+        "radiation_setting": {
+          "rad_scheme": "simplified",
+          "l_rad_above_cloud": true,
+          "l_calc_thlp2_rad": true
+        }
+      },
+      "presets": {
+        "dycoms2_rf02_do": {                        // DYCOMS2 RF02 Sc case with drizzle and no cloud water sedimentation.
+          "model_setting": {
+
+            "day": 11,
+            "month": 7,
+            "year": 2001,
+            "lat_vals": 31.5,
+            "lon_vals": -122.0,
+            "time_initial": 0.0,
+            "time_final": 21600.0,
+            "deltaz_nl": 10.0,
+            "zm_top_nl": 1600.0,
+
+            // Temperature of underlying surface (e.g. SST)           [K]
+
+            "restart_path_case": "restart/dycoms2_rf02_do",
+            "nzmax": 75
+
+          },
+          "microphysics_setting": {
+            "microphys_scheme": "khairoutdinov_kogan",
+            "nc0_in_cloud": 55000000.0,
+            "l_const_nc_in_cloud": true,
+            "l_var_covar_src": true,
+            "hmp2_ip_on_hmm2_ip_intrcpt": {"rr": 1.0, "nr": 1.0},
+            "ncnp2_on_ncnm2": 0.003
+          },
+
+          "stats_setting": {
+            "fname_prefix": "dycoms2_rf02_do"
+          },
+          "setfields": {
+            "datafile": "../les_and_clubb_benchmark_runs/sam_benchmark_runs/DYCOMS_RF02_128x128x96_dr_nosed/DYCOMS_RF02_128x128x96_dr_nosed.nc",
+            "l_input_ug": false,
+            "l_input_vg": false,
+            "l_input_wm_zt": false,
+            "l_input_exner": false,
+            "l_input_rho": true,
+            "l_input_rho_zm": false,
+            "l_input_lscale": false,
+            "l_input_lscale_up": false,
+            "l_input_lscale_down": false,
+            "l_input_kh_zt": false,
+            "l_input_kh_zm": false,
+            "l_input_tau_zm": false,
+            "l_input_tau_zt": false,
+            "l_input_wpthvp": false,
+            "l_input_thl_1": false,
+            "l_input_thl_2": false,
+            "l_input_mixt_frac": false,
+            "l_input_chi_1": false,
+            "l_input_chi_2": false,
+            "l_input_stdev_chi_1": false,
+            "l_input_stdev_chi_2": false,
+            "l_input_rc_1": false,
+            "l_input_rc_2": false,
+            "l_input_thvm": false,
+            "l_input_rrm": false,
+            "l_input_nrm": false,
+            "l_input_ncm": false,
+            "l_input_rsm": false,
+            "l_input_rim": false,
+            "l_input_rgm": false,
+            "l_input_nccnm": false,
+            "l_input_nim": false,
+            "l_input_thlm_forcing": false,
+            "l_input_rtm_forcing": false,
+            "l_input_sigma_sqd_w": false,
+            "l_input_cloud_frac": false,
+            "l_input_sigma_sqd_w_zt": false,
+            "l_input_veg_t_in_k": false,
+            "l_input_deep_soil_t_in_k": false,
+            "l_input_sfc_soil_t_in_k": false
+          }
+        },
+        "dycoms2_rf02_ds": {                        // DYCOMS2 RF02 Sc case with drizzle and cloud water sedimentation.
+          "model_setting": {
+
+            "day": 11,
+            "month": 7,
+            "year": 2001,
+            "lat_vals": 31.5,
+            "lon_vals": -122.0,
+            "time_initial": 0.0,
+            "time_final": 21600.0,
+            "deltaz_nl": 10.0,
+            "zm_top_nl": 1600.0,
+
+            "restart_path_case": "restart/dycoms2_rf02_ds",
+            "nzmax": 75
+
+          },
+          "microphysics_setting": {
+            "microphys_scheme": "khairoutdinov_kogan",
+            "l_cloud_sed": true,
+            "nc0_in_cloud": 55000000.0,
+            "l_var_covar_src": true,
+            "hmp2_ip_on_hmm2_ip_intrcpt": {"rr": 1.0, "nr": 1.0},
+            "ncnp2_on_ncnm2": 0.003
+          },
+
+          "stats_setting": {
+            "fname_prefix": "dycoms2_rf02_ds"
+          },
+          "setfields": {
+            "datafile": "../les_and_clubb_benchmark_runs/sam_benchmark_runs/DYCOMS_RF02_128x128x96_dr_sed/DYCOMS_RF02_128x128x96_dr_sed.nc"
+          }
+        },
+        "dycoms2_rf02_morr": {                      // DYCOMS2 RF02 Sc case with drizzle and cloud water sedimentation.
+          "model_setting": {
+
+            "day": 11,
+            "month": 7,
+            "year": 2001,
+            "lat_vals": 31.5,
+            "lon_vals": -122.0,
+            "time_initial": 0.0,
+            "time_final": 21600.0,
+            "nzmax": 97,
+            "grid_type": 2,
+            "deltaz_nl": 10.0,
+            "zm_top_nl": 1460.0,
+            "zt_grid_fname": "../input/grid/dycoms2_rf02_97lev_grid.grd",
+
+            "restart_path_case": "restart/dycoms2_rf02_ds"
+
+          },
+          "microphysics_setting": {
+            "microphys_scheme": "morrison",
+            "nc0_in_cloud": 55000000.0,
+            "hmp2_ip_on_hmm2_ip_slope": {"rr": 2.12e-05, "nr": 2.12e-05}
+          },
+
+          "stats_setting": {
+            "fname_prefix": "dycoms2_rf02_morr"
+          }
+        },
+        "dycoms2_rf02_nd": {                        // DYCOMS2 RF02 Sc case with no drizzle and no cloud water sedimentation.
+          "model_setting": {
+
+            "day": 11,
+            "month": 7,
+            "year": 2001,
+            "lat_vals": 31.5,
+            "lon_vals": -122.0,
+            "time_initial": 0.0,
+            "time_final": 21600.0,
+            "deltaz_nl": 40.0,
+            "zm_top_nl": 1600.0,
+
+            "restart_path_case": "restart/dycoms2_rf02_nd",
+            "nzmax": 75
+
+          },
+
+          "stats_setting": {
+            "fname_prefix": "dycoms2_rf02_nd"
+          },
+          "setfields": {
+            "datafile": "../les_and_clubb_benchmark_runs/sam_benchmark_runs/DYCOMS_RF02_128x128x96_nodr_nosed/DYCOMS_RF02_128x128x96_nodr_nosed.nc"
+          }
+        },
+        "dycoms2_rf02_so": {                        // DYCOMS2 RF02 Sc case with no drizzle but with cloud water sedimentation.
+          "model_setting": {
+
+            "day": 11,
+            "month": 7,
+            "year": 2001,
+            "lat_vals": 31.5,
+            "lon_vals": -122.0,
+            "time_initial": 0.0,
+            "time_final": 21600.0,
+            "nzmax": 97,
+            "grid_type": 3,
+            "deltaz_nl": 10.0,
+            "zm_top_nl": 1600.0,
+            "zm_grid_fname": "../input/grid/dycoms2_rf02_gcss_zm_grid.grd",
+
+            "restart_path_case": "restart/dycoms2_rf02_so"
+
+          },
+          "microphysics_setting": {
+            "l_cloud_sed": true,
+            "nc0_in_cloud": 55000000.0
+          },
+
+          "stats_setting": {
+            "fname_prefix": "dycoms2_rf02_so"
+          },
+          "setfields": {
+            "datafile": "../les_and_clubb_benchmark_runs/sam_benchmark_runs/DYCOMS_RF02_128x128x96_nodr_sed/DYCOMS_RF02_128x128x96_nodr_sed.nc"
+          }
+        }
+      }
+    }
+  },
+  // Run lists select existing cases without contributing settings. Their order
+  // and membership preserve the former batch-runner selections.
+  "lists": {
+    "all_cases": [
+      "arm",
+      "arm_3year",
+      "arm_97",
+      "astex_a209",
+      "atex",
+      "bomex",
+      "bomex_5day_4scam",
+      "cgils_s6",
+      "cgils_s6_p2k",
+      "cgils_s11",
+      "cgils_s11_p2k",
+      "cgils_s12",
+      "cgils_s12_p2k",
+      "clex9_nov02",
+      "clex9_oct14",
+      "cloud_feedback_s6",
+      "cloud_feedback_s6_p2k",
+      "cloud_feedback_s11",
+      "cloud_feedback_s11_p2k",
+      "cloud_feedback_s12",
+      "cloud_feedback_s12_p2k",
+      "cobra",
+      "dycoms2_rf01",
+      "dycoms2_rf01_fixed_sst",
+      "dycoms2_rf02_do",
+      "dycoms2_rf02_ds",
+      "dycoms2_rf02_morr",
+      "dycoms2_rf02_nd",
+      "dycoms2_rf02_so",
+      "fire",
+      "gabls2",
+      "gabls3",
+      "gabls3_night",
+      "jun25_altocu",
+      "lba",
+      "mc3e",
+      "mpace_a",
+      "mpace_b",
+      "mpace_b_silhs",
+      "nov11_altocu",
+      "neutral",
+      "rico",
+      "rico_silhs",
+      "twp_ice",
+      "wangara"
+    ],
+    "standard_cases": [
+      "arm",
+      "arm_97",
+      "astex_a209",
+      "atex",
+      "bomex",
+      "cgils_s6",
+      "cgils_s11",
+      "cgils_s12",
+      "clex9_nov02",
+      "clex9_oct14",
+      "dycoms2_rf01",
+      "dycoms2_rf01_fixed_sst",
+      "dycoms2_rf02_do",
+      "dycoms2_rf02_ds",
+      "dycoms2_rf02_nd",
+      "dycoms2_rf02_so",
+      "fire",
+      "gabls2",
+      "gabls3",
+      "gabls3_night",
+      "jun25_altocu",
+      "lba",
+      "mc3e",
+      "mpace_a",
+      "mpace_b",
+      "mpace_b_silhs",
+      "nov11_altocu",
+      "rico",
+      "rico_silhs",
+      "twp_ice",
+      "wangara"
+    ],
+    "priority_cases": [
+      "arm",
+      "atex",
+      "bomex",
+      "dycoms2_rf01",
+      "dycoms2_rf01_fixed_sst",
+      "dycoms2_rf02_ds",
+      "dycoms2_rf02_nd",
+      "mpace_b",
+      "rico",
+      "wangara",
+      "arm_97",
+      "cgils_s6",
+      "cgils_s11",
+      "cgils_s12",
+      "gabls3_night",
+      "lba",
+      "twp_ice"
+    ],
+    "min_cases": [
+      "arm",
+      "atex",
+      "bomex",
+      "dycoms2_rf01",
+      "dycoms2_rf02_ds",
+      "rico",
+      "wangara",
+      "arm_97",
+      "gabls3_night",
+      "lba",
+      "twp_ice",
+      "bomex_5day_4scam"
+    ],
+    "short_cases": [
+      "gabls2",
+      "cgils_s6",
+      "cgils_s11",
+      "cgils_s12",
+      "cloud_feedback_s6",
+      "cloud_feedback_s11",
+      "cloud_feedback_s12",
+      "twp_ice"
+    ]
   }
 }

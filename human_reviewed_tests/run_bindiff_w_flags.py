@@ -5,7 +5,7 @@ are toggled.
 
 This script clones each requested branch, tag, commit hash, or other git ref
 into a destination directory, compiles each clone, runs the selected SCM case
-set for each JSON flag configuration, and compares the resulting output trees.
+set for each selected flag member, and compares the resulting output trees.
 Comparison is run even if some cases fail. Failed runs are represented by the
 files that each run left in the output tree, and the comparison reports any
 missing files or differing NetCDF values.
@@ -18,25 +18,18 @@ The wrapper uses the current Python run scripts:
 
 Inputs:
   1. Two or more git refs to compare.
-  2. A JSON configuration file describing flag sets to test.
+  2. A flag group/list from input/clubb_config_flags.jsonc.
   3. A destination directory where cloned repos and outputs are stored.
 
 Output:
   1. Per-flag-set bindiff output from run_bindiff_all.py.
   2. A final nonzero exit status when compared output trees differ.
 
-The JSON flag config has the same shape used by run_clubb_w_varying_flags.py:
-
-  {
-    "flag_set_name": {
-      "l_some_flag": true,
-      "some_integer_option": 2
-    }
-  }
-
-The unmodified default flag set is included unless -skip_default_flags is
-provided. Alternate flag sets are applied with run_scm.py -override; this
-script no longer creates temporary configurable_model_flags.in files.
+Flag collections come from input/clubb_config_flags.jsonc. Local member names
+remain independent within each collection. The unmodified default run is
+included unless -skip_default_flags is supplied. Sweep patches are passed as
+late -override assignments, followed by user edits. The current catalog resolver
+runs each checkout's SCM script, so older refs need not understand groups.
 
 Only bindiff-specific options are consumed here. Case-selection options and
 run_scm.py options are forwarded to run_clubb_w_varying_flags.py, and unknown
@@ -44,11 +37,11 @@ options are then forwarded to run_scm.py. For example:
 
   python3 human_reviewed_tests/run_bindiff_w_flags.py \\
       -branches master,my_branch \\
-      -flag_config_file input/flag_sets/run_bindiff_w_flags_config_example.json \\
+      -flag_group run_bindiff_w_flags_config_example_group \\
       -output_root ~/clubb_bindiff \\
-      -priority_cases -workers 4 -max_iters 3
+      -cases priority_cases -workers 4 -max_iters 3
 
-In that example, -priority_cases and -workers are consumed by
+In that example, -cases priority_cases and -workers are consumed by
 run_clubb_w_varying_flags.py, while -max_iters is forwarded to run_scm.py.
 
 If a clone directory already exists, the script prompts whether to overwrite
@@ -60,7 +53,6 @@ test jobs such as Jenkins.
 from __future__ import annotations
 
 import argparse
-import ast
 import itertools
 import os
 import re
@@ -72,7 +64,8 @@ from pathlib import Path
 
 DEFAULT_REPO_URL = "https://github.com/larson-group/clubb.git"
 REPO_ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_FLAG_CONFIG_FILE = REPO_ROOT / "input" / "flag_sets" / "run_bindiff_w_flags_config_core_flags.json"
+sys.path.insert(0, str(REPO_ROOT))
+from input.scripts.flag_sets import DEFAULT_FLAG_GROUP
 RUN_BINDIFF_ALL = REPO_ROOT / "run_scripts" / "run_bindiff_all.py"
 
 
@@ -98,7 +91,7 @@ def get_cli_args():
         ),
         epilog=(
             "Any unrecognized options are forwarded to run_clubb_w_varying_flags.py. "
-            "That script consumes case-selection options such as -priority_cases "
+            "That script consumes case-selection options such as -cases priority_cases "
             "and forwards remaining options such as -max_iters to run_scm.py."
         ),
         add_help=False, allow_abbrev=False
@@ -114,9 +107,9 @@ def get_cli_args():
         ),
     )
     parser.add_argument(
-        '-flag_config_file', dest='flag_config_file',
-        default=str(DEFAULT_FLAG_CONFIG_FILE),
-        help="JSON flag-set config passed to run_clubb_w_varying_flags.py.",
+        '-flag_group', dest='flag_group',
+        default=str(DEFAULT_FLAG_GROUP),
+        help="Flag group/list from input/clubb_config_flags.jsonc.",
     )
     parser.add_argument(
         '-output_root', dest='destination_dir',
@@ -169,7 +162,6 @@ def get_cli_args():
         parser.error("at least two branches or refs must be provided with -branches")
 
     args.run_args = run_args
-    args.flag_config_file = str(Path(args.flag_config_file).expanduser().resolve())
     args.destination_dir = Path(args.destination_dir).expanduser().resolve()
     return args
 
@@ -247,7 +239,7 @@ def prepare_clone(git_ref, args):
     print(f"Compiling CLUBB for {git_ref}...")
     run_checked(
         [sys.executable, str(compile_script),
-         *clone_arguments(clone_dir, args.compile_arg, ["compile.py"])],
+         *args.compile_arg],
         cwd=clone_dir,
         env=compile_environment(),
     )
@@ -255,55 +247,21 @@ def prepare_clone(git_ref, args):
 
 
 
-def clone_arguments(clone_dir, arguments, scripts):
-    """Translate canonical options when comparing refs with older script interfaces."""
-    supported = set()
-    for script in scripts:
-        path = clone_dir / script
-        if not path.is_file():
-            continue
-        for node in ast.walk(ast.parse(path.read_text())):
-            if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and node.func.attr == "add_argument":
-                supported.update(arg.value for arg in node.args
-                                 if isinstance(arg, ast.Constant) and isinstance(arg.value, str))
-    legacy = {
-        "-workers": ("-nproc", "--nproc"),
-        "-flag_config_file": ("--flag-config-file", "-f"),
-        "-skip_default_flags": ("--skip-default-flags",),
-        "-all": ("--all",),
-        "-short_cases": ("--short-cases",),
-        "-priority_cases": ("--priority-cases",),
-        "-min_cases": ("--min-cases",),
-        "-output_dir": ("-out_dir",),
-        "-params_file": ("-params",),
-        "-silhs_params_file": ("-silhs_params",),
-        "-install_dir": ("-install",),
-    }
-    translated = []
-    for token in arguments:
-        option, separator, value = token.partition("=")
-        if option not in supported:
-            option = next((old for old in legacy.get(option, ()) if old in supported), option)
-        translated.append(option + separator + value)
-    return translated
-
-
 def build_varying_flags_command(clone_dir, args):
     """Build the run_clubb_w_varying_flags.py command for one clone."""
     command = [
         sys.executable,
-        str(clone_dir / "run_scripts" / "run_clubb_w_varying_flags.py"),
-        "-flag_config_file",
-        args.flag_config_file,
+        str(REPO_ROOT / "run_scripts" / "run_clubb_w_varying_flags.py"),
+        "-clubb_root", str(clone_dir),
+        "-flag_group",
+        args.flag_group,
     ]
 
     if args.skip_default_flags:
         command.append("-skip_default_flags")
 
     command.extend(args.run_args)
-    scripts = ["run_scripts/run_clubb_w_varying_flags.py", "run_scripts/run_scm.py",
-               "input/scripts/create_case_namelist.py"]
-    return command[:2] + clone_arguments(clone_dir, command[2:], scripts)
+    return command
 
 
 def run_clubb_model_for_all_flag_settings(git_ref, clone_dir, args):
@@ -353,8 +311,11 @@ def compare_outputs(ref_to_clone, args):
 def main():
     args = get_cli_args()
 
-    if not Path(args.flag_config_file).is_file():
-        print(f"Flag config file does not exist: {args.flag_config_file}")
+    from input.scripts.flag_sets import read_flag_settings
+    try:
+        read_flag_settings(args.flag_group)
+    except ValueError as exc:
+        print(str(exc), file=sys.stderr)
         return 2
 
     if not RUN_BINDIFF_ALL.is_file():

@@ -20,7 +20,7 @@ def test_workers_and_cases_forwarded(tmp_path, monkeypatch, worker_args, expecte
     """Forward the selected worker count and existing cases before checking budgets."""
     scripts = tmp_path / "run_scripts"
     scripts.mkdir()
-    (scripts / "run_scm_all.py").touch()
+    (scripts / "run_scm.py").touch()
     calls = []
     checks = []
 
@@ -33,7 +33,7 @@ def test_workers_and_cases_forwarded(tmp_path, monkeypatch, worker_args, expecte
     monkeypatch.setattr(runner, "check_budgets", lambda *args: checks.append(args) or 0)
     assert runner.main() == 0
     command, options = calls[0]
-    assert command[1] == str(scripts / "run_scm_all.py")
+    assert command[1] == str(scripts / "run_scm.py")
     if expected is None:
         assert "-workers" not in command
     else:
@@ -49,7 +49,7 @@ def test_failed_cases_do_not_run_budget_checker(tmp_path, monkeypatch):
     """A failing concurrent case run stops the budget checker."""
     scripts = tmp_path / "run_scripts"
     scripts.mkdir()
-    (scripts / "run_scm_all.py").touch()
+    (scripts / "run_scm.py").touch()
     calls = []
 
     def fake_run(cmd, **kwargs):
@@ -68,7 +68,7 @@ def test_budget_failure_propagates(tmp_path, monkeypatch):
     """Return the in-process checker failure after a successful SCM run."""
     scripts = tmp_path / "run_scripts"
     scripts.mkdir()
-    (scripts / "run_scm_all.py").touch()
+    (scripts / "run_scm.py").touch()
     monkeypatch.setattr(sys, "argv", [str(SCRIPT), str(tmp_path)])
     monkeypatch.setattr(runner.subprocess, "run", lambda *args, **kwargs: SimpleNamespace(returncode=0))
     monkeypatch.setattr(runner, "check_budgets", lambda *args: 1)

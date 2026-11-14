@@ -5,7 +5,7 @@ from dash_app.shared.tunable_configs import (
     config_settings,
     default_tunable_config_name,
 )
-from input.scripts import create_case_namelist as inputs
+from input.scripts import input_catalog as inputs
 
 
 def test_dash_offers_baseline_without_a_default_preset(monkeypatch):

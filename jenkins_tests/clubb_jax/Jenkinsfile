@@ -98,7 +98,7 @@ pipeline {
             source /etc/profile.d/larson-group.sh
             module load gcc netcdf-fortran
             ulimit -s 8388608
-            ./human_reviewed_tests/run_jax_vs_fortran_cases.py -workers 8
+            ./human_reviewed_tests/run_jax_vs_fortran_cases.py -workers 4
           '''
         }
       }
@@ -110,7 +110,7 @@ pipeline {
             source /etc/profile.d/larson-group.sh
             module load gcc netcdf-fortran
             ulimit -s 8388608
-            human_reviewed_tests/run_jax_vs_fortran_cases.py -debug 0 -cases cobra, bomex -flag_config_file input/flag_sets/config_core_flags_wo_never_supported_jax_features.json -skip_default_flags -stats multi_col_stats
+            human_reviewed_tests/run_jax_vs_fortran_cases.py -debug 0 -cases cobra, bomex -flag_group config_core_flags_wo_never_supported_jax_features_group -skip_default_flags -stats multi_col_stats
           ''' // Full curated durations. The standard stats stage already runs the default flags; multi_col_stats compares 15 core fields instead of 623.
         }
         catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
@@ -118,7 +118,7 @@ pipeline {
             source /etc/profile.d/larson-group.sh
             module load gcc netcdf-fortran
             ulimit -s 8388608
-            human_reviewed_tests/run_jax_vs_fortran_cases.py -debug 0 -cases dycoms2_rf02_ds -max_iters 140 -flag_config_file input/flag_sets/config_core_flags_wo_never_supported_jax_features.json -skip_default_flags -stats multi_col_stats
+            human_reviewed_tests/run_jax_vs_fortran_cases.py -debug 0 -cases dycoms2_rf02_ds -max_iters 140 -flag_group config_core_flags_wo_never_supported_jax_features_group -skip_default_flags -stats multi_col_stats
           ''' // Under flag10 and flag14, roundoff growth exceeds 1e-7 after about 150 steps, as it does between the -O0 and -O2 Fortran builds, so stop at 140 instead of 230.
         }
       }

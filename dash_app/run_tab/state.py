@@ -9,7 +9,6 @@ CASE_DIR = os.path.join(REPO_ROOT, "input", "case_data")
 STATS_DIR = os.path.join(REPO_ROOT, "input")
 DEFAULT_STATS_NAME = "standard"
 NO_STATS_NAME = "none"
-RUN_SCM_ALL = os.path.join(REPO_ROOT, "run_scripts", "run_scm_all.py")
 RUN_PROCS = {}
 RUN_LOCK = threading.Lock()
 RUN_STACK_KB = int(os.environ.get("CLUBB_RUN_STACK_KB", "8192000"))

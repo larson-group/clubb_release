@@ -29,7 +29,7 @@ def config_root(tmp_path):
 
 
 def _value(path, setting, preset="default"):
-    from input.scripts.create_case_namelist import CATALOG_FILES, resolve_input_settings
+    from input.scripts.input_catalog import CATALOG_FILES, resolve_input_settings
     kind = next(kind for kind, filename in CATALOG_FILES.items() if filename == path.name)
     values = resolve_input_settings(kind, config=preset, json_file=path)
     value = next(values[category][setting] for category in ("model", "silhs") if setting in values[category])

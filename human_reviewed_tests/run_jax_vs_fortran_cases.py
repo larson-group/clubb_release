@@ -30,7 +30,7 @@ from input.scripts.flag_sets import build_override_arg, format_override_value, g
 
 from tuner.system_defaults import default_max_workers as default_workers
 from input.scripts.create_case_namelist import parse_forwarded_args
-from run_scripts.run_scm_all import positive_int, split_values
+from input.scripts.input_catalog import positive_int, split_values
 
 @dataclass(frozen=True)
 class CaseConfig:
@@ -146,19 +146,20 @@ HR_SPEC = "C8/0.2:0.8/4"
 
 @dataclass
 class FlagData:
-    """One flag set: its name, the config file it came from, and its overrides."""
+    """One flag member: its local name, catalog selection and sparse overrides."""
 
     flag_name: str
     flag_dict: dict | None
     # Stored as a plain string (not a Path) so asdict() output stays JSON serializable.
-    flag_file: str | None = None
+    flag_group: str | None = None
 
     @property
     def dir_name(self) -> str:
         """Directory name identifying this flag set under both output roots."""
-        if not self.flag_dict or self.flag_file is None:
+        if not self.flag_dict or self.flag_group is None:
             return self.flag_name
-        return f"{Path(self.flag_file).stem}_{self.flag_name}"
+        prefix = self.flag_group.removesuffix("_group").replace("/", "__").replace(",", "__")
+        return f"{prefix}_{self.flag_name}"
 
 
 @dataclass
@@ -548,16 +549,16 @@ def parse_args(argv=None) -> argparse.Namespace:
         help="Case names to run (default is the curated supported set).",
     )
     parser.add_argument(
-        "-flag_config_file", type=str, default=None,
-        help="JSON file describing alternate flag settings.",
+        "-flag_group", type=str, default=None,
+        help="Flag group/list from input/clubb_config_flags.jsonc.",
     )
     parser.add_argument(
         "-skip_default_flags", action="store_true",
-        help="Do not run the default flag configuration; requires -flag_config_file.",
+        help="Do not run the default flag configuration; requires -flag_group.",
     )
     args, forwarded = parse_forwarded_args(parser, argv)
-    if args.skip_default_flags and args.flag_config_file is None:
-        parser.error("-skip_default_flags requires -flag_config_file")
+    if args.skip_default_flags and args.flag_group is None:
+        parser.error("-skip_default_flags requires -flag_group")
     args.cases = split_values(args.cases) if args.cases is not None else None
     if args.cases == []:
         parser.error("-cases must contain at least one case name")
@@ -654,16 +655,16 @@ def _run_comparisons(args, supervisor) -> int:
         return 2
 
     # get_flag_sets adds the unmodified "default" run unless it is skipped and rejects
-    # a JSON flag set that would collide with that name. Validate before the previous results are
-    # deleted, so a bad config file doesn't cost the last run's output.
+    # a catalog member that would collide with that name. Validate before the previous
+    # results are deleted, so an invalid selection preserves the last run's output.
     try:
-        flag_config = read_flag_settings(args.flag_config_file) if args.flag_config_file else {}
+        flag_config = read_flag_settings(args.flag_group) if args.flag_group else {}
         flag_sets = get_flag_sets(args.skip_default_flags, flag_config)
     except (OSError, ValueError) as exc:
         print(f"ERROR: could not load flag sets: {exc}")
         return 2
     flag_data_list = [
-        FlagData(flag_name=name, flag_dict=overrides, flag_file=args.flag_config_file)
+        FlagData(flag_name=name, flag_dict=overrides, flag_group=args.flag_group)
         for name, overrides in flag_sets.items()
     ]
 

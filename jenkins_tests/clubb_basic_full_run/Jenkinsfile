@@ -1,6 +1,6 @@
 // Run full-duration standard cases with GNU and NVHPC debug builds.
 // From the repository root, load the selected compiler and netcdf-fortran modules,
-// run ./compile.py -debug, then run_scripts/run_scm_all.py -workers 8.
+// run ./compile.py -debug, then run_scripts/run_scm.py -cases standard_cases -workers 8.
 // Keep full-duration case runs separate from the compiler/CTest smoke matrix.
 // Record independent failures while allowing manual aborts to stop the pipeline.
 pipeline {
@@ -22,7 +22,7 @@ pipeline {
                   module load gcc netcdf-fortran
                   ./compile.py -debug
                   ulimit -s 8388608
-                  run_scripts/run_scm_all.py -workers 8
+                  run_scripts/run_scm.py -cases standard_cases -workers 8
                 '''
               }
             }
@@ -39,7 +39,7 @@ pipeline {
                   module load nvhpc netcdf-fortran
                   ./compile.py -debug
                   ulimit -s 8388608
-                  run_scripts/run_scm_all.py -workers 8
+                  run_scripts/run_scm.py -cases standard_cases -workers 8
                 '''
               }
             }

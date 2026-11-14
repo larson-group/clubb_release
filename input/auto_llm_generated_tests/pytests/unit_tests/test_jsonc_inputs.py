@@ -112,7 +112,7 @@ def test_named_custom_jsonc_case_is_saved_back_to_its_source(tmp_path):
 def test_tunable_save_preserves_comments_when_adding_and_replacing_presets(tmp_path):
     """Use the actual commented catalogs through the parameter/flag save owner."""
     from input.scripts.save_tunable_config import save_tunable_config
-    from input.scripts.create_case_namelist import CATALOG_FILES
+    from input.scripts.input_catalog import CATALOG_FILES
     root = Path(__file__).resolve().parents[3]
     originals = {}
     for kind in ("parameters", "flags"):

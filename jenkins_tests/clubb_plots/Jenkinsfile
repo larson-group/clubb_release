@@ -38,7 +38,7 @@ pipeline {
                     '''
                     // Load the compiler and matching NetCDF runtime from the shared module setup.
                     sh '''
-                      run_scripts/run_scm_all.py -workers 4
+                      run_scripts/run_scm.py -cases standard_cases -workers 4
                       mv output cpu_${commit}; mkdir output
                     '''
                     sh 'scp -r carson:/home/pub/web_plots/clubb_ifort_plots/master/cur_out .'
@@ -75,14 +75,14 @@ pipeline {
                     '''
                     // Native cases with ported features; keep their settings and full durations.
                     sh '''
-                      run_scripts/run_scm_all.py -workers 4 \
+                      run_scripts/run_scm.py -workers 4 \
                         -cases arm atex bomex clex9_oct14 \
                           dycoms2_rf01 dycoms2_rf01_fixed_sst dycoms2_rf02_do \
                           dycoms2_rf02_ds dycoms2_rf02_nd dycoms2_rf02_so \
                           fire gabls2 gabls3_night jun25_altocu lba \
                           neutral nov11_altocu rico rico_silhs wangara \
                         -output_dir jax_vs_fortran/fortran_${commit}
-                      run_scripts/run_scm_all.py -jax=cpu -workers 4 \
+                      run_scripts/run_scm.py -jax=cpu -workers 4 \
                         -cases arm atex bomex clex9_oct14 \
                           dycoms2_rf01 dycoms2_rf01_fixed_sst dycoms2_rf02_do \
                           dycoms2_rf02_ds dycoms2_rf02_nd dycoms2_rf02_so \
@@ -116,7 +116,7 @@ pipeline {
                       ./compile.py
                     '''
                     sh '''
-                      run_scripts/run_scm_all.py -workers 4 -priority_cases -override l_lh_straight_mc=.true.
+                      run_scripts/run_scm.py -workers 4 -cases priority_cases -override l_lh_straight_mc=.true.
                       mv output cpu_${commit}; mkdir output
                     '''
                     sh '''
@@ -127,7 +127,7 @@ pipeline {
                     // Serialize GPU cases on this worker; other nodes may run concurrently.
                     lock( "GPU_${env.NODE_NAME}" ) {
                       sh '''
-                        run_scripts/run_scm_all.py -workers 1 -priority_cases -override l_lh_straight_mc=.true.
+                        run_scripts/run_scm.py -workers 1 -cases priority_cases -override l_lh_straight_mc=.true.
                         mv output gpu_${commit}; mkdir output
                       '''
                     }
@@ -163,11 +163,11 @@ pipeline {
                       module load intel netcdf-fortran
                       ./compile.py
                     '''
-                    sh '''run_scripts/run_scm_all.py -workers 4 -priority_cases -output_dir solver_compare/lapack_output -override penta_solve_method=1,tridiag_solve_method=1'''
-                    sh '''run_scripts/run_scm_all.py -workers 4 -priority_cases -output_dir solver_compare/custom_lu_output'''
+                    sh '''run_scripts/run_scm.py -workers 4 -cases priority_cases -output_dir solver_compare/lapack_output -override penta_solve_method=1,tridiag_solve_method=1'''
+                    sh '''run_scripts/run_scm.py -workers 4 -cases priority_cases -output_dir solver_compare/custom_lu_output'''
                     // BiCGSTAB keeps the default tridiagonal LU solver; known failing cases are excluded below.
                     catchError(buildResult: 'SUCCESS', stageResult: 'SUCCESS', catchInterruptions: false) {
-                      sh '''run_scripts/run_scm_all.py -workers 4 -priority_cases -output_dir solver_compare/bicgstab_output -override penta_solve_method=3'''
+                      sh '''run_scripts/run_scm.py -workers 4 -cases priority_cases -output_dir solver_compare/bicgstab_output -override penta_solve_method=3'''
                     }
                     sh '''rm output/solver_compare/bicgstab_output/dycoms2_rf02_ds_*'''
                     sh '''rm output/solver_compare/bicgstab_output/dycoms2_rf01_*'''

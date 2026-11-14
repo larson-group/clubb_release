@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from input.scripts import create_case_namelist as inputs
+from input.scripts import input_catalog as inputs
 from input.scripts.flags_json_to_namelist import flags_json_to_namelist, flags_to_namelist
 from input.scripts.parameters_json_to_namelist import parameters_json_to_namelist, parameters_to_namelist
 from input.scripts.save_tunable_config import save_tunable_config

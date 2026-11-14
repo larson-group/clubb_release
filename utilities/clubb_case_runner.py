@@ -295,7 +295,7 @@ def add_runner_arguments(parser):
     )
 
 
-def parse_case_arguments(argv):
+def parse_case_arguments(argv, *, multiple_cases=False):
     """Return a Namespace for argv's case name, runtime and namelist options.
 
     Combine the shared runtime and model parsers, preserve attached -jax values,
@@ -308,10 +308,24 @@ def parse_case_arguments(argv):
                                      add_help=False, allow_abbrev=False)
     parser.add_argument("-h", "-help", action="help", help="Show this help and exit.")
     add_runner_arguments(parser.add_argument_group("Runtime options"))
-    add_namelist_arguments(parser.add_argument_group("Model settings"))
-    parser.add_argument("case_name", nargs="?", help="Case preset or JSON override file")
+    add_namelist_arguments(parser.add_argument_group("Model settings"), multiple_cases=multiple_cases)
+    parser.add_argument("case_name", nargs="*" if multiple_cases else "?", help="Case preset, group, list or JSON override file")
+    if multiple_cases:
+        from tuner.system_defaults import default_max_workers
+        from input.scripts.input_catalog import positive_int
+        parser.add_argument("-workers", type=positive_int, default=default_max_workers(),
+                            help="Maximum concurrent runs; one run executes directly.")
+        parser.add_argument("-show_output", action="store_true", help="Echo model output during multi-case runs.")
     normalized, value, occurrences = extract_jax_options(argv)
-    args = normalize_case_selection(parser.parse_args(normalized), parser)
+    args = parser.parse_args(normalized)
+    if multiple_cases:
+        if args.case_selector and args.case_name:
+            parser.error("Use either positional selections or -cases")
+        args.case_selections = args.case_selector or args.case_name or ([args.config] if args.config else [])
+        if not args.case_selections:
+            parser.error("Provide a case, group or list, for example -cases standard_cases")
+    else:
+        args = normalize_case_selection(args, parser)
     args.jax_options = value
     if occurrences > 1:
         parser.error("-jax may be specified only once.")

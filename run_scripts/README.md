@@ -11,103 +11,80 @@ Most model-running scripts expect CLUBB to have already been compiled with
 
 ### `run_scm.py`
 
-Runs one CLUBB case with native Fortran, the Python SCM or JAX. It builds the
-aggregate namelist with
-[`create_case_namelist.py`](../input/scripts/create_case_namelist.py), then runs the
-selected standalone. Output includes the generated input, a console log and
-configured statistics under `output/` or `-output_dir`.
+Runs individual CLUBB cases, inherited case groups, or named run lists with
+native Fortran, the Python SCM or JAX. Selections come from
+[`case_definitions.jsonc`](../input/case_definitions.jsonc); flag presets and
+collections come from [`clubb_config_flags.jsonc`](../input/clubb_config_flags.jsonc).
+It prepares each aggregate namelist in memory, then submits it to the shared
+[`clubb_case_runner`](../utilities/clubb_case_runner.py). A single resolved run
+uses no worker pool or preparation subprocess. Multiple runs use at most
+`-workers` concurrent tasks (default: half the logical CPUs); `-workers 1`
+executes them sequentially. The model itself runs in its normal process.
 
-Examples:
+Examples from the repository root:
 
-- `python3 run_scripts/run_scm.py bomex`
-  Runs the `bomex` case with the default compiled executable and default output
-  directory.
+```sh
+python3 run_scripts/run_scm.py bomex
+python3 run_scripts/run_scm.py -cases priority_cases -workers 4
+python3 run_scripts/run_scm.py -cases clex_group bomex -max_iters 5
+python3 run_scripts/run_scm.py -cases arm,bomex,atex -workers 1 -show_output
+python3 run_scripts/run_scm.py -jax=cpu -output_dir jax_bomex -max_iters 20 bomex
+python3 run_scripts/run_scm.py -config compatible_r8029 arm
+python3 run_scripts/run_scm.py -flags run_bindiff_w_flags_config_example_group bomex
+```
 
-- `python3 run_scripts/run_scm.py -output_dir bomex_short -max_iters 10 bomex`
-  Runs `bomex` for only 10 iterations and writes output under
-  `output/bomex_short`.
+`standard_cases`, `priority_cases`, `min_cases`, `short_cases` and `all_cases`
+retain the former batch runner's exact membership and order. `all_cases` includes
+unmaintained cases. Case groups use names ending in `_group`, such as
+`clex_group`. Lists select cases without changing their settings. Repeated case
+selections run once in first-use order. Unknown selectors and list cycles fail
+before model execution. Supply an explicit case selection; no arguments do not
+start the standard suite.
 
-- `python3 run_scripts/run_scm.py -stats none -debug 0 bomex`
-  Runs `bomex` without stats output and with debug checks disabled.
+Generated inputs, console logs and configured stats go under `output/` or
+`-output_dir`. Flag-collection sweeps use a separate subdirectory per qualified
+member; they run exactly the selected members. Batch output is captured in each
+case's log; `-show_output` also echoes it. Independent runs continue after a
+failure, and any failed run makes the command return nonzero.
 
-- `python3 run_scripts/run_scm.py -stats core+radiation arm`
-  Runs `arm` with the union of the core and radiation stats categories.
+`-override` accepts assignments, inline JSON or a JSON filename. JSON may map
+settings directly, or contain case-specific objects plus an optional `all`
+object. Shared values apply first, then case-specific values. Repeated
+`-override` arguments apply in order, with later values taking precedence:
 
-- `python3 run_scripts/run_scm.py -config compatible_r8029 arm`
-  Runs `arm` with the `compatible_r8029` presets in the parameter and flag JSON catalogs.
+```sh
+python3 run_scripts/run_scm.py -cases arm,bomex -override '{"all":{"dt_main":60},"bomex":{"dt_main":30}}'
+python3 run_scripts/run_scm.py bomex -override C8=0.4 -override ~/experiment.json
+python3 run_scripts/run_scm.py arm -stats core+radiation -debug 0
+python3 run_scripts/run_scm.py arm -zm_grid input/grid/31_level_zm_grid.grd -nzmax 31
+python3 run_scripts/run_scm.py arm -gdb
+```
 
-- `python3 run_scripts/run_scm.py -zm_grid input/grid/31_level_zm_grid.grd -nzmax 31 arm`
-  Runs `arm` on a specified `zm` grid with the matching vertical level count.
-
-- `python3 run_scripts/run_scm.py -override l_call_pdf_closure_twice=.true. bomex`
-  Runs `bomex` with one namelist value overridden at runtime.
-
-- `python3 run_scripts/run_scm.py -gdb arm`
-  Launches the compiled `arm` run under `gdb`.
-
-- `python3 run_scripts/run_scm.py -jax=cpu -output_dir jax_bomex -max_iters 20 bomex`
-  Runs 20 steps through JAX's managed CPU launcher. Use `-python` instead for
-  the Python SCM with a Python-enabled install.
-
-[`run_scm.py`](run_scm.py) and [`time_clubb.py`](../utilities/time_clubb.py) share
-[`clubb_case_runner`](../utilities/clubb_case_runner.py) for runtime selection
-and process execution. The SCM script prepares and runs one case; timing
-reuses runners across full-case warmups and repetitions. JAX runtime options
-remain owned by its launcher. See the [runner interface](../utilities/README.md#reusable-case-runners).
-
-### `run_scm_all.py`
-
-Runs a predefined set of SCM cases by launching `run_scm.py` in parallel.
-Unknown extra arguments are forwarded to each `run_scm.py` call.
-`-override` accepts assignments (`C2=2.0`), inline JSON (`'{"C2": 2.0}'`), or a
-JSON filename. JSON may contain shared settings or case-specific objects, such
-as `{"mc3e": {"time_final": 1944000.0}}`; cases absent from that mapping are
-unchanged. A case-mapping JSON may also contain an `"all"` object whose settings
-apply first to every case; named-case settings override those defaults. For
-example, `{"all": {"dt_main": 60}, "bomex": {"dt_main": 30}}` sets a shared
-60-second timestep and a 30-second timestep for BOMEX. The batch runner forwards
-the value through `run_scm.py`, and
-`create_case_namelist.py` selects and applies settings to the generated namelist.
-Repeat `-override` to combine inputs in order; later values win.
-
-Examples:
-
-- `python3 run_scripts/run_scm_all.py`
-  Runs the standard maintained case list with the default process count.
-
-- `python3 run_scripts/run_scm_all.py -priority_cases -workers 4`
-  Runs the priority case list using at most four concurrent workers.
-
-- `python3 run_scripts/run_scm_all.py -cases arm,bomex,atex -max_iters 5`
-  Runs only `arm`, `bomex`, and `atex`, forwarding `-max_iters 5` to each case.
-
-- `python3 run_scripts/run_scm_all.py -short_cases -show_output`
-  Runs the short case list and prints each underlying `run_scm.py` log.
+JAX device/environment options remain owned by its launcher. Use `-python` for
+the Python SCM with a Python-enabled build. Timing workflows use the same
+runner through [`time_clubb.py`](../utilities/time_clubb.py).
 
 ### `run_clubb_w_varying_flags.py`
 
-Runs one case or a case set multiple times while applying flag sets from a JSON
-file. Each flag set is written to its own output subdirectory.
-It forwards `-override` in the same formats as `run_scm_all.py`. The selected
-flag set is supplied first, followed by forwarded overrides; the namelist
-generator resolves them in order. For example, `-override grid_overrides.json`
-adds case-specific settings while retaining the selected flag set.
+Runs a selected case list under each independent member of a flag collection.
+`-flag_group` selects a group, list or preset from the flag catalog. An
+unmodified `default` run is prepended unless `-skip_default_flags` is supplied.
+Local names such as `flag1` remain unchanged within each collection, including
+their output subdirectory names. When a selection combines collections with
+colliding member names, qualified labels distinguish their outputs.
 
-Examples:
+```sh
+python3 run_scripts/run_clubb_w_varying_flags.py bomex
+python3 run_scripts/run_clubb_w_varying_flags.py -cases priority_cases -workers 4
+python3 run_scripts/run_clubb_w_varying_flags.py -flag_group run_bindiff_w_flags_config_host_flags_group -cases min_cases
+python3 run_scripts/run_clubb_w_varying_flags.py -flag_group run_bindiff_w_flags_config_example_group -skip_default_flags -max_iters 10 bomex
+```
 
-- `python3 run_scripts/run_clubb_w_varying_flags.py bomex`
-  Runs `bomex` once for the default flags and once for each default JSON flag
-  set.
-
-- `python3 run_scripts/run_clubb_w_varying_flags.py -priority_cases -workers 4`
-  Runs the priority case list across all configured flag sets with four workers.
-
-- `python3 run_scripts/run_clubb_w_varying_flags.py -flag_config_file input/flag_sets/run_bindiff_w_flags_config_host_flags.json -min_cases`
-  Runs the minimal case list using the host-flag JSON config.
-
-- `python3 run_scripts/run_clubb_w_varying_flags.py -skip_default_flags -max_iters 10 bomex`
-  Runs only the alternate flag sets for `bomex`, forwarding `-max_iters 10` to
-  `run_scm.py`.
+The default collection is `run_bindiff_w_flags_config_core_flags_group`. Sweep
+settings apply after the selected baseline, followed by user `-override`
+arguments. Members never accumulate changes from previous runs. For comparing
+checkouts, `-clubb_root PATH` uses the current catalog definitions while running
+that checkout's SCM script and compiled model.
 
 ### `run_bindiff_all.py`
 

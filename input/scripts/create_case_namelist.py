@@ -5,17 +5,15 @@ Usage:
     python input/scripts/create_case_namelist.py -cases arm -config e3sm -flags custom.json
     python input/scripts/create_case_namelist.py -list parameters
 
-    load_catalog(), normalize_input_selection(), input_patch(),
-    resolve_input_settings() and available_configs()
-    read defaults and presets without creating files. Case resolution retains the
-    source path and benchmark identity. Override helpers apply direct CLI edits
+    input_catalog.py reads defaults and presets without creating files.
+    Case resolution retains the source path and benchmark identity. Override helpers apply direct CLI edits
     to typed groups; arrays replace arrays and settings require non-null values.
 
     create_case_settings() assembles normal-run groups in memory. Loss setup uses
     build_loss_settings(), create_normalized_benchmark_file() and timing helpers
-    before writing. convert_to_multi_col() prepares JSON column arrays.
+    before writing. Multicolumn parameters are prepared in memory.
 
-    write_case_namelist() calls the four colocated converters exactly at the
+    write_case_namelist() serializes finalized groups exactly at the
     runner boundary. create_case_namelist_file() and create_loss_case_namelist()
     provide the complete Fortran/Python/JAX run and loss inputs.
 
@@ -46,12 +44,11 @@ INPUT_DIR = os.path.dirname(SCRIPT_DIR)
 CLUBB_ROOT = os.path.join(INPUT_DIR, "..")
 DEFAULT_OUTPUT_DIR = os.path.join(CLUBB_ROOT, "output")
 DEFAULT_TUNER_STATS = "all_tuning_stats"
-MULTI_COL_PARAMS_SCRIPT = os.path.join(SCRIPT_DIR, "create_multi_col_params.py")
 
 if os.path.abspath(CLUBB_ROOT) not in sys.path:
     sys.path.insert(0, os.path.abspath(CLUBB_ROOT))
 from input.scripts.case_json_to_namelist import (
-    available_case_names as json_case_names, case_definition_record, case_to_namelist,
+    available_case_names as json_case_names, case_definition_record,
 )
 
 HR_SPEC_RE = re.compile(
@@ -60,79 +57,9 @@ HR_SPEC_RE = re.compile(
 )
 
 
-INPUT_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_CONFIG = "default"
-CATALOG_FILES = {
-    "cases": "case_definitions.jsonc",
-    "parameters": "clubb_params.jsonc",
-    "flags": "clubb_config_flags.jsonc",
-}
-
-
-def load_catalog(kind, json_file=None):
-    """Read one authoritative defaults/presets catalog without creating files."""
-    from input.scripts.namelist import load_json, require_non_null
-    if kind not in CATALOG_FILES:
-        raise ValueError(f"Unknown input catalog {kind!r}")
-    catalog = load_json(json_file or INPUT_ROOT / CATALOG_FILES[kind])
-    if not isinstance(catalog, dict) or "defaults" not in catalog or not isinstance(catalog.get("presets"), dict):
-        raise ValueError(f"{kind} catalog requires defaults and presets")
-    require_non_null(catalog["defaults"], f"{kind}.defaults")
-    for name, patch in catalog["presets"].items():
-        require_non_null({key: value for key, value in patch.items() if key != "_metadata"}
-                         if isinstance(patch, dict) else patch, f"{kind}.presets.{name}")
-    return catalog
-
-
-def available_configs(root=None):
-    """Return the built-in default choice and names defined by any catalog."""
-    root = Path(root or INPUT_ROOT)
-    return sorted({DEFAULT_CONFIG} | {name for kind, filename in CATALOG_FILES.items()
-                   for name in load_catalog(kind, root / filename)["presets"]})
-
-
-def normalize_input_selection(selection):
-    """Keep preset names intact and resolve JSON paths against the caller's directory."""
-    value = os.fspath(selection)
-    path = Path(value).expanduser()
-    if path.suffix.lower() in {".json", ".jsonc"} or path.is_file() or value.startswith(("/", "~", ".")):
-        return str(path.resolve())
-    return value
-
-
-def input_patch(kind, selection, *, json_file=None):
-    """Read an explicit named preset or JSON override with identical contents."""
-    from input.scripts.namelist import load_json
-    value = normalize_input_selection(selection)
-    path = Path(value)
-    if path.is_absolute():
-        return load_json(path)
-    catalog = load_catalog(kind, json_file)
-    if value not in catalog["presets"]:
-        raise ValueError(f"Unknown {kind} preset {value!r}. Available: {', '.join(catalog['presets'])}")
-    return catalog["presets"][value]
-
-
-def resolve_input_settings(kind, selection=None, *, config=None, json_file=None):
-    """Apply defaults, a shared config and explicit overrides; default skips presets."""
-    import copy
-    from input.scripts.namelist import merge_settings, require_non_null
-    catalog = load_catalog(kind, json_file)
-    if config == DEFAULT_CONFIG:
-        config = None
-    if config and json_file is None and config not in available_configs():
-        raise ValueError(f"Unknown config {config!r}")
-    result = copy.deepcopy(catalog["defaults"])
-    patches = []
-    if config in catalog["presets"]:
-        patches.append(catalog["presets"][config])
-    if selection is not None:
-        patches.append(input_patch(kind, selection, json_file=json_file))
-    for patch in patches:
-        patch = {key: value for key, value in patch.items() if key != "_metadata"} if isinstance(patch, dict) else patch
-        require_non_null(patch, f"{kind}.overrides")
-        result = merge_settings(result, patch)
-    return result
+from input.scripts.input_catalog import (
+    CATALOG_FILES, available_configs, load_catalog, catalog_presets, catalog_selectors,
+)
 
 
 def validate_multicol(value: str) -> str:
@@ -153,46 +80,6 @@ def validate_multicol(value: str) -> str:
         raise argparse.ArgumentTypeError("integer -multicol value must be >= 1")
 
     return stripped
-
-
-def convert_to_multi_col(
-    params_file: str,
-    case_name: str,
-    output_dir: str,
-    multicol_spec: str,
-    batch_size: int | None = None,
-    *,
-    integer_mode: str = "dup_tweak",
-    out_file: str | None = None,
-) -> str:
-    if not os.path.isfile(MULTI_COL_PARAMS_SCRIPT):
-        raise RuntimeError(f"Missing helper script: {MULTI_COL_PARAMS_SCRIPT}")
-
-    if out_file is None:
-        out_file = os.path.join(output_dir, f"{case_name}_multicol_params.json")
-    cmd = [sys.executable, MULTI_COL_PARAMS_SCRIPT, "-params_file", params_file, "-output_file", out_file]
-
-    try:
-        ngrdcol = int(multicol_spec)
-    except ValueError:
-        cmd.extend(["-multicol", multicol_spec])
-    else:
-        cmd.extend(["-mode", integer_mode, "-multicol", str(ngrdcol)])
-
-    if batch_size is not None:
-        cmd.extend(["-batch_size", str(batch_size)])
-
-    try:
-        subprocess.run(cmd, check=True)
-    except subprocess.CalledProcessError as exc:
-        raise RuntimeError(
-            f"create_multi_col_params failed (exit {exc.returncode}). Command was:\n  {' '.join(cmd)}"
-        ) from exc
-
-    if not os.path.isfile(out_file):
-        raise RuntimeError(f"Expected output file not created: {out_file}")
-
-    return out_file
 
 
 def available_case_names():
@@ -363,7 +250,7 @@ def set_model_value(settings, key, value):
     return set_namelist_value(settings, "model_setting", key, value)
 
 
-def apply_namelist_overrides(args, settings, model_settings, output_dir):
+def apply_namelist_overrides(args, settings, output_dir):
     """Apply direct CLI settings to resolved JSON, then the general override."""
     model = settings.setdefault("model_setting", {})
     stats = settings.setdefault("stats_setting", {})
@@ -412,6 +299,7 @@ def create_case_settings(
     stats: str | None = None,
     multicol: str | None = None,
     batch_size: int | None = None,
+    multicol_mode: str = "dup_tweak",
     zt_grid: str | None = None,
     zm_grid: str | None = None,
     nzmax: int | None = None,
@@ -424,7 +312,7 @@ def create_case_settings(
     stats_tend: float | None = None,
     override: str | list[str] | None = None,
 ) -> dict:
-    """Assemble resolved JSON groups for a normal run without emitting a namelist."""
+    """Assemble resolved groups; multicol_mode selects tweaking or exact duplication."""
     output_dir_abs = os.path.abspath(os.fspath(output_dir) if output_dir else DEFAULT_OUTPUT_DIR)
     os.makedirs(output_dir_abs, exist_ok=True)
 
@@ -443,15 +331,12 @@ def create_case_settings(
 
     from input.scripts.parameters_json_to_namelist import parameter_settings
     from input.scripts.flags_json_to_namelist import flag_settings
-    from input.scripts.namelist import atomic_text
     from input.scripts.stats_json_to_namelist import select_stats_entries, ENTRY_FIELDS
 
     parameters = parameter_settings(params, config=config)
     if multicol is not None:
-        params_file = os.path.join(output_dir_abs, f"{case_name}_base_parameters.json")
-        atomic_text(params_file, json.dumps(parameters, indent=2, allow_nan=False) + "\n")
-        params_file = convert_to_multi_col(params_file, case_name, output_dir_abs, multicol, batch_size=batch_size)
-        parameters = parameter_settings(params_file)
+        from input.scripts.create_multi_col_params import multi_col_settings
+        parameters = multi_col_settings(parameters, multicol, batch_size=batch_size, mode=multicol_mode)
     if silhs_params:
         parameters["silhs"] = parameter_settings(silhs_params, config=config)["silhs"]
     flag_values = flag_settings(flags, config=config)
@@ -478,7 +363,7 @@ def create_case_settings(
         stats_tend=stats_tend,
         override=override,
     )
-    return apply_namelist_overrides(args, settings, model_input["model_setting"], output_dir_abs)
+    return apply_namelist_overrides(args, settings, output_dir_abs)
 
 
 def case_run_name(selection):
@@ -487,19 +372,20 @@ def case_run_name(selection):
 
 
 def write_case_namelist(settings, path):
-    """Call the specialized converters once, at the top-level runner boundary."""
-    from input.scripts.parameters_json_to_namelist import parameters_to_namelist
-    from input.scripts.flags_json_to_namelist import flags_to_namelist
-    from input.scripts.stats_json_to_namelist import stats_to_namelist, ENTRY_FIELDS
-    from input.scripts.namelist import atomic_text
-    parameters = {"model": settings.get("clubb_params_nl", {}), "silhs": settings.get("silhs_params_nl", {})}
-    if "multicol_def" in settings:
-        parameters["multicol"] = settings["multicol_def"]
-    flags = {"model": settings.get("configurable_clubb_flags_nl", {}), "silhs": settings.get("configurable_silhs_flags_nl", {})}
-    omitted = {"clubb_params_nl", "silhs_params_nl", "multicol_def", "configurable_clubb_flags_nl", "configurable_silhs_flags_nl", "clubb_stats_nl"}
-    text = parameters_to_namelist(parameters) + flags_to_namelist(flags)
-    text += case_to_namelist({key: value for key, value in settings.items() if key not in omitted})
-    entries = [dict(zip(ENTRY_FIELDS, [piece.strip() for piece in entry.split(" | ", 3)]))
+    """Serialize finalized groups once, at the top-level runner boundary."""
+    from input.scripts.namelist import atomic_text, namelists_to_text
+    from input.scripts.stats_json_to_namelist import stats_to_namelist
+
+    # Preserve section order and separators used by existing generated files.
+    parameter_names = (["multicol_def"] if "multicol_def" in settings else []) + [
+        "clubb_params_nl", "silhs_params_nl"]
+    flag_names = ["configurable_clubb_flags_nl", "configurable_silhs_flags_nl"]
+    omitted = {*parameter_names, *flag_names, "clubb_stats_nl"}
+    sections = [{name: settings.get(name, {}) for name in names}
+                for names in (parameter_names, flag_names)]
+    sections.append({name: values for name, values in settings.items() if name not in omitted})
+    text = "".join(namelists_to_text(section) for section in sections)
+    entries = [" | ".join(part.strip() for part in entry.split(" | ", 3))
                for entry in settings.get("clubb_stats_nl", {}).get("entry", [])]
     atomic_text(path, text + stats_to_namelist(entries))
     return Path(path)
@@ -700,39 +586,20 @@ def create_loss_case_namelist(
     num_time_windows = int(num_time_windows)
     case_defaults["num_time_windows"] = num_time_windows
 
-    params_for_case = params
-    multicol_for_case = multicol
-    batch_size_for_case = batch_size
-    if duplicate_params_for_batch:
-        if batch_size is None:
-            raise RuntimeError("duplicate_params_for_batch requires batch_size")
-        from input.scripts.parameters_json_to_namelist import parameter_settings
-        from input.scripts.namelist import atomic_text
-        base_settings = parameter_settings(params, config=config)
-        base_params_file = str(output_path / f"{case_name}_base_parameters.json")
-        atomic_text(base_params_file, json.dumps(base_settings, indent=2, allow_nan=False) + "\n")
-        params_for_case = convert_to_multi_col(
-            base_params_file,
-            case_name,
-            str(output_path),
-            str(batch_size),
-            batch_size=batch_size,
-            integer_mode="duplicate",
-            out_file=str(output_path / f"{case_name}_tuning_multicol_params.json"),
-        )
-        multicol_for_case = None
-        batch_size_for_case = None
+    if duplicate_params_for_batch and batch_size is None:
+        raise RuntimeError("duplicate_params_for_batch requires batch_size")
 
     clubb_in = create_case_settings(
         case_selector,
         output_path,
         config=config,
-        params=params_for_case,
+        params=params,
         flags=flags,
         silhs_params=silhs_params,
         stats=stats,
-        multicol=multicol_for_case,
-        batch_size=batch_size_for_case,
+        multicol=str(batch_size) if duplicate_params_for_batch else multicol,
+        batch_size=batch_size,
+        multicol_mode="duplicate" if duplicate_params_for_batch else "dup_tweak",
     )
 
     normalized_benchmark_file = create_normalized_benchmark_file(
@@ -779,10 +646,10 @@ def create_loss_case_namelist(
     return aggregate_path, selected_fields, case_defaults
 
 
-def add_input_arguments(parser, *, cases=True):
+def add_input_arguments(parser, *, cases=True, multiple_cases=False):
     """Declare the shared config, input overrides and independent stats selector."""
     if cases:
-        parser.add_argument("-cases", dest="case_selector", metavar="NAME|JSON", help="Case preset or JSON override file; also accepted as the positional case.")
+        parser.add_argument("-cases", dest="case_selector", nargs="+" if multiple_cases else None, metavar="NAME|JSON", help="Case preset or JSON override file; also accepted as the positional case.")
     parser.add_argument("-config", metavar="NAME", help="Intermediate preset applied wherever that name exists in cases, parameters or flags; default uses catalog defaults without a preset.")
     parser.add_argument('-params', '-params_file', dest='params', metavar="NAME|JSON",
         help="Parameter preset name or JSON overrides, applied after -config.")
@@ -796,9 +663,9 @@ def add_input_arguments(parser, *, cases=True):
               "Use 'all' for every stat or 'none' to disable stats. Default: standard."))
 
 
-def add_namelist_arguments(parser):
+def add_namelist_arguments(parser, *, multiple_cases=False):
     """Declare shared input selectors and direct model settings."""
-    add_input_arguments(parser)
+    add_input_arguments(parser, multiple_cases=multiple_cases)
     parser.add_argument('-output_dir', dest='out_dir', metavar="[DIR]",
         help="Output directory for the generated namelist and run results. Relative paths are rooted under output/ unless they already start with output/; absolute paths are used directly. Default: output")
     parser.add_argument("-multicol", metavar="[NUM|SPEC]", type=validate_multicol,
@@ -840,7 +707,7 @@ def add_namelist_arguments(parser):
 def normalize_case_selection(args, parser):
     """Preserve the case selector while deriving a safe name for run artifacts."""
     selection = getattr(args, "case_selector", None) or args.case_name
-    if selection is None and getattr(args, "config", None) in load_catalog("cases")["presets"]:
+    if selection is None and getattr(args, "config", None) in catalog_presets("cases", load_catalog("cases")):
         selection = args.config
     if not selection:
         parser.error("Provide a case preset or JSON file as CASE or -cases")
@@ -874,15 +741,22 @@ def case_namelist_command(args, output_dir):
 def create_case_namelist_from_args(args, output_dir, *, log_file=None, timeout=None):
     """Generate args' aggregate namelist in resolved output_dir and return its Path.
 
-    args supplies the case name and parsed model options. Run the generator as
-    a subprocess so concurrent callers can send console output to separate open
-    log_file streams (None inherits stdout). timeout is its limit in seconds.
-    Generation failure/timeout propagates from subprocess.run. This helper does
-    not initialize a model or select its runtime.
+    Prepare directly from parsed model options by default. Callers requesting
+    a separate log_file or timeout use the generator subprocess for isolation;
+    its failures and timeout propagate. This helper does not initialize a model
+    or select its runtime. Selections here must identify one concrete case.
     """
-    subprocess.run(case_namelist_command(args, output_dir), check=True,
-                   stdout=log_file, stderr=subprocess.STDOUT, timeout=timeout)
-    return Path(output_dir) / f"{case_run_name(args.case_name)}.in"
+    if log_file is not None or timeout is not None:
+        subprocess.run(case_namelist_command(args, output_dir), check=True,
+                       stdout=log_file, stderr=subprocess.STDOUT, timeout=timeout)
+        return Path(output_dir) / f"{case_run_name(args.case_name)}.in"
+    names = ("config", "params", "flags", "silhs_params", "stats", "multicol", "batch_size",
+             "zt_grid", "zm_grid", "nzmax", "debug", "max_iters", "dt_main", "dt_rad",
+             "tout", "stats_tstart", "stats_tend", "override")
+    return create_case_namelist_file(
+        getattr(args, "case_selector", None) or args.case_name, output_dir,
+        **{name: getattr(args, name, None) for name in names},
+    )
 
 
 def parse_forwarded_args(parser, argv=None):
@@ -945,10 +819,13 @@ def main():
             names = [path.removeprefix("all/") for path in load_stats_categories()]
             names.extend(load_json(DEFAULT_STATS_JSON).get("presets", {}))
         else:
-            names = available_configs() if args.list == "configs" else load_catalog(args.list)["presets"]
+            names = available_configs() if args.list == "configs" else catalog_selectors(args.list, load_catalog(args.list))
         print("\n".join(names))
         return
     args = normalize_case_selection(args, parser)
+    if args.multicol is not None:
+        from utilities.setup_python_venv import ensure_python_venv
+        ensure_python_venv()
 
     try:
         clubb_input_namelist = create_case_namelist_file(

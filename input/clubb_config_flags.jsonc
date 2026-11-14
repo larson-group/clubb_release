@@ -323,5 +323,482 @@
         "l_add_dycore_grid":               false
       }
     }
+  },
+
+  // Flag collections define independent sparse presets with local names.
+  // Select a whole collection with -flags GROUP in run_scm.py, or use
+  // -flag_group GROUP in the varying-flags and comparison runners. The latter
+  // add an unmodified default run unless -skip_default_flags is supplied.
+  // Each member starts from the selected baseline; members never accumulate.
+  // Grouping simultaneous changes limits the otherwise combinatorial test
+  // matrix. A flag's other state may already be exercised by the default run.
+  // Core flags serve most Jenkins tests; host flags serve generalized-grid
+  // tests. The example collection remains a small demonstration.
+  // The JAX collection omits unsupported algorithms such as LAPACK, and omits
+  // l_use_tke_in_wp2_wp3_K_dfsn=true: cobra and dycoms2_rf02_ds amplify compiler
+  // roundoff enough for -O0 and -O2 Fortran to diverge within 40 timesteps.
+  // l_Lscale_plume_centered=true is excluded from the core collection because
+  // the compile-time l_avg_Lscale constant is false. See
+  // https://github.com/larson-group/clubb/issues/1354#issuecomment-5640458314
+  "groups": {
+    "config_core_flags_wo_never_supported_jax_features_group": {
+      "presets": {
+        "flag2": {
+          "model": {
+            "saturation_formula": 1,
+            "l_godunov_upwind_xpyp_ta": true
+          },
+          "silhs": {
+            "l_lh_importance_sampling": false,
+            "l_max_overlap_in_cloud": false
+          }
+        },
+        "flag3": {
+          "model": {
+            "ipdf_call_placement": 1,
+            "l_ho_trad_coriolis": true,
+            "l_ho_nontrad_coriolis": true
+          }
+        },
+        "flag5": {
+          "model": {
+            "l_predict_upwp_vpwp": false
+          }
+        },
+        "flag6": {
+          "model": {
+            "l_wp2_fill_holes_tke": false,
+            "l_enable_relaxed_clipping": true,
+            "l_min_xp2_from_corr_wx": false
+          },
+          "silhs": {
+            "l_lh_straight_mc": true
+          }
+        },
+        "flag7": {
+          "model": {
+            "Lscale_method": 2,
+            "fill_holes_type": 3
+          }
+        },
+        "flag8": {
+          "model": {
+            "l_upwind_xpyp_ta": false,
+            "l_upwind_xm_ma": false
+          },
+          "silhs": {
+            "l_lh_clustered_sampling": false,
+            "l_lh_instant_var_covar_src": false,
+            "l_lh_limit_weights": false
+          }
+        },
+        "flag9": {
+          "model": {
+            "l_min_wp2_from_corr_wx": true,
+            "l_stability_correct_tau_zm": true,
+            "l_damp_wp2_using_em": false,
+            "l_use_C7_Richardson": false
+          }
+        },
+        "flag10": {
+          "model": {
+            "l_vert_avg_closure": true,
+            "l_use_cloud_cover": true,
+            "l_damp_wp3_Skw_squared": false,
+            "l_use_C11_Richardson": true
+          },
+          "silhs": {
+            "l_rcm_in_cloud_k_lh_start": false
+          }
+        },
+        "flag11": {
+          "model": {
+            "l_rcm_supersat_adj": false,
+            "l_C2_cloud_frac": true,
+            "l_use_precip_frac": false,
+            "l_do_expldiff_rtm_thlm": true,
+            "l_use_shear_Richardson": true
+          }
+        },
+        "flag12": {
+          "model": {
+            "l_prescribed_avg_deltaz": true,
+            "l_stability_correct_Kh_N2_zm": true,
+            "l_trapezoidal_rule_zt": true,
+            "l_trapezoidal_rule_zm": true,
+            "l_call_pdf_closure_twice": true
+          }
+        },
+        "flag13": {
+          "model": {
+            "l_brunt_vaisala_freq_moist": true,
+            "l_use_thvm_in_bv_freq": true,
+            "l_lmm_stepping": true,
+            "l_vary_convect_depth": true
+          }
+        },
+        "flag14": {
+          "model": {
+            "l_use_tke_in_wp3_pr_turb_term": false,
+            "l_use_wp3_lim_with_smth_Heaviside": true,
+            "l_smooth_Heaviside_tau_wpxp": false,
+            "l_modify_limiters_for_cnvg_test": true
+          }
+        },
+        "flag15": {
+          "model": {
+            "l_mono_flux_lim_rtm": false,
+            "l_mono_flux_lim_um": false,
+            "l_mono_flux_lim_vm": false,
+            "l_mono_flux_lim_spikefix": false
+          }
+        },
+        "flag16": {
+          "model": {
+            "l_standard_term_ta": true,
+            "l_partial_upwind_wp3": false
+          },
+          "silhs": {
+            "l_lh_var_frac": true
+          }
+        },
+        "flag17": {
+          "model": {
+            "l_standard_term_ta": true,
+            "l_partial_upwind_wp3": true
+          },
+          "silhs": {
+            "l_lh_normalize_weights": false
+          }
+        },
+        "flag18": {
+          "model": {
+            "ipdf_call_placement": 3
+          }
+        }
+      }
+    },
+    "run_bindiff_w_flags_config_core_flags_group": {
+      "presets": {
+        "flag1": {
+          "model": {
+            "l_godunov_upwind_wpxp_ta": true,
+            "penta_solve_method": 1,
+            "tridiag_solve_method": 1,
+            "l_diffuse_rtm_and_thlm": true,
+            "saturation_formula": 2,
+            "fill_holes_type": 4
+          }
+        },
+        "flag2": {
+          "model": {
+            "Lscale_method": 1,
+            "saturation_formula": 1,
+            "l_godunov_upwind_xpyp_ta": true
+          },
+          "silhs": {
+            "l_lh_importance_sampling": false,
+            "l_random_k_lh_start": true,
+            "l_max_overlap_in_cloud": false
+          }
+        },
+        "flag3": {
+          "model": {
+            "ipdf_call_placement": 1,
+            "l_ho_trad_coriolis": true,
+            "l_ho_nontrad_coriolis": true
+          }
+        },
+        "flag4": {
+          "model": {
+            "iiPDF_type": 7
+          }
+        },
+        "flag5": {
+          "model": {
+            "l_predict_upwp_vpwp": false
+          }
+        },
+        "flag6": {
+          "model": {
+            "l_wp2_fill_holes_tke": false,
+            "l_enable_relaxed_clipping": true,
+            "l_min_xp2_from_corr_wx": false,
+            "l_add_dycore_grid": true
+          },
+          "silhs": {
+            "l_lh_straight_mc": true
+          }
+        },
+        "flag7": {
+          "model": {
+            "Lscale_method": 2,
+            "fill_holes_type": 3
+          }
+        },
+        "flag8": {
+          "model": {
+            "l_upwind_xpyp_ta": false,
+            "l_upwind_xm_ma": false
+          },
+          "silhs": {
+            "l_lh_clustered_sampling": false,
+            "l_lh_instant_var_covar_src": false,
+            "l_lh_limit_weights": false
+          }
+        },
+        "flag9": {
+          "model": {
+            "l_min_wp2_from_corr_wx": true,
+            "l_stability_correct_tau_zm": true,
+            "l_damp_wp2_using_em": false,
+            "l_use_C7_Richardson": false
+          }
+        },
+        "flag10": {
+          "model": {
+            "l_vert_avg_closure": true,
+            "l_use_cloud_cover": true,
+            "l_damp_wp3_Skw_squared": false,
+            "l_use_C11_Richardson": true
+          },
+          "silhs": {
+            "l_rcm_in_cloud_k_lh_start": false
+          }
+        },
+        "flag11": {
+          "model": {
+            "l_rcm_supersat_adj": false,
+            "l_C2_cloud_frac": true,
+            "l_use_precip_frac": false,
+            "l_do_expldiff_rtm_thlm": true,
+            "l_use_shear_Richardson": true
+          }
+        },
+        "flag12": {
+          "model": {
+            "l_prescribed_avg_deltaz": true,
+            "l_stability_correct_Kh_N2_zm": true,
+            "l_trapezoidal_rule_zt": true,
+            "l_trapezoidal_rule_zm": true,
+            "l_call_pdf_closure_twice": true
+          }
+        },
+        "flag13": {
+          "model": {
+            "l_brunt_vaisala_freq_moist": true,
+            "l_use_thvm_in_bv_freq": true,
+            "l_lmm_stepping": true,
+            "l_vary_convect_depth": true
+          }
+        },
+        "flag14": {
+          "model": {
+            "l_use_tke_in_wp3_pr_turb_term": false,
+            "l_use_tke_in_wp2_wp3_K_dfsn": true,
+            "l_use_wp3_lim_with_smth_Heaviside": true,
+            "l_smooth_Heaviside_tau_wpxp": false,
+            "l_modify_limiters_for_cnvg_test": true
+          }
+        },
+        "flag15": {
+          "model": {
+            "l_mono_flux_lim_rtm": false,
+            "l_mono_flux_lim_um": false,
+            "l_mono_flux_lim_vm": false,
+            "l_mono_flux_lim_spikefix": false
+          }
+        },
+        "flag16": {
+          "model": {
+            "l_standard_term_ta": true,
+            "l_partial_upwind_wp3": false
+          },
+          "silhs": {
+            "l_lh_var_frac": true
+          }
+        },
+        "flag17": {
+          "model": {
+            "l_standard_term_ta": true,
+            "l_partial_upwind_wp3": true
+          },
+          "silhs": {
+            "l_lh_normalize_weights": false
+          }
+        },
+        "flag18": {
+          "model": {
+            "ipdf_call_placement": 3
+          }
+        }
+      }
+    },
+    "run_bindiff_w_flags_config_example_group": {
+      "presets": {
+        "flag1": {
+          "model": {
+            "l_godunov_upwind_wpxp_ta": true,
+            "tridiag_solve_method": 2,
+            "l_diffuse_rtm_and_thlm": true,
+            "penta_solve_method": 2,
+            "saturation_formula": 2
+          }
+        },
+        "flag2": {
+          "model": {
+            "saturation_formula": 1
+          }
+        }
+      }
+    },
+    "run_bindiff_w_flags_config_host_flags_group": {
+      "presets": {
+        "flag1": {
+          "model": {
+            "l_use_precip_frac": true,
+            "l_predict_upwp_vpwp": true,
+            "l_min_wp2_from_corr_wx": false,
+            "l_min_xp2_from_corr_wx": true,
+            "l_C2_cloud_frac": false,
+            "l_diffuse_rtm_and_thlm": false,
+            "l_stability_correct_Kh_N2_zm": false,
+            "l_upwind_xpyp_ta": true,
+            "l_upwind_xm_ma": true,
+            "l_vert_avg_closure": true,
+            "l_trapezoidal_rule_zt": true,
+            "l_trapezoidal_rule_zm": true,
+            "l_call_pdf_closure_twice": true,
+            "l_standard_term_ta": false,
+            "l_partial_upwind_wp3": false,
+            "l_godunov_upwind_wpxp_ta": false,
+            "l_godunov_upwind_xpyp_ta": false,
+            "l_use_cloud_cover": true,
+            "l_stability_correct_tau_zm": true,
+            "l_damp_wp2_using_em": false,
+            "l_do_expldiff_rtm_thlm": true,
+            "l_Lscale_plume_centered": false,
+            "Lscale_method": 1,
+            "l_use_C7_Richardson": false,
+            "l_use_C11_Richardson": false,
+            "l_use_shear_Richardson": false,
+            "l_brunt_vaisala_freq_moist": false,
+            "l_use_thvm_in_bv_freq": false,
+            "l_rcm_supersat_adj": false,
+            "l_damp_wp3_Skw_squared": false,
+            "l_prescribed_avg_deltaz": false,
+            "l_lmm_stepping": false,
+            "l_e3sm_config": false,
+            "l_vary_convect_depth": false,
+            "l_use_tke_in_wp3_pr_turb_term": false,
+            "l_use_tke_in_wp2_wp3_K_dfsn": false,
+            "l_use_wp3_lim_with_smth_Heaviside": false,
+            "l_smooth_Heaviside_tau_wpxp": false,
+            "l_modify_limiters_for_cnvg_test": false,
+            "l_enable_relaxed_clipping": false,
+            "l_linearize_pbl_winds": false,
+            "l_mono_flux_lim_thlm": true,
+            "l_mono_flux_lim_rtm": true,
+            "l_mono_flux_lim_um": true,
+            "l_mono_flux_lim_vm": true,
+            "l_mono_flux_lim_spikefix": true,
+            "l_host_applies_sfc_fluxes": false,
+            "l_wp2_fill_holes_tke": false,
+            "l_add_dycore_grid": false
+          }
+        },
+        "flag2": {
+          "model": {
+            "iiPDF_type": 1,
+            "ipdf_call_placement": 2,
+            "penta_solve_method": 1,
+            "tridiag_solve_method": 1,
+            "grid_remap_method": 1,
+            "grid_adapt_in_time_method": 0,
+            "l_use_precip_frac": true,
+            "l_predict_upwp_vpwp": false,
+            "l_min_wp2_from_corr_wx": true,
+            "l_min_xp2_from_corr_wx": true,
+            "l_C2_cloud_frac": false,
+            "l_diffuse_rtm_and_thlm": false,
+            "l_stability_correct_Kh_N2_zm": false,
+            "l_upwind_xpyp_ta": true,
+            "l_upwind_xm_ma": true,
+            "l_vert_avg_closure": true,
+            "l_trapezoidal_rule_zt": true,
+            "l_trapezoidal_rule_zm": true,
+            "l_call_pdf_closure_twice": true,
+            "l_standard_term_ta": false,
+            "l_partial_upwind_wp3": false,
+            "l_godunov_upwind_wpxp_ta": false,
+            "l_godunov_upwind_xpyp_ta": false,
+            "l_use_cloud_cover": true,
+            "l_stability_correct_tau_zm": false,
+            "l_damp_wp2_using_em": false,
+            "l_do_expldiff_rtm_thlm": true,
+            "l_Lscale_plume_centered": false,
+            "Lscale_method": 1,
+            "l_use_C7_Richardson": true,
+            "l_use_C11_Richardson": true,
+            "l_use_shear_Richardson": false,
+            "l_brunt_vaisala_freq_moist": true,
+            "l_use_thvm_in_bv_freq": true,
+            "l_rcm_supersat_adj": false,
+            "l_damp_wp3_Skw_squared": false,
+            "l_prescribed_avg_deltaz": false,
+            "l_lmm_stepping": false,
+            "l_e3sm_config": false,
+            "l_vary_convect_depth": false,
+            "l_use_tke_in_wp3_pr_turb_term": false,
+            "l_use_tke_in_wp2_wp3_K_dfsn": false,
+            "l_use_wp3_lim_with_smth_Heaviside": false,
+            "l_smooth_Heaviside_tau_wpxp": false,
+            "l_modify_limiters_for_cnvg_test": false,
+            "l_enable_relaxed_clipping": false,
+            "l_linearize_pbl_winds": false,
+            "l_mono_flux_lim_thlm": true,
+            "l_mono_flux_lim_rtm": true,
+            "l_mono_flux_lim_um": true,
+            "l_mono_flux_lim_vm": true,
+            "l_mono_flux_lim_spikefix": true,
+            "l_host_applies_sfc_fluxes": false,
+            "l_wp2_fill_holes_tke": true,
+            "l_add_dycore_grid": false
+          }
+        },
+        "flag3": {
+          "model": {
+            "ipdf_call_placement": 1,
+            "saturation_formula": 3,
+            "l_predict_upwp_vpwp": false,
+            "l_min_wp2_from_corr_wx": false,
+            "l_min_xp2_from_corr_wx": false,
+            "l_C2_cloud_frac": false,
+            "l_diffuse_rtm_and_thlm": false,
+            "l_stability_correct_Kh_N2_zm": false,
+            "l_upwind_xpyp_ta": true,
+            "l_upwind_xm_ma": true,
+            "l_vert_avg_closure": true,
+            "l_trapezoidal_rule_zt": true,
+            "l_trapezoidal_rule_zm": true,
+            "l_call_pdf_closure_twice": true,
+            "l_standard_term_ta": false,
+            "l_host_applies_sfc_fluxes": false,
+            "l_use_cloud_cover": true,
+            "l_stability_correct_tau_zm": true,
+            "l_damp_wp2_using_em": false,
+            "l_do_expldiff_rtm_thlm": true,
+            "l_Lscale_plume_centered": false,
+            "Lscale_method": 1,
+            "l_use_C7_Richardson": false,
+            "l_use_C11_Richardson": false,
+            "l_brunt_vaisala_freq_moist": false,
+            "l_use_thvm_in_bv_freq": false,
+            "l_rcm_supersat_adj": false,
+            "l_damp_wp3_Skw_squared": false
+          }
+        }
+      }
+    }
   }
 }

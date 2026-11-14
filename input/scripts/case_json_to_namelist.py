@@ -7,8 +7,8 @@ lists presets and locally saved *.case.json or *.case.jsonc files. load_case_cat
 the source. merge_case_settings() and case_settings_patch() form/apply sparse
 overrides. save_case_definition() writes copyable overrides with provenance;
 existing entries require a matching source checksum. custom_case_path() confines
-UI-created names to input/. case_to_namelist() serializes final case groups for
-create_case_namelist.py; it does not create files.
+UI-created names to input/. case_to_namelist() serializes resolved case groups
+in memory for callers that need only case settings.
 """
 from __future__ import annotations
 
@@ -26,6 +26,7 @@ CASE_NAME = re.compile(r"[A-Za-z][A-Za-z0-9_]*\Z")
 MISSING = object()
 
 
+from input.scripts.input_catalog import load_catalog, resolve_input_settings, catalog_presets, catalog_index
 from input.scripts.namelist import (
     load_json, merge_settings as merge_case_settings, settings_patch as case_settings_patch,
     updated_json_text,
@@ -34,7 +35,6 @@ from input.scripts.namelist import (
 
 def load_case_catalog(json_file=None):
     """Read the case catalog through the shared non-null input validation."""
-    from input.scripts.create_case_namelist import load_catalog
     catalog = load_catalog("cases", json_file or DEFAULT_CASES_JSON)
     if not isinstance(catalog["defaults"], dict):
         raise ValueError("Case catalog requires defaults and presets objects")
@@ -53,7 +53,7 @@ def custom_case_path(name, json_file=None):
 
 def available_case_names(json_file=None):
     catalog = load_case_catalog(json_file)
-    names = set(catalog["presets"])
+    names = set(catalog_presets("cases", catalog))
     root = Path(json_file or DEFAULT_CASES_JSON).parent
     for path in [*root.glob("*.case.json"), *root.glob("*.case.jsonc")]:
         name = path.stem.removesuffix(".case")
@@ -64,7 +64,6 @@ def available_case_names(json_file=None):
 
 def case_definition_record(name, json_file=None, *, config=None):
     """Resolve a preset or override file and retain its source and benchmark identity."""
-    from input.scripts.create_case_namelist import resolve_input_settings
     catalog = load_case_catalog(json_file)
     value = os.fspath(name)
     candidate = Path(value).expanduser()
@@ -91,7 +90,7 @@ def case_definition_record(name, json_file=None, *, config=None):
     settings = resolve_input_settings("cases", selection, config=config, json_file=json_file or DEFAULT_CASES_JSON)
     if explicit_file and "benchmark_case" not in metadata:
         runtype = settings.get("model_setting", {}).get("runtype")
-        metadata = {**metadata, "benchmark_case": runtype if runtype in catalog["presets"] else None}
+        metadata = {**metadata, "benchmark_case": runtype if runtype in catalog_presets("cases", catalog) else None}
     return {"name": candidate.stem.removesuffix(".case") if explicit_file else name,
             "namelists": settings, "kind": kind, "source_file": str(path),
             "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
@@ -138,7 +137,9 @@ def save_case_definition(name, settings, *, copied_from=None, expected_sha256=No
         if current["sha256"] != expected_sha256:
             raise ValueError("Case changed since confirmation; review the replacement again")
         if current["kind"] == "catalog":
-            catalog["presets"][name] = case_settings_patch(catalog["defaults"], settings)
+            records, _, locations = catalog_index("cases", catalog)
+            base = merge_case_settings(catalog["defaults"], records[name]["inherited"])
+            locations[name][name] = case_settings_patch(base, settings)
             catalog.setdefault("case_metadata", {})[name] = {"copied_from": copied_from,
                                                             "benchmark_case": benchmark_case}
             _atomic_json(Path(json_file or DEFAULT_CASES_JSON), catalog)
@@ -154,5 +155,5 @@ def save_case_definition(name, settings, *, copied_from=None, expected_sha256=No
 
 
 def case_to_namelist(settings):
-    """Serialize finalized case/loss groups for the central entry-point builder."""
+    """Serialize finalized case/loss groups without creating files."""
     return namelists_to_text(settings)

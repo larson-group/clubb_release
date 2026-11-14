@@ -15,7 +15,8 @@ import subprocess
 from input.scripts.namelist import updated_settings, atomic_text, settings_patch, updated_json_text
 from input.scripts.parameters_json_to_namelist import parameter_settings
 from input.scripts.flags_json_to_namelist import flag_settings
-from input.scripts.create_case_namelist import CATALOG_FILES, DEFAULT_CONFIG, normalize_override_string, parse_override_pairs
+from input.scripts.create_case_namelist import normalize_override_string, parse_override_pairs
+from input.scripts.input_catalog import CATALOG_FILES, DEFAULT_CONFIG
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 CONFIG_ROOT = REPO_ROOT / "input"
@@ -41,7 +42,7 @@ def _git_hash():
 
 def _source_settings(source_config, root):
     """Resolve the baseline or matching presets, inheriting missing sections."""
-    from input.scripts.create_case_namelist import load_catalog
+    from input.scripts.input_catalog import load_catalog
     name = normalize_config_name(source_config)
     if name != DEFAULT_CONFIG and not any(name in load_catalog(kind, root / CATALOG_FILES[kind])["presets"]
                for kind in ("parameters", "flags")):
@@ -77,7 +78,7 @@ def save_tunable_config(source_config, overrides, name, note="", force=False, *,
     destination_name = normalize_config_name(name)
     if destination_name == DEFAULT_CONFIG:
         raise ValueError(f"Config name {DEFAULT_CONFIG!r} is reserved for catalog defaults; choose another name.")
-    from input.scripts.create_case_namelist import load_catalog
+    from input.scripts.input_catalog import load_catalog
     catalogs = {kind: load_catalog(kind, root / CATALOG_FILES[kind]) for kind in ("parameters", "flags")}
     overwritten = any(destination_name in catalog["presets"] for catalog in catalogs.values())
     if overwritten and not force:

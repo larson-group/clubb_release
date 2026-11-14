@@ -286,7 +286,7 @@ Examples:
   Recreates existing clone directories without prompting and forwards
   `-max_iters 360` to the case runs.
 
-- `python3 human_reviewed_tests/run_bindiff_w_flags.py -branches master,my_branch -flag_config_file input/flag_sets/run_bindiff_w_flags_config_example.json -priority_cases -workers 4`
+- `python3 human_reviewed_tests/run_bindiff_w_flags.py -branches master,my_branch -flag_group run_bindiff_w_flags_config_example_group -cases priority_cases -workers 4`
   Uses an explicit flag config and forwards case-selection and worker-count
   options to `run_clubb_w_varying_flags.py`.
 
@@ -367,7 +367,7 @@ Runs selected cases with both the JAX driver and the Fortran standalone driver,
 then compares outputs with `run_bindiff_all.py`.
 
 Every case runs once per flag set. The unmodified "default" flag set is
-included unless `-skip_default_flags` is given with `-flag_config_file`.
+included unless `-skip_default_flags` is given with `-flag_group`.
 Results are written as
 
     output/tests/jax_driver_test_results/
@@ -402,7 +402,7 @@ Examples:
 - `python3 human_reviewed_tests/run_jax_vs_fortran_cases.py -bindiff_verbose 2 -bindiff_threshold 1e-12`
   Runs the default case set and prints detailed strict bindiff output.
 
-- `python3 human_reviewed_tests/run_jax_vs_fortran_cases.py -flag_config_file input/flag_sets/run_bindiff_w_flags_config_example.json`
+- `python3 human_reviewed_tests/run_jax_vs_fortran_cases.py -flag_group run_bindiff_w_flags_config_example_group`
   Also runs every case under each flag set in the JSON file, using the same
   config format as `run_scripts/run_clubb_w_varying_flags.py`. Add
   `-skip_default_flags` to run only the flag sets from the file.

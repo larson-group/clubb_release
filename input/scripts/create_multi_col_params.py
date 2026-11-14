@@ -1,8 +1,24 @@
 #!/usr/bin/env python3
+"""Build multicolumn parameter arrays for runs and explicit JSON exports.
+
+Usage:
+    multi_col_settings() transforms resolved settings in memory. The CLI reads a
+    catalog or sparse parameter file and writes the same result to -output_file.
+    is_single_col_list() checks a file's dimensions; parse_clubb_params() reads
+    its scalar model values. duplicate_params() copies values, while
+    duplicate_and_tweak() varies selected parameters and optionally mirrors them.
+    hypergrid() samples relative ranges. parse_hypergrid_range_spec() reads
+    explicit ranges for custom_hypergrid(). clamp_batch_size() caps batch width.
+
+Understanding:
+    Generated lists contain one value per column in meshgrid order. SILHS
+    settings are copied unchanged. Input must be single-column; the default
+    count mode varies C11 over half to twice its initial value. Exact duplication
+    is used for tuning batches. Batch width is independent of the column count.
+"""
 import argparse
 import json
 import sys
-import re
 import os
 from pathlib import Path
 
@@ -14,7 +30,7 @@ if __name__ == "__main__":
 
 import numpy as np
 
-from input.scripts.parameters_json_to_namelist import parameter_settings
+from input.scripts.parameters_json_to_namelist import parameter_settings, validate_parameter_settings
 from input.scripts.namelist import load_json
 
 
@@ -29,7 +45,6 @@ def _parameter_file_settings(path):
     return parameter_settings(json_file=path) if isinstance(data, dict) and "presets" in data else parameter_settings(path)
 
 
-# detect any &multicol* namelist (e.g., &multicol_def)
 def is_single_col_list(path: str) -> bool:
     """Return whether a parameter JSON snapshot defines a single column."""
     return "multicol" not in _parameter_file_settings(path)
@@ -196,6 +211,45 @@ def clamp_batch_size(batch_size, ngrdcol):
     return ngrdcol
 
 
+def multi_col_settings(settings, multicol, *, batch_size=None, mode="dup_tweak",
+                       tweak_list=None, mirror=False):
+    """Copy resolved single-column settings into arrays, retaining SILHS values.
+
+    multicol is a count or a PARAM/MIN:MAX/NPOINTS grid specification. Count
+    modes duplicate, duplicate and tweak, or form a relative hypergrid. Return
+    plain JSON values with ngrdcol and an optional clipped batch_size.
+    """
+    import copy
+
+    if "multicol" in settings:
+        raise ValueError("Column generation requires single-column parameters")
+    if batch_size is not None and batch_size < 1:
+        raise ValueError("-batch_size must be >= 1")
+    parsed = {name: float(value) for name, value in settings["model"].items()}
+    tweaks = ["C11"] if tweak_list is None else tweak_list
+    try:
+        count = int(multicol)
+    except ValueError:
+        values, count = custom_hypergrid(parsed, parse_hypergrid_range_spec(multicol))
+    else:
+        if count < 1:
+            raise ValueError("-multicol column count must be >= 1")
+        if mode == "duplicate":
+            values = duplicate_params(count, parsed)
+        elif mode == "dup_tweak":
+            values = duplicate_and_tweak(count, parsed, tweaks, mirror)
+        elif mode == "hypergrid":
+            values, count = hypergrid(count, parsed, tweaks)
+        else:
+            raise ValueError(f"Unknown column generation mode: {mode}")
+    result = copy.deepcopy(settings)
+    result["model"] = {name: value.tolist() for name, value in values.items()}
+    result["multicol"] = {"ngrdcol": count}
+    if batch_size is not None:
+        result["multicol"]["batch_size"] = clamp_batch_size(batch_size, count)
+    return validate_parameter_settings(result)
+
+
 if __name__ == "__main__":
 
     # Get the directory of the current script
@@ -240,103 +294,20 @@ if __name__ == "__main__":
     # Parse the arguments
     args = parser.parse_args()
 
-    # Assign parsed arguments to variables
-    ngrdcol                 = None
-    clubb_params_file       = args.param_file
-    output_file_name        = args.out_file
-    param_creation_mode     = args.mode or "dup_tweak"
-    mirror                  = args.mirror == "true"
-    batch_size              = args.batch_size
     try:
-        ngrdcol = int(args.multicol)
+        int(args.multicol)
     except ValueError:
-        hr_mode_requested = True
-    else:
-        hr_mode_requested = False
+        if args.mode is not None:
+            parser.error("Do not specify -mode when using a parameter-grid specification.")
 
-    if hr_mode_requested and any(arg.split("=", 1)[0] == "-mode" for arg in sys.argv[1:]):
-        sys.exit("Do not specify -mode when using -multicol.")
-
-    if hr_mode_requested:
-        try:
-            hr_specs = parse_hypergrid_range_spec(args.multicol)
-        except ValueError as exc:
-            sys.exit(str(exc))
-    else:
-        hr_specs = None
-        ngrdcol = int(args.multicol)
-        if ngrdcol < 1:
-            sys.exit("-multicol column count must be >= 1.")
-
-    if batch_size is not None and batch_size < 1:
-        sys.exit("-batch_size must be >= 1")
-
-    if args.tweak_list is None:
-        tweak_list = ['C11']
-    else:
-        tweak_list = args.tweak_list
-
-     # The input params file must have only a single column definition
-    if not is_single_col_list(clubb_params_file):
-        abs_p = os.path.abspath(clubb_params_file)
-        print(
-            f"ERROR: '{abs_p}' already defines a &multicol* namelist.\n"
-            f"This script can only duplicate a single-column params file.\n"
+    try:
+        settings = multi_col_settings(
+            _parameter_file_settings(args.param_file), args.multicol,
+            batch_size=args.batch_size, mode=args.mode or "dup_tweak",
+            tweak_list=args.tweak_list, mirror=args.mirror == "true",
         )
-        sys.exit(2)
-    
-    # Parse the clubb params file
-    parsed_params = parse_clubb_params(clubb_params_file)
-    
-    # Create new parameter set dependin on selected creation mode
-    if hr_mode_requested:
-
-        print("Creating a custom hypergrid of parameters")
-        print(f" - Initial values file: '{clubb_params_file}'")
-        print(f" - Spec: {args.multicol}")
-
-        try:
-            clubb_params, ngrdcol = custom_hypergrid(parsed_params, hr_specs)
-        except (KeyError, ValueError) as exc:
-            sys.exit(str(exc))
-
-    elif param_creation_mode == "duplicate":
-
-        print(f"Duplicating params")
-        print(f" - Initial values file: '{clubb_params_file}'")
-        print(f" - Duplicating '{ngrdcol}' times.")
-
-        clubb_params = duplicate_params( ngrdcol, parsed_params )
-
-    elif param_creation_mode == "dup_tweak":
-
-        print(f"Duplicating then tweaking params")
-        print(f" - Initial values file: '{clubb_params_file}'")
-        print(f" - Duplicating '{ngrdcol}' times and tweaking: {tweak_list}")
-
-        clubb_params = duplicate_and_tweak( ngrdcol, parsed_params, tweak_list, mirror )
-
-    elif param_creation_mode == "hypergrid":
-
-        print(f"Creating a hypergrid of parameters")
-        print(f" - Initial values file: '{clubb_params_file}'")
-        print(f" - Gridizing {tweak_list} into {ngrdcol}^{len(tweak_list)}={ngrdcol**len(tweak_list)} total points.")
-
-        clubb_params, ngrdcol = hypergrid( ngrdcol, parsed_params, tweak_list )
-
-    else:
-        print(f"Mode '{param_creation_mode}' not recognized")
-        exit(1)
-
-    batch_size = clamp_batch_size(batch_size, ngrdcol)
-    
-    #--------------------  Write the clubb_params to output_file_name --------------------  
-    print(f"Writing to '{output_file_name}':")
-    
-    settings = _parameter_file_settings(clubb_params_file)
-    settings["model"] = {name: values.tolist() for name, values in clubb_params.items()}
-    settings["multicol"] = {"ngrdcol": ngrdcol}
-    if batch_size is not None:
-        settings["multicol"]["batch_size"] = batch_size
-    Path(output_file_name).write_text(json.dumps(settings, indent=2, allow_nan=False) + "\n", encoding="utf-8")
-    print(f" - ngrdcol = {ngrdcol}")
+    except (KeyError, ValueError) as exc:
+        parser.error(str(exc))
+    from input.scripts.namelist import atomic_text
+    atomic_text(args.out_file, json.dumps(settings, indent=2, allow_nan=False) + "\n")
+    print(f"Wrote {settings['multicol']['ngrdcol']} columns to '{args.out_file}'")

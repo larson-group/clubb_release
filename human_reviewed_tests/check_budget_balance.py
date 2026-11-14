@@ -459,17 +459,17 @@ def main() -> int:
     env["LAPACK"] = "/usr/lib64"
 
     run_scripts_dir = clubb_source / "run_scripts"
-    run_scm_all_py = run_scripts_dir / "run_scm_all.py"
+    run_scm_py = run_scripts_dir / "run_scm.py"
     output_dir = args.output_dir.resolve() if args.output_dir else clubb_source / "output"
     if args.check_only:
         return check_budgets(output_dir, args.iteration)
-    if not run_scm_all_py.exists():
-        raise SystemExit(f"Missing run_scm_all.py at: {run_scm_all_py}")
+    if not run_scm_py.exists():
+        raise SystemExit(f"Missing run_scm.py at: {run_scm_py}")
 
     run_cmd(
         [
             sys.executable,
-            str(run_scm_all_py),
+            str(run_scm_py),
             "-output_dir", str(output_dir),
             *(["-workers", args.workers] if args.workers is not None else []),
             "-dt_main",

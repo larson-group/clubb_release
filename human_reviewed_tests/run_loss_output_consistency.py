@@ -798,7 +798,7 @@ def parse_args() -> argparse.Namespace:
     args = parser.parse_args(argv)
     args.jax_options = jax_options
 
-    from input.scripts.create_case_namelist import normalize_input_selection
+    from input.scripts.input_catalog import normalize_input_selection
     args.params = normalize_input_selection(args.params) if args.params else None
     args.flags = normalize_input_selection(args.flags) if args.flags else None
     return args

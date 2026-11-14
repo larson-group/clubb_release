@@ -10,6 +10,7 @@ from pathlib import Path
 import pytest
 
 from input.scripts import create_case_namelist as builder
+from input.scripts import input_catalog as catalog_inputs
 from input.scripts.parameters_json_to_namelist import parameter_settings
 from input.scripts.flags_json_to_namelist import flag_settings
 from input.scripts.stats_json_to_namelist import select_stats_entries
@@ -30,21 +31,21 @@ def catalogs(tmp_path, monkeypatch):
                               "arm": {"model_setting": {"runtype": "arm", "dt_main": 10}}}},
     }
     for kind, value in values.items():
-        (tmp_path / builder.CATALOG_FILES[kind]).write_text(json.dumps(value))
-    monkeypatch.setattr(builder, "INPUT_ROOT", tmp_path)
+        (tmp_path / catalog_inputs.CATALOG_FILES[kind]).write_text(json.dumps(value))
+    monkeypatch.setattr(catalog_inputs, "INPUT_ROOT", tmp_path)
     return tmp_path
 
 
 @pytest.mark.parametrize("kind", ["parameters", "flags", "cases"])
 def test_custom_file_and_named_preset_are_identical_sparse_overrides(catalogs, kind):
     """Copy a preset into a file and require identical config-before-section precedence."""
-    catalog = json.loads((catalogs / builder.CATALOG_FILES[kind]).read_text())
+    catalog = json.loads((catalogs / catalog_inputs.CATALOG_FILES[kind]).read_text())
     name = "arm" if kind == "cases" else "specific"
     custom = catalogs / "custom.json"
     custom.write_text(json.dumps(catalog["presets"][name]))
     before = sorted(catalogs.iterdir())
-    named = builder.resolve_input_settings(kind, name, config="experiment")
-    saved = builder.resolve_input_settings(kind, str(custom), config="experiment")
+    named = catalog_inputs.resolve_input_settings(kind, name, config="experiment")
+    saved = catalog_inputs.resolve_input_settings(kind, str(custom), config="experiment")
     assert named == saved
     assert sorted(catalogs.iterdir()) == before
     if kind == "parameters":
@@ -58,12 +59,12 @@ def test_custom_file_and_named_preset_are_identical_sparse_overrides(catalogs, k
 
 def test_config_missing_from_one_section_preserves_its_defaults(catalogs):
     """A shared name may exist only in cases; explicit unknown section names still fail."""
-    settings = builder.resolve_input_settings("parameters", config="arm")
+    settings = catalog_inputs.resolve_input_settings("parameters", config="arm")
     assert settings["model"]["C8"] == 0.5
     with pytest.raises(ValueError, match="Unknown parameters preset"):
-        builder.resolve_input_settings("parameters", "arm")
+        catalog_inputs.resolve_input_settings("parameters", "arm")
     with pytest.raises(ValueError, match="Unknown config"):
-        builder.resolve_input_settings("parameters", config="typo")
+        catalog_inputs.resolve_input_settings("parameters", config="typo")
 
 
 @pytest.mark.parametrize("body", [

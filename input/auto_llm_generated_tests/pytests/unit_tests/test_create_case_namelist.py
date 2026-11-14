@@ -149,28 +149,21 @@ def test_varying_flags_retains_flag_set_with_a_forwarded_json_profile(tmp_path, 
 
 
 def test_batch_runner_forwards_the_same_json_argument_to_every_case(tmp_path, monkeypatch):
+    """Resolved batch tasks retain repeated override arguments for every case."""
     import sys
-    from concurrent.futures import Future
-    from run_scripts import run_scm_all as runner
+    from run_scripts import run_scm as runner
 
     calls = []
     profile = str(tmp_path / "handled_by_generator.json")
-    class Pool:
-        def __init__(self, max_workers):
-            assert max_workers == 2
-        def __enter__(self):
-            return self
-        def __exit__(self, *_args):
-            pass
-        def submit(self, _fn, case, options, verbose):
-            calls.append((case, list(options)))
-            future = Future()
-            future.set_result((case, 0, ""))
-            return future
-    monkeypatch.setattr(runner, "ProcessPoolExecutor", Pool)
-    monkeypatch.setattr(sys, "argv", ["run_scm_all.py", "-cases", "mc3e,bomex", "-override", profile])
+    def run_case(args, destination, **kwargs):
+        """Capture concrete run arguments without preparing or launching a model."""
+        calls.append((args.case_name, args.override))
+        return 0
+    monkeypatch.setattr(runner, "run_case", run_case)
+    monkeypatch.setattr(sys, "argv", ["run_scm.py", "-cases", "mc3e,bomex",
+                                    "-workers", "2", "-override", profile])
     assert runner.main() == 0
-    assert calls == [("mc3e", ["-override", profile]), ("bomex", ["-override", profile])]
+    assert sorted(calls) == [("bomex", [profile]), ("mc3e", [profile])]
 
 
 @pytest.mark.parametrize("case_args", [[], ["mc3e"]])

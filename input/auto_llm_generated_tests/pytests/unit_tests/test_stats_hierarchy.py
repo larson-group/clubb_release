@@ -55,7 +55,8 @@ def test_optional_diagnostics_require_explicit_selection(category, names):
 
 def test_shared_config_cannot_change_the_stats_selection(tmp_path):
     """The normal input builder uses the same stats for baseline and e3sm settings."""
-    from input.scripts.create_case_namelist import available_configs, create_case_settings
+    from input.scripts.create_case_namelist import create_case_settings
+    from input.scripts.input_catalog import available_configs
 
     expected = [" | ".join(entry[key] for key in ("name", "grid", "units", "long_name"))
                 for entry in select_stats_entries("standard")]

@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from input.scripts.create_case_namelist import load_catalog, resolve_input_settings
+from input.scripts.input_catalog import load_catalog, resolve_input_settings
 from input.scripts.namelist import merge_settings, namelists_to_text, parse_value, settings_patch
 from input.scripts.stats_json_to_namelist import select_stats_entries
 

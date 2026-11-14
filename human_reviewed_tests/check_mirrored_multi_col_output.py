@@ -66,7 +66,7 @@ sys.path.insert(0, str(REPO_ROOT))
 from input.scripts.create_case_namelist import parse_forwarded_args
 from input.scripts.create_multi_col_params import parse_hypergrid_range_spec
 from utilities.output_paths import resolve_output_dir
-from run_scripts.run_scm_all import STANDARD_CASES, positive_int, split_values
+from input.scripts.input_catalog import positive_int, split_values, resolve_selection
 
 
 from tuner.system_defaults import default_max_workers as default_workers
@@ -295,7 +295,7 @@ def parse_args(argv=None):
     parser.add_argument("directories", nargs="*", metavar="DIRECTORY",
                         help="Two saved output directories to compare without running the model")
     cases = parser.add_mutually_exclusive_group()
-    cases.add_argument("-case", help="Run one case (default: run_scm_all.py standard case set)")
+    cases.add_argument("-case", help="Run one case (default: run_scm.py standard case set)")
     cases.add_argument("-cases", nargs="+", help="Case names separated by spaces or commas.")
     parser.add_argument("-multicol", default="3", metavar="NUM|SPEC",
                         help="Column count for C8 in 0.2:0.8, or an explicit parameter grid (default: 3).")
@@ -412,8 +412,8 @@ def run_test(args, forwarded):
     params = generate_parameter_files(run_dir, args.spec, base_params)
     forwarded = prepare_runtime(forwarded, run_dir / "build.log")
     override = ",".join(filter(None, [args.override, "l_lh_straight_mc=.true."]))
-    script = "run_scm.py" if args.case else "run_scm_all.py"
-    cases = [args.case] if args.case else (args.cases.split(",") if args.cases else STANDARD_CASES)
+    script = "run_scm.py"
+    cases = [args.case] if args.case else (args.cases.split(",") if args.cases else resolve_selection("cases", "standard_cases"))
     for stage, order, label, param_file in zip((2, 3), ("forward", "reverse"), ("ABC", "CBA"), params):
         print(f"[{stage}/4] {label} run", flush=True)
         print(textwrap.fill("Cases: " + ", ".join(case.strip() for case in cases),
@@ -428,8 +428,7 @@ def run_test(args, forwarded):
             command.append(args.case)
         else:
             command += ["-workers", str(args.nproc)]
-            if args.cases:
-                command += ["-cases", args.cases]
+            command += ["-cases", args.cases or "standard_cases"]
         log_path = run_dir / f"{order}.log"
         with log_path.open("w") as log:
             log.write(shlex.join(command) + "\n")

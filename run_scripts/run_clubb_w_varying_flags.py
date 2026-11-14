@@ -3,7 +3,7 @@
 Run CLUBB with various flag configurations.
 
 This script:
-  1. Reads a JSON configuration file describing flag sets to test.
+  1. Resolves flag groups or lists from input/clubb_config_flags.jsonc.
   2. Expands the requested cases and flag sets into a list of run_scm.py tasks.
   3. Runs those tasks with bounded parallelism.
   4. Reports failures immediately and exits with an aggregated code.
@@ -14,7 +14,7 @@ Modes:
     → runs run_scm.py rico for each flag configuration.
 
   - Multi-case mode (no case name):
-        ./run_clubb_w_varying_flags.py -short_cases
+        ./run_clubb_w_varying_flags.py -cases short_cases
     → runs run_scm.py once per (case, flag set) pair for the selected case list.
 """
 
@@ -30,22 +30,14 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = SCRIPT_DIR.parent
 sys.path.insert(0, str(REPO_ROOT))
 
-from run_scripts.run_scm_all import (
-    ALL_CASES,
-    MIN_CASES,
-    PRIORITY_CASES,
-    SHORT_CASES,
-    STANDARD_CASES,
-    positive_int,
-)
+from input.scripts.input_catalog import positive_int, resolve_selection
 
-from input.scripts.flag_sets import build_override_arg, get_flag_sets, read_flag_settings  # noqa: E402
+from input.scripts.flag_sets import DEFAULT_FLAG_GROUP, build_override_arg, get_flag_sets, read_flag_settings  # noqa: E402
 
 from tuner.system_defaults import default_max_workers as default_workers
 from input.scripts.create_case_namelist import parse_forwarded_args
 
 DEFAULT_MAX_WORKERS = default_workers()
-DEFAULT_FLAG_CONFIG_FILE = REPO_ROOT / "input" / "flag_sets" / "run_bindiff_w_flags_config_core_flags.json"
 
 
 # ------------------------------------------------------------------------------
@@ -55,109 +47,28 @@ DEFAULT_FLAG_CONFIG_FILE = REPO_ROOT / "input" / "flag_sets" / "run_bindiff_w_fl
 
 
 def get_cli_args():
-    """Parse wrapper arguments and validate single-case vs multi-case mode."""
-    parser = argparse.ArgumentParser(
-        formatter_class=argparse.RawTextHelpFormatter,
-        add_help=False, allow_abbrev=False
-    )
-    parser.add_argument("-h", "-help", action="help", help="Show this help and exit.")
-
-    parser.add_argument(
-        "case_name",
-        type=str,
-        nargs="?",
-        help=(
-            "Name of the CLUBB case to run (optional).\n"
-            "If omitted, you may specify at most one of:\n"
-            "  -all, -short_cases, -priority_cases, -min_cases."
-        )
-    )
-
-    parser.add_argument(
-        '-all', dest='all',
-        action="store_true",
-        default=False,
-        help="Run all cases (multi-case mode).",
-    )
-    parser.add_argument(
-        '-short_cases', dest='short_cases', action="store_true", default=False,
-        help="Run short cases only (multi-case mode)."
-    )
-    parser.add_argument(
-        '-priority_cases', dest='priority_cases', action="store_true", default=False,
-        help="Run priority cases only (multi-case mode)."
-    )
-    parser.add_argument(
-        '-min_cases', dest='min_cases', action="store_true", default=False,
-        help="Run minimal set of cases (multi-case mode)."
-    )
-    parser.add_argument(
-        '-skip_default_flags', dest='skip_default_flags', action="store_true", default=False,
-        help="Do not run the default flag configuration."
-    )
-    parser.add_argument(
-        '-flag_config_file', dest='flag_config_file', type=str, default=str(DEFAULT_FLAG_CONFIG_FILE),
-        help="JSON file describing alternate flag settings."
-    )
-    parser.add_argument(
-        '-workers',
-        dest="nproc",
-        type=positive_int,
-        default=DEFAULT_MAX_WORKERS,
-        help=(
-            "Maximum number of concurrent run_scm.py workers "
-            f"(default: {DEFAULT_MAX_WORKERS})."
-        ),
-        metavar='N',
-    )
-
-    # Recognize the value so the optional case argument cannot consume it.
-    parser.add_argument("-override", action="append", metavar="ASSIGNMENTS|JSON",
-                        help="Forward assignments or JSON to create_case_namelist.")
-    args, run_scm_extra_args = parse_forwarded_args(parser)
+    """Read sweep selection and forward model/runtime options unchanged."""
+    parser = argparse.ArgumentParser(add_help=False, allow_abbrev=False)
+    parser.add_argument("-h", "-help", action="help")
+    parser.add_argument("case_name", nargs="?", help="Case, group or run list")
+    parser.add_argument("-cases", nargs="+", help="Cases, groups or lists from the catalog")
+    parser.add_argument("-flag_group", default=DEFAULT_FLAG_GROUP, help="Flag group, list or preset from clubb_config_flags.jsonc")
+    parser.add_argument("-skip_default_flags", action="store_true", help="Omit the unmodified baseline")
+    parser.add_argument("-workers", dest="nproc", type=positive_int, default=DEFAULT_MAX_WORKERS)
+    parser.add_argument("-clubb_root", default=str(REPO_ROOT), help="Model checkout to run (default: this checkout)")
+    parser.add_argument("-override", action="append", help="Final assignments or JSON edits")
+    args, extra = parse_forwarded_args(parser)
+    if args.cases and args.case_name:
+        parser.error("Use either a positional selection or -cases")
     for value in args.override or []:
-        run_scm_extra_args.extend(["-override", value])
-    args.run_scm_extra_args = run_scm_extra_args
-
-    subset_flags_count = sum([
-        args.all,
-        args.short_cases,
-        args.priority_cases,
-        args.min_cases,
-    ])
-
-    if args.case_name is None:
-        if subset_flags_count > 1:
-            print("\nError: only one of the following may be specified:\n"
-                  "  -all, -short_cases, -priority_cases, -min_cases\n")
-            sys.exit(1)
-    else:
-        if subset_flags_count > 0:
-            print("\nError: When providing a case_name, you may not also use "
-                  "-all, -short_cases, -priority_cases, or -min_cases.\n")
-            sys.exit(1)
-
+        extra.extend(["-override", value])
+    args.run_scm_extra_args = extra
     return args
 
 
-# ------------------------------------------------------------------------------
-# CONFIGURATION / TASK BUILDING
-# ------------------------------------------------------------------------------
-
-
 def determine_run_cases(args):
-    """Resolve the requested case selection into a concrete list of case names."""
-    if args.case_name is not None:
-        return [args.case_name]
-    if args.short_cases:
-        return SHORT_CASES
-    if args.all:
-        return ALL_CASES
-    if args.priority_cases:
-        return PRIORITY_CASES
-    if args.min_cases:
-        return MIN_CASES
-    return STANDARD_CASES
+    """Expand the requested case selection before constructing the sweep matrix."""
+    return resolve_selection("cases", args.cases or args.case_name or "standard_cases")
 
 
 def build_tasks(root, flag_sets, run_cases, args):
@@ -284,14 +195,13 @@ def main():
     """Wire together argument parsing, task expansion, execution, and exit code."""
     args = get_cli_args()
 
-    script_dir = os.path.dirname(os.path.realpath(__file__))
-    root = os.path.abspath(os.path.join(script_dir, ".."))
+    root = str(Path(args.clubb_root).resolve())
 
     # Build the full task matrix up front so the execution phase is only
     # responsible for scheduling and reporting.
-    print(f"Reading settings from {args.flag_config_file}...")
+    print(f"Reading settings from {args.flag_group}...")
     try:
-        flag_dict = read_flag_settings(args.flag_config_file)
+        flag_dict = read_flag_settings(args.flag_group)
         flag_sets = get_flag_sets(args.skip_default_flags, flag_dict)
     except ValueError as exc:
         print(f"Error: {exc}")

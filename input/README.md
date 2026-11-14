@@ -26,6 +26,7 @@ python3 run_scripts/run_scm.py bomex -params ~/custom_parameters.json -stats ~/c
 ## Defaults, shared configs and explicit selections
 
 The case, parameter and flag catalogs contain `defaults` and sparse `presets`.
+Case and flag catalogs can also contain inherited `groups` and ordered `lists`.
 Their resolution is ordered:
 
 1. Start with the section's catalog defaults.
@@ -136,6 +137,63 @@ python3 input/scripts/create_case_namelist.py -list configs
 python3 input/scripts/create_case_namelist.py -list stats
 ```
 
+## Inherited groups and run lists
+
+Case definitions may be nested under `groups`. Every group name ends in
+`_group`, using its family's common name. Every leaf case name remains globally
+unique and can still be selected directly. Group `settings` apply to every
+child; nested groups add another inheritance level:
+
+```jsonc
+"groups": {
+  "new_cases_group": {
+    "settings": {"model_setting": {"dt_main": 30}},
+    "presets": {
+      "new_case_default": {},
+      "new_case_cold": {"model_setting": {"t_sfc_nl": 270}},
+      "new_case_hot": {"model_setting": {"t_sfc_nl": 300}}
+    }
+  }
+},
+"lists": {
+  "smoke_cases": ["bomex", "new_cases_group"]
+}
+```
+
+A case resolves catalog defaults, a matching `-config` preset, outer-to-inner
+group settings, its own patch, then direct run options and general overrides.
+Objects merge recursively and arrays replace whole arrays at every level.
+Selecting a leaf directly retains its ancestry. Saved case edits update only
+that leaf relative to its inherited base; copying a case into a custom file
+stores its settings relative to catalog defaults.
+
+`lists` are ordered selections without settings. They can reference cases,
+groups or other lists; cycles, unknown members and ambiguous names fail before
+execution. Duplicates run once in first-use order. The five maintained lists are
+`all_cases`, `standard_cases`, `priority_cases`, `min_cases` and `short_cases`.
+Their membership preserves the previous batch-run selections, rather than
+implicitly including every new case added to the catalog.
+
+Flag collections use the same group structure with `model`/`silhs` settings.
+Their member names are local: two groups can each define `flag1`. A single
+member is selected as `GROUP/flag1`. A flag list can combine groups or qualified
+members. Each selected member starts from the selected baseline independently.
+For example:
+
+```sh
+python3 run_scripts/run_scm.py -cases clex_group -workers 2
+python3 run_scripts/run_scm.py -flags run_bindiff_w_flags_config_core_flags_group/flag1 bomex
+python3 run_scripts/run_clubb_w_varying_flags.py -flag_group run_bindiff_w_flags_config_core_flags_group -cases priority_cases
+```
+
+The migrated flag collections retain the original collection stems followed by
+`_group`, all local member names and all sparse override values. The JAX-specific
+collection keeps its unsupported-algorithm and roundoff exclusions; explanatory
+notes live beside the groups in the flag catalog. Comparison runners retain the
+optional unmodified baseline and apply sweep overrides after their curated case
+setup. Flags are logical/integer algorithm switches; real-valued tunable
+coefficients remain in the parameter catalog.
+
 ## Preparation tools
 
 The central builder can also be called directly:
@@ -148,12 +206,17 @@ python3 input/scripts/create_case_namelist.py -cases arm -config e3sm -stats cor
 The colocated [case](scripts/case_json_to_namelist.py),
 [parameter](scripts/parameters_json_to_namelist.py), [flag](scripts/flags_json_to_namelist.py) and
 [stats](scripts/stats_json_to_namelist.py) converters are internal library functions.
-[namelist.py](scripts/namelist.py) owns JSON reading/merging and low-level serialization.
+[input_catalog.py](scripts/input_catalog.py) owns shared catalog selection and
+precedence; [namelist.py](scripts/namelist.py) owns JSON reading/merging and
+low-level serialization. The final writer serializes the assembled groups
+without converting them back into section-specific settings.
 Preparing or displaying settings does not generate intermediate namelist files.
 Python and JAX retain their namelist readers at the model entry point.
 
-[create_multi_col_params.py](scripts/create_multi_col_params.py) writes JSON column
-arrays and optional batch dimensions:
+[create_multi_col_params.py](scripts/create_multi_col_params.py) supplies the
+in-memory column generation used by normal runs and loss preparation. These
+paths no longer write intermediate parameter JSON snapshots. Its standalone
+CLI exports JSON column arrays and optional batch dimensions:
 
 ```bash
 python3 input/scripts/create_multi_col_params.py -multicol 4 -output_file /tmp/columns.json
@@ -173,9 +236,8 @@ python3 input/scripts/benchmark_converter.py -list_fields
 python3 input/scripts/benchmark_converter.py input/les_and_clubb_benchmark_runs/les_runs/bomex_coamps_sm.nc /tmp/bomex_benchmark.nc -source coamps -fields cloud_frac
 ```
 
-[flag_sets.py](scripts/flag_sets.py) reads the multi-run flag
-sweeps stored under [flag_sets/](flag_sets/); these describe test sweeps rather
-than the flag presets for a single run.
+[flag_sets.py](scripts/flag_sets.py) expands catalog flag selections for
+comparison sweeps and renders their final overrides.
 
 The tables in [case_data/](case_data/), grids, atmospheric profiles and
 benchmark NetCDF files remain data inputs. Their `.in` or other suffixes do not

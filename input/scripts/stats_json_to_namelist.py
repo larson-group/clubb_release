@@ -6,7 +6,7 @@ accepts a complete preset, a JSON list of names, or categories/var:NAME joined
 with comma or plus. An omitted selection uses the standard category. Custom
 lists retain their explicit order and take metadata from the catalog; unions
 use catalog order and emit each variable once. stats_to_namelist(entries) serializes
-the final registry for create_case_namelist.py. stats_json_to_namelist() combines
+finalized pipe-separated strings for create_case_namelist.py. stats_json_to_namelist() combines
 selection and serialization in memory. Empty selections disable stats output
 when the central builder assembles the runner input.
 """
@@ -126,16 +126,17 @@ def select_stats_entries(selection=None, json_file=DEFAULT_STATS_JSON):
 
 
 def stats_to_namelist(entries):
-    """Serialize the final selected registry for a top-level model entry point."""
+    """Serialize finalized name/grid/units/description strings with one-based indices."""
     if not entries:
         return ""
     lines = ["&clubb_stats_nl"]
     for index, entry in enumerate(entries, 1):
-        value = " | ".join(entry[key] for key in ENTRY_FIELDS).replace('"', '""')
+        value = entry.replace('"', '""')
         lines.append(f'  entry({index}) = "{value}"')
     return "\n".join([*lines, "/"]) + "\n"
 
 
 def stats_json_to_namelist(selection=None, json_file=DEFAULT_STATS_JSON):
     """Return the selected registry with metadata from the authoritative catalog."""
-    return stats_to_namelist(select_stats_entries(selection, json_file))
+    return stats_to_namelist([" | ".join(entry[key] for key in ENTRY_FIELDS)
+                              for entry in select_stats_entries(selection, json_file)])
