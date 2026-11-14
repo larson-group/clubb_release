@@ -18,7 +18,7 @@ from clubb_jax.src.Microphys.KK_microphys.KK_Nrm_tendencies import (
     KK_Nrm_auto_mean, KK_Nrm_evap_local_mean)
 
 _RHO_LW, _R0 = 1000.0, 2.5e-5
-_PI = 3.141592654  # constants_clubb.F90 deliberately uses this rounded literal.
+_PI = 3.14159265358979323846  # Shared pi value from constants_clubb.F90.
 _DROP_MASS = (4.0 / 3.0) * _PI * _RHO_LW * _R0 ** 3   # mass of one radius-r0 drop
 
 

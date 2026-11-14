@@ -10,7 +10,7 @@ from clubb_jax.src.CLUBB_core.advance_helper_module import smooth_heaviside_pesk
 
 
 def test_f2py_oracle():
-    """smooth_heaviside_peskin matches Fortran, including CLUBB's truncated pi and invrs_pi constants."""
+    """smooth_heaviside_peskin matches Fortran, using the shared pi and invrs_pi constants."""
     rng = np.random.default_rng(4)
     worst = 0.0
     for smth_range in (0.6, 1.0, 0.25):

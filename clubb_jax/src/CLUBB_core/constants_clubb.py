@@ -99,7 +99,7 @@ gamma_over_implicit_ts = 1.50
 # -----------------------------------------------------------------------------
 pi_dp = 3.14159265358979323846
 
-pi = 3.141592654                    # The ratio of radii to their circumference
+pi = 3.14159265358979323846         # The ratio of radii to their circumference
 invrs_pi = 0.31830988618            # 1 / pi
 radians_per_deg = pi / 180.0
 

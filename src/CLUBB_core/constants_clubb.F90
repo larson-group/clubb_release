@@ -111,8 +111,8 @@ module constants_clubb
     pi_dp = 3.14159265358979323846_dp
 
   real( kind = core_rknd ), parameter, public ::  & 
-    pi = 3.141592654_core_rknd, &         ! The ratio of radii to their circumference
-    invrs_pi = 0.31830988618_core_rknd, & ! 1 / pi
+    pi = 3.14159265358979323846_core_rknd, &  ! The ratio of radii to their circumference
+    invrs_pi = 0.31830988618_core_rknd, &     ! 1 / pi
     radians_per_deg = pi / 180._core_rknd
 
   real( kind = dp ), parameter, public :: &

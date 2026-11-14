@@ -17,7 +17,7 @@ from clubb_jax.src.CLUBB_core.constants_clubb import Cp, Lv, grav, pi, sec_per_h
 
 
 def _ref(t, z, rho, thlm, ubar):
-    # The source uses constants_clubb.pi, not the full-precision math constant.
+    # Use the shared pi constant from the source diurnal scheme.
     ft = max(0.0, math.cos(0.5 * pi * (5.25 - t / sec_per_hr) / 5.25))
     wpthlp = (270.0 * ft ** 1.5) / (rho * Cp)
     wprtp = (554.0 * ft ** 1.3) / (rho * Lv)
