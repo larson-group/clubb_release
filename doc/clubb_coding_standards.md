@@ -4,7 +4,7 @@
 
 The following coding standards apply only to the parts of CLUBB that we have
 written. We try not to modify code from external contributors such as
-BUGSrad, Numerical Recipes, and so forth, because such external code is
+BUGSrad, LAPACK, and so forth, because such external code is
 less familiar to us, and we might introduce bugs. Furthermore, our
 changes would be lost if we were to update to a new version of the
 external code.

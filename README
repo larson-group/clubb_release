@@ -54,8 +54,8 @@ The tuner code tunes certain parameters in a one-dimensional boundary layer
 cloud parameterization (``CLUBB''), to best fit large-eddy simulation output.  
 It is not needed to run the single-column or for using CLUBB in a host model.
 
-For more information about the tuner, see section 3.3 below and 
-in the tuner README: input_misc/tuner/README.  
+For tuning commands, available algorithms, and the Fortran or JAX backend,
+see [Tune CLUBB parameters](tuner/README.md).
 
 
 For archived tools and research code, see the
@@ -301,10 +301,6 @@ If you add a new source file to CLUBB, then in order for CMake to be
 able to find it, you will need to add the filename 
 to one of the file lists in the appropriate 'CMakeLists.txt' file.
 
-When compiling for a tuning run, make sure to include the command-line option
--tuning along with any other option:
-   $ ./compile.py -tuning [other options]
-
 Run './compile.py -help' to view the different options you can use when compiling.
 
 -----------------------------------------------------------------------
@@ -313,10 +309,7 @@ Run './compile.py -help' to view the different options you can use when compilin
 
 Several compilers allows for promotion of real variables without a "kind="
 statement to double precision at compile time through the use of a compiler
-flag.  This will not currently work with the numerical recipes subroutines
-referenced by the tuner because they use operator overloading (therefore you can
-only use tune_type = 2 when all real variables are promoted).
-It also fails to work with Morrison microphysics (clubb:ticket:585#comment:13).
+flag.  This fails to work with Morrison microphysics (clubb:ticket:585#comment:13).
 
 To do this:
 
@@ -605,12 +598,6 @@ How to create a new case:
   src/Benchmark_cases.
   
 
-The randomization file (only needed for the tuner described below):
-
-  input_misc/tuner/rand_seed.dat
-  The seed file is plain text and can be edited by hand.
-
-
 -----------------------------------------------------------------------
 - (2.3) Plotting output from a single-column run:
 -----------------------------------------------------------------------
@@ -755,85 +742,9 @@ enabled.
 - (3.3) Executing a tuning run:
 -----------------------------------------------------------------------
 
-The "tuner" code is used to optimize CLUBB's parameters in order to better match
-output from a 3D large-eddy simulation (LES) model.  The parameterization is called 
-as a subroutine ( run_clubb() ) with parameter values as input.  The default optimization 
-technique is the downhill-simplex method of Nelder and Mead, as implemented in 
-Numerical Recipes In Fortran 90, 3rd Ed. (amoeba.f90).  You will either need special
-access to the CLUBB repository, or your own license from Numerical Recipes to
-use the default algorithm.  In the latter case, the files that need to be placed in
-the directory src/Numerical_recipes are:
-amebsa.f90  nr.f90      nrutil.f90  ran1_v.f90
-amoeba.f90  nrtype.f90  ran1_s.f90  ran_state.f90
-You may need to separate out any USE statements delimited by a semicolon in
-order to make the files work properly.
-
-The tuner code is highly flexible.  One can vary the cases (bomex, fire, arm, 
-or atex) to match; the variables to match (cloud fraction, liquid water, third
-moment of vertical velocity, etc.); the altitude and times over which to match
-these variables; and the parameters to tune (C1, beta, etc.).
-
-For a tuning run, CLUBB must be compiled as described in Chapter 1 with one exception:
-it is advised to use the command-line option -tuning when calling the compile.py script 
-in order to avoid crashing while tuning:
-   $ ./compile.py -tuning [other options]
-Using this option will set a compiler flag that enables additional checks needed to avoid 
-floating-point issues when running CLUBB with unusual parameter sets.
-In general, this change will likely not be bit-changing since it will only affect the output 
-in extreme cases.
-Do steps 1, 2, & 3 as outlined in the description of a standalone run (Sec 2.1).
-
-4. Edit the legacy control file input_misc/tuner/error_CASE.in. The native
-   tuner retains namelist controls as an exception to the JSON model catalogs.
-   The tune_type value in &stats selects the optimization algorithm.
-   If tune_type = 0, then the amoeba subroutine, which implements the downhill 
-   simplex algorithm, will be used.  If tune_type is 1, then amebsa, 
-   a variant of amoeba which uses simulated annealing instead, is used.  A complete 
-   explanation of these minimization algorithms can be found 
-   in "Numerical Recipes" by Press et al., .
-   The current default is tune_type = iesa = 2 and l_esa_siarry = .false.,
-   which runs a variant of simulated annealing developed by Gunther Huebler.
-   The parameters whose values are adjusted by the tuner 
-   are selected by nonzero entries in initmax or init_minmax, depending on
-   the optimization algorithm.
-   Sometimes the names of the optimized variable in the CLUBB and LES output
-   will differ.  Note that when tuning against netCDF data, the file will
-   need to have a .nc extension for the clubb_tuner to correctly identify
-   the file as being in netCDF format.  
-   For more information on the tuning parameters go to input_misc/tuner/README.
-
-5. You may also wish to set model_setting.debug_level to 0 in the case preset
-   in input/case_definitions.jsonc to speed up tuning.
-   Doing this will also help make the output match the nightly tuning run. 
-   You may need to set stats_tout to 60.0 in order to match the
-   time interval of LES output data.  The tuner also supports 
-   setting l_input_fields to .true. for the purposes of `fixing' 
-   variables such as um or vm for the purposes of isolating model errors.
-
-6. Select stats presets or custom JSON lists using -stats_tune and -stats_opt.
-   The defaults are tuning_stats for tuning and the standard category for optimized
-   standalone runs. Both selections live in input/stats.jsonc. Include the matching
-   CLUBB variable in the chosen stats list when adding a benchmark-converter field.
-
-7. Ensure that `input/les_and_clubb_benchmark_runs` points to the benchmark
-   data directory. By default it is a symlink to
-   `/home/pub/les_and_clubb_benchmark_runs`, so UWM group computers should
-   resolve it without extra setup. If the archive is mounted somewhere else,
-   retarget `input/les_and_clubb_benchmark_runs` locally. This
-   directory should contain the benchmark LES output that CLUBB is trying
-   to match.
-
-8. From the repository root, run:
-
-   $ python3 run_scripts/run_tuner.py -run_case fire
-   $ python3 run_scripts/run_tuner.py -run_case fire -initial_output -stats_opt core
-
-   Historical presets retain their original options, including obsolete ones;
-   see input/README.md for the JSON interface and this limitation.
-
-Pre-tuning standalone runs are disabled by default. Use -initial_output to save
-those outputs. The native tuner writes optimized parameters and flags as JSON,
-which can be passed directly to run_scm.py using -params or -flags.
+Use [the Python tuner](tuner/README.md) to select cloud cases, parameters,
+comparison fields, and a search algorithm. It supports Fortran and JAX loss
+backends through the CLI and Dash.
 
 - (3.4) Running a convergence test:
 -----------------------------------------------------------------------

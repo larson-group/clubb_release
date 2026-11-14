@@ -6,11 +6,6 @@ include_directories(${CMAKE_Fortran_MODULE_DIRECTORY})
 # enable "ifdef radoffline/nooverlap/COAMPS_MICRO" 
 add_compile_definitions(radoffline nooverlap CLUBB COAMPS_MICRO)
 
-if(${TUNING})
-    # enable "ifdef TUNING"
-    add_compile_definitions(TUNER)
-endif()
-
 if(${USE_GPTL})
     # enable "ifdef GPTL"
     add_compile_definitions(GPTL)

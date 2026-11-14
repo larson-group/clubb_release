@@ -56,8 +56,6 @@ FORTRAN_ONLY_ALLOWED_DIRS = {
     "Lapack": "Vendored LAPACK source (85 .f files). JAX uses jnp.linalg / jax.scipy.linalg.",
     "G_unit_test_types": "Fortran's own unit-test framework; used only by src/G_unit_tests.F90. JAX has its "
                          "own pytests under clubb_jax/auto_llm_generated_tests/pytests/.",
-    "Numerical_recipes": "Vendored Numerical Recipes routines (simulated annealing, quicksort, RNG state). "
-                         "Used only by the Fortran tuner (clubb_tuner.F90, error.F90, tuner_tests.F90).",
     "readiopdata_core": "IOP (SCAM netCDF) reader core; used only by src/readiopdata_module.F90, itself not "
                         "ported -- see that entry.",
     "Microphys/COAMPS_microphys": "COAMPS microphysics scheme (fixed-form .F). JAX keeps only disabled "
@@ -67,7 +65,7 @@ FORTRAN_ONLY_ALLOWED_DIRS = {
 # Fortran files (path relative to src/, without extension) whose code is genuinely NOT ported.
 # NOT for renames/folds/splits -- see this file's docstring -- except the approved ones marked below.
 FORTRAN_ONLY_ALLOWED_FILES = {
-    # ---- src/ root: Fortran test programs, the legacy tuner and host machinery ----
+    # ---- src/ root: Fortran test programs and host machinery ----
     "clubb_loss_driver_test": "Fortran test program for the loss driver. JAX loss coverage is "
                               "clubb_jax/auto_llm_generated_tests/integration_tests/test_loss_driver.py.",
     # Approved renames and splits (https://github.com/larson-group/clubb/pull/1442).
@@ -81,10 +79,6 @@ FORTRAN_ONLY_ALLOWED_FILES = {
     "G_unit_tests": "Fortran unit-test driver program; JAX's equivalent is the pytest suite.",
     "generalized_grid_test": "Grid-generalization self-test invoked from clubb_driver.F90. The JAX driver "
                              "rejects it (clubb_case_initialization.py: l_test_grid_generalization).",
-    "clubb_tuner": "Legacy Fortran tuner program. JAX takes part in tuning through the Python tuner "
-                   "(tuner/, loss through clubb_loss_driver.py), not through a port of this program.",
-    "error": "Despite the name, this module is the legacy Fortran tuner (tuner_init, min_les_clubb_diff, "
-             "output_nml_tuner), not error handling. Not ported, as with clubb_tuner.",
     "readiopdata_module": "IOP (SCAM netCDF) sounding/surface reader, used when l_readiopdata is true. That "
                           "input path is not ported.",
     "text_writer": "write_text/write_date formatting helpers for Fortran's text log output; host I/O.",

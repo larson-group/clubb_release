@@ -1268,50 +1268,6 @@ module pdf_closure_module
       end do
     end if
 
-#ifdef TUNER
-
-    !$acc update host( pdf_params, pdf_params%thl_1, pdf_params%thl_2 )
-
-    ! Check the first levels (and first gridcolumn) for reasonable temperatures
-    ! greater than 190K and less than 1000K
-    ! This is necessary because for certain parameter sets we can get floating point errors
-    do i=1, min( 10, size(pdf_params%thl_1(1,:)) )
-        if ( pdf_params%thl_1(1,i) < 190. ) then
-            write(fstderr, *) err_info%err_header(1)
-            write(fstderr,*) "Fatal error: pdf_params%thl_1 =", pdf_params%thl_1(1,i), &
-                             " < 190K at first grid column and grid level i = ", i
-          ! Error in grid column 1 -> set 1st entry to clubb_fatal_error
-          err_info%err_code(1) = clubb_fatal_error
-        end if
-        if ( pdf_params%thl_2(1,i) < 190. ) then
-            write(fstderr, *) err_info%err_header(1)
-            write(fstderr,*) "Fatal error: pdf_params%thl_2 =", pdf_params%thl_2(1,i), &
-                             " < 190K at first grid column and grid level i = ", i
-          ! Error in grid column 1 -> set 1st entry to clubb_fatal_error
-          err_info%err_code(1) = clubb_fatal_error
-        end if
-        if ( pdf_params%thl_1(1,i) > 1000. ) then
-            write(fstderr, *) err_info%err_header(1)
-            write(fstderr,*) "Fatal error: pdf_params%thl_1 =", pdf_params%thl_1(1,i), &
-                             " > 1000K at first grid column and grid level i = ", i
-          ! Error in grid column 1 -> set 1st entry to clubb_fatal_error
-          err_info%err_code(1) = clubb_fatal_error
-        end if
-        if ( pdf_params%thl_2(1,i) > 1000. ) then
-            write(fstderr, *) err_info%err_header(1)
-            write(fstderr,*) "Fatal error: pdf_params%thl_2 =", pdf_params%thl_2(1,i), &
-                             " > 1000K at first grid column and grid level i = ", i
-          ! Error in grid column 1 -> set 1st entry to clubb_fatal_error
-          err_info%err_code(1) = clubb_fatal_error
-        end if
-    end do
-    
-    if ( clubb_at_least_debug_level_api( 0 ) ) then
-      if ( any(err_info%err_code == clubb_fatal_error) ) return
-    end if
-
-#endif /*TUNER*/
-
     if ( clubb_at_least_debug_level_api( 2 ) ) then
 
       !$acc update host( wp4, wprtp2, wp2rtp, wpthlp2, wp2thlp, cloud_frac, &

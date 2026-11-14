@@ -2,7 +2,7 @@
 
 Description:
   This module contains tunable model parameters.  The purpose of the module is to make it
-  easier for the clubb_tuner code to use the clubb_params vector without "knowing" any
+  easier for model drivers to use the clubb_params vector without "knowing" any
   information about the individual parameters contained in the vector itself.
   It makes it easier to add
   new parameters to be tuned for, but does not make the CLUBB_core code itself any simpler.
@@ -16,17 +16,13 @@ References:
 
 Porting deviations:
 The JAX driver needs ``get_param_names``, ``init_clubb_params``,
-``calc_derived_params``, and ``check_parameters``.  The Fortran tuner-only
-``read_param_minmax`` and ``read_param_constraints`` routines are omitted.
+``calc_derived_params``, and ``check_parameters``.
 Fortran ``pack_parameters`` and ``unpack_parameters`` are represented by
 ``PARAM_NAMES``/``PNAME_IDX`` plus a Python dictionary of defaults.  Fortran
 mutates derived-type allocations in place; Python returns a ``NuVertResDep``
 pytree with JAX arrays. Host parameter-file I/O and validation use NumPy;
 parameter-dependent derived calculations are pure JAX. The source lmin fatal
 check is performed by the host driver at initialization and rerun reset.
-
-Observed Fortran differences retained in this diagnostic pass:
-- The init_minmax and parameter_constraints namelist-validation routines and their warnings are not implemented here.
 """
 from __future__ import annotations
 
@@ -92,7 +88,7 @@ class NuVertResDep(NamedTuple):
 #                    ***** IMPORTANT *****
 # If you change the order of the parameters in the parameter_indices,
 # you will need to change the order of this list as well or the
-# tuner will break!
+# parameter names and vector indices will no longer match!
 #                    ***** IMPORTANT *****
 #***************************************************************
 # ---------------------------------------------------------------------------

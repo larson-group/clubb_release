@@ -75,32 +75,6 @@ def test_install_artifact_older_than_tolerance_is_stale(tmp_path):
     assert runtime._artifact_is_stale(build_artifact, install_artifact) is True
 
 
-def test_rebuild_command_preserves_discovered_tuning_flag():
-    options = runtime.compile_options_from_build(
-        {
-            "build_type": "Debug",
-            "name": "gcc_DEBUG_PRECdouble_PYTHON_OPENMP_TUNING_GPTL",
-            "precision": "double",
-            "gpu": "none",
-            "python": "ON",
-            "openmp": "ON",
-            "tuning": "ON",
-            "gptl": "ON",
-            "toolchain": "/tmp/toolchain.cmake",
-            "install_prefix": "/tmp/gcc_DEBUG_PRECdouble_PYTHON_OPENMP_TUNING_GPTL",
-        },
-        {"toolchains": [{"path": "/tmp/toolchain.cmake"}]},
-        module_stack=[],
-    )
-
-    argv = runtime.build_compile_argv(options)
-
-    assert "-no_update_selected" in argv
-    assert "-tuning" in argv
-    assert "-gptl" in argv
-    assert "-install_dir" in argv
-
-
 def test_rebuild_command_drops_mismatched_install_prefix():
     options = runtime.compile_options_from_build(
         {
@@ -110,10 +84,9 @@ def test_rebuild_command_drops_mismatched_install_prefix():
             "gpu": "none",
             "python": "ON",
             "openmp": "ON",
-            "tuning": "OFF",
             "gptl": "ON",
             "toolchain": "/tmp/toolchain.cmake",
-            "install_prefix": "/tmp/gcc_DEBUG_PRECdouble_PYTHON_OPENMP_TUNING_GPTL",
+            "install_prefix": "/tmp/another_build",
         },
         {"toolchains": [{"path": "/tmp/toolchain.cmake"}]},
         module_stack=[],
@@ -122,7 +95,6 @@ def test_rebuild_command_drops_mismatched_install_prefix():
     argv = runtime.build_compile_argv(options)
 
     assert "-install_dir" not in argv
-    assert "-tuning" not in argv
     assert "-gptl" in argv
 
 

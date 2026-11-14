@@ -39,7 +39,7 @@ module read_corr_mtx_test
     iunit = 5  ! input unit
 
   character(LEN=*), parameter :: &
-    input_file = "../input_misc/corr_array.in" ! Path to the file
+    input_file = "../src/G_unit_test_types/corr_array.in" ! Path to the file
 
   ! tolerance used for real precision testing
   real( kind = core_rknd ), parameter :: tol = 1.0e-6_core_rknd

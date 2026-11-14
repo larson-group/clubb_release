@@ -38,6 +38,3 @@ run_scripts/clubb_params_multi_col.json
 /input/*.case.jsonc
 /input/*.stats.json
 /input/*.stats.jsonc
-/input/tunable_parameters_*.json
-/input/configurable_model_flags_*.json
-/input/error_*.json

@@ -5,7 +5,6 @@ parsing, and final emission without running any model cases.
 """
 import copy
 import json
-import re
 from pathlib import Path
 
 import pytest
@@ -132,19 +131,3 @@ def test_custom_paths_expand_home_and_remain_distinct_from_preset_names(tmp_path
     assert flag_settings("./clubb_config_flags.jsonc") == expected
     with pytest.raises(FileNotFoundError):
         flag_settings(str(tmp_path / "missing.json"))
-
-
-def test_native_tuner_bounds_cover_the_current_fortran_reader():
-    """Every active bounds group names and initializes exactly the native tunables."""
-    source = (builder.INPUT_ROOT.parent / "src/CLUBB_core/parameters_tunable.F90").read_text()
-    declaration = source.split("namelist /init_minmax/", 1)[1].split("\n\n", 1)[0]
-    supported = set(re.findall(r"\b\w+_minmax\b", declaration.lower()))
-    from clubb_python_driver.io.namelist import _read_namelist_groups
-    controls = builder.INPUT_ROOT.parent / "input_misc/tuner"
-    paths = list(controls.glob("error_*.in"))
-    assert paths, "Native tuner controls must be present for bounds validation"
-    for path in paths:
-        settings = _read_namelist_groups(path)
-        bounds = settings.get("init_minmax")
-        if bounds is not None:
-            assert set(bounds) == supported, path.name

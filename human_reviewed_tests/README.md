@@ -596,19 +596,6 @@ Example:
 - `python3 human_reviewed_tests/test_fatal_error_handling.py`
   Runs all configured fatal-error injection tests.
 
-### `test_fire_tuner.py`
-
-Configures the FIRE case for tuning, writes a focused FIRE stats file, and runs
-`run_scripts/run_tuner.py`.
-
-Examples:
-
-- `python3 human_reviewed_tests/test_fire_tuner.py`
-  Runs the FIRE tuner test against the current checkout.
-
-- `python3 human_reviewed_tests/test_fire_tuner.py /path/to/clubb`
-  Runs the FIRE tuner test against an explicit CLUBB source tree.
-
 ### `test_monoflux_limiter_GPU.py`
 
 Runs the monotonic turbulent flux limiter GPU-vs-CPU PCAST test. It temporarily

@@ -86,7 +86,7 @@ proposals; it is not a separate setting for each algorithm.
 
 The generated [objective benchmarks](../auto_llm_generated_tests/pytests/unit_tests/test_algorithm_objectives.py)
 run Goldstein–Price, five-dimensional Rastrigin, Himmelblau, Eggholder and
-Schaffer from the [Fortran G_unit suite](../../src/G_unit_test_types/tuner_tests.F90)
+Schaffer from the [retired Fortran G-unit suite](https://github.com/larson-group/clubb/blob/73f0f6ad1b8c1b1e31ad780aae2d2c853a0674e5/src/G_unit_test_types/tuner_tests.F90)
 through every registered method using default options. All methods must produce
 finite bounded proposals, unique sample IDs and finite losses, make progress,
 and finish within their declared budgets. For methods categorized as `optimizer`,

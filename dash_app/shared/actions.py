@@ -2812,7 +2812,7 @@ def compile_clubb(
     job_id: str | None = None,
 ) -> dict[str, Any]:
     """Start one normal CLUBB compile and stream real progress into Dash."""
-    options = {"debug": bool(debug), "run_tests": False, "python": bool(python_bindings), "fresh": bool(fresh), "openmp": False, "tuning": False, "gptl": bool(gptl), "precision": "double", "gpu": "none", "toolchain": "auto", "extra_args": "", "module_stack": []}
+    options = {"debug": bool(debug), "run_tests": False, "python": bool(python_bindings), "fresh": bool(fresh), "openmp": False, "gptl": bool(gptl), "precision": "double", "gpu": "none", "toolchain": "auto", "extra_args": "", "module_stack": []}
     return launch_compile_request(options, job_id=job_id)
 
 

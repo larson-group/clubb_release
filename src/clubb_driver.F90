@@ -779,7 +779,7 @@ module clubb_driver
 
   !                                       run_clubb
   !=============================================================================================
-  subroutine run_clubb( namelist_filename, l_stdout, err_info, clubb_params_in, model_flags_array )
+  subroutine run_clubb( namelist_filename, l_stdout, err_info, clubb_params_in )
   !
   ! Description:
   !   Top-level lifecycle routine for a standalone CLUBB run.  This is the
@@ -831,9 +831,6 @@ module clubb_driver
     real( kind = core_rknd ), dimension(:,:), optional, intent(in) :: &
       clubb_params_in ! Optional parameter matrix override, one row per requested column. [-]
 
-    logical, optional, dimension(:), intent(in) :: &
-      model_flags_array ! Optional configurable model-flag override, used by tuner callers. [-]
-
     integer :: &
       num_batches, &     ! Number of runtime reruns needed to cover all parameter columns.
       batch_idx          ! Current batch loop index.
@@ -844,15 +841,7 @@ module clubb_driver
     ! expensive one-time setup: namelist reads, grid construction, allocation,
     ! tunable-parameter loading, stats file creation, radiation/microphysics
     ! initialization, and OpenACC data-region setup.
-    !
-    ! model_flags_array is optional because normal standalone runs use the flags
-    ! from the namelist/defaults, while tuner-style callers can inject a flag set
-    ! without editing input files.
-    if ( present( model_flags_array ) ) then
-      call init_clubb_case( namelist_filename, err_info, clubb_params_in, model_flags_array )
-    else
-      call init_clubb_case( namelist_filename, err_info, clubb_params_in )
-    end if
+    call init_clubb_case( namelist_filename, err_info, clubb_params_in )
     if ( any( err_info%err_code == clubb_fatal_error ) ) return
 
     ! init_clubb_case validates that total_param_sets is evenly divisible by
@@ -941,7 +930,7 @@ module clubb_driver
 
   end subroutine get_clubb_params_all
 
-  subroutine init_clubb_case(runfile, err_info, clubb_params_in, model_flags_array)
+  subroutine init_clubb_case(runfile, err_info, clubb_params_in)
   !
   ! Description:
   !   This subroutine sets reads the runfile namelist, sets up all model settings, allocates
@@ -1008,9 +997,6 @@ module clubb_driver
 
     real( kind = core_rknd ), dimension(:,:), optional, intent(in) :: &
       clubb_params_in  ! Optional model parameters, C1, nu2, etc.
-
-    logical, optional, dimension(:), intent(in) :: &
-      model_flags_array ! Array containing model flags (for the clubb_tuner only)
 
     !----------------------------------- Output Variables -----------------------------------
     type(err_info_type), intent(out) :: &
@@ -1767,11 +1753,6 @@ module clubb_driver
 #else
       call write_text( "-DCOAMPS_MICRO disabled", l_write_to_file, iunit )
 #endif
-#ifdef TUNER
-      call write_text( "-DTUNER enabled", l_write_to_file, iunit )
-#else
-      call write_text( "-DTUNER disabled", l_write_to_file, iunit )
-#endif
 #ifdef nooverlap
       call write_text( "-Dnooverlap enabled", l_write_to_file, iunit )
 #else
@@ -2492,25 +2473,6 @@ module clubb_driver
                                l_ascending_grid, &             ! Intent(in)
                                gr_fixed_min, err_info )        ! Intent(out)
 
-    end if
-
-    ! This special purpose code only applies to tuner runs where the tune_type
-    ! is setup to try all permutations of our model flags
-    if ( present( model_flags_array ) ) then
-      clubb_config_flags%l_godunov_upwind_wpxp_ta = model_flags_array(1)
-      clubb_config_flags%l_godunov_upwind_xpyp_ta = model_flags_array(2)
-      clubb_config_flags%l_upwind_xpyp_ta         = model_flags_array(3)
-      clubb_config_flags%l_upwind_xm_ma           = model_flags_array(4)
-      clubb_config_flags%l_vert_avg_closure       = model_flags_array(5)
-      clubb_config_flags%l_standard_term_ta       = model_flags_array(6)
-      clubb_config_flags%l_use_cloud_cover        = model_flags_array(7)
-      clubb_config_flags%l_rcm_supersat_adj       = model_flags_array(8)
-
-      if ( clubb_config_flags%l_vert_avg_closure ) then
-        clubb_config_flags%l_trapezoidal_rule_zt    = .true.
-        clubb_config_flags%l_trapezoidal_rule_zm    = .true.
-        clubb_config_flags%l_call_pdf_closure_twice = .true.
-      end if
     end if
 
 #ifdef _OPENMP

@@ -152,9 +152,6 @@ program G_unit_tests
   use spurious_source_test, only: &
       spurious_source_unit_test  ! Procedure(s)
 
-  use tuner_tests, only: &
-      tuner_tests_driver        ! Procedure
-      
   use w_up_in_cloud_tests, only: &
       w_up_in_cloud_tests_driver
       
@@ -201,7 +198,6 @@ program G_unit_tests
     l_mu_sigma_hm_tests = .true.,       & ! Flag for the hydromet mu/sigma tests
     l_pdf_parameter_tests = .true.,     & ! Flag for the PDF parameter tests
     l_spurious_source_test = .true.,    & ! Flag for the spurious source test
-    l_tuner_tests = .true.,             & ! Flag for the tuner tests
     l_w_up_in_cloud_test = .true.,      & ! Flag for the calc_w_up_in_cloud test
     l_smooth_heaviside_test = .true.,   & ! Flag for the smooth_heaviside test
     l_smooth_min_max_test = .true.,     & ! Flag for the smooth_min_max test
@@ -214,7 +210,7 @@ program G_unit_tests
     l_KK_unit_tests, l_corr_cholesky_mtx_tests, l_hole_filling_tests, &
     l_Nc_Ncn_test, l_read_corr_mtx_test, l_silhs_category_test, &
     l_mu_sigma_hm_tests, l_pdf_parameter_tests, l_spurious_source_test, &
-    l_tuner_tests, l_w_up_in_cloud_test, l_smooth_heaviside_test, &
+    l_w_up_in_cloud_test, l_smooth_heaviside_test, &
     l_smooth_min_max_test, l_rev_direction_grid_test, l_fill_holes_test, &
     l_cubic_solve_test
 
@@ -296,12 +292,6 @@ program G_unit_tests
      endif
   endif
 
-  if ( l_tuner_tests ) then
-     if ( tuner_tests_driver( ) /= 0 ) then
-        exit_code = 1
-     endif
-  endif
-  
   if ( l_w_up_in_cloud_test ) then
      if ( w_up_in_cloud_tests_driver(gr) /= 0 ) then
         exit_code = 1

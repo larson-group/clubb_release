@@ -232,7 +232,6 @@ def configure_cmake(args, toolchain_file, inst_dir, build_type):
         # --- Core Physics & Features ---
         f"-DENABLE_F2PY={to_on_off(args.python)}",             # default OFF
         f"-DENABLE_OMP={to_on_off(args.openmp)}",              # default OFF
-        f"-DTUNING={to_on_off(args.tuning)}",                  # default OFF
         f"-DUSE_GPTL={to_on_off(args.gptl)}",                  # default OFF
 
         # --- Python Environment ---
@@ -384,8 +383,6 @@ def main():
     # Feature toggles
     parser.add_argument("-openmp", action="store_true", 
                         help="Enable OpenMP threading (default: disabled)")
-    parser.add_argument("-tuning", action="store_true", 
-                        help="Enable TUNING mode with extra runtime checks (default: disabled)")
     parser.add_argument("-gptl", action="store_true", 
                         help="Enable GPTL timing library (default: disabled)")
 
@@ -411,7 +408,6 @@ def main():
     subdir_suffix += f"_PREC{args.precision}"
     subdir_suffix += "_PYTHON" if args.python else ""
     subdir_suffix += "_OPENMP" if args.openmp else ""
-    subdir_suffix += "_TUNING" if args.tuning else ""
     subdir_suffix += "_GPTL" if args.gptl else ""
 
     build_dir = os.path.join(CLUBB_ROOT, f"build/{compiler}{subdir_suffix}") 

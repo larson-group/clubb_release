@@ -27,7 +27,6 @@ RUNTIME_BUILD_TARGETS = (
     "clubb_driver_lib",
     "clubb_standalone",
     "clubb_thread_test",
-    "clubb_tuner",
     "G_unit_tests",
     "clubb_driver_test",
     "clubb_standalone_loss",
@@ -38,7 +37,6 @@ RUNTIME_INSTALL_ARTIFACTS = {
     "clubb_driver_lib": ("src/libclubb_driver_lib.a", "libclubb_driver_lib.a"),
     "clubb_standalone": ("src/clubb_standalone", "clubb_standalone"),
     "clubb_thread_test": ("src/clubb_thread_test", "clubb_thread_test"),
-    "clubb_tuner": ("src/clubb_tuner", "clubb_tuner"),
     "G_unit_tests": ("src/G_unit_tests", "G_unit_tests"),
     "clubb_driver_test": ("src/clubb_driver_test", "clubb_driver_test"),
     "clubb_standalone_loss": ("src/clubb_standalone_loss", "clubb_standalone_loss"),
@@ -268,7 +266,6 @@ COMPILE_FEATURE_FLAG_ORDER = [
     "debug",
     "python",
     "openmp",
-    "tuning",
     "gptl"
 ]
 
@@ -344,8 +341,6 @@ def compile_settings_from_build(build, discovery=None, lmod_compiler=None):
         flags.append("python")
     if cmake_enabled((build or {}).get("openmp")):
         flags.append("openmp")
-    if cmake_enabled((build or {}).get("tuning")):
-        flags.append("tuning")
     if cmake_enabled((build or {}).get("gptl")):
         flags.append("gptl")
 
@@ -386,7 +381,6 @@ def compile_options_from_build(build, discovery=None, module_stack=None):
         "python": "python" in settings["flags"],
         "fresh": False,
         "openmp": "openmp" in settings["flags"],
-        "tuning": "tuning" in settings["flags"],
         "gptl": "gptl" in settings["flags"],
     }
     install_prefix = (build or {}).get("install_prefix") or ""
@@ -427,7 +421,6 @@ def build_compile_argv(options):
     argv.extend(_bool_flag(options, "python", "-python"))
     argv.extend(_bool_flag(options, "fresh", "-fresh"))
     argv.extend(_bool_flag(options, "openmp", "-openmp"))
-    argv.extend(_bool_flag(options, "tuning", "-tuning"))
     argv.extend(_bool_flag(options, "gptl", "-gptl"))
     extra_args = (options.get("extra_args") or "").strip()
     if extra_args:

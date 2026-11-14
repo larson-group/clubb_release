@@ -1,4 +1,6 @@
-"""Synthetic objectives from src/G_unit_test_types/tuner_tests.F90.
+"""Synthetic objectives retained from the retired Fortran G-unit tuner suite.
+
+Historical source: https://github.com/larson-group/clubb/blob/73f0f6ad1b8c1b1e31ad780aae2d2c853a0674e5/src/G_unit_test_types/tuner_tests.F90
 
 Goldstein–Price, Rastrigin, Himmelblau, Eggholder and Schaffer retain the
 Fortran formulas and search domains. Rastrigin uses five coordinates, as in

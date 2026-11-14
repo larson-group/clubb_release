@@ -639,7 +639,6 @@ def discover_existing_builds():
                 "openmp": cache.get("ENABLE_OMP", ""),
                 "python": cache.get("ENABLE_F2PY", ""),
                 "gptl": cache.get("USE_GPTL", ""),
-                "tuning": cache.get("TUNING", ""),
                 "silhs": cache.get("SILHS", ""),
                 "modified": int(build_dir.stat().st_mtime),
             }

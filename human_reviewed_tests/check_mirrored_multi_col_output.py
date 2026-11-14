@@ -372,7 +372,7 @@ def build_test_executable(log_path):
          f"-DCMAKE_TOOLCHAIN_FILE={wrapper}", f"-DCMAKE_Fortran_COMPILER={compiler}",
          "-DCMAKE_BUILD_TYPE=Release", "-DGPU=none", "-DPRECISION=double",
          "-DENABLE_TESTS=OFF", "-DENABLE_F2PY=OFF", "-DENABLE_OMP=OFF",
-         "-DUSE_GPTL=OFF", "-DTUNING=OFF"],
+         "-DUSE_GPTL=OFF"],
         [cmake, "--build", str(BUILD_DIR), "--target", "clubb_standalone",
          "--parallel", str(min(8, os.cpu_count() or 1))],
     ]

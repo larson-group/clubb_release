@@ -200,40 +200,6 @@ Examples:
 - `python3 run_scripts/run_scm_loss.py -jax=cpu bomex -fields cloud_frac`
   Runs the JAX loss frontend through its managed CPU launcher.
 
-### `run_tuner.py`
-
-Runs the older CLUBB tuner executable with Python setup and cleanup around the
-input files it needs. Its legacy controls are
-[error_NAME.in namelists](../input_misc/tuner/README); model cases, parameters
-and flags still come from the current JSON catalogs. Optimized results remain
-JSON for standalone reruns and archiving.
-
-Use `-controls NAME|IN` to select a control name or an explicit namelist path.
-`-params NAME|JSON` supplies the initial parameter set. `-prepare_only` writes
-the final inputs without launching a model; `-output_dir` selects their
-destination in that mode. Executed runs use the legacy `run_scripts` working
-directory and require a compiled `install/latest/clubb_tuner`.
-
-Examples:
-
-- `python3 run_scripts/run_tuner.py`
-  Runs the tuner for the default single-case setup.
-
-- `python3 run_scripts/run_tuner.py -initial_output -run_case fire`
-  Saves pre-tuning standalone output for `fire` before running the tuner.
-
-- `python3 run_scripts/run_tuner.py -run_type multiple -model_mult fire atex`
-  Sets up a multiple-case tuner run using `fire` and `atex`.
-
-- `python3 run_scripts/run_tuner.py -nightly -run_case fire`
-  Runs in nightly mode and copies tuner artifacts to `~/tuner_output`.
-
-- `python3 run_scripts/run_tuner.py -prepare_only -run_case fire -output_dir /tmp/native_tuner`
-  Prepares `error.in` and `fire_hoc.in` without requiring a tuner executable.
-
-- `python3 run_scripts/run_tuner.py -prepare_only -controls combined_001 -run_type multiple -model_mult bomex dycoms2_rf01 -params ~/previous_optimum.json -output_dir /tmp/ensemble`
-  Prepares ensemble inputs from legacy controls and a JSON parameter set.
-
 ### `run_tuner_job.py`
 
 Runs the newer Dash-style tuner workflow from the command line. It creates a

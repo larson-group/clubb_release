@@ -30,7 +30,6 @@ def build_option_checklist():
             {"label": "Debug", "value": "debug"},
             {"label": "Python API", "value": "python"},
             {"label": "OpenMP", "value": "openmp"},
-            {"label": "Tuning", "value": "tuning"},
             {"label": "GPTL", "value": "gptl"},
         ],
         value=[],

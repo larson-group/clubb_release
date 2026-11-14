@@ -55,8 +55,9 @@ _SimAnnChain retains each temperature, counters and best/current positions for
 current-format checkpoints. Unlike Adam, this method does not reserve a clipped
 default start; the scheduler evaluates configured baselines separately.
 
-Reference: src/Numerical_recipes/enhanced_simann.F90, esa_driver and its cited
-simulated-annealing method. See the source path in this checkout for exact
+Reference: historical CLUBB esa_driver and its cited simulated-annealing method:
+https://github.com/larson-group/clubb/blob/73f0f6ad1b8c1b1e31ad780aae2d2c853a0674e5/src/Numerical_recipes/enhanced_simann.F90
+See that revision for exact
 acceptance and adaptation policy.
 """
 

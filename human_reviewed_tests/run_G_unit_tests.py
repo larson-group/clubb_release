@@ -15,7 +15,7 @@ RUN_SCRIPTS = REPO_ROOT / "run_scripts"
 EXECUTABLE = REPO_ROOT / "install" / "latest" / "G_unit_tests"
 
 # --------------------------------------------------------------------------
-# Hard-coded default test settings (from your original G_unit_tests.in)
+# Default settings for the generated G_unit_tests.in namelist
 # --------------------------------------------------------------------------
 
 DEFAULT_FLAGS = {
@@ -29,7 +29,6 @@ DEFAULT_FLAGS = {
     "l_mu_sigma_hm_tests": True,
     "l_pdf_parameter_tests": True,
     "l_spurious_source_test": True,
-    "l_tuner_tests": True,
     "l_smooth_heaviside_test": True,
     "l_smooth_min_max_test": True,
     "l_rev_direction_grid_test": False,
@@ -48,7 +47,6 @@ TEST_OPTIONS = {
     "mu_sigma_hm_tests": "l_mu_sigma_hm_tests",
     "pdf_parameter_tests": "l_pdf_parameter_tests",
     "spurious_source_test": "l_spurious_source_test",
-    "tuner_tests": "l_tuner_tests",
     "smooth_heaviside_test": "l_smooth_heaviside_test",
     "smooth_min_max_test": "l_smooth_min_max_test",
     "rev_direction_grid_test": "l_rev_direction_grid_test",

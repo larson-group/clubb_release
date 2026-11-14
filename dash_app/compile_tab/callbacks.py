@@ -70,7 +70,6 @@ def options_from_flags(flag_values):
         "python": "python" in flags,
         "fresh": False,
         "openmp": "openmp" in flags,
-        "tuning": "tuning" in flags,
         "gptl": "gptl" in flags,
     }
 

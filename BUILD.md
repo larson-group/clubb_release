@@ -118,7 +118,6 @@ to use compiler flags:
 | Compiler Flags          | Description                                   | Default Value         |
 |-------------------------|-----------------------------------------------|-----------------------|
 |  -openmp                |  Enable OpenMP threading                      |  Disabled             |
-|  -tuning                |  Enable TUNING mode with extra runtime checks |  Disabled             |
 |  -run_tests             |  Run ctests after compilation                 |  Disabled             |
 
 
@@ -127,7 +126,6 @@ However, you can also edit the top level CMakeLists.txt (clubb/CMakeLists.txt):
 | CMake Option            | Description                     |    Default Value  |
 |-------------------------|---------------------------------|-------------------|
 |   ENABLE_OMP            | Enable CLUBB to run with OpenMP |       OFF         |
-|   TUNING                | Compile CLUBB for tuning        |       OFF         |
 |   ENABLE_TESTS          | Enable running tests            |       ON          |
 
 

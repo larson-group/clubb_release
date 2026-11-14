@@ -15,7 +15,8 @@ losses, make progress, and finish within their declared evaluation budgets.
 Optimizers additionally require at least one trial's best loss strictly below
 the loss at that function's predefined starting point; samplers do not require
 improvement. This distinction uses only the catalog's category. Global-hit rules
-come from src/G_unit_test_types/tuner_tests.F90 and are diagnostic only: 1/3
+are retained from the retired Fortran suite (see algorithm_objectives.py)
+and are diagnostic only: 1/3
 means one of three complete searches met that function's coordinate/loss rule,
 not one iteration or one function out of three. Formula/minimum and independent
 analytic-gradient checks plus finite bounded proposals, unique IDs, progress,

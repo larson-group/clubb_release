@@ -84,25 +84,6 @@ def test_optional_provenance_is_separate_from_input_settings(tmp_path):
     assert "_metadata" not in settings
 
 
-def test_native_tuner_preserves_legacy_controls_at_the_entry_boundary(tmp_path):
-    """Legacy array holes stay in namelist text; parameter overrides come from JSON."""
-    from run_scripts.run_tuner import create_native_tuner_inputs
-    from clubb_python_driver.io.namelist import _read_namelist_groups
-
-    control = tmp_path / "legacy.in"
-    text = "&stats\n tune_type = 2\n/\n&cases\n timestep_intvls_nl(3,1) = , , 121\n/\n"
-    control.write_text(text)
-    params = tmp_path / "params.json"
-    params.write_text('{"model": {"C8": 0.2}}')
-    destination = tmp_path / "prepared"
-    error, cases, tune_type = create_native_tuner_inputs(
-        ["bomex"], control, destination, params=params, override="dt_main=30")
-    assert error.read_text().startswith(text)
-    assert tune_type == 2 and cases == [destination / "bomex_hoc.in"]
-    assert _read_namelist_groups(error)["clubb_params_nl"]["c8"] == 0.2
-    assert _read_namelist_groups(cases[0])["model_setting"]["dt_main"] == 30
-
-
 def test_saved_shared_config_can_have_only_a_parameter_preset(tmp_path):
     """A missing flag preset inherits defaults when saving a shared configuration."""
     from input.scripts.save_tunable_config import save_tunable_config
@@ -119,74 +100,3 @@ def test_saved_shared_config_can_have_only_a_parameter_preset(tmp_path):
     save_tunable_config("source", {"tunable": {"C8": "0.4"}}, "saved", config_root=tmp_path)
     assert parameter_settings("saved", tmp_path / "clubb_params.jsonc")["model"]["C8"] == 0.4
     assert flag_settings("saved", tmp_path / "clubb_config_flags.jsonc")["model"]["enabled"] is False
-
-
-def test_native_reruns_inherit_defaults_without_requesting_an_empty_preset(monkeypatch, tmp_path):
-    """The SCM boundary receives no default selector that could be absent from a catalog."""
-    from run_scripts import run_tuner
-
-    commands = []
-    monkeypatch.setattr(run_tuner, "run_and_tee", lambda command, **kwargs: commands.append(command) or 0)
-    assert run_tuner.run_case_with_run_scm("bomex", None, None, None, "core", tmp_path / "log") == 0
-    assert commands[0][-1] == "bomex"
-    assert not {"-params", "-flags", "-silhs_params_file"}.intersection(commands[0])
-
-
-@pytest.mark.parametrize("tune_type,result_prefix,option", [
-    (2, "tunable_parameters", "-params"), (3, "configurable_model_flags", "-flags"),
-])
-@pytest.mark.parametrize("initial_params", [False, True])
-def test_native_execution_keeps_json_results_at_the_modern_boundary(
-    monkeypatch, tmp_path, tune_type, result_prefix, option, initial_params,
-):
-    """A bounded fake tuner exercises preparation, JSON reruns and temporary-file cleanup."""
-    from run_scripts import run_tuner
-    launch = tmp_path / "launch"
-    launch.mkdir()
-    results = tmp_path / "results"
-    results.mkdir()
-    controls = tmp_path / "legacy.in"
-    controls.write_text(f"&stats\n tune_type = {tune_type}\n/\n")
-    (tmp_path / "rand_seed.dat").write_text("1\n")
-    executable = tmp_path / "clubb_tuner"
-    executable.touch()
-    monkeypatch.setattr(run_tuner, "RUN_SCRIPTS", launch)
-    monkeypatch.setattr(run_tuner, "INPUT_DIR", results)
-    monkeypatch.setattr(run_tuner, "TUNABLE_DIR", results)
-    monkeypatch.setattr(run_tuner, "TUNER_MISC_DIR", tmp_path)
-    monkeypatch.setattr(run_tuner, "OUTPUT_DIR", tmp_path / "output")
-    monkeypatch.setattr(run_tuner, "TUNER_EXE", executable)
-    monkeypatch.setattr(run_tuner, "move_case_outputs", lambda *args: None)
-    params = tmp_path / "initial.json"
-    params.write_text('{"model": {"C8": 0.2}}')
-    arguments = ["run_tuner.py", "-run_case", "bomex",
-                 "-controls", str(controls), "-initial_output"]
-    if initial_params:
-        arguments.extend(["-params", str(params)])
-    monkeypatch.setattr("sys.argv", arguments)
-    scm_commands = []
-    result = results / f"{result_prefix}_test.json"
-
-    def run(command, **kwargs):
-        """Model only the external execution boundary, keeping real input preparation."""
-        if command == [str(executable)]:
-            assert (launch / "error.in").is_file()
-            assert (launch / "bomex_hoc.in").is_file()
-            result.write_text('{"model": {}}')
-        else:
-            scm_commands.append(command)
-        return 0
-
-    monkeypatch.setattr(run_tuner, "run_and_tee", run)
-    assert run_tuner.main() == 0
-    assert len(scm_commands) == 2  # Initial output and optimized output.
-    assert "-flags" not in scm_commands[0]
-    assert ("-params" in scm_commands[0]) is initial_params
-    if initial_params:
-        assert scm_commands[0][scm_commands[0].index("-params") + 1] == str(params)
-    assert scm_commands[1][scm_commands[1].index(option) + 1] == str(result)
-    if tune_type == 3 and initial_params:
-        assert scm_commands[1][scm_commands[1].index("-params") + 1] == str(params)
-    else:
-        assert ("-flags" if option == "-params" else "-params") not in scm_commands[1]
-    assert not list(launch.iterdir())

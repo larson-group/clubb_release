@@ -177,26 +177,6 @@ python3 input/scripts/benchmark_converter.py input/les_and_clubb_benchmark_runs/
 sweeps stored under [flag_sets/](flag_sets/); these describe test sweeps rather
 than the flag presets for a single run.
 
-## Legacy native tuner
-
-The old native tuner is an exception to the JSON input format. Its additional
-controls and comparison windows are namelists under
-[input_misc/tuner](../input_misc/tuner/README). The legacy wrapper
-[run_tuner.py](../run_scripts/run_tuner.py) combines one control file with JSON
-parameters to write `error.in`. Its `CASE_hoc.in` files use the current model
-catalogs and final input builder:
-
-```bash
-python3 run_scripts/run_tuner.py -prepare_only -run_case fire -output_dir /tmp/native_tuner
-python3 run_scripts/run_tuner.py -prepare_only -controls combined_001 -run_type multiple -model_mult bomex dycoms2_rf01 -params ~/previous_optimum.json -output_dir /tmp/ensemble
-```
-
-The tuner writes parameter/flag JSON overrides and diagnostic JSON. Its optimized
-parameter files can be supplied directly to `run_scm.py -params`; optimized flags
-can be supplied to `-flags`. Historical native controls and paper-specific stats
-lists retain their original settings, including obsolete options; converting
-those definitions does not modernize their physics or benchmark paths.
-
 The tables in [case_data/](case_data/), grids, atmospheric profiles and
 benchmark NetCDF files remain data inputs. Their `.in` or other suffixes do not
 make them model/parameter/flag/stats namelist definitions.
