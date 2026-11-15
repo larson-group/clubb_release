@@ -1,3 +1,13 @@
+// Build the public CLUBB release with Intel and run its standard case list.
+// Run from a clean workspace with Git, Python and Carson's Intel/NetCDF modules.
+// Reproduce the checkout, build and run from the workspace root:
+//   git clone https://github.com/larson-group/clubb_release.git
+//   source /etc/profile.d/larson-group.sh
+//   module load intel netcdf-fortran
+//   clubb_release/compile.py
+//   clubb_release/run_scripts/run_scm.py -cases standard_cases
+// Passing confirms compilation and case completion; outputs are not compared.
+
 pipeline {
   agent any
   stages {
@@ -18,8 +28,8 @@ pipeline {
     }
     stage('Run') {
       steps {
-        // Load the compiler and matching NetCDF runtime from the shared module setup.
-        sh '''clubb_release/run_scripts/run_scm_all.py'''
+        // Select the release catalog's standard cases explicitly.
+        sh '''clubb_release/run_scripts/run_scm.py -cases standard_cases'''
       }
     }
   }
