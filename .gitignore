@@ -38,3 +38,7 @@ run_scripts/clubb_params_multi_col.json
 /input/*.case.jsonc
 /input/*.stats.json
 /input/*.stats.jsonc
+
+# Local benchmark data and acquisition locks.
+/input/les_and_clubb_benchmark_runs
+/input/.les_and_clubb_benchmark_runs.locks/

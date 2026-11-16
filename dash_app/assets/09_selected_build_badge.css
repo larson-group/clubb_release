@@ -449,3 +449,18 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+.runner-refresh {
+  padding: 5px 9px;
+  border: 1px solid #64748b;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+#runner-loading, #runner-message { font-size: 12px; }
+
+#runner-fortran-options, #runner-jax-options {
+  display: grid;
+  gap: 12px;
+}

@@ -203,12 +203,10 @@ def build_console():
     )
 
 
-def build_layout(initial_data):
+def build_layout():
     """Assemble the compile tab layout."""
     return html.Div(
         [
-            dcc.Store(id="compile-discovery", data=initial_data),
-            dcc.Store(id="compile-build-statuses", data={}),
             dcc.Store(id="compile-build-failures", data={}),
             dcc.Store(id="compile-build-delete-target", data=None),
             # "auto" is the normal policy; this store records an explicit

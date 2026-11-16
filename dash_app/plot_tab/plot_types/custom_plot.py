@@ -552,6 +552,7 @@ class CustomPlotType(BasePlotType):
             Input("plots-selected-column", "data"),
             Input("plots-column-mode", "value"),
             Input("plots-column-filters", "data"),
+            Input("plots-ready-benchmarks", "data"),
             Input("theme-store", "data"),
             Input(self.size_store_id(MATCH), "data"),
             State(self.graph_id(MATCH), "relayoutData"),
@@ -566,6 +567,7 @@ class CustomPlotType(BasePlotType):
             selected_column,
             column_mode,
             column_filters,
+            benchmark_readiness,
             theme_name,
             size_store_value,
             relayout_data,
@@ -574,6 +576,16 @@ class CustomPlotType(BasePlotType):
             size_value = shared.normalize_plot_size(size_store_value)
             active_time = shared.resolve_active_time_values(case_data, time_range, time_point, time_override)
             signal = int(active_time["start_seconds"]) if active_time["start_seconds"] is not None else ""
+            try:
+                _, names = expression_variable_names(expression)
+                needs_les = any(name.startswith("les.") for name in names)
+                source = self._les_source_name(case_data) if needs_les else None
+            except ExpressionError:
+                source = None
+            if source and source not in benchmark_overlay.ready_benchmark_sources(
+                case_data, benchmark_readiness, include_unselected=True,
+            ):
+                return shared.make_empty_figure("Preparing LES data…", theme_name), signal
             fig = self.build_figure(
                 {"expression": expression, "size": size_value},
                 {

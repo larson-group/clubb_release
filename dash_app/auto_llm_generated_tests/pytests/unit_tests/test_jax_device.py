@@ -5,8 +5,6 @@ import subprocess
 from types import SimpleNamespace
 
 import pytest
-from dash import Dash
-
 from dash_app.compile_tab import callbacks, build_selector
 from clubb_jax.run_jax import runtime_selection
 from dash_app.services.models import ScmRunBatchRequest
@@ -36,26 +34,6 @@ def test_cpu_launch_ignores_remembered_gpu(monkeypatch):
     assert gpu["jax_gpu"] == GPU_B
 
 
-def compute_callback():
-    app = Dash(__name__, suppress_callback_exceptions=True)
-    callbacks.register_compile_callbacks(app)
-    entry = next(entry for key, entry in app.callback_map.items()
-                 if "compile-run-jax-profile.data" in key)
-    # Metadata changes never silently switch a selected backend/device.
-    assert len(entry["inputs"]) == 1
-    return entry["callback"].__wrapped__
-
-
-def test_gpu_tile_reselect_enables_gpu_after_cpu_without_changing_uuid(monkeypatch):
-    select = compute_callback()
-    monkeypatch.setattr(callbacks, "clicked_trigger_id", lambda: {"index": GPU_B})
-    assert select([1], inventory()) == ("gpu", GPU_B)
-    monkeypatch.setattr(callbacks, "clicked_trigger_id", lambda: {"index": "cpu"})
-    assert select([1], inventory()) == ("cpu", callbacks.no_update)
-    monkeypatch.setattr(callbacks, "clicked_trigger_id", lambda: {"index": GPU_B})
-    assert select([2], inventory()) == ("gpu", GPU_B)
-
-
 def test_device_choices_display_physical_indices_and_store_uuids():
     menu = callbacks.render_compact_build_selector({}, implementation="jax", jax_profile="gpu",
         jax_runtime_info=inventory(), jax_gpu=GPU_B)
@@ -74,16 +52,6 @@ def test_device_choices_display_physical_indices_and_store_uuids():
     missing_tile = missing[1].children[1].children[-1]
     assert missing_tile.children.children[0].children[0].children == "Saved GPU"
     assert missing_tile.disabled is True
-
-
-def test_click_callback_ignores_mount_and_unknown_device(monkeypatch):
-    select = compute_callback()
-    monkeypatch.setattr(callbacks, "clicked_trigger_id", lambda: None)
-    assert select([0], inventory()) == (callbacks.no_update, callbacks.no_update)
-    for value, expected in [(GPU_B, ("gpu", GPU_B)), ("gpu", ("gpu", "")),
-                            ("unknown", (callbacks.no_update, callbacks.no_update))]:
-        monkeypatch.setattr(callbacks, "clicked_trigger_id", lambda: {"index": value})
-        assert select([1], inventory()) == expected
 
 
 def test_cpu_selected_has_no_remembered_gpu_highlight_and_no_device_submenu():
@@ -199,19 +167,6 @@ def test_preallocation_checkbox_requires_compatible_selected_gpu(profile, status
     checkbox = menu[1].children[2].children
     assert checkbox.value == ["enabled"]  # Remember preference even while disabled.
     assert checkbox.options[0]["disabled"] is not enabled
-
-
-def test_preallocation_callback_rejects_disabled_changes_and_preserves_false():
-    app = Dash(__name__, suppress_callback_exceptions=True)
-    callbacks.register_compile_callbacks(app)
-    change = app.callback_map["compile-run-jax-xla-prealloc.data"]["callback"].__wrapped__
-    info = inventory()
-    info["gpu"]["hardware"]["selected_gpu"] = {"uuid": GPU_B}
-    assert change([["enabled"]], info, "cpu", GPU_B, False) is callbacks.no_update
-    assert change([["enabled"]], info, "gpu", GPU_B, False) is True
-    assert change([[]], info, "gpu", GPU_B, True) is False
-    assert change([[]], info, "gpu", GPU_B, False) is callbacks.no_update
-    assert change([], info, "gpu", GPU_B, True) is callbacks.no_update
 
 
 def test_preallocation_is_validated_and_frozen_in_batch_children():

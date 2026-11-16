@@ -8,7 +8,7 @@ netCDF4~=1.7
 # Matplotlib 3.10 retains the APIs used by the dashboard and has wheels for
 # the supported Python versions.
 matplotlib>=3.10,<3.11
-# ReportBuilder uses Pillow to cap published PNG/JPEG evidence at 1200 px.
+# Image and atlas utilities use Pillow.
 pillow>=10,<13
 mcp>=1.0,<2
 pydantic>=2,<3

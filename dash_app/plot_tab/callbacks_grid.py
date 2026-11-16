@@ -3,6 +3,7 @@ import re
 from dash import ALL, MATCH, Input, Output, Patch, State, callback_context, no_update
 
 from dash_app.plot_tab.case_cache import resolve_case_data
+from dash_app.plot_tab.benchmark_overlay import ready_benchmark_sources
 
 from .layout import child_id, render_plot_card, render_plot_grid
 from .plot_types.registry import PLOT_TYPES
@@ -458,24 +459,34 @@ def register_grid_callbacks(app):
         Output({"type": "plots-size-toggle", "index": MATCH}, "className"),
         Output({"type": "plots-size-toggle", "index": MATCH}, "disabled"),
         Input({"type": "plots-size-store", "index": MATCH}, "data"),
-        Input("plots-enabled-benchmarks", "data"),
+        Input("plots-ready-benchmarks", "data"),
+        Input("plots-case-data", "data"),
         State({"type": "plots-size-store", "index": MATCH}, "id"),
         State("plots-plot-state", "data"),
         prevent_initial_call=False,
     )
-    def update_one_plot_size(size_value, enabled_benchmarks, size_store_id, plot_state):
+    def update_one_plot_size(size_value, enabled_benchmarks, case_data, size_store_id, plot_state):
         """Mirror one plot's local size-store state into the card shell and toggle button."""
+        enabled_benchmarks = ready_benchmark_sources(case_data, enabled_benchmarks)
         plot_id = str((size_store_id or {}).get("index"))
         plot_entry = (plot_state or {}).get(plot_id, {})
         lock_large = (
             plot_entry.get("plot_type") == "timeheight"
-            and bool(enabled_benchmarks)
+            and (bool(enabled_benchmarks) or bool((case_data or {}).get("compare_mode")))
         )
         current_size = "large" if lock_large else shared.normalize_plot_size(size_value)
         button_text, button_class = shared.plot_size_button_props(current_size)
+        shell_style = shared.plot_graph_shell_style(current_size)
+        if lock_large:
+            case_data = case_data or {}
+            benchmarks = case_data.get("benchmarks") or {}
+            panel_count = max(1, len(case_data.get("files") or [])) + sum(
+                len(benchmarks.get(source) or {}) for source in set(enabled_benchmarks or [])
+            )
+            shell_style = {"height": f"{max(shared.figure_height_for_size(current_size), 260 * panel_count)}px"}
         return (
             shared.plot_card_class_name(current_size),
-            shared.plot_graph_shell_style(current_size),
+            shell_style,
             button_text,
             button_class,
             lock_large,

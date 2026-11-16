@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dash import ClientsideFunction, Input, Output, State, dcc, html, no_update
+from dash import ClientsideFunction, Input, Output, State, dcc, html, no_update, set_props
 
 from dash_app.shared.activity import acknowledge_ui_request, broker_jobs, claim_ui_request, count_active_jobs
 
@@ -88,9 +88,16 @@ def register_dashboard_handoff_callbacks(app):
         State("dashboard-handoff-last-action", "data"),
         State("dashboard-broker-jobs", "data"),
         State("dashboard-active-process-count", "data"),
+        State("compile-jax-runtime-info", "data"),
+        State("runner-environment-change", "data"),
         prevent_initial_call=True,
     )
-    def refresh_dashboard_handoff(_ticks, last_action_id, current_jobs, current_active_count):
+    def refresh_dashboard_handoff(_ticks, last_action_id, current_jobs, current_active_count, runtime_info, environment):
+        """Recover job/UI state and publish completed runtime setup without another poller."""
+        from dash_app.compile_tab.runner_selector import environment_change
+        changed_environment = environment_change(runtime_info, environment)
+        if changed_environment is not no_update:
+            set_props("runner-environment-change", {"data": changed_environment})
         request = claim_ui_request(last_action_id)
         jobs = broker_jobs()
         request_id = int((request or {}).get("id") or 0)

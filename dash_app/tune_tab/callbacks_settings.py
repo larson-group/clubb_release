@@ -24,7 +24,6 @@ from .layout import (
 )
 from .runtime import empty_status_payload
 from .state import REPO_ROOT
-from dash_app.run_tab.layout import build_run_config_buttons
 from dash_app.shared.tunable_configs import canonical_tunable_parameter_name
 from utilities.clubb_settings_validation import is_independently_tunable
 from input.scripts.save_tunable_config import (
@@ -336,6 +335,13 @@ def sanitize_param_values_for_config(
 
 def register_settings_callbacks(app):
     """Register callbacks that manage case defaults and range-row state."""
+    @app.callback(
+        Output("tune-tunable-configs", "data", allow_duplicate=True),
+        Input("dashboard-config-catalog", "data"), prevent_initial_call=True,
+    )
+    def receive_config_catalog(configs):
+        """Adopt newly saved configs when this tab is mounted."""
+        return configs if configs is not None else no_update
 
     @app.callback(
         Output("tune-settings-help-modal", "children"),
@@ -366,8 +372,7 @@ def register_settings_callbacks(app):
         Output("tune-config-save-submit", "className"),
         Output("tune-config-save-status", "children"),
         Output("tune-tunable-configs", "data", allow_duplicate=True),
-        Output("run-tunable-configs", "data", allow_duplicate=True),
-        Output("run-config-buttons", "children", allow_duplicate=True),
+        Output("dashboard-config-catalog", "data", allow_duplicate=True),
         Input("tune-config-save-open", "n_clicks"),
         Input("tune-config-save-cancel", "n_clicks"),
         Input("tune-config-save-submit", "n_clicks"),
@@ -377,7 +382,6 @@ def register_settings_callbacks(app):
         State("tune-top-results", "data"),
         State("tune-best-results", "data"),
         State("tune-status", "data"),
-        State("run-selected-config", "data"),
         prevent_initial_call=True,
     )
     def save_tuned_config(
@@ -390,7 +394,6 @@ def register_settings_callbacks(app):
         top_results,
         best_results,
         status,
-        run_selected_config,
     ):
         """Save one retained Tune result on top of its exact run configuration."""
         hidden = "shared-notecard-overlay tune-config-save-modal--hidden"
@@ -412,15 +415,23 @@ def register_settings_callbacks(app):
                 no_update,
                 no_update,
                 no_update,
-                no_update,
             )
         if trigger_id == "tune-config-save-cancel":
             return (
-                hidden, no_update, None, "", "", None, "Save config",
-                default_submit_class, no_update, no_update, no_update, no_update,
+                hidden,
+                no_update,
+                None,
+                "",
+                "",
+                None,
+                "Save config",
+                default_submit_class,
+                no_update,
+                no_update,
+                no_update,
             )
         if trigger_id != "tune-config-save-submit":
-            return (no_update,) * 12
+            return (no_update,) * 11
 
         try:
             save_name = normalize_config_name(name)
@@ -433,8 +444,17 @@ def register_settings_callbacks(app):
                 className="tune-config-save-feedback tune-config-save-feedback--error",
             )
             return (
-                visible, no_update, no_update, no_update, feedback, None,
-                "Save config", default_submit_class, no_update, no_update, no_update, no_update,
+                visible,
+                no_update,
+                no_update,
+                no_update,
+                feedback,
+                None,
+                "Save config",
+                default_submit_class,
+                no_update,
+                no_update,
+                no_update,
             )
 
         configs = available_tunable_configs()
@@ -453,7 +473,6 @@ def register_settings_callbacks(app):
                 save_name,
                 "Overwrite config",
                 "tune-config-save-submit tune-config-save-submit--danger",
-                no_update,
                 no_update,
                 no_update,
                 no_update,
@@ -485,8 +504,17 @@ def register_settings_callbacks(app):
                 className="tune-config-save-feedback tune-config-save-feedback--error",
             )
             return (
-                visible, no_update, no_update, no_update, feedback, None,
-                "Save config", default_submit_class, no_update, no_update, no_update, no_update,
+                visible,
+                no_update,
+                no_update,
+                no_update,
+                feedback,
+                None,
+                "Save config",
+                default_submit_class,
+                no_update,
+                no_update,
+                no_update,
             )
 
         configs = available_tunable_configs()
@@ -504,7 +532,6 @@ def register_settings_callbacks(app):
             message,
             configs,
             configs,
-            build_run_config_buttons(configs, run_selected_config).children,
         )
 
     @app.callback(

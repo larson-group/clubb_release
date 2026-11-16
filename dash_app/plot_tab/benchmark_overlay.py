@@ -15,6 +15,7 @@ from dash_app.shared.netcdf import (
 
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
+from input.scripts.confirm_les_data import confirm_les_data, find_les_data
 from input.scripts.benchmark_converter import (
     CONVERTER_VERSION,
     convert_benchmark_file,
@@ -56,13 +57,35 @@ def sanitize_enabled_sources(case_data, enabled_sources):
     return [source for source in (enabled_sources or []) if source in available]
 
 
+def ready_benchmark_sources(case_data, readiness, *, include_unselected=False):
+    """Return prepared sources only when the readiness belongs to the current case."""
+    if not readiness or not case_data:
+        return []
+    if (readiness.get("name") != case_data.get("name")
+            or readiness.get("benchmarks") != case_data.get("benchmarks")):
+        return []
+    return sanitize_enabled_sources(case_data, readiness.get("ready" if include_unselected else "sources"))
+
+
+def acquire_benchmark_source(case_data, source):
+    """Prepare one source in the LES worker and return its ready/error button state."""
+    paths = ((case_data or {}).get("benchmarks") or {}).get(source) or {}
+    request = {"name": (case_data or {}).get("name"), "source": source, "paths": paths}
+    try:
+        for path in paths.values():
+            confirm_les_data(path)
+        return {"request": request, "state": "ready"}
+    except Exception as exc:
+        return {"request": request, "state": "error", "error": str(exc)}
+
+
 def resolve_enabled_sources(case_data, requested_sources=None, *, strict=False):
     """Resolve the selected benchmark sources for one Plot-tab case.
 
-    ``None`` means preserve the caller's current/default selection.  Explicit
-    selections are normalized, deduplicated, and limited to sources whose
-    benchmark files are present for this case.  MCP requests use ``strict`` so
-    an unavailable source is rejected instead of being silently ignored;
+    ``None`` disables all benchmark overlays. Explicit selections are normalized,
+    deduplicated, and limited to sources configured for this case. Files are
+    acquired separately before browser overlays read them. MCP requests use ``strict``
+    so an unconfigured source is rejected instead of being silently ignored;
     browser toggles use the permissive mode for the existing UI contract.
     """
     available = available_benchmark_sources(case_data)
@@ -128,6 +151,7 @@ def _freeze(value):
 
 
 def _normalize_benchmark_paths(raw_value):
+    """Retain configured file paths without requiring local data or starting downloads."""
     if raw_value is None:
         return None
     if isinstance(raw_value, str):
@@ -141,12 +165,12 @@ def _normalize_benchmark_paths(raw_value):
         if not value:
             continue
         path = os.path.abspath(os.path.expanduser(str(value)))
-        if os.path.isfile(path):
-            resolved[str(key)] = path
+        resolved[str(key)] = path
     return resolved or None
 
 
 def build_case_benchmark_info(case_def):
+    """Describe configured SAM/COAMPS sources, including data not downloaded yet."""
     case_def = case_def or {}
     sam_paths = _normalize_benchmark_paths(case_def.get("sam_benchmark_file"))
     coamps_paths = _normalize_benchmark_paths(case_def.get("coamps_benchmark_file"))
@@ -473,7 +497,12 @@ def _dataset_metadata(path):
 
 
 def _source_paths(case_data, source_name):
-    return dict(((case_data or {}).get("benchmarks") or {}).get(source_name) or {})
+    """Resolve prepared files without making a figure worker wait for a download."""
+    paths = ((case_data or {}).get("benchmarks") or {}).get(source_name) or {}
+    resolved = {label: find_les_data(path) for label, path in paths.items()}
+    if any(path is None for path in resolved.values()):
+        return {}
+    return {label: str(path) for label, path in resolved.items()}
 
 
 def _normalized_field_names(fields=None):

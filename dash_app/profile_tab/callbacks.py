@@ -9,7 +9,12 @@ from typing import Any
 from dash import ALL, Input, Output, State, callback_context, dcc, no_update
 
 from dash_app.shared.broker_client import perform_action
-from dash_app.compile_tab.build_selector import selected_launch_target
+from dash_app.compile_tab.build_selector import (
+    normalize_jax_profile,
+    normalize_run_implementation,
+    selected_build_info,
+    selected_launch_target,
+)
 
 from .figures import (
     METRICS,
@@ -31,6 +36,8 @@ from .library import (
 )
 from .layout import active_profile_items, available_profile_buttons
 from .runtime import (
+    CPU_COLUMN_DEFAULTS,
+    GPU_COLUMN_DEFAULTS,
     overwrite_confirmation,
     profile_command_display,
     profile_save_target,
@@ -338,6 +345,29 @@ def build_profile_graph_outputs(
 
 
 def register_profile_callbacks(app) -> None:
+    @app.callback(
+        Output("profile-columns", "value"),
+        Output("profile-sweep-device", "data"),
+        Input("compile-run-implementation", "data"),
+        Input("compile-run-jax-profile", "data"),
+        Input("compile-discovery", "data"),
+        State("profile-sweep-device", "data"),
+        State("profile-columns", "value"),
+    )
+    def update_column_defaults(implementation, jax_profile, _discovery, previous_device, columns):
+        """Reset the batch sweep on device changes; retain manual edits otherwise."""
+        if normalize_run_implementation(implementation) == "jax":
+            device = normalize_jax_profile(jax_profile)
+        else:
+            gpu_backend = str(selected_build_info().get("gpu") or "none").lower()
+            device = "gpu" if gpu_backend in {"openacc", "openmp"} else "cpu"
+        if device == previous_device:
+            return no_update, no_update
+        # A refreshed workspace may contain a deliberately edited sweep.
+        if previous_device is None and columns not in (None, "", CPU_COLUMN_DEFAULTS, GPU_COLUMN_DEFAULTS):
+            return no_update, device
+        return (GPU_COLUMN_DEFAULTS if device == "gpu" else CPU_COLUMN_DEFAULTS), device
+
     @app.callback(
         Output("profile-picker-expanded", "data"),
         Input("profile-picker-toggle", "n_clicks_timestamp"),

@@ -238,8 +238,8 @@ class ArtifactStore:
     ``output/agent_artifacts`` is intentionally not a report or experiment
     archive.  A bundle may contain an isolated SCM output while its broker job
     is alive, then compact manifests, logs, and PNGs after completion.  Any
-    result worth retaining must be copied into a durable output directory or
-    a ``doc/reports/<report-id>/`` bundle.  The root can therefore be removed
+    raw result worth retaining must be copied into a named output directory.
+    Final PDF, Markdown or plain-text reports belong under ``doc/``.  The root can therefore be removed
     between jobs; it is recreated lazily on the next request.
     """
 
@@ -377,7 +377,7 @@ class ArtifactStore:
                 "lifecycle": {
                     "storage": "ephemeral_staging",
                     "retention": "bounded; completed bundles may be removed at any time",
-                    "preservation": "copy final evidence to doc/reports or a named output directory",
+                    "preservation": "save final PDF/Markdown/plain-text reports under doc/; retain raw evidence in a named output directory",
                 },
                 "service": dict(SERVICE_PROVENANCE),
                 **payload,

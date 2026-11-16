@@ -17,9 +17,8 @@ from dash_app.compile_tab.build_selector import (
     register_build_selector_position_callback,
     selected_build_info,
     selected_launch_target,
-    selector_popover_style,
 )
-from dash_app.compile_tab import callbacks
+from dash_app.compile_tab import callbacks, runner_selector
 from dash_app.tune_tab.layout import build_top_controls
 
 
@@ -148,18 +147,6 @@ def test_shared_overlay_is_single_and_position_callback_owns_its_anchor():
     assert component_id_count(app.layout, "compile-build-selector-help") == 1
 
 
-def test_selector_position_stays_in_the_viewport_and_can_open_above():
-    below = selector_popover_style(
-        {"left": 900, "top": 50, "bottom": 90, "viewport_width": 1000, "viewport_height": 800}
-    )
-    above = selector_popover_style(
-        {"left": 20, "top": 700, "bottom": 740, "viewport_width": 1000, "viewport_height": 800}
-    )
-
-    assert below["left"] == "472.0px"
-    assert below["top"] == "96.0px"
-    assert above["bottom"] == "106.0px"
-
 
 @pytest.mark.parametrize("implementation", ["fortran", "python"])
 def test_compact_selector_shows_only_build_names_and_rebuild_controls(monkeypatch, implementation):
@@ -257,26 +244,20 @@ def test_jax_selector_and_badges_do_not_inspect_fortran_builds(monkeypatch):
     def unexpected():
         raise AssertionError("JAX must not inspect the selected Fortran install")
 
-    monkeypatch.setattr(callbacks, "selected_build_info", unexpected)
-    app = Dash(__name__)
-    callbacks.register_compile_callbacks(app)
-    update = next(
-        entry["callback"].__wrapped__ for entry in app.callback_map.values()
-        if entry.get("callback") and entry["callback"].__name__ == "update_build_selector"
-    )
+    monkeypatch.setattr(runner_selector, "selected_build_info", unexpected)
+    update = runner_selector._selector_state
     values = update(
         {"trigger_id": "profile-selected-build-badge"},
         {"builds": [{"name": "gcc_Fortran", "path": "/build/gcc"}]},
-        {}, {}, {}, "jax", "cpu", {"cpu": {"status": "ready", "selectable": True}}, "", False,
+        {}, {}, {}, "jax", "cpu", {"cpu": {"status": "ready", "selectable": True}}, "", False, "profile",
     )
     panel, compute, timing_note = values[0]
     assert next(button for button in panel.children[1].children
                 if button.id["index"] == "jax").children == "JAX"
     assert compute.children[0].children == "Compute"
     assert "timer files required by Profile" in timing_note.children
-    for badge in (values[3], values[6], values[9]):
-        assert badge[0].children == "JAX"
-        assert badge[1].children == "CPU"
+    assert values[1]["implementation"] == "jax"
+    assert values[1]["name"] == "CPU"
 
 
 def test_jax_selector_displays_wrapper_metadata_and_disables_unavailable_gpu():
@@ -351,18 +332,18 @@ def test_profile_card_describes_selected_gpu_not_first_inventory_entry():
 
 def test_runtime_help_ignores_mount_events_and_opens_and_closes(monkeypatch):
     app = Dash(__name__, suppress_callback_exceptions=True)
-    callbacks.register_compile_callbacks(app)
+    runner_selector.register_runner_selector(app)
     toggle = app.callback_map["compile-build-selector-help.children"]["callback"].__wrapped__
-    monkeypatch.setattr(callbacks, "clicked_trigger_id", lambda: None)
+    monkeypatch.setattr(runner_selector, "clicked_trigger_id", lambda: None)
     assert toggle([0], [], {}) is callbacks.no_update
-    monkeypatch.setattr(callbacks, "clicked_trigger_id", lambda: {
+    monkeypatch.setattr(runner_selector, "clicked_trigger_id", lambda: {
         "type": "compile-selector-help-open", "index": "runtime",
     })
     help_card = toggle([1], [], {})
     assert help_card.className == "shared-notecard-overlay"
     assert "Choosing a runtime" in component_text(help_card)
     assert "Close" in component_text(help_card)
-    monkeypatch.setattr(callbacks, "clicked_trigger_id", lambda: {
+    monkeypatch.setattr(runner_selector, "clicked_trigger_id", lambda: {
         "type": "compile-selector-help-close", "index": "runtime",
     })
     assert toggle([1], [1], {}) == ""

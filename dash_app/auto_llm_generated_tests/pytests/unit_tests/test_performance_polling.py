@@ -134,14 +134,14 @@ def test_report_catalog_only_scans_while_visible(monkeypatch):
     app = Dash(__name__)
     tab.build_tab(app)
     scans = []
-    monkeypatch.setattr(tab, "discover_reports", lambda: scans.append(True) or [])
-    refresh = callback(app, "refresh_report_catalog")
-    assert refresh(1, "welcome", "old", None) == (no_update,) * 3
+    monkeypatch.setattr(tab, "discover_documents", lambda **_kwargs: scans.append(True) or [])
+    refresh = callback(app, "refresh_documents")
+    assert refresh(1, "welcome", "", "old", None) == (no_update,) * 3
     assert scans == []
-    changed = refresh(1, "reports", "old", None)
+    changed = refresh(1, "reports", "", "old", None)
     assert scans == [True]
-    assert changed[1] == tab.catalog_token([])
-    assert refresh(2, "reports", changed[1], None) == (no_update,) * 3
+    assert changed[2] == tab.catalog_token([])
+    assert refresh(2, "reports", "", changed[2], None) == (no_update,) * 3
 
 
 def test_tune_activity_only_polls_while_visible_and_suppresses_equal_results(monkeypatch):

@@ -1,12 +1,7 @@
-import os
-from pathlib import Path
-import shutil
-import time
-
-from dash import ClientsideFunction, ALL, Input, Output, State, callback_context, html, no_update
+from dash import ALL, Input, Output, State, callback_context, html, no_update
 
 from .async_callbacks import task_callback
-from .benchmark_overlay import sanitize_enabled_sources
+from .benchmark_overlay import BENCHMARK_SOURCES, acquire_benchmark_source, sanitize_enabled_sources
 from .layout import (
     benchmark_button,
     case_button,
@@ -15,14 +10,12 @@ from .plot_types.registry import PLOT_TYPES
 from .case_cache import compact_case_data, resolve_case_data
 from dash_app.services.profiles import (
     build_case_metadata as build_case_data,
-    discover_output_directories,
+    normalize_output_directories,
     scan_case_outputs as scan_output_cases,
 )
 from dash_app.services.plots import apply_plot_request, resolve_benchmark_sources, toggle_benchmark_source
-from utilities.output_paths import OUTPUT_ROOT
 from .plot_types.shared import (
     duration_slider_marks,
-    normalize_output_directory,
     ordered_case_names,
     snap_start_time_to_step,
     start_time_slider_marks,
@@ -53,81 +46,6 @@ def _is_same_case(current_case_data, case_name, output_dirs):
     )
 
 
-def _normalize_output_dirs(output_dirs):
-    """Normalize and de-duplicate selection state without pruning missing paths."""
-    normalized = []
-    seen = set()
-    for raw_entry in output_dirs or []:
-        candidate = str(raw_entry or "").strip()
-        if not candidate:
-            continue
-        path = normalize_output_directory(candidate)
-        if path not in seen:
-            normalized.append(path)
-            seen.add(path)
-    return normalized
-
-
-def _update_output_dirs(output_dirs, action, path):
-    """Apply one explicit add/remove action while preserving every other path."""
-    selected = _normalize_output_dirs(output_dirs)
-    normalized = normalize_output_directory(str(path or ""))
-    if action == "add" and normalized not in selected:
-        return [*selected, normalized]
-    if action == "remove":
-        return [candidate for candidate in selected if candidate != normalized]
-    return selected
-
-
-def _delete_output_directory(path):
-    """Permanently remove one resolved subdirectory beneath output/."""
-    target = Path(path).expanduser().resolve()
-    output_root = Path(OUTPUT_ROOT).resolve()
-    if target == output_root or output_root not in target.parents:
-        raise ValueError("Only subdirectories inside output/ can be deleted here")
-    shutil.rmtree(target)
-
-
-def _catalog_tracking_paths(records, selected_dirs):
-    """Keep active paths and previously added external paths in the catalog."""
-    tracked = _normalize_output_dirs(selected_dirs)
-    for record in records or []:
-        if record.get("catalog_origin") != "external":
-            continue
-        path = str(record.get("path") or "")
-        if path and path not in tracked:
-            tracked.append(path)
-    return tracked
-
-
-def _output_summaries(output_dirs, cases):
-    """Describe restored/external selections using the already completed scan."""
-    summaries = []
-    for directory in _normalize_output_dirs(output_dirs):
-        names = sorted(name for name, files in cases.items()
-                       if any(os.path.dirname(path) == directory for path in files))
-        try:
-            relative = Path(directory).relative_to(Path(OUTPUT_ROOT).resolve()).as_posix()
-            label, origin = ("output" if relative == "." else f"output/{relative}"), "output"
-        except ValueError:
-            label, origin = directory, "external"
-        summaries.append({"path": directory, "label": label, "catalog_origin": origin,
-                          "case_names": names, "case_count": len(names), "available": bool(names)})
-    return summaries
-
-
-def _sort_output_catalog(records):
-    """Keep recency badges correct after a local insertion or deletion."""
-    ordered = sorted(records, key=lambda item: (-float(item.get("modified") or 0), str(item.get("label") or item["path"])))
-    found_newest = False
-    result = []
-    for index, record in enumerate(ordered):
-        newest = bool(record.get("available")) and not found_newest
-        result.append({**record, "recency_index": index, "is_newest": newest})
-        found_newest = found_newest or newest
-    return result
-
-
 def _triggered_click_is_positive():
     triggered = callback_context.triggered[0] if callback_context.triggered else None
     return bool(triggered) and _is_positive_click(triggered.get("value"))
@@ -142,121 +60,7 @@ def _clear_plot_render_state():
 
 
 def register_case_callbacks(app):
-    """Register callbacks that manage directories, cases, and case-driven resets."""
-    app.clientside_callback(ClientsideFunction("plotsChooser", "showExtra"),
-        Output("plots-extra-dir-control", "style"),
-        Input("plots-show-extra-dir", "n_clicks"),
-        State("plots-extra-dir-control", "style"),
-        prevent_initial_call=True,
-    )
-
-    @task_callback(app, "catalog",
-        Output("plots-output-catalog", "data"),
-        Input("plots-output-menu-expanded", "data"),
-        Input("plots-output-refresh", "n_clicks"),
-        Input("plots-output-dirs", "data"),
-        State("plots-output-catalog", "data"),
-    )
-    def refresh_output_catalog(expanded, _clicks, selected_dirs, current_catalog):
-        """Discover in a worker; inspect only unknown folders on selection changes."""
-        trigger = callback_context.triggered_id
-        if trigger == "plots-output-dirs":
-            known = {record["path"] for record in (current_catalog or [])}
-            missing = [path for path in _normalize_output_dirs(selected_dirs) if path not in known]
-            if not missing:
-                return no_update
-            catalog = list(current_catalog or [])
-            for path in missing:
-                records = discover_output_directories(root=path, selected_dirs=[], recursive=False)
-                direct = next((record for record in records if record["path"] == path), None)
-                if direct is None:
-                    direct = {"path": path, "label": path, "case_names": [], "case_count": 0,
-                              "available": False, "error": "No readable case output found in this directory."}
-                display = _output_summaries([path], {})[0]
-                catalog.append({**direct, "label": display["label"], "catalog_origin": display["catalog_origin"]})
-            return _sort_output_catalog(catalog)
-        if not expanded and trigger == "plots-output-menu-expanded":
-            return no_update
-        tracked = _catalog_tracking_paths(current_catalog, selected_dirs)
-        catalog = discover_output_directories(selected_dirs=tracked)
-        return catalog if catalog != current_catalog else no_update
-
-    app.clientside_callback(ClientsideFunction("plotsChooser", "toggle"),
-        Output("plots-output-menu-expanded", "data"),
-        Input("plots-output-menu-toggle", "n_clicks_timestamp"),
-        State("plots-output-menu-expanded", "data"),
-        prevent_initial_call=True,
-    )
-
-    app.clientside_callback(ClientsideFunction("plotsChooser", "render"),
-        Output("plots-available-output-list", "children"),
-        Output("plots-active-output-list", "children"),
-        Output("plots-output-menu", "className"),
-        Input("plots-output-catalog", "data"),
-        Input("plots-output-dirs", "data"),
-        Input("plots-output-menu-expanded", "data"),
-        Input("plots-output-delete-confirm", "data"),
-        State("plots-path-context", "data"),
-    )
-
-    @app.callback(
-        Output("plots-output-dirs", "data", allow_duplicate=True),
-        Output("plots-output-catalog", "data", allow_duplicate=True),
-        Output("plots-extra-dir-message", "children", allow_duplicate=True),
-        Output("plots-output-delete-confirm", "data"),
-        Output("plots-output-delete-expiry", "disabled"),
-        Input({"type": "plots-delete-output-dir", "path": ALL}, "n_clicks_timestamp"),
-        Input("plots-output-delete-expiry", "n_intervals"),
-        State("plots-output-dirs", "data"),
-        State("plots-output-catalog", "data"),
-        State("plots-output-delete-confirm", "data"),
-        prevent_initial_call=True,
-    )
-    def delete_output_directory(_clicks, _ticks, selected_dirs, catalog, confirmation):
-        """Require two clicks within three seconds before deleting an output."""
-        trigger = callback_context.triggered_id
-        now = time.time()
-        if trigger == "plots-output-delete-expiry":
-            if confirmation and now >= float(confirmation.get("expires_at") or 0.0):
-                return no_update, no_update, no_update, None, True
-            return no_update, no_update, no_update, no_update, no_update
-        if not isinstance(trigger, dict) or trigger.get("type") != "plots-delete-output-dir":
-            return no_update, no_update, no_update, no_update, no_update
-        if not _triggered_click_is_positive():
-            return no_update, no_update, no_update, no_update, no_update
-
-        target = str(Path(str(trigger.get("path") or "")).expanduser().resolve())
-        armed = (
-            confirmation
-            and confirmation.get("path") == target
-            and now < float(confirmation.get("expires_at") or 0.0)
-        )
-        if not armed:
-            return no_update, no_update, "", {"path": target, "expires_at": now + 3.0}, False
-        try:
-            _delete_output_directory(target)
-        except (OSError, ValueError) as exc:
-            return no_update, no_update, str(exc), None, True
-
-        selected = _update_output_dirs(selected_dirs, "remove", target)
-        updated_catalog = _sort_output_catalog([record for record in (catalog or []) if record.get("path") != target])
-        return selected, updated_catalog, f"Deleted {target}", None, True
-
-    app.clientside_callback(ClientsideFunction("plotsChooser", "choose"),
-        Output("plots-output-dirs", "data"),
-        Output("plots-extra-dir-input", "value"),
-        Output("plots-extra-dir-message", "children"),
-        Output("plots-output-catalog", "data", allow_duplicate=True),
-        Input({"type": "plots-add-output-dir", "path": ALL}, "n_clicks_timestamp"),
-        Input("plots-add-extra-dir", "n_clicks_timestamp"),
-        Input({"type": "plots-remove-output-dir", "path": ALL}, "n_clicks_timestamp"),
-        State("plots-output-dirs", "data"),
-        State("plots-extra-dir-input", "value"),
-        State("plots-output-catalog", "data"),
-        State("plots-path-context", "data"),
-        prevent_initial_call=True,
-    )
-
+    """Load cases from the chooser selection and register case-driven controls."""
     @app.callback(
         Output("plots-case-button-container", "children"),
         Input("plots-case-data", "data"),
@@ -352,7 +156,7 @@ def register_case_callbacks(app):
                 return (no_update,) * 23
             requested_output_dirs = (agent_request or {}).get("output_dirs")
             if requested_output_dirs:
-                output_dirs = _normalize_output_dirs(requested_output_dirs)
+                output_dirs = normalize_output_directories(requested_output_dirs)
             else:
                 requested_output_dir = str((agent_request or {}).get("output_dir") or "").strip()
                 if requested_output_dir:
@@ -375,7 +179,6 @@ def register_case_callbacks(app):
             return (no_update,) * 23
         case_data = build_case_data(case_name, files, output_dirs)
         case_data["available_cases"] = ordered_case_names(cases.keys())
-        case_data["output_summaries"] = _output_summaries(output_dirs, cases)
         same_case = _is_same_case(current_case_data, case_name, case_data.get("output_dirs"))
         case_data["preserve_plot_view"] = bool(same_case)
         updated_order = list(plot_order or [])
@@ -516,20 +319,50 @@ def register_case_callbacks(app):
         }
         return selection if selection != previous else no_update
 
+    for source in BENCHMARK_SOURCES:
+        @task_callback(app, "benchmark_" + source,
+            Output("plots-benchmark-" + source, "data"),
+            Input("plots-case-data", "data"),
+            Input("plots-enabled-benchmarks", "data"),
+            Input("plots-plot-state", "data"),
+        )
+        def prepare_benchmark(case_data, _enabled, _plot_state, _source=source):
+            """Acquire source files in the separate LES lane, leaving figures usable."""
+            return acquire_benchmark_source(case_data, _source)
+
+    app.clientside_callback(
+        """function(caseData, selected, sam, coamps, previous) {
+            return window.clubbPlotTasks.benchmarkReadiness(caseData, selected, sam, coamps, previous);
+        }""",
+        Output("plots-ready-benchmarks", "data"),
+        Input("plots-case-data", "data"),
+        Input("plots-enabled-benchmarks", "data"),
+        Input("plots-benchmark-sam", "data"),
+        Input("plots-benchmark-coamps", "data"),
+        State("plots-ready-benchmarks", "data"),
+    )
+
     @app.callback(
         Output("plots-benchmark-button-container", "children"),
         Input("plots-case-data", "data"),
         Input("plots-enabled-benchmarks", "data"),
+        Input("plots-benchmark-sam", "data"),
+        Input("plots-benchmark-coamps", "data"),
     )
-    def sync_benchmark_controls(case_data, enabled_benchmarks):
+    def sync_benchmark_controls(case_data, enabled_benchmarks, sam, coamps):
         """Render benchmark toggle buttons in the header for the active case."""
         case_data = resolve_case_data(case_data)
         available = set((case_data or {}).get("benchmarks", {}).get("available_sources") or [])
         selected = set(sanitize_enabled_sources(case_data, enabled_benchmarks))
-        return [
-            benchmark_button("sam", "SAM LES", "sam" in available, selected=("sam" in selected)),
-            benchmark_button("coamps", "COAMPS LES", "coamps" in available, selected=("coamps" in selected)),
-        ]
+        buttons = []
+        for source, state in zip(BENCHMARK_SOURCES, (sam, coamps)):
+            request = (state or {}).get("request") or {}
+            if (request.get("name") != (case_data or {}).get("name")
+                    or request.get("paths") != (case_data or {}).get("benchmarks", {}).get(source)):
+                state = None
+            buttons.append(benchmark_button(source, source.upper() + " LES", source in available,
+                                            selected=source in selected, acquisition=state))
+        return buttons
 
     @app.callback(
         Output("plots-enabled-benchmarks", "data", allow_duplicate=True),

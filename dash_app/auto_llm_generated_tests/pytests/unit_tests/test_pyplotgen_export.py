@@ -41,6 +41,9 @@ def test_runtime_uses_fixed_unique_output(tmp_path, monkeypatch):
         return _Process()
 
     monkeypatch.setattr(pyplotgen_runtime, "PYPLOTGEN_OUTPUT_ROOT", output_root)
+    monkeypatch.setattr(pyplotgen_runtime, "pyplotgen_help", lambda: {
+        'options': [{'flag': '-les', 'metavar': ''}],
+    })
     monkeypatch.setattr(pyplotgen_runtime.subprocess, "Popen", fake_popen)
 
     job, _process = pyplotgen_runtime.start_pyplotgen([str(input_a), str(input_b)])
@@ -119,7 +122,7 @@ def test_static_route_serves_only_completed_fixed_exports(tmp_path, monkeypatch)
 
 def test_plot_header_contains_export_control_and_browser_state():
     initial = {"case_data": {}, "enabled_benchmarks": []}
-    selector = _directory_case_selector(initial, [])
+    selector = _directory_case_selector(initial)
     stores = _plots_stores(
         {
             **initial,
@@ -127,7 +130,7 @@ def test_plot_header_contains_export_control_and_browser_state():
             "plot_state": {},
             "next_id": 1,
             "selected_column": 0,
-        }, []
+        }
     )
 
     assert _find(selector, "plots-pyplotgen-run") is not None

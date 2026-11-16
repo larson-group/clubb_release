@@ -3,11 +3,15 @@
 from __future__ import annotations
 
 import time
+import subprocess
 
-from dash import ClientsideFunction, Input, Output, State, html, no_update
+from dash import ALL, ClientsideFunction, Input, Output, State, callback_context, dcc, html, no_update
 
 from dash_app.shared.broker_client import perform_action
-from .pyplotgen_runtime import read_pyplotgen_progress
+from dash_app.shared.notecard import notecard
+from dash_app.persistence import WORKSPACE_TOKEN
+from .async_callbacks import task_callback
+from .pyplotgen_runtime import pyplotgen_help, read_pyplotgen_progress
 
 
 ACTIVE_STATES = {"queued", "submitting", "running", "stopping"}
@@ -28,15 +32,94 @@ def _current_job(broker_snapshot, action):
 
 
 def register_pyplotgen_callbacks(app):
+    """Wire help-derived export controls to the existing broker-owned export lifecycle."""
+    @task_callback(app, 'pyplotgen_help',
+        Output('plots-pyplotgen-help', 'data'),
+        Input('plots-pyplotgen-options', 'id'),
+    )
+    def load_pyplotgen_help(_mounted):
+        """Load the CLI's help in a worker so tab mounting does not wait for imports."""
+        try:
+            return pyplotgen_help()
+        except (OSError, ValueError, subprocess.SubprocessError) as exc:
+            return {'error': f'Could not read PyPlotGen -h: {exc}', 'options': [], 'text': ''}
+
+    @app.callback(
+        Output('plots-pyplotgen-options', 'options'),
+        Output('plots-pyplotgen-help-status', 'children'),
+        Input('plots-pyplotgen-help', 'data'),
+    )
+    def update_pyplotgen_options(help_data):
+        """Populate searchable option names and hover descriptions from the CLI help."""
+        data = help_data or {}
+        return ([{'label': option['flag'], 'value': option['flag'], 'title': option['description']}
+                 for option in data.get('options', [])], data.get('error') or '')
+
+    @app.callback(
+        Output('plots-pyplotgen-option-values', 'children'),
+        Input('plots-pyplotgen-options', 'value'),
+        Input('plots-pyplotgen-help', 'data'),
+        State({'type': 'plots-pyplotgen-option-value', 'flag': ALL}, 'value'),
+        State({'type': 'plots-pyplotgen-option-value', 'flag': ALL}, 'id'),
+    )
+    def update_pyplotgen_value_fields(selected, help_data, values, ids):
+        """Show value fields only for selected options whose help lists a value hint."""
+        previous = {item['flag']: value for item, value in zip(ids or [], values or [])}
+        catalog = {option['flag']: option for option in (help_data or {}).get('options', [])}
+        fields = []
+        for flag in selected or []:
+            metavar = catalog.get(flag, {}).get('metavar')
+            if not metavar:
+                continue
+            fields.append(html.Label([
+                html.Span(flag + ' ' + metavar),
+                dcc.Input(id={'type': 'plots-pyplotgen-option-value', 'flag': flag},
+                          type='text', value=previous.get(flag, ''), placeholder=metavar,
+                          persistence=WORKSPACE_TOKEN, persistence_type='local'),
+            ], title=catalog[flag]['description']))
+        return fields
+
+    @app.callback(
+        Output('plots-pyplotgen-help-modal', 'children'),
+        Input('plots-pyplotgen-help-open', 'n_clicks'),
+        Input({'type': 'plots-pyplotgen-help-close', 'index': ALL}, 'n_clicks'),
+        Input('plots-pyplotgen-help', 'data'),
+        State('plots-pyplotgen-help-modal', 'children'),
+        prevent_initial_call=True,
+    )
+    def show_pyplotgen_help(open_clicks, close_clicks, help_data, current):
+        """Show PyPlotGen's verbatim -h text and a short explanation of gallery export."""
+        trigger = callback_context.triggered_id
+        if isinstance(trigger, dict) and trigger.get('type') == 'plots-pyplotgen-help-close':
+            return '' if any(value for value in close_clicks or []) else no_update
+        if trigger == 'plots-pyplotgen-help-open' and not open_clicks:
+            return no_update
+        if trigger != 'plots-pyplotgen-help-open' and not current:
+            return no_update
+        data = help_data or {}
+        return notecard('PyPlotGen', [
+            html.P('PyPlotGen creates a static gallery of CLUBB plots from the active output folders. '
+                   'The completed gallery opens in a new tab.'),
+            html.P('Search for options, press Enter to select one, and repeat to add more. '
+                   'Fill in any value fields below the selector; quote paths containing spaces. '
+                   'Dash supplies -clubb and -output_dir from the active outputs and export folder.'),
+            html.Pre(data.get('error') or data.get('text') or 'Loading PyPlotGen -h…',
+                     className='plots-pyplotgen-help-text'),
+        ], {'type': 'plots-pyplotgen-help-close', 'index': 0}, subtitle='pyplotgen/pyplotgen.py -h', size='large')
+
     @app.callback(
         Output("plots-pyplotgen-action", "data"),
         Input("plots-pyplotgen-run", "n_clicks"),
         State("plots-output-dirs", "data"),
+        State('plots-pyplotgen-options', 'value'),
+        State({'type': 'plots-pyplotgen-option-value', 'flag': ALL}, 'value'),
+        State({'type': 'plots-pyplotgen-option-value', 'flag': ALL}, 'id'),
         State("dashboard-broker-jobs", "data"),
         State("plots-pyplotgen-action", "data"),
         prevent_initial_call=True,
     )
-    def launch_pyplotgen(clicks, output_dirs, broker_snapshot, current_action):
+    def launch_pyplotgen(clicks, output_dirs, options, values, ids, broker_snapshot, current_action):
+        """Forward selected flags/values, or cancel an active export through its broker owner."""
         if not clicks:
             return no_update
         try:
@@ -46,7 +129,8 @@ def register_pyplotgen_callbacks(app):
                 return {"kind": "stopping", "at": time.time(), "job": dict(response.get("job") or {})}
             response = perform_action(
                 "launch_pyplotgen_request",
-                {"output_dirs": list(output_dirs or [])},
+                {"output_dirs": list(output_dirs or []), 'options': list(options or []),
+                 'option_values': {item['flag']: value for item, value in zip(ids or [], values or [])}},
                 internal=True,
             )
             return {"kind": "started", "at": time.time(), "job": dict(response.get("job") or {})}

@@ -16,7 +16,7 @@ def render_state():
     app = Dash(__name__)
     register_display_callbacks(app)
     entry = next(item for item in app.callback_map.values()
-                 if item['callback'].__wrapped__.__name__ == 'render_tuning_state')
+                 if 'callback' in item and item['callback'].__wrapped__.__name__ == 'render_tuning_state')
     assert any(item['id'] == 'compile-run-implementation' for item in entry['inputs'])
 
     def render(algorithm='adam_gradient', backend='fortran', **changes):

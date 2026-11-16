@@ -1,8 +1,23 @@
-"""Compile-owned selected-build triggers and the shared floating selector."""
+"""Provide runtime validation and the shared runner selector's layout.
+
+Use selected_build_info and selected_launch_target to resolve the installed
+Fortran build or JAX environment without setting up a runtime. The normalizers
+normalize_run_implementation and normalize_jax_profile canonicalize preferences;
+build_implementation_capability checks required files, while
+inspect_jax_runtime_profiles invokes the read-only wrapper readiness report.
+jax_device_info resolves a CUDA selection from the cached inventory.
+
+build_selector_trigger and build_selector_trigger_children render a tab's badge.
+Mount build_selector_overlay once outside tab bodies, then register its browser
+position callback with register_build_selector_position_callback. State and
+background metadata updates are owned by runner_selector.register_runner_selector.
+Runtime inspection must execute in that worker lane, rather than an HTTP callback.
+"""
 
 from __future__ import annotations
 
 import json
+from copy import deepcopy
 import os
 import platform
 import subprocess
@@ -68,6 +83,26 @@ def inspect_jax_runtime_profiles(repo_root: Path = REPO_ROOT, *, jax_gpu="", jax
             }
     return profiles
 
+
+
+def jax_device_info(info, device):
+    """Resolve a CUDA tile's compatibility from the cached inventory and environment."""
+    if not device or (info.get("runtime") or {}).get("accelerator") != "cuda13":
+        return info
+    from clubb_jax.backends.cuda import compatibility
+    result = deepcopy(info)
+    hardware = result.setdefault("hardware", {})
+    gpu = next((gpu for gpu in hardware.get("gpus") or [] if gpu.get("uuid") == device), None)
+    selectable, reason = compatibility([gpu] if gpu else [], "")
+    if not gpu:
+        reason = f"Selected GPU is no longer detected: {device}"
+    hardware["selected_gpu"] = gpu
+    hardware["cuda_visible_devices"] = device
+    result.update(selectable=selectable, reason=reason)
+    result["status"] = (
+        "ready" if result["runtime"].get("environment_ready") else "setup_required"
+    ) if selectable else "unavailable"
+    return result
 
 def _cmake_cache(path: Path) -> dict[str, str]:
     values: dict[str, str] = {}
@@ -147,6 +182,7 @@ def selected_build_info(repo_root: Path = REPO_ROOT) -> dict[str, Any]:
         "source": source,
         "target": str(target),
         "title": "\n".join(lines),
+        "gpu": cache.get("GPU", "none"),
     }
 
 
@@ -262,6 +298,17 @@ def build_selector_overlay():
     return html.Div(
         [
             dcc.Store(id="compile-build-selector-anchor", data=None),
+            dcc.Store(id="compile-discovery", data={}),
+            dcc.Store(id="compile-build-statuses", data={}),
+            dcc.Store(id="runner-compile-state", data={}),
+            dcc.Store(id="runner-runtime-request"),
+            dcc.Store(id="runner-catalog-request"),
+            dcc.Store(id="runner-catalog-signal"),
+            dcc.Store(id="runner-environment-change"),
+            dcc.Store(id="runner-failures", data={}),
+            dcc.Store(id="runner-selected-build"),
+            dcc.Store(id="runner-badge-state"),
+            dcc.Store(id="runner-paint-signal"),
             dcc.Store(
                 id="compile-run-implementation",
                 data="fortran",
@@ -286,12 +333,15 @@ def build_selector_overlay():
                         className="compile-build-selector-backdrop",
                         **{"aria-label": "Close build selector"},
                     ),
-                    html.Div(
-                        id="compile-build-selector-menu",
-                        className="compile-build-selector-menu",
-                        role="dialog",
-                        **{"aria-label": "Choose a runtime or rebuild CLUBB"},
-                    ),
+                    html.Div([
+                        html.Div([
+                            html.Button("Refresh runners", id="runner-refresh", n_clicks=0, className="runner-refresh"),
+                            html.Div(id="runner-message", role="status"),
+                            html.Div(id="runner-loading", role="status"),
+                        ], className="compile-selector-toolbar"),
+                        html.Div("Checking available runners…", id="compile-build-selector-menu"),
+                    ], id="runner-surface", className="compile-build-selector-menu",
+                       role="dialog", **{"aria-label": "Choose a runtime or rebuild CLUBB"}),
                 ],
                 id="compile-build-selector-popover",
                 className="compile-build-selector-popover compile-build-selector-popover-closed",
@@ -301,63 +351,14 @@ def build_selector_overlay():
     )
 
 
-def selector_popover_style(anchor: dict[str, Any] | None) -> dict[str, Any]:
-    """Place the fixed popover beside its requesting trigger."""
-    if not anchor:
-        return {}
-    viewport_width = max(320.0, float(anchor.get("viewport_width") or 0))
-    viewport_height = max(240.0, float(anchor.get("viewport_height") or 0))
-    width = min(520.0, viewport_width - 16.0)
-    left = min(max(8.0, float(anchor.get("left") or 0)), viewport_width - width - 8.0)
-    top = float(anchor.get("top") or 0)
-    bottom = float(anchor.get("bottom") or 0)
-    space_below = viewport_height - bottom - 8.0
-    space_above = top - 8.0
-    style: dict[str, Any] = {"left": f"{left}px", "width": f"{width}px"}
-    if space_below < 220.0 and space_above > space_below:
-        style.update({"bottom": f"{viewport_height - top + 6.0}px", "maxHeight": f"{max(120.0, space_above - 6.0)}px"})
-    else:
-        style.update({"top": f"{bottom + 6.0}px", "maxHeight": f"{max(120.0, space_below - 6.0)}px"})
-    return style
-
-
 def register_build_selector_position_callback(app) -> None:
     """Capture trigger coordinates in the browser and close on outside/select."""
     app.clientside_callback(
-        """
-        function(runClicks, tuneClicks, profileClicks, dismissClicks, selectClicks) {
-            const ctx = window.dash_clientside.callback_context || {};
-            const triggered = ctx.triggered_id;
-            const event = (ctx.triggered || [])[0] || {};
-            if (!triggered || !(Number(event.value) > 0)) {
-                return window.dash_clientside.no_update;
-            }
-            if (triggered === "compile-build-selector-dismiss" ||
-                (typeof triggered === "object" && triggered.type === "compile-build-selector-select")) {
-                return null;
-            }
-            if (typeof triggered !== "string") {
-                return window.dash_clientside.no_update;
-            }
-            const button = document.getElementById(triggered);
-            if (!button) {
-                return window.dash_clientside.no_update;
-            }
-            const rect = button.getBoundingClientRect();
-            return {
-                trigger_id: triggered,
-                left: rect.left,
-                top: rect.top,
-                bottom: rect.bottom,
-                viewport_width: window.innerWidth,
-                viewport_height: window.innerHeight
-            };
-        }
-        """,
+        "function() { return window.clubbRunnerSelector.position(); }",
         Output("compile-build-selector-anchor", "data"),
-        Input(BUILD_SELECTOR_TRIGGER_IDS[0], "n_clicks"),
-        Input(BUILD_SELECTOR_TRIGGER_IDS[1], "n_clicks"),
-        Input(BUILD_SELECTOR_TRIGGER_IDS[2], "n_clicks"),
+        Input(BUILD_SELECTOR_TRIGGER_IDS[0], "n_clicks", allow_optional=True),
+        Input(BUILD_SELECTOR_TRIGGER_IDS[1], "n_clicks", allow_optional=True),
+        Input(BUILD_SELECTOR_TRIGGER_IDS[2], "n_clicks", allow_optional=True),
         Input("compile-build-selector-dismiss", "n_clicks"),
         Input({"type": "compile-build-selector-select", "index": ALL}, "n_clicks"),
         prevent_initial_call=True,

@@ -112,7 +112,7 @@ def test_registered_controls_lock_with_the_rest_of_a_saved_workspace():
     app = Dash(__name__)
     register_display_callbacks(app)
     entry = next(item for item in app.callback_map.values()
-                 if item['callback'].__wrapped__.__name__ == 'render_tuning_state')
+                 if 'callback' in item and item['callback'].__wrapped__.__name__ == 'render_tuning_state')
     callback = entry['callback'].__wrapped__
     result = callback(
         status={}, top_results=[], best_results=[], loss_runs={}, active_job={},

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+from copy import deepcopy
 import hashlib
 import json
 import os
@@ -73,6 +74,65 @@ def inspect_runtime(
             gpu["cuda_ordinal"] = index if getattr(backend, "CUDA_ORDINALS", False) else None
             gpu["jax_device_index"] = index
     selected_gpu = selection.devices[0] if selection.devices and selection.order_known else None
+    runtime_metadata = {
+        "xla_preallocate": None, "cuda_major": None,
+        "minimum_driver": None, "minimum_compute_capability": None,
+    }
+    if hasattr(backend, "runtime_metadata"):
+        runtime_metadata.update(backend.runtime_metadata())
+    info = {
+        "schema_version": 1,
+        "profile": profile,
+        "selectable": selectable,
+        "status": "unavailable" if not selectable else "setup_required",
+        "reason": compatibility_reason,
+        "hardware": {
+            "cpu": cpu,
+            "gpus": gpus,
+            "cuda_visible_devices": selection.resolved_devices,
+            "requested_cuda_visible_devices": requested,
+            "cuda_device_order": device_order,
+            "cuda_device_order_source": os.environ.get(
+                "CLUBB_JAX_CUDA_DEVICE_ORDER_SOURCE", "user setting"
+            ),
+            "selection_note": selection.note,
+            "selected_gpu": selected_gpu,
+        },
+        "runtime": {
+            "xla_flags": os.environ.get("XLA_FLAGS", ""),
+            **runtime_metadata,
+            "backend_verified": False,
+            "accelerator": accelerator,
+            "venv": str(venv),
+            "python": {
+                "version": str(planned_python or platform.python_version()),
+                "installed": False,
+            },
+            "jax": {
+                "required": required_jax,
+                "installed": None,
+            },
+            "jaxlib": {
+                "required": required_jax,
+                "installed": None,
+            },
+        },
+    }
+
+    return refresh_environment(info, requirements)
+
+
+def refresh_environment(info: dict[str, object], requirements: Path) -> dict[str, object]:
+    """Refresh installed-package readiness while preserving a discovered device inventory.
+
+    ``info`` is an inspect_runtime report. No hardware query or environment setup
+    occurs; the returned report owns a copy of the input's nested metadata.
+    """
+    info = deepcopy(info)
+    runtime = info["runtime"]
+    venv = Path(runtime["venv"])
+    backend = backends.get_backend(str(runtime["accelerator"]))
+    required_jax = runtime["jax"]["required"]
     installed = _installed_runtime(venv)
     packages = (
         installed.get("packages")
@@ -82,6 +142,8 @@ def inspect_runtime(
     expected_packages = backend.expected_packages(required_jax)
     required_packages = list(expected_packages)
 
+    selectable = bool(info["selectable"])
+    compatibility_reason = str(info.get("reason") or "")
     requirements_hash = ""
     try:
         requirements_hash = hashlib.sha256(requirements.read_bytes()).hexdigest()
@@ -111,53 +173,15 @@ def inspect_runtime(
         status = "setup_required"
         reason = "The managed environment will be prepared when the run starts."
 
-    python_version = str(
-        installed.get("python") or planned_python or platform.python_version()
+    runtime["environment_ready"] = environment_ready
+    info.update(selectable=selectable, status=status, reason=reason)
+    runtime["python"].update(
+        version=str(installed.get("python") or runtime["python"]["version"]),
+        installed=bool(installed),
     )
-    runtime_metadata = {
-        "xla_preallocate": None, "cuda_major": None,
-        "minimum_driver": None, "minimum_compute_capability": None,
-    }
-    if hasattr(backend, "runtime_metadata"):
-        runtime_metadata.update(backend.runtime_metadata())
-    return {
-        "schema_version": 1,
-        "profile": profile,
-        "selectable": selectable,
-        "status": status,
-        "reason": reason,
-        "hardware": {
-            "cpu": cpu,
-            "gpus": gpus,
-            "cuda_visible_devices": selection.resolved_devices,
-            "requested_cuda_visible_devices": requested,
-            "cuda_device_order": device_order,
-            "cuda_device_order_source": os.environ.get(
-                "CLUBB_JAX_CUDA_DEVICE_ORDER_SOURCE", "user setting"
-            ),
-            "selection_note": selection.note,
-            "selected_gpu": selected_gpu,
-        },
-        "runtime": {
-            "xla_flags": os.environ.get("XLA_FLAGS", ""),
-            **runtime_metadata,
-            "backend_verified": False,
-            "accelerator": accelerator,
-            "venv": str(venv),
-            "python": {
-                "version": python_version,
-                "installed": bool(installed),
-            },
-            "jax": {
-                "required": required_jax,
-                "installed": packages.get("jax"),
-            },
-            "jaxlib": {
-                "required": required_jax,
-                "installed": packages.get("jaxlib"),
-            },
-        },
-    }
+    for name in ("jax", "jaxlib"):
+        runtime[name]["installed"] = packages.get(name)
+    return info
 
 
 def format_human(info: dict[str, object]) -> str:

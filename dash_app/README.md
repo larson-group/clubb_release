@@ -135,11 +135,15 @@ reruns use that saved choice even if the chooser changes later.
   time-height, time-series, budget, and subcolumn plots from the NetCDF files.
 - **Tune tab:** configure and monitor tuning runs. Choose JAX CPU/GPU in the
   runtime chooser, or use a [Python build](#python-runs-and-tuning) for the
-  Fortran loss backend.
+  Fortran loss backend. Taylor diagrams, parameter spread and the parameter
+  landscape are always shown and update automatically as new results arrive.
+  Correlations, sensitivity and interactions are optional under **Additional
+  plots**. Plot calculations run in the background, separately from live status,
+  uptime and best loss.
 - **Tutorial tab:** explore CLUBB concepts through interactive lessons,
   including a guide to the model equations and the ADG1 two-Gaussian explorer.
-- **Reports tab:** browse saved investigation reports from `doc/reports/`,
-  including their figures, data, and provenance.
+- **Documents tab:** browse PDF, Markdown and plain-text (`.txt`) files under [`doc/`](../doc/),
+  including `README.md` files. Search by filename or relative path.
 - **Misc tab:** open focused diagnostics such as the SAM w–rₜ neighborhood
   viewer, Mixing Length Trajectories explorer, and
   [Affine Coherence Mixing Length](#examine-coherent-mixing-lengths) diagnostic.
@@ -222,9 +226,15 @@ default. Leave it off when comparing interaction performance.
 
 Pages load on their first visit and retain their state when you switch tabs.
 Tutorial lessons and Misc tools initialize individually; Compile, Run, Profile,
-and Tune initialize together because they share the build selector. Unvisited
-pages do not scan outputs or generate figures during startup. Saved tab and
-control selections still restore on refresh.
+and Tune initialize independently. Their shared runner chooser stays available
+across tabs, opens immediately, and checks builds and JAX readiness in the
+background once per page session. Compile and the chooser share one build
+catalog; compilation and deletion update it. Opening the chooser or changing
+CPU/GPU preferences reuses that state. Selection paints from cached panels
+without waiting for dashboard callbacks. **Refresh runners** rescans changes made
+outside Dash. Runtime setup updates readiness without rediscovering devices.
+Unvisited pages do not scan outputs or generate figures during startup. Saved
+tab and control selections still restore on refresh.
 
 The launcher supervises Dash and attempts recovery after a crash. Lifecycle
 and broker details are in the
@@ -233,6 +243,14 @@ and broker details are in the
 ### Profiling
 
 Use **Profile** to choose a case, process counts, batch sizes, and repetitions.
+The batch-size sweep defaults to `1,2,3,4,5,6,7,8,12,16,32,64` columns per
+process for CPU targets and `256,512,1024,2048,4096` for GPU targets. Switching
+between CPU and GPU resets that field; switching within the same device type
+preserves your edits. JAX uses its selected CPU/GPU target. Compiled builds
+currently use their OpenACC/OpenMP GPU build setting as a heuristic, even if
+that build is run on a CPU. An explicit executable override does not change
+this chooser-based default. Process counts are a separate sweep.
+
 Results appear after each measured repetition; warmups are excluded from the
 default plots. Saved profiles can be overlaid, compared with a baseline, or
 viewed as process distributions and exclusive-cost decompositions.
@@ -245,15 +263,86 @@ metadata so Dash can flag potentially incomparable results. Storage and update
 details are documented in the
 [development notes](./DEVELOPMENT.md#profile-results).
 
+### Documents
+
+Save finished reports as PDF, Markdown or plain text (`.txt`) under [`doc/`](../doc/), for example
+[`sam-heatmap-color-signals.pdf`](../doc/sam-heatmap-color-signals.pdf). The
+Documents tab discovers them automatically; search matches filenames and paths
+relative to `doc/`. Files are grouped as PDFs, Markdown, then Text, with paths
+sorted alphabetically within each group. Markdown includes `README.md` files.
+Hidden paths and other formats are excluded. Plain text preserves spacing and line breaks without interpreting
+Markdown or HTML. Text files use UTF-8. No index, manifest or publisher is required.
+
+Finish the research before writing the document. Embed figures in a PDF, or keep
+Markdown images beside the document. Raw runs, logs and other generated research
+artifacts belong in a named `output/` directory.
+
+Relative links in Markdown open their target file in a new browser tab, resolved
+from the Markdown file's folder. Linked source files such as `.F90` and `.py`
+open as plain text; PDFs and images use the browser viewer. Files outside `doc/`
+must be tracked by Git. External links keep their original destinations.
+
+To open a document through the semantic browser interface, use
+`reports/open_document` with `{"path": "sam-heatmap-color-signals.pdf"}`.
+
 ### Plot loading
 
-The output chooser discovers folders when Plots first loads, when opened, or
-when **Refresh outputs** is clicked. Adding and removing folders updates the
-selection immediately; metadata and figures load in background workers.
+Enable **SAM LES** or **COAMPS LES** to compare against that case's configured
+benchmark data. Enabling a source starts the shared
+[LES finder/downloader](../input/scripts/confirm_les_data.py) in the background,
+even if no plots are open yet. The button shows a spinner and **Loading…** while
+its files are being found or downloaded. Model plots and controls remain usable;
+the overlay appears automatically when ready. A failed download shows an error
+beside the button; toggle the source off and on to retry. Turning it off or
+switching cases prevents a late result from adding an unwanted overlay. An
+already running download may finish and remain cached for later use.
+
+Shared files and local downloads in `input/les_and_clubb_benchmark_runs` are reused.
+Opening a case with LES sources disabled or listing outputs does not download
+data. Custom expressions referencing `les.<field>` also prepare their LES source
+in the background, then update automatically.
+
+
+Time-height comparisons stack one panel per selected output directory, followed
+by any enabled LES benchmark panels. Panels share axes and a color scale and
+use the selected averaging interval. In comparison mode, choose a variable
+with time and height dimensions in every selected output.
+
+The output chooser keeps **Available** and **Active** folders together inside
+one box, separated by a vertical divider. Click an available folder to move it
+into the active side as a bubble; remove a bubble to return the folder to the
+available side. Active bubbles flow onto additional lines. The compact view has
+a fixed height and shows five available entries. Click the **Output folders ▾**
+heading to expand both sides downward over the content below, without resizing
+the header or plot area; click again to collapse. The expanded view includes all
+available entries and scrolls for longer lists.
+
+The chooser discovers folders when it first loads or when **Refresh outputs**
+is clicked. **Refresh outputs** and **Add extra folder** sit in the chooser's
+top bar. Adding an extra folder opens a path field in the expanded overlay and
+accepts paths outside the discovered list.
+Moving folders updates the selection immediately; metadata and figures load in background workers.
 Existing figures stay visible with an updating label until replacements are
 ready. Rapid changes apply only the latest selection. The selected case, plot
 cards, and view controls survive a browser refresh; older saved workspaces
 migrate automatically.
+
+### PyPlotGen export
+
+The **PyPlotGen** section in the top bar creates a static plot gallery from the
+active output folders. Search the options selector, press **Enter** to add an
+option, and repeat to select more. For example, search for `pdf` to select
+`-pdf`, or add `-cases` and enter `bomex arm` in its value field to limit the
+gallery to those cases. Options that take values show an additional field;
+quote paths containing spaces. `-les` is selected initially and can be removed.
+
+Click **Generate PyPlotGen** to start; the same button cancels an active export.
+The completed gallery opens in a new tab and is stored under `output/pyplotgen/`.
+Click **(?)** to see what PyPlotGen does and its complete command-line help.
+The option list and help come from
+[`pyplotgen.py -h`](../pyplotgen/pyplotgen.py), including requirements and option
+restrictions. Dash supplies `-clubb` and `-output_dir` from the active folders
+and export destination, so those and the help flags are excluded from selection.
 
 ### JULY_2017 statistics vs. 3-D recreation viewer
 
@@ -389,8 +478,8 @@ Private immutable manifests and temporary execution evidence still live under
 ignored, owner-private `output/agent_artifacts/`. This is **ephemeral staging**,
 not an experiment or report archive: active bundles are protected from broker
 cleanup, completed bundles have bounded retention, and the root may be cleared
-between jobs. Copy evidence that must survive into `doc/reports/<report-id>/`
-(or a named `output/` directory for a raw run).
+between jobs. Save final reports as PDF, Markdown or plain text under `doc/`. Keep raw runs and other
+generated research artifacts in a named `output/` directory.
 Plot artifacts are selected by `run_id`, exact requested/actual time windows,
 and coordinate metadata, so a later same-case run cannot silently change them.
 
@@ -489,16 +578,14 @@ COAMPS benchmark files in:
 pyplotgen/config/Case_definitions.py
 ```
 
-Currently those case definitions use the repository benchmark symlink:
-
-```text
-input/les_and_clubb_benchmark_runs/
-```
-
-`input/les_and_clubb_benchmark_runs` defaults to
-`/home/pub/les_and_clubb_benchmark_runs`. The app only shows LES overlay
-options when the configured files exist on the local machine. If the archive is
-mounted somewhere else, retarget that symlink locally.
+The app offers the sources configured for each case, even before their files
+are available locally. Enable **SAM** or **COAMPS** to include that source in
+the plots. A background worker uses the shared
+[LES finder/downloader](../input/scripts/confirm_les_data.py) to reuse existing
+files or download missing ones; an input symlink is optional. See
+[plot loading](#plot-loading) for progress and retry behavior, and
+[acquiring LES benchmark data](../input/README.md#acquiring-les-benchmark-data)
+for search locations, download placement and standalone use.
 
 ### Shared UI components
 

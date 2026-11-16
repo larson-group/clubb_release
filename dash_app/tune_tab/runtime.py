@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import os
 from pathlib import Path
 import re
@@ -21,6 +22,7 @@ from .state import (
 )
 from tuner.job_runtime import TunerJob, tuner_worker_env, tuner_runtime_settings
 from tuner.status import atomic_write_json, write_control
+from tuner.sample_history import sample_history_paths
 from tuner.workspaces import create_workspace, replace_draft_request, workspace_display_name
 from input.scripts.create_case_namelist import filter_tuned_overrides, normalize_override_string
 from dash_app.run_tab.runtime import append_launch_target
@@ -451,6 +453,24 @@ def clear_finished_job(job_data):
             TUNE_ACTIVE.clear()
 
 
+def sample_history_signature(job_dir):
+    """Identify published history from file metadata without opening the chunks."""
+    if not job_dir:
+        return ""
+    try:
+        paths = sample_history_paths(Path(job_dir))
+    except Exception:
+        return ""
+    parts = []
+    for path in paths:
+        try:
+            stat = path.stat()
+        except OSError:
+            continue
+        parts.append(f"{path.name}:{stat.st_size}:{stat.st_mtime_ns}")
+    return hashlib.sha256("|".join(parts).encode()).hexdigest() if parts else ""
+
+
 def read_tuning_status(status_path):
     """Read the worker status file, tolerating partial or missing writes."""
     if not status_path:
@@ -459,7 +479,10 @@ def read_tuning_status(status_path):
     if not path.is_file():
         return empty_status_payload()
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        if isinstance(payload, dict):
+            payload["sample_history_signature"] = sample_history_signature(payload.get("job_dir") or path.parent)
+        return payload
     except Exception:
         return empty_status_payload()
 

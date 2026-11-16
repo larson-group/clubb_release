@@ -12,11 +12,8 @@ UNKNOWN = object()
 
 
 def _benchmark_env():
-    """Return benchmark root constants used by pyplotgen case definitions."""
+    """Use canonical collection paths; the shared LES helper resolves actual files later."""
     benchmark_root = os.path.join(REPO_ROOT, "input", "les_and_clubb_benchmark_runs")
-    local_root = os.path.join(REPO_ROOT, "pyplotgen", "les_and_clubb_benchmark_runs")
-    if not (os.path.isdir(benchmark_root) or os.path.islink(benchmark_root)):
-        benchmark_root = local_root
     benchmark_root = os.path.abspath(benchmark_root) + os.sep
     return {
         "REPO_ROOT": REPO_ROOT,

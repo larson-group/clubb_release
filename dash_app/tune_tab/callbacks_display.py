@@ -6,6 +6,7 @@ import json
 import math
 from pathlib import Path
 
+from dash_app.plot_tab.async_callbacks import task_callback
 from dash import ALL, Input, Output, State, dcc, html, no_update
 import numpy as np
 import plotly.graph_objects as go
@@ -13,6 +14,8 @@ from plotly.colors import get_colorscale
 
 from dash_app.shared.plot_theme import figure_theme
 
+from .runtime import sample_history_signature as _sample_history_signature
+from .state import PRIMARY_DIAGNOSTIC_PLOTS, OPTIONAL_DIAGNOSTIC_PLOTS
 from .callbacks_settings import parameter_group_specs
 from .algorithm_controls import algorithm_backend_error, algorithm_summary, option_ids, options_ready
 from dash_app.compile_tab.build_selector import normalize_run_implementation
@@ -856,28 +859,16 @@ def _job_dir_from_status(status):
     return Path(job_dir)
 
 
-def _sample_history_signature(job_dir):
-    """Return a cheap signature for all available sample-history chunks."""
-    if job_dir is None:
-        return ""
-    try:
-        paths = sample_history_paths(Path(job_dir))
-    except Exception:
-        return ""
-    parts = []
-    for path in paths:
-        try:
-            stat = path.stat()
-        except OSError:
-            continue
-        parts.append(f"{path.name}:{stat.st_size}:{stat.st_mtime_ns}")
-    return "|".join(parts)
+_HISTORY_CACHE = {}
 
 
 def _load_sample_history(job_dir):
     """Load sample-history chunks from one job directory."""
     if job_dir is None:
         return None
+    signature = (str(job_dir), _sample_history_signature(job_dir))
+    if signature in _HISTORY_CACHE:
+        return _HISTORY_CACHE[signature]
     paths = sample_history_paths(Path(job_dir))
     if not paths:
         return None
@@ -896,6 +887,9 @@ def _load_sample_history(job_dir):
         history["sample_id"] = np.concatenate([chunk["sample_id"] for chunk in chunks], axis=0)
         history["batch_id"] = np.concatenate([chunk["batch_id"] for chunk in chunks], axis=0)
         history["chunk_paths"] = paths
+        _HISTORY_CACHE.clear()
+        if sum(value.nbytes for value in history.values() if isinstance(value, np.ndarray)) <= 64 * 1024 * 1024:
+            _HISTORY_CACHE[signature] = history
         return history
     finally:
         for chunk in chunks:
@@ -1032,7 +1026,18 @@ def _aggregate_sample_matrix(matrix, mode):
         return values
     if values.size == 0:
         return np.full(values.shape[0], np.nan)
-    return np.asarray([_aggregate_finite(row, mode) for row in values], dtype=float)
+    valid = _plot_metric_mask(values)
+    usable = valid.any(axis=1)
+    result = np.full(values.shape[0], np.nan)
+    if not usable.any():
+        return result
+    selected = np.where(valid[usable], values[usable], np.nan)
+    if mode == "p90":
+        result[usable] = np.nanpercentile(selected, 90.0, axis=1)
+    else:
+        reducer = {"median": np.nanmedian, "min": np.nanmin, "max": np.nanmax}.get(mode, np.nanmean)
+        result[usable] = reducer(selected, axis=1)
+    return result
 
 
 def _observation_mask(history, case_value, field_value, window_value):
@@ -1904,7 +1909,7 @@ def format_status_text(status):
     summary = html.Div(
         [
             html.Div([html.Strong(f"{samples_per_second:.2f}" if elapsed_seconds else "--"), html.Span("samples/s")]),
-            html.Div([html.Strong(_duration(elapsed_seconds)), html.Span("uptime")]),
+            html.Div([html.Strong(_duration(elapsed_seconds), id="tune-runtime-uptime"), html.Span("uptime")]),
         ],
         className="tune-runtime-rate-summary",
     )
@@ -2140,8 +2145,23 @@ def case_window_setup_ready(
     return valid_rows == len(selected_cases)
 
 
+
 def register_display_callbacks(app):
-    """Register result-table and status-display callbacks."""
+    """Register live status and background diagnostic callbacks."""
+    app.clientside_callback(
+        "function(extra) { return Array.from(new Set(PRIMARY.concat((extra || []).filter(name => OPTIONAL.includes(name))))); }"
+        .replace("PRIMARY", json.dumps(list(PRIMARY_DIAGNOSTIC_PLOTS)))
+        .replace("OPTIONAL", json.dumps(list(OPTIONAL_DIAGNOSTIC_PLOTS))),
+        Output("tune-diagnostic-plots", "data"), Input("tune-postprocessing", "value"),
+    )
+    app.clientside_callback(
+        "function(status) { return window.clubbTuneDisplay.clock(status); }",
+        Output("tune-clock-signal", "data"), Input("tune-status", "data"),
+    )
+    app.clientside_callback(
+        "function(enabled) { return window.clubbTuneDisplay.visibility(enabled); }",
+        Output("tune-postprocessing-signal", "data"), Input("tune-diagnostic-plots", "data"),
+    )
 
     @app.callback(
         Output("tune-config-save-open", "disabled"),
@@ -2172,7 +2192,7 @@ def register_display_callbacks(app):
             return no_update, no_update
         return build_runtime_best_loss_figure(status), signature
 
-    @app.callback(
+    @task_callback(app, "tune_controls",
         Output("tune-landscape-x-param", "options"),
         Output("tune-landscape-x-param", "value"),
         Output("tune-landscape-y-param", "options"),
@@ -2189,6 +2209,9 @@ def register_display_callbacks(app):
         Input({"type": "tune-range-member", "row": ALL, "member": ALL}, "id"),
         Input({"type": "tune-range-member", "row": ALL, "member": ALL}, "value"),
         Input("tune-range-row-order", "data"),
+        Input("tune-diagnostic-plots", "data"),
+        Input("tune-postprocessing-refresh", "n_clicks"),
+        Input("dashboard-tabs", "value"),
         State("tune-landscape-x-param", "value"),
         State("tune-landscape-y-param", "value"),
         State("tune-landscape-metric", "value"),
@@ -2201,6 +2224,7 @@ def register_display_callbacks(app):
         member_ids,
         member_values,
         range_row_order,
+        enabled, refresh, tab,
         current_x,
         current_y,
         current_metric,
@@ -2208,7 +2232,9 @@ def register_display_callbacks(app):
         current_field,
         current_window,
     ):
-        """Keep landscape controls matched to available sample-history axes."""
+        """Keep landscape controls matched to the published sample history."""
+        if tab != "tune" or not set(enabled or []) & {"landscape", "correlation", "sensitivity", "interaction"}:
+            return (no_update,) * 12
         selected_param_names = [
             spec["targets"][0]
             for spec in parameter_group_specs(member_ids, member_values, range_row_order)
@@ -2273,7 +2299,7 @@ def register_display_callbacks(app):
             _first_valid(current_window, window_values, _LANDSCAPE_ALL),
         )
 
-    @app.callback(
+    @task_callback(app, "tune_landscape",
         Output("tune-landscape-plot", "figure"),
         Output("tune-parameter-correlation-plot", "figure"),
         Output("tune-field-sensitivity-plot", "figure"),
@@ -2289,6 +2315,9 @@ def register_display_callbacks(app):
         Input("tune-landscape-field", "value"),
         Input("tune-landscape-window", "value"),
         Input("theme-store", "data"),
+        Input("tune-diagnostic-plots", "data"),
+        Input("tune-postprocessing-refresh", "n_clicks"),
+        Input("dashboard-tabs", "value"),
         State("tune-landscape-signature", "data"),
     )
     def render_landscape(
@@ -2302,13 +2331,17 @@ def register_display_callbacks(app):
         field_value,
         window_value,
         theme,
+        enabled, refresh, tab,
         previous_signature,
     ):
-        """Render all-sample parameter landscape diagnostics."""
+        """Render enabled landscape plots when published history changes."""
+        if tab != "tune" or not set(enabled or []) & {"landscape", "correlation", "sensitivity", "interaction"}:
+            return (no_update,) * 5
         job_dir = _job_dir_from_status(status)
         history_signature = _sample_history_signature(job_dir)
         signature = json.dumps(
             {
+                "enabled": sorted(enabled or []),
                 "job_dir": str(job_dir) if job_dir is not None else None,
                 "theme": theme,
                 "history": history_signature,
@@ -2373,7 +2406,7 @@ def register_display_callbacks(app):
             field_value,
             window_value,
             aggregation,
-        )
+        ) if set(enabled) & {"landscape", "correlation"} else None
         return (
             _theme_diagnostic_figure(build_landscape_figure(
                 history,
@@ -2387,7 +2420,7 @@ def register_display_callbacks(app):
                 field_value,
                 window_value,
                 z_values=z_values,
-            ), theme),
+            ), theme) if "landscape" in enabled else no_update,
             _theme_diagnostic_figure(build_parameter_correlation_figure(
                 history,
                 request,
@@ -2397,7 +2430,7 @@ def register_display_callbacks(app):
                 field_value,
                 window_value,
                 z_values=z_values,
-            ), theme),
+            ), theme) if "correlation" in enabled else no_update,
             _theme_diagnostic_figure(build_field_sensitivity_figure(
                 history,
                 request,
@@ -2405,7 +2438,7 @@ def register_display_callbacks(app):
                 case_value,
                 field_value,
                 window_value,
-            ), theme),
+            ), theme) if "sensitivity" in enabled else no_update,
             _theme_diagnostic_figure(build_field_interaction_figure(
                 history,
                 request,
@@ -2413,11 +2446,11 @@ def register_display_callbacks(app):
                 case_value,
                 field_value,
                 window_value,
-            ), theme),
+            ), theme) if "interaction" in enabled else no_update,
             signature,
         )
 
-    @app.callback(
+    @task_callback(app, "tune_diagnostics",
         Output("tune-taylor-diagram", "figure"),
         Output("tune-parameter-box-plot", "figure"),
         Output("tune-diagnostics-signature", "data"),
@@ -2427,7 +2460,10 @@ def register_display_callbacks(app):
         Input("tune-parameter-box-scale", "value"),
         Input("tune-taylor-window-display", "value"),
         Input("theme-store", "data"),
-        State("tune-status", "data"),
+        Input("tune-diagnostic-plots", "data"),
+        Input("tune-postprocessing-refresh", "n_clicks"),
+        Input("dashboard-tabs", "value"),
+        Input("tune-status", "data"),
         State("tune-diagnostics-signature", "data"),
     )
     def render_diagnostics(
@@ -2437,10 +2473,13 @@ def register_display_callbacks(app):
         scale_mode,
         window_display,
         theme,
+        enabled, refresh, tab,
         status,
         previous_signature,
     ):
-        """Update diagnostics figures without rebuilding the graph components."""
+        """Render Taylor and parameter plots when retained results change."""
+        if tab != "tune" or not set(enabled or []) & {"taylor", "parameters"}:
+            return (no_update,) * 3
         best_results = best_results or []
         best_results_by_case = best_results_by_case or {}
         request = _read_job_request(_job_dir_from_status(status))
@@ -2452,18 +2491,18 @@ def register_display_callbacks(app):
             window_display,
             scale_mode,
             parameter_context,
-        ) + ":" + str(theme)
+        ) + ":" + str(theme) + ":" + ",".join(sorted(enabled))
         if signature == (previous_signature or ""):
             return no_update, no_update, no_update
         return (
-            _theme_diagnostic_figure(build_taylor_figure(best_results, window_display), theme),
+            _theme_diagnostic_figure(build_taylor_figure(best_results, window_display), theme) if "taylor" in enabled else no_update,
             _theme_diagnostic_figure(build_parameter_box_figure(
                 best_results,
                 best_results_by_case,
                 selected_box_groups,
                 scale_mode,
                 parameter_context,
-            ), theme),
+            ), theme) if "parameters" in enabled else no_update,
             signature,
         )
 

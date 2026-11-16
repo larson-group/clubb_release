@@ -433,7 +433,7 @@ class ProfilePlotType(BasePlotType):
             Output(self.error_id(MATCH), "children"),
             Input(self.var_input_id(MATCH), "value"),
             Input("plots-case-data", "data"),
-            Input("plots-enabled-benchmarks", "data"),
+            Input("plots-ready-benchmarks", "data"),
             Input("plots-global-time-range", "value"),
             Input("plots-global-time-point", "value"),
             Input("plots-time-override", "data"),
@@ -463,6 +463,7 @@ class ProfilePlotType(BasePlotType):
             graph_id,
         ):
             case_data = resolve_case_data(case_data)
+            enabled_benchmarks = benchmark_overlay.ready_benchmark_sources(case_data, enabled_benchmarks)
             plot_id = int((graph_id or {}).get("index", -1))
             size_value = shared.normalize_plot_size(size_store_value)
             active_time = shared.resolve_active_time_values(case_data, time_range, time_point, time_override)

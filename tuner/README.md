@@ -6,6 +6,13 @@ loss. Use the CLI below or [Dash’s Tune tab](../dash_app/tune_tab/tab.py) to s
 cases, parameters, a search algorithm and the Fortran or JAX backend.
 See [algorithm choices](algorithms/README.md) for their differences and requirements.
 
+Benchmark files are acquired on demand during loss-input preparation. Existing
+shared data are reused; missing files are added to a writable data directory or
+the local `input/les_and_clubb_benchmark_runs` directory. See
+[LES acquisition](../input/README.md#acquiring-les-benchmark-data)
+for search paths, manual preparation and download errors. No acquisition is
+triggered by listing cases or editing tuning settings.
+
 ## Quick start
 
 Run these commands from the repository root. This evaluates 16 Latin hypercube

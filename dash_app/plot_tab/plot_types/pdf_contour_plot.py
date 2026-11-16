@@ -2531,7 +2531,7 @@ class PdfContourPlotType(BasePlotType):
             Input("plots-global-time-point", "value"),
             Input("plots-time-override", "data"),
             Input("plots-selected-column", "data"),
-            Input("plots-enabled-benchmarks", "data"),
+            Input("plots-ready-benchmarks", "data"),
             Input("theme-store", "data"),
             Input(self.size_store_id(MATCH), "data"),
             State(self.graph_id(MATCH), "relayoutData"),
@@ -2553,6 +2553,7 @@ class PdfContourPlotType(BasePlotType):
             relayout_data,
         ):
             case_data = resolve_case_data(case_data)
+            enabled_benchmarks = benchmark_overlay.ready_benchmark_sources(case_data, enabled_benchmarks)
             size_value = shared.normalize_plot_size(size_store_value or "large")
             active_time = shared.resolve_active_time_values(case_data, time_range, time_point, time_override)
             signal = int(active_time["start_seconds"]) if active_time["start_seconds"] is not None else ""

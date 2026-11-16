@@ -444,16 +444,22 @@ body.tune-ui-dragging * {
 }
 
 .tune-landscape-toolbar {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  align-items: start;
+  align-content: start;
+  min-width: 0;
   border: 1px solid #334155;
   border-radius: 8px;
   padding: 10px 12px 12px;
-  margin-bottom: 12px;
 }
 
 .tune-landscape-intro {
   display: flex;
-  align-items: baseline;
-  gap: 10px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
   margin: 0 0 10px;
 }
 
@@ -472,13 +478,6 @@ body.tune-ui-dragging * {
 
 .tune-landscape-toolbar > .tune-landscape-control-group {
   display: grid;
-}
-
-.tune-landscape-toolbar {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(150px, 1fr));
-  gap: 8px;
-  align-items: start;
 }
 
 .tune-landscape-toolbar > .tune-landscape-intro {
@@ -504,7 +503,7 @@ body.tune-ui-dragging * {
 
 .tune-landscape-row {
   display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr);
   gap: 12px;
   align-items: stretch;
 }
@@ -627,18 +626,6 @@ body.tune-ui-dragging * {
   border-radius: 6px;
   overflow: hidden;
   height: 430px;
-}
-
-@media (max-width: 1250px) {
-  .tune-landscape-toolbar {
-    grid-template-columns: repeat(2, minmax(180px, 1fr));
-  }
-
-  .tune-landscape-intro {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 2px;
-  }
 }
 
 .tune-results-table {

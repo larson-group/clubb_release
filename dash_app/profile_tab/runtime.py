@@ -30,6 +30,8 @@ from utilities.timing_profiles import (
 REPO_ROOT = Path(__file__).resolve().parents[2]
 TIME_CLUBB = REPO_ROOT / "utilities" / "time_clubb.py"
 MAX_LOG_CHARACTERS = 24_000
+CPU_COLUMN_DEFAULTS = "1,2,3,4,5,6,7,8,12,16,32,64"
+GPU_COLUMN_DEFAULTS = "256,512,1024,2048,4096"
 
 PROFILE_LOCK = threading.Lock()
 PROFILE_PROCESSES: dict[int, subprocess.Popen[bytes]] = {}

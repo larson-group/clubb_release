@@ -27,6 +27,7 @@
   let selectedCases = new Set();
   let knownRevision = null;
   let requestActive = false;
+  let refreshRequested = false;
   let pollTimer = null;
   let submitting = false;
   let targetOutputDirectory = null;
@@ -373,7 +374,10 @@
   }
 
   async function pollTelemetry() {
-    if (requestActive) return;
+    if (requestActive) {
+      refreshRequested = true;
+      return;
+    }
     if (!runTabVisible()) {
       schedulePoll(HIDDEN_CHECK_MS, false);
       return;
@@ -395,6 +399,10 @@
       // A later poll retries transient Dash reloads and broker replacements.
     } finally {
       requestActive = false;
+    }
+    if (refreshRequested) {
+      refreshRequested = false;
+      schedulePoll(0, true);
     }
     if (payload) {
       knownRevision = Number(payload.revision) || 0;

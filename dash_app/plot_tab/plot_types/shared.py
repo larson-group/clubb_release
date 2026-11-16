@@ -1596,7 +1596,7 @@ def build_case_data(case_name, files, directories=None):
             source_dirs = [os.path.dirname(path) for path in collection.paths]
         profile_vars = list_profile_vars(collection, require_all=compare_mode)
         budget_groups = [] if compare_mode else list_budget_groups(collection)
-        timeheight_vars = [] if compare_mode else list_timeheight_vars(collection)
+        timeheight_vars = list_timeheight_vars(collection, require_all=compare_mode)
         subcolumn_vars = [] if compare_mode else list_subcolumn_vars(collection)
         timeseries_vars = list_timeseries_vars(collection, require_all=compare_mode)
         slider_max = max(collection.time_len, 1)
@@ -1719,12 +1719,21 @@ def has_profile_shape(collection, var_name):
     return info.get("z_dim") is not None
 
 
-def list_timeheight_vars(collection, curated_catalog=None):
+def list_timeheight_vars(collection, curated_catalog=None, *, require_all=False):
+    """List time-height fields, optionally requiring compatible axes in every file."""
+    common_vars = None
+    if require_all:
+        for dataset in collection.datasets:
+            compatible = {name for name, info in dataset.var_info.items()
+                          if info.get("t_dim") is not None and info.get("z_dim") is not None}
+            common_vars = compatible if common_vars is None else common_vars & compatible
     catalog = curated_catalog or TIMEHEIGHT_CATALOG
     options = []
     seen = set()
     for entry in catalog:
         name = entry["name"]
+        if require_all and name not in (common_vars or set()):
+            continue
         ds_info = collection.dataset_for_var(name)
         if ds_info is None:
             continue
@@ -1734,7 +1743,7 @@ def list_timeheight_vars(collection, curated_catalog=None):
         options.append({"label": entry["title"], "value": name})
         seen.add(name)
     for name in collection.vars:
-        if name in seen:
+        if name in seen or (require_all and name not in (common_vars or set())):
             continue
         ds_info = collection.dataset_for_var(name)
         if ds_info is None:

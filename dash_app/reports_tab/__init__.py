@@ -1,1 +1,1 @@
-"""Reload-safe static investigation reports for the CLUBB dashboard."""
+"""PDF, Markdown and plain-text browsing for files under doc/."""

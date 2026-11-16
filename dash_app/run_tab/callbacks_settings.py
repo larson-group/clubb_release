@@ -220,6 +220,18 @@ def register_settings_callbacks(app):
     """Register callbacks that track dirty state and changed-field styling."""
 
     @app.callback(
+        Output("run-tunable-configs", "data", allow_duplicate=True),
+        Output("run-config-buttons", "children", allow_duplicate=True),
+        Input("dashboard-config-catalog", "data"), State("run-selected-config", "data"),
+        prevent_initial_call=True,
+    )
+    def receive_config_catalog(configs, selected):
+        """Adopt newly saved configs without requiring Tune controls to be mounted."""
+        if configs is None:
+            return no_update, no_update
+        return configs, build_run_config_buttons(configs, selected).children
+
+    @app.callback(
         Output("run-output-dir-warning", "children"),
         Output("run-output-dir-warning", "className"),
         Output("run-resolved-output-dir", "data"),
@@ -310,7 +322,7 @@ def register_settings_callbacks(app):
 
     @app.callback(
         Output("run-tunable-configs", "data"),
-        Output("tune-tunable-configs", "data"),
+        Output("dashboard-config-catalog", "data"),
         Output("run-config-buttons", "children"),
         Output("run-config-save-status", "children"),
         Output("run-config-save-status", "hidden"),

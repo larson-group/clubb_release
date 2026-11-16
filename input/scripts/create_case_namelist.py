@@ -423,14 +423,15 @@ def create_normalized_benchmark_file(
     selected_fields: list[str],
     job_dir: Path,
 ) -> Path:
-    """Convert the case LES benchmark to CLUBB-facing field names."""
+    """Ensure the case LES file is available, then normalize its requested fields."""
     _ensure_repo_root_on_path()
     from input.scripts.benchmark_converter import convert_benchmark_file
+    from input.scripts.confirm_les_data import confirm_les_data
 
     job_dir.mkdir(parents=True, exist_ok=True)
     output_path = job_dir / f"{case_name}_normalized_benchmark.nc"
     status = convert_benchmark_file(
-        case_defaults["les_stats_file"],
+        confirm_les_data(case_defaults["les_stats_file"]),
         output_path,
         source_type="auto",
         fields=selected_fields,

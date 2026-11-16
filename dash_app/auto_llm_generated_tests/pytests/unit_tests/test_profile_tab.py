@@ -932,3 +932,35 @@ def test_manager_shutdown_includes_active_profile_job(monkeypatch):
     assert stopped == ["profile"]
     assert result["requested"] == ["Profile"]
     assert result["errors"] == []
+
+
+@pytest.mark.parametrize('gpu_backend', ['none', 'openacc', 'openmp'])
+def test_profile_defaults_follow_device_transitions(tmp_path, monkeypatch, gpu_backend):
+    """Real build metadata and JAX selection reset sweeps only on device changes."""
+    from dash import no_update
+    from dash_app.compile_tab import build_selector
+    from dash_app.profile_tab import callbacks
+    from dash_app.profile_tab.runtime import CPU_COLUMN_DEFAULTS, GPU_COLUMN_DEFAULTS
+
+    repo = tmp_path / 'repo'
+    (repo / 'install' / 'chosen').mkdir(parents=True)
+    (repo / 'install' / 'selected').symlink_to('chosen')
+    build = repo / 'build' / 'chosen'
+    build.mkdir(parents=True)
+    (build / 'CMakeCache.txt').write_text(f'GPU:STRING={gpu_backend}\n')
+    monkeypatch.setattr(callbacks, 'selected_build_info', lambda: build_selector.selected_build_info(repo))
+    app = Dash(__name__)
+    callbacks.register_profile_callbacks(app)
+    callback = next(entry['callback'].__wrapped__ for key, entry in app.callback_map.items()
+                    if 'profile-columns.value' in key)
+    device = 'cpu' if gpu_backend == 'none' else 'gpu'
+    expected = CPU_COLUMN_DEFAULTS if device == 'cpu' else GPU_COLUMN_DEFAULTS
+    assert callback('fortran', 'cpu', {}, None, CPU_COLUMN_DEFAULTS) == (expected, device)
+    assert callback('fortran', 'cpu', {}, device, '3,9') == (no_update, no_update)
+    assert callback('jax', 'gpu', {}, 'cpu', '3,9') == (GPU_COLUMN_DEFAULTS, 'gpu')
+    assert callback('jax', 'cpu', {}, 'gpu', '3,9') == (CPU_COLUMN_DEFAULTS, 'cpu')
+    assert callback('jax', 'gpu', {}, 'gpu', '3,9') == (no_update, no_update)
+    assert callback('jax', 'gpu', {}, None, '3,9') == (no_update, 'gpu')
+    # Returning to a compiled build uses its backend, not the inactive JAX choice.
+    previous = 'gpu' if device == 'cpu' else 'cpu'
+    assert callback('fortran', previous, {}, previous, '3,9') == (expected, device)

@@ -18,7 +18,7 @@ from tuner.taylor_metrics import (
 from tuner.presets import list_presets
 from tuner.algorithm_registry import ALGORITHMS, get_algorithm
 from .algorithm_controls import build_algorithm_controls
-from .state import REPO_ROOT
+from .state import REPO_ROOT, PRIMARY_DIAGNOSTIC_PLOTS
 
 DEFAULT_AVERAGE_TIME_SECONDS = 3600
 
@@ -814,6 +814,9 @@ def build_layout(initial_data):
             ),
             # A one-second cadence keeps the live status responsive while
             # avoiding two full multi-graph Dash render passes every second.
+            dcc.Store(id="tune-clock-signal"),
+            dcc.Store(id="tune-postprocessing-signal"),
+            dcc.Store(id="tune-diagnostic-plots", data=list(PRIMARY_DIAGNOSTIC_PLOTS)),
             dcc.Interval(id="tune-interval", interval=1000, disabled=True),
             # Workspace status is deliberately lightweight and independent of
             # the selected revision.  A Tune worker may continue in another
@@ -846,6 +849,7 @@ def build_layout(initial_data):
                             ),
                             html.Div(
                                 [
+                            html.Section([
                             html.Div(
                                 [
                                     html.Div(
@@ -920,111 +924,123 @@ def build_layout(initial_data):
                                 [
                                     html.Div(
                                         [
-                                            html.Div(
-                                                [
-                                                    html.Div("Explore parameter response", className="tune-landscape-heading"),
-                                                    html.Div(
-                                                        "Each sample is one tested parameter set. Color shows the selected loss or diagnostic; choose a field to expose its response and pairwise effects.",
-                                                        className="tune-landscape-caption",
-                                                    ),
-                                                ],
-                                                className="tune-landscape-intro",
-                                            ),
-                                            landscape_control("X parameter", styled_dropdown(
-                                                id="tune-landscape-x-param",
-                                                options=[],
-                                                value=None,
-                                                clearable=False,
-                                                searchable=True,
-                                                placeholder="x parameter",
-                                                className="tune-landscape-control",
-                                            )),
-                                            landscape_control("Y parameter", styled_dropdown(
-                                                id="tune-landscape-y-param",
-                                                options=[],
-                                                value=None,
-                                                clearable=False,
-                                                searchable=True,
-                                                placeholder="y parameter",
-                                                className="tune-landscape-control",
-                                            )),
-                                            landscape_control("Metric", styled_dropdown(
-                                                id="tune-landscape-metric",
-                                                options=[],
-                                                value=None,
-                                                clearable=False,
-                                                searchable=True,
-                                                placeholder="metric",
-                                                className="tune-landscape-control",
-                                            )),
-                                            landscape_control("Summary", styled_dropdown(
-                                                id="tune-landscape-aggregation",
-                                                options=[
-                                                    {"label": "Mean", "value": "mean"},
-                                                    {"label": "Median", "value": "median"},
-                                                    {"label": "Min", "value": "min"},
-                                                    {"label": "P90", "value": "p90"},
-                                                    {"label": "Max", "value": "max"},
-                                                ],
-                                                value="mean",
-                                                clearable=False,
-                                                searchable=False,
-                                                className="tune-landscape-control",
-                                            )),
-                                            landscape_control("Display", styled_dropdown(
-                                                id="tune-landscape-mode",
-                                                options=[
-                                                    {"label": "Samples", "value": "samples"},
-                                                    {"label": "Binned heatmap", "value": "binned"},
-                                                ],
-                                                value="samples",
-                                                clearable=False,
-                                                searchable=False,
-                                                className="tune-landscape-control",
-                                            )),
-                                            landscape_control("Case", styled_dropdown(
-                                                id="tune-landscape-case",
-                                                options=[{"label": "All cases", "value": "__all__"}],
-                                                value=None,
-                                                clearable=False,
-                                                searchable=True,
-                                                className="tune-landscape-control",
-                                            )),
-                                            landscape_control("Field", styled_dropdown(
-                                                id="tune-landscape-field",
-                                                options=[{"label": "All fields", "value": "__all__"}],
-                                                value=None,
-                                                clearable=False,
-                                                searchable=True,
-                                                className="tune-landscape-control",
-                                            )),
-                                            landscape_control("Time window", styled_dropdown(
-                                                id="tune-landscape-window",
-                                                options=[{"label": "All windows", "value": "__all__"}],
-                                                value="__all__",
-                                                clearable=False,
-                                                searchable=False,
-                                                className="tune-landscape-control",
-                                            )),
-                                        ],
-                                        className="tune-landscape-toolbar",
-                                    ),
-                                    html.Div(
-                                        [
                                             dcc.Graph(
                                                 id="tune-landscape-plot",
                                                 className="tune-landscape-graph",
                                                 config={"responsive": True, "displaylogo": False},
                                                 style={"width": "100%", "minWidth": 0, "height": "430px"},
                                             ),
-                                            dcc.Graph(
-                                                id="tune-parameter-correlation-plot",
-                                                className="tune-landscape-graph",
-                                                config={"responsive": True, "displaylogo": False},
-                                                style={"width": "100%", "minWidth": 0, "height": "430px"},
+                                            html.Div(
+                                                [
+                                                    html.Div(
+                                                        [
+                                                            html.Div("Explore parameter response", className="tune-landscape-heading"),
+                                                            html.Div(
+                                                                "Each sample is one tested parameter set. Color shows the selected loss or diagnostic; choose a field to expose its response and pairwise effects.",
+                                                                className="tune-landscape-caption",
+                                                            ),
+                                                        ],
+                                                        className="tune-landscape-intro",
+                                                    ),
+                                                    landscape_control("X parameter", styled_dropdown(
+                                                        id="tune-landscape-x-param",
+                                                        options=[],
+                                                        value=None,
+                                                        clearable=False,
+                                                        searchable=True,
+                                                        placeholder="x parameter",
+                                                        className="tune-landscape-control",
+                                                    )),
+                                                    landscape_control("Y parameter", styled_dropdown(
+                                                        id="tune-landscape-y-param",
+                                                        options=[],
+                                                        value=None,
+                                                        clearable=False,
+                                                        searchable=True,
+                                                        placeholder="y parameter",
+                                                        className="tune-landscape-control",
+                                                    )),
+                                                    landscape_control("Metric", styled_dropdown(
+                                                        id="tune-landscape-metric",
+                                                        options=[],
+                                                        value=None,
+                                                        clearable=False,
+                                                        searchable=True,
+                                                        placeholder="metric",
+                                                        className="tune-landscape-control",
+                                                    )),
+                                                    landscape_control("Summary", styled_dropdown(
+                                                        id="tune-landscape-aggregation",
+                                                        options=[
+                                                            {"label": "Mean", "value": "mean"},
+                                                            {"label": "Median", "value": "median"},
+                                                            {"label": "Min", "value": "min"},
+                                                            {"label": "P90", "value": "p90"},
+                                                            {"label": "Max", "value": "max"},
+                                                        ],
+                                                        value="mean",
+                                                        clearable=False,
+                                                        searchable=False,
+                                                        className="tune-landscape-control",
+                                                    )),
+                                                    landscape_control("Display", styled_dropdown(
+                                                        id="tune-landscape-mode",
+                                                        options=[
+                                                            {"label": "Samples", "value": "samples"},
+                                                            {"label": "Binned heatmap", "value": "binned"},
+                                                        ],
+                                                        value="samples",
+                                                        clearable=False,
+                                                        searchable=False,
+                                                        className="tune-landscape-control",
+                                                    )),
+                                                    landscape_control("Case", styled_dropdown(
+                                                        id="tune-landscape-case",
+                                                        options=[{"label": "All cases", "value": "__all__"}],
+                                                        value=None,
+                                                        clearable=False,
+                                                        searchable=True,
+                                                        className="tune-landscape-control",
+                                                    )),
+                                                    landscape_control("Field", styled_dropdown(
+                                                        id="tune-landscape-field",
+                                                        options=[{"label": "All fields", "value": "__all__"}],
+                                                        value=None,
+                                                        clearable=False,
+                                                        searchable=True,
+                                                        className="tune-landscape-control",
+                                                    )),
+                                                    landscape_control("Time window", styled_dropdown(
+                                                        id="tune-landscape-window",
+                                                        options=[{"label": "All windows", "value": "__all__"}],
+                                                        value="__all__",
+                                                        clearable=False,
+                                                        searchable=False,
+                                                        className="tune-landscape-control",
+                                                    )),
+                                                ],
+                                                className="tune-landscape-toolbar",
                                             ),
                                         ],
                                         className="tune-landscape-row",
+                                    ),
+                                    html.Div(id="tune-results-container", className="tune-results-container", children=build_results_placeholder()),
+                                    html.H4("Additional plots", className="tune-section-title"),
+                                    html.P("Selected plots update automatically as new data arrives."),
+                                    dcc.Checklist(id="tune-postprocessing", value=[], options=[
+                                        {"label": label, "value": key} for key, label in [
+                                            ("correlation", "Parameter correlations"),
+                                            ("sensitivity", "Field sensitivity"), ("interaction", "Field interactions"),
+                                        ]
+                                    ], inline=True, labelStyle={"marginRight": "18px"}),
+                                    html.Button("Refresh now", id="tune-postprocessing-refresh", n_clicks=0,
+                                                style=action_button_style("#475569")),
+                                    html.Div(id="tune-postprocessing-status", role="status"),
+                                    dcc.Graph(
+                                        id="tune-parameter-correlation-plot",
+                                        className="tune-landscape-graph",
+                                        config={"responsive": True, "displaylogo": False},
+                                        style={"width": "100%", "minWidth": 0, "height": "430px", "display": "none"},
                                     ),
                                     html.Div(
                                         [
@@ -1032,13 +1048,13 @@ def build_layout(initial_data):
                                                 id="tune-field-sensitivity-plot",
                                                 className="tune-landscape-graph",
                                                 config={"responsive": True, "displaylogo": False},
-                                                style={"width": "100%", "minWidth": 0, "height": "430px"},
+                                                style={"width": "100%", "minWidth": 0, "height": "430px", "display": "none"},
                                             ),
                                             dcc.Graph(
                                                 id="tune-field-interaction-plot",
                                                 className="tune-landscape-graph",
                                                 config={"responsive": True, "displaylogo": False},
-                                                style={"width": "100%", "minWidth": 0, "height": "430px"},
+                                                style={"width": "100%", "minWidth": 0, "height": "430px", "display": "none"},
                                             ),
                                         ],
                                         className="tune-field-sensitivity-row",
@@ -1054,7 +1070,7 @@ def build_layout(initial_data):
                                 id="tune-landscape-container",
                                 className="tune-landscape-container",
                             ),
-                            html.Div(id="tune-results-container", className="tune-results-container", children=build_results_placeholder()),
+                            ], className="tune-postprocessing"),
                                 ],
                                 id="tune-results-view",
                                 style={"display": "none"},

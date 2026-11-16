@@ -36,7 +36,7 @@ def test_manifest_covers_every_top_level_dashboard_tab():
     assert all(any(operation["name"] == "navigate" for operation in item["operations"]) for item in tabs.values())
     assert {operation["name"] for operation in tabs["plots"]["operations"]} >= {"set_view", "list", "remove"}
     assert {operation["name"] for operation in tabs["tune"]["operations"]} == {"navigate"}
-    assert {operation["name"] for operation in tabs["reports"]["operations"]} >= {"open_report"}
+    assert {operation["name"] for operation in tabs["reports"]["operations"]} >= {"open_document"}
 
 
 def test_generic_invoke_routes_plot_state_to_existing_tab_handler(monkeypatch):
@@ -125,19 +125,15 @@ def test_tutorial_operation_emits_one_unified_browser_request(tmp_path, monkeypa
     assert tutorial_request["tab"] == "tutorial"
     assert tutorial_request["operation"] == "open_lesson"
 
-def test_static_report_operation_opens_the_published_bundle(tmp_path, monkeypatch):
+def test_document_operation_opens_a_doc_relative_path(tmp_path, monkeypatch):
+    """The handoff opens an ordinary document without report publication metadata."""
     _isolated_activity(tmp_path, monkeypatch)
     _live_dashboard(monkeypatch)
-
-    result = actions.invoke_dashboard(
-        "reports",
-        "open_report",
-        {"report_id": "sam-heatmap-coloring-examples-20h30"},
-    )
+    path = "clubb_coding_standards.md"
+    result = actions.invoke_dashboard("reports", "open_document", {"path": path})
     request = activity.read_activity()["ui_request"]
-
     assert result["status"] == "requested"
-    assert result["report_id"] == "sam-heatmap-coloring-examples-20h30"
+    assert result["path"] == path
     assert request["tab"] == "reports"
-    assert request["operation"] == "open_report"
-    assert request["report_id"] == "sam-heatmap-coloring-examples-20h30"
+    assert request["operation"] == "open_document"
+    assert request["path"] == path

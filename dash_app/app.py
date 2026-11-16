@@ -32,7 +32,7 @@ from dash_app.lazy_tabs import LazyTabs
 from dash_app.plot_tab.tab import build_tab as build_plots_tab
 from dash_app.plot_tab.static import register_pyplotgen_routes
 from dash_app.profile_tab.tab import build_tab as build_profile_tab
-from dash_app.reports_tab.static import register_static_report_routes
+from dash_app.reports_tab.static import register_document_routes
 from dash_app.reports_tab.tab import build_tab as build_reports_tab
 from dash_app.run_tab.tab import build_tab as build_run_tab
 from dash_app.run_tab.telemetry import run_telemetry
@@ -192,12 +192,9 @@ def _reuse_existing_dashboard(host: str) -> bool:
 
 
 def build_dashboard_tabs(app):
-    # The shared build selector reads controls in all four workflow tabs.
-    # Mount these together; independent pages need only their own controls.
-    lazy = LazyTabs(
-        "dashboard-tabs", groups=(("compile", "run", "profile", "tune"),),
-        handoff_id="dashboard-request",
-    )
+    from dash_app.compile_tab.runner_selector import register_runner_selector
+    register_runner_selector(app)
+    lazy = LazyTabs("dashboard-tabs", handoff_id="dashboard-request")
     tabs = [
         build_tutorial_tab(app, defer=True),
         build_compile_tab(app, lazy=lazy),
@@ -208,8 +205,11 @@ def build_dashboard_tabs(app):
         build_reports_tab(app, lazy=lazy),
         build_misc_tab(app, defer=True),
     ]
-    loaders = lazy.register(app, shared={"compile": ("dashboard-build-selector", build_selector_overlay)})
-    return html.Div([loaders, dcc.Tabs(tabs, id="dashboard-tabs", value="tutorial")])
+    loaders = lazy.register(app)
+    return html.Div([
+        dcc.Store(id="dashboard-config-catalog"), build_selector_overlay(), loaders,
+        dcc.Tabs(tabs, id="dashboard-tabs", value="tutorial"),
+    ])
 
 
 def main():
@@ -275,7 +275,7 @@ def main():
     )
     _register_dashboard_generation_route(app)
     _register_run_telemetry_route(app)
-    register_static_report_routes(app)
+    register_document_routes(app)
     register_pyplotgen_routes(app)
 
     tabs = build_dashboard_tabs(app)

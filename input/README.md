@@ -239,6 +239,44 @@ python3 input/scripts/benchmark_converter.py input/les_and_clubb_benchmark_runs/
 [flag_sets.py](scripts/flag_sets.py) expands catalog flag selections for
 comparison sweeps and renders their final overrides.
 
+### Acquiring LES benchmark data
+
+Tuning and [`run_scm_loss.py`](../run_scripts/run_scm_loss.py) automatically
+ensure the requested benchmark exists before normalizing it for loss evaluation.
+[confirm_les_data.py](scripts/confirm_les_data.py) owns this acquisition step and
+can also prepare individual files directly. Dash's Plots tab runs this helper in
+the background when a SAM/COAMPS source is enabled or a custom expression needs
+LES data. Its source button shows loading or errors, and plots update when the
+files are ready. Listing cases does not start downloads:
+
+```bash
+python3 input/scripts/confirm_les_data.py les_runs/wangara_rams.nc
+python3 input/scripts/confirm_les_data.py input/les_and_clubb_benchmark_runs/les_runs/wangara_rams.nc input/les_and_clubb_benchmark_runs/les_runs/fire_coamps_sm.nc
+```
+
+The helper first reuses the requested file from the configured input tree,
+`/home/pub/les_and_clubb_benchmark_runs`, or `~/les_and_clubb_benchmark_runs`.
+Existing explicit file paths are also accepted. A missing file is added to an
+existing writable data directory. If those directories are unwritable or absent,
+the helper downloads into `input/les_and_clubb_benchmark_runs`. When this local
+fallback is needed, an existing input symlink is replaced with a real directory;
+the shared target and its files stay untouched. Existing shared files are still
+found through the usual search paths. The local data directory and acquisition
+locks are ignored by Git.
+
+The [public data catalog](https://carson.math.uwm.edu/sites/benchmark-data/)
+publishes run ZIPs. The helper reads ZIP metadata and the requested member using
+HTTP byte ranges; it does not download or unpack other run members. New files
+are published atomically after ZIP CRC/size and NetCDF checks. Workers in this
+checkout share a per-file lock. Existing files require no network access.
+
+A missing path must match the published catalog exactly. The helper reports
+unpublished files, transfer errors and invalid downloads without substituting a
+different benchmark or leaving a partial target. Unrelated missing absolute
+paths remain errors. Direct low-level loss calls, the standalone benchmark
+converter and Pyplotgen do not acquire files. Dash's discovery and rendering
+use read-only lookup; its separate preparation worker acquires missing files.
+
 The tables in [case_data/](case_data/), grids, atmospheric profiles and
 benchmark NetCDF files remain data inputs. Their `.in` or other suffixes do not
 make them model/parameter/flag/stats namelist definitions.

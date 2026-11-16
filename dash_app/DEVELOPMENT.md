@@ -99,9 +99,11 @@ form/runtime state across navigation. Loaded/request stores are memory-only.
 An explicit dashboard handoff also loads its target, even with `preserve_tab`,
 so requests can update an unvisited workspace without changing the visible tab.
 
-Compile, Run, Profile, and Tune load atomically as one group because their build
-selector callbacks span all four tabs. Its shared overlay loads with the group
-but stays outside tab bodies so it remains visible from each tab. Tutorial and
+Compile, Run, Profile and Tune load independently. The shared runner selector
+lives outside tab bodies and owns its catalog, runtime preferences and metadata.
+Consumers use its published stores; optional badge inputs tolerate unmounted
+tabs. Named-config saves publish the shared catalog rather than writing another
+tab's rendered controls. Tutorial and
 Misc have separate gates for each lesson/tool, also requiring the parent tab to
 be active. Component JavaScript still loads eagerly: lazy bundles in the current
 Dash version caused slider-tooltip callbacks to access unmounted React nodes
@@ -123,7 +125,7 @@ because JavaScript numbers cannot preserve nanoseconds. Timing CSVs derive the
 summary and process tables together. Keep file-change detection working for
 same-size overwrites and atomic replacements, not just appended rows.
 
-Reports and Tune workspace activity polling pause outside their tabs and refresh
+Documents and Tune workspace activity polling pause outside their tabs and refresh
 on reentry. Tune job supervision/leases continue independently. Activity state
 still uses its lock and atomic writes, but unchanged transactions do not rewrite
 the file. Trajectory discovery caches only compatibility booleans in a bounded
@@ -150,11 +152,35 @@ signature and selection. Do not reintroduce full-cube preloads or request
 threads for HDF5. Profile, budget, and subcolumn playback can update trace values
 with Dash patches while preserving manual zoom.
 
+`plot_tab/output_chooser.py` owns the output chooser's two-sided layout, stores,
+discovery, refresh, extra paths and confirmed deletion. Its browser renderer and
+selection transitions live in `assets/34_plot_chooser.js`, with styles in
+`assets/34_output_chooser.css`. The component publishes the ordered list in
+`plots-output-dirs.data`; case loading and PyPlotGen consume that list, without
+reading its catalog or manipulating its internal display. The chooser does not
+call the Plot task runtime; the case callback invalidates old plot requests when
+it receives a changed selection. Saved selections retain the same persistent
+store id, including temporarily unavailable folders.
+
+The chooser reserves a fixed compact height, with a five-entry Available list
+and wrapping Active bubbles. Its inner surface is absolutely positioned in both
+states; expansion grows that surface downward over adjacent content without
+changing the chooser or parent's layout height. Refresh/Add extra are top-bar
+siblings of the expansion button. Add extra expands the surface and reveals its
+path field; collapse hides that field. Expansion is memory-only component state
+and does not change selection or trigger case loading. Expanded lists scroll
+after their viewport cap, with guarded delete controls available there. Browser
+rendering remains the sole list renderer. Catalog scans run in the existing metadata worker on
+mount/refresh; selection changes inspect only unknown paths once a catalog
+exists. Initial hydration with an empty catalog performs full discovery so a
+restored selection cannot hide other available folders. Internal catalog
+refreshes never prune the selected list or trigger scientific case reloads.
+
 Directory selection and chooser rendering run in the browser. Register expensive
 native Plot callbacks with `plot_tab/async_callbacks.py:task_callback`; its fixed
 task names execute in broker-owned spawned processes through `plot_tab/tasks.py`.
-There are separate single-worker lanes for metadata and figures, so figure work
-does not delay case discovery. Warm workers retain extraction caches. The
+There are separate single-worker lanes for metadata, figures and LES acquisition,
+so downloads do not delay figures or case discovery. Warm workers retain extraction caches. The
 same-origin `/plots/tasks` proxy accepts only submit/poll for these registered
 tasks; it does not expose broker credentials or general function execution.
 
@@ -170,6 +196,44 @@ including after a broker restart. These transient UI tasks do not create durable
 scientific job/artifact records. Broker shutdown closes their worker pools.
 Playback patches require a successful accepted figure with matching inputs;
 worker render flags alone cannot establish a valid patch base across browsers.
+
+SAM/COAMPS overlay metadata retains the canonical collection paths from the
+case definitions, including missing files. The `benchmark_sam` and
+`benchmark_coamps` tasks call `benchmark_overlay.acquire_benchmark_source`, which
+uses the shared `confirm_les_data` helper in the LES lane. The browser starts a
+task for a selected source or a custom expression referencing LES, and shows its
+loading/error state beside the source button. These tasks share the existing
+revision checks, bounded queues and batched polling; no separate polling loop
+or job store is needed.
+
+`plots-enabled-benchmarks` retains selection intent. `plots-ready-benchmarks`
+carries current-case readiness and the prepared subset of that selection;
+figure callbacks and time-height sizing use this subset. Custom expressions
+also accept their prepared source without enabling an overlay on other plots.
+`benchmark_overlay._source_paths` uses the shared read-only `find_les_data`, so
+rendering never downloads. Missing files omit that source until preparation
+completes. Readiness changes rerender plots automatically, with case/path checks
+preventing stale results from enabling another case. Failed preparation remains
+visible at the button and off/on retries it. A running download may complete
+after deselection; its result cannot re-enable the overlay, and its file remains
+reusable. Pyplotgen's own data lookup remains unchanged.
+
+The PyPlotGen header category uses `pyplotgen_runtime.pyplotgen_help()` to run
+the actual CLI with `-h`. The `pyplotgen_help` metadata task loads it without
+blocking tab mounting and survives case-selection revisions, like the output
+catalog. CLI text is cached per process until the entry-point signature changes.
+Its verbatim stdout supplies the help notecard; option declaration lines supply
+names, value hints and wrapped descriptions for the searchable multi-selector.
+No second PyPlotGen option inventory is maintained. Dashboard-managed input,
+destination and help options are excluded from selection.
+
+Selected names and value fields pass through the existing `launch_pyplotgen_request`
+broker owner. `pyplotgen_arguments` checks names against the help-derived catalog,
+requires nonoptional values, and splits quoted value text into literal argv tokens.
+It rejects flags in value fields so those cannot override managed destinations.
+The PyPlotGen parser retains responsibility for types, choices and option
+compatibility. Generation still uses its existing process, progress, cancellation
+and fixed output-serving lifecycle; help discovery does not generate plots.
 
 ## Controls
 
@@ -239,17 +303,28 @@ browser only changes image crops. Keep that generator as an importable module
 and a tracked background subprocess rather than implementing unlogged,
 dashboard-only generation.
 
-## Static report bundles
+## Document browser
 
-The top-level Reports tab is intentionally separate from Misc.  Misc contains
-interactive Python/Dash tools; Reports displays immutable HTML bundles under
-`doc/reports/`.  Adding a report must not create a Python module, touch
-`dash_app/assets/`, or otherwise alter the dashboard source tree.  Publish
-only a complete bundle and its atomically updated `doc/reports/index.json`
-catalog so a running Dash process can discover it through its lightweight poll
-without a development reload.  See `doc/reports/README.md` and use
-`dash_app.reports_tab.publisher.ReportBuilder` for the standard staging and
-publication flow.
+The Documents tab lists `.pdf`, `.md` and `.txt` files recursively under `doc/`, including
+`README.md` but excluding hidden paths. The list groups PDFs, Markdown and plain
+text in that order, with alphabetical paths inside each group. Its search matches filenames and relative paths.
+Other formats, including notebooks and HTML, are ignored. Discovery needs no
+index, manifest or application change when adding a document.
+
+Complete an investigation first, then save its final PDF, Markdown or plain-text document
+under `doc/`. Keep raw runs and other generated research artifacts in a named
+`output/` directory. The viewer reads files; it never runs research code.
+PDFs use the browser viewer and Markdown uses Dash's renderer with HTML disabled.
+Plain text uses a wrapping preformatted element with its original spacing and
+line breaks; both text formats are read as UTF-8.
+The document wrapper records its repository-relative path. The delegated link
+handler resolves rendered Markdown anchors against that path, including reference
+links, without parsing or rewriting Markdown source. `/repository-files/` serves
+visible `doc/` files and Git-tracked repository files, rejecting outside paths and
+hidden files. Source and other UTF-8 text is served as `text/plain` with sniffing
+disabled; binary text targets are rejected. Source code is never executed.
+The catalog refreshes while this tab is visible. The semantic browser handoff is
+`reports/open_document` with a `path` relative to `doc/`.
 
 The supported production Misc subtab is the SAM w–rₜ time-height
 neighborhood. It serves a pre-rendered sprite atlas generated by
@@ -268,6 +343,36 @@ neither import nor register it. This keeps the dashboard usable when
 prototype-only directories are absent from a checkout.
 
 ## Runtime selection and JAX job settings
+
+[`compile_tab/runner_selector.py`](compile_tab/runner_selector.py) owns the shared
+chooser. Its menu opens and closes in the browser. Build discovery and JAX
+inspection use the existing bounded native task transport in a separate runner
+worker lane at page initialization. The root owns `compile-discovery` and
+`compile-build-statuses`; Compile reads and updates those same stores. Mounting
+Compile does not scan again. A completed compile refreshes the catalog through
+Compile when mounted, or through the shared worker otherwise. Deletion updates
+it directly. Refresh runners explicitly rescans changes made outside Dash.
+Opening the menu, changing implementation/device or changing allocation
+preferences submits no metadata task; there is no expiry timer.
+
+The metadata callback builds both Fortran and JAX panels and their badge views.
+The selector asset handles native click/change events, paints those cached
+panels directly and publishes the existing preference stores after the first
+frame. Pending values are flushed before any other control's click, so Launch
+reads the current target. Metadata updates merge pending preferences instead of
+restoring an older selection. Selection buttons do not feed Dash callbacks:
+waiting for even clientside callbacks was visible with Run's large form loaded.
+For remaining pattern-button callbacks, `clicked_trigger_id` resolves each
+positive event's own ID; a zero-click mount at the front of a batch is not the
+user's selection.
+
+The existing handoff heartbeat checks managed environment marker timestamps.
+A changed stamp requests only installed-package readiness through
+[`refresh_environment`](../clubb_jax/runtime_info.py), preserving discovered
+hardware. CUDA tile compatibility is derived from the cached inventory using
+the backend's existing compatibility check. The selected install alias remains
+authoritative for launches. A newer Compile catalog invalidates any older
+in-flight discovery result.
 
 The runtime chooser uses the read-only report from
 [`clubb_jax/run_jax.py`](../clubb_jax/run_jax.py). Hardware discovery does not
@@ -315,8 +420,26 @@ and summary explain the requirement, and Start is disabled. Running and readonly
 revisions validate their saved request's backend instead of the shared chooser.
 Numeric options use compact
 manual entries beside their labels. Shared notecards explain gradient modes,
-RMSE weights and across-case aggregation. The existing landscape signature
-tracks sample-history publication: the scheduler publishes the first completed
+RMSE weights and across-case aggregation.
+
+Taylor diagrams, parameter spread and parameter landscapes are permanent.
+Only correlations, sensitivity and interactions have optional controls. The
+`tune-diagnostic-plots` store combines the fixed primary set with those choices;
+individual Tune controls are not restored from component persistence.
+
+Plots refresh automatically through the native task transport's separate Tune
+lane. `read_tuning_status` adds a compact history-publication signature from
+chunk file metadata, without loading arrays. Landscape/control tasks follow
+that signature; Taylor/spread tasks follow retained leaderboard data. Timer-only
+status changes do not submit work. An in-flight data refresh finishes instead
+of being continually superseded; its latest queued data update runs immediately
+afterward, including when final-job polling has already stopped. Explicit
+control changes, revision changes and Refresh now still request a fresh view.
+The worker computes only enabled plots and retains at most 64 MiB of decompressed
+history for one job. Hidden tabs do no plot work; browser-local uptime remains
+independent, and status polling pauses while another tab is visible.
+
+Sample-history publication remains unchanged: the scheduler publishes the first completed
 set immediately, then pending rows after 500 samples or 20 seconds, whichever
 comes first, and flushes them on stopping.
 

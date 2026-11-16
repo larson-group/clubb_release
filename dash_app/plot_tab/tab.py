@@ -7,6 +7,7 @@ from .callbacks_grid import register_grid_callbacks
 from .callbacks_params import register_param_callbacks
 from .callbacks_pyplotgen import register_pyplotgen_callbacks
 from .layout import build_layout
+from .output_chooser import register_output_chooser
 from .plot_types.registry import register_plot_callbacks
 from .state import build_initial_plots_state
 
@@ -18,7 +19,8 @@ def build_tab(app, *, lazy=None):
     # Hydrate the saved selection in the background after the browser connects.
     register_task_routes(app)
 
-    # Wire case and directory selection first because the rest of the tab depends on case_data.
+    # The chooser owns folder selection; case loading consumes its selected list.
+    register_output_chooser(app)
     register_case_callbacks(app)
 
     # Register time, height, and playback controls that drive the visible plots.

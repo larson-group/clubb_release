@@ -35,3 +35,6 @@ TUNE_ACTIVE = {}
 TUNE_LOCK = threading.Lock()
 LOSS_RUN_PROCS = {}
 LOSS_RUN_LOCK = threading.Lock()
+
+PRIMARY_DIAGNOSTIC_PLOTS = ("taylor", "parameters", "landscape")
+OPTIONAL_DIAGNOSTIC_PLOTS = ("correlation", "sensitivity", "interaction")

@@ -551,6 +551,12 @@ def _unchanged_workspace_outputs(message=None):
 
 def register_run_callbacks(app):
     """Register tuning start/stop/poll callbacks."""
+    app.clientside_callback(
+        "function(tab, job) { return tab !== 'tune' || !job || !Object.keys(job).length; }",
+        Output("tune-interval", "disabled", allow_duplicate=True),
+        Input("dashboard-tabs", "value"), Input("tune-active-job", "data"),
+        prevent_initial_call=True,
+    )
 
     @app.callback(
         Output("tune-case-rows", "children", allow_duplicate=True),
@@ -1044,12 +1050,15 @@ def register_run_callbacks(app):
         Output("tune-interval", "disabled", allow_duplicate=True),
         Output("tune-runtime-error", "children", allow_duplicate=True),
         Input("tune-interval", "n_intervals"),
+        Input("dashboard-tabs", "value"),
         State("tune-active-job", "data"),
         State("tune-status", "data"),
         prevent_initial_call=True,
     )
-    def poll_tuning_status(_tick, active_job, displayed_status):
+    def poll_tuning_status(_tick, tab, active_job, displayed_status):
         """Poll the worker status file and retire finished jobs."""
+        if tab != "tune":
+            return (no_update,) * 7
         if not active_job:
             return no_update, no_update, no_update, no_update, no_update, True, no_update
 

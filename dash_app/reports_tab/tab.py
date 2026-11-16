@@ -1,87 +1,62 @@
-"""Entrypoint and callbacks for the static Reports dashboard tab."""
-
-from __future__ import annotations
+"""Keep the document browser in sync with its search and files under doc/."""
 
 from dash import Input, Output, State, dcc, no_update
-from urllib.parse import quote
 
-from .catalog import catalog_token, discover_reports, report_by_id, report_tab_value
-from .layout import build_layout, report_tabs, selected_value
-
-
-def _report_id_from_value(value: str | None) -> str:
-    prefix = "static-report-"
-    selected = str(value or "")
-    return selected.removeprefix(prefix) if selected.startswith(prefix) else ""
-
-
-def _opened_report_url(report, request_id) -> str:
-    """Give each explicit agent handoff a distinct iframe URL.
-
-    A report can already be selected when an agent republishes a corrected
-    artifact.  Updating ``dcc.Tabs.value`` to that same value does not trigger
-    the normal selection callback, so attach the durable activity id as a
-    harmless query parameter and explicitly reload the static iframe.
-    """
-    token = quote(str(request_id or "open"), safe="")
-    return f"{report.url}?open={token}"
+from .catalog import catalog_token, discover_documents
+from .layout import build_layout, document_tabs, document_view, selected_value
 
 
 def build_tab(app, *, lazy=None):
-    """Build the permanent tab once; report publication only changes data files."""
-
+    """Register document discovery, selection and browser-handoff callbacks."""
     app.clientside_callback(
         "function(tab) { return tab !== 'reports'; }",
-        Output("reports-catalog-poll", "disabled"),
-        Input("dashboard-tabs", "value"),
+        Output('reports-catalog-poll', 'disabled'), Input('dashboard-tabs', 'value'),
     )
 
     @app.callback(
-        Output("reports-pages", "children"),
-        Output("reports-catalog-token", "data"),
-        Output("reports-pages", "value", allow_duplicate=True),
-        Input("reports-catalog-poll", "n_intervals"),
-        Input("dashboard-tabs", "value"),
-        State("reports-catalog-token", "data"),
-        State("reports-pages", "value"),
+        Output('reports-pages', 'children'),
+        Output('reports-pages', 'value', allow_duplicate=True),
+        Output('reports-catalog-token', 'data'),
+        Input('reports-catalog-poll', 'n_intervals'),
+        Input('dashboard-tabs', 'value'), Input('reports-search', 'value'),
+        State('reports-catalog-token', 'data'), State('reports-pages', 'value'),
         prevent_initial_call=True,
     )
-    def refresh_report_catalog(_poll_count, selected_tab, previous_token, current_value):
-        if selected_tab != "reports":
-            return no_update, no_update, no_update
-        reports = discover_reports()
-        token = catalog_token(reports)
-        if token == previous_token:
-            return no_update, no_update, no_update
-        return report_tabs(reports), token, selected_value(reports, current_value)
+    def refresh_documents(_tick, tab, query, previous_token, current):
+        """Rescan while visible, retaining the selection when it still matches."""
+        if tab != 'reports':
+            return (no_update,) * 3
+        documents = discover_documents(query=query)
+        token = catalog_token(documents)
+        selection = selected_value(documents, current)
+        if token == previous_token and selection == current:
+            return (no_update,) * 3
+        return document_tabs(documents), selection, token
 
     @app.callback(
-        Output("reports-frame", "src"),
-        Output("reports-frame", "className"),
-        Output("reports-empty-state", "className"),
-        Input("reports-pages", "value"),
+        Output('reports-view', 'children'),
+        Input('reports-pages', 'value'), Input('reports-catalog-token', 'data'),
     )
-    def display_selected_report(value):
-        report = report_by_id(_report_id_from_value(value))
-        if report is None:
-            return "about:blank", "reports-frame reports-frame-hidden", "reports-empty-state"
-        return report.url, "reports-frame", "reports-empty-state reports-empty-state-hidden"
+    def display_document(path, _token):
+        """Reload a selected file when its version changes, including Markdown edits."""
+        document = next((item for item in discover_documents() if item.path == path), None)
+        return document_view(document)
 
     @app.callback(
-        Output("reports-pages", "value", allow_duplicate=True),
-        Output("reports-frame", "src", allow_duplicate=True),
-        Input("dashboard-request", "data"),
-        prevent_initial_call=True,
+        Output('reports-pages', 'value', allow_duplicate=True),
+        Output('reports-search', 'value'),
+        Input('dashboard-request', 'data'), prevent_initial_call=True,
     )
-    def select_agent_report(request):
-        if (request or {}).get("tab") != "reports" or (request or {}).get("operation") != "open_report":
+    def select_agent_document(request):
+        """Select the exact doc-relative path requested by a browser handoff."""
+        request = request or {}
+        if request.get('tab') != 'reports' or request.get('operation') != 'open_document':
             return no_update, no_update
-        report_id = str((request or {}).get("report_id") or "")
-        report = report_by_id(report_id)
-        if report is None:
+        path = request.get('path')
+        if not any(item.path == path for item in discover_documents()):
             return no_update, no_update
-        return report_tab_value(report.report_id), _opened_report_url(report, (request or {}).get("id"))
+        return path, ''
 
     if lazy is not None:
-        return lazy.tab(label="Reports", value="reports", build=build_layout)
-    return dcc.Tab(label="Reports", value="reports", children=build_layout())
+        return lazy.tab(label='Documents', value='reports', build=build_layout)
+    return dcc.Tab(label='Documents', value='reports', children=build_layout())

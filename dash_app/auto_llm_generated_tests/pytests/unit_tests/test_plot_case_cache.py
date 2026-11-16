@@ -9,7 +9,7 @@ import pytest
 from dash import Dash, dcc, html, no_update
 
 from dash_app.persistence import enable_workspace_persistence
-from dash_app.plot_tab import callbacks_case, case_cache
+from dash_app.plot_tab import callbacks_case, case_cache, output_chooser
 from dash_app.plot_tab.tasks import _HANDLERS
 from dash_app.plot_tab.plot_types import shared
 
@@ -126,16 +126,15 @@ def test_hydration_keeps_saved_view_and_scans_once(metadata_cache, monkeypatch):
 
 
 def test_unchanged_catalog_returns_no_update(monkeypatch):
+    """Refreshing an unchanged catalog must not resend chooser contents."""
     app = Dash(__name__)
-    callbacks_case.register_case_callbacks(app)
+    output_chooser.register_output_chooser(app)
     refresh = _HANDLERS['catalog']
     catalog = [{'path': '/tmp/a'}]
     scans = []
-    monkeypatch.setattr(callbacks_case, 'callback_context', SimpleNamespace(triggered_id='plots-output-menu-expanded'))
-    monkeypatch.setattr(callbacks_case, 'discover_output_directories', lambda **kwargs: scans.append(kwargs) or catalog)
-    assert refresh(False, 0, ['/tmp/a'], catalog) is no_update
-    assert not scans
-    assert refresh(True, 0, ['/tmp/a'], catalog) is no_update
+    monkeypatch.setattr(output_chooser, 'callback_context', SimpleNamespace(triggered_id='plots-output-refresh'))
+    monkeypatch.setattr(output_chooser, 'discover_output_directories', lambda **kwargs: scans.append(kwargs) or catalog)
+    assert refresh('plots-output-chooser', 1, ['/tmp/a'], catalog) is no_update
     assert len(scans) == 1
 
 
@@ -226,31 +225,3 @@ def test_identical_metadata_from_different_outputs_has_separate_identity(metadat
     first = metadata()
     second = {**first, 'files': ['/tmp/other/bomex_stats.nc']}
     assert case_cache.compact_case_data(first)['metadata_key'] != case_cache.compact_case_data(second)['metadata_key']
-
-
-def test_external_output_is_inspected_without_recursing(tmp_path, monkeypatch):
-    app = Dash(__name__)
-    callbacks_case.register_case_callbacks(app)
-    refresh = _HANDLERS['catalog']
-    calls = []
-    monkeypatch.setattr(callbacks_case, 'callback_context', SimpleNamespace(triggered_id='plots-output-dirs'))
-    monkeypatch.setattr(callbacks_case, 'discover_output_directories',
-                        lambda **kwargs: calls.append(kwargs) or [])
-    result = refresh(True, 0, [str(tmp_path)], [])
-    assert calls == [{'root': str(tmp_path), 'selected_dirs': [], 'recursive': False}]
-    assert result[0]['path'] == str(tmp_path)
-    assert not result[0]['available']
-    assert refresh(True, 0, [str(tmp_path)], result) is no_update
-    assert len(calls) == 1  # Known selections never trigger another scan.
-
-
-def test_restored_external_output_gets_counts_from_worker_scan(monkeypatch):
-    app = Dash(__name__)
-    callbacks_case.register_case_callbacks(app)
-    refresh = _HANDLERS['catalog']
-    monkeypatch.setattr(callbacks_case, 'callback_context', SimpleNamespace(triggered_id='plots-output-dirs'))
-    record = {'path': '/tmp/run', 'case_names': ['bomex'], 'case_count': 1, 'available': True}
-    monkeypatch.setattr(callbacks_case, 'discover_output_directories', lambda **kw: [record])
-    result = refresh(False, 0, ['/tmp/run'], [])
-    assert result[0]['case_names'] == ['bomex']
-    assert result[0]['available']

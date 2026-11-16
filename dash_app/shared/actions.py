@@ -190,7 +190,7 @@ _BROWSER_HANDOFF_OPERATIONS = {
     ("tutorial", "navigate"),
     ("tutorial", "open_lesson"),
     ("reports", "navigate"),
-    ("reports", "open_report"),
+    ("reports", "open_document"),
     ("misc", "navigate"),
     ("misc", "open_report"),
     ("compile", "navigate"),
@@ -2712,12 +2712,12 @@ def _watch_pyplotgen(job: dict[str, Any], process) -> None:
     )
 
 
-def launch_pyplotgen_request(output_dirs: list[str]) -> dict[str, Any]:
+def launch_pyplotgen_request(output_dirs: list[str], options=None, option_values=None) -> dict[str, Any]:
     """Start one fixed-destination Plot-tab PyPlotGen export."""
     existing = dict(broker_jobs().get("pyplotgen") or {})
     if str(existing.get("state") or "") in {"queued", "submitting", "running", "stopping"}:
         raise ValueError("a PyPlotGen export is already active")
-    job, process = start_pyplotgen(list(output_dirs or []))
+    job, process = start_pyplotgen(list(output_dirs or []), options=options, option_values=option_values)
     set_broker_job("pyplotgen", job)
     publish_event(
         "plot",
@@ -3828,21 +3828,18 @@ def open_note(slug: str) -> dict[str, Any]:
     return {"status": "requested", "activity_id": event["id"], "slug": value}
 
 
-def open_static_report(report_id: str) -> dict[str, Any]:
-    """Open one immutable report bundle in the dashboard's Reports tab."""
-    from dash_app.reports_tab.catalog import report_by_id
+def open_document(path: str) -> dict[str, Any]:
+    """Open a PDF, Markdown or plain-text file identified relative to doc/."""
+    from dash_app.reports_tab.catalog import resolve_document
 
-    report = report_by_id(str(report_id or "").strip())
-    if report is None:
-        raise ValueError(f"unknown static report: {report_id}")
+    value = str(path or "").strip()
+    if resolve_document(value) is None:
+        raise ValueError(f"unknown or unavailable document: {value}")
     event = publish_tab_request(
-        "reports",
-        f"Opening static report: {report.title}",
-        type="reports",
-        operation="open_report",
-        report_id=report.report_id,
+        "reports", f"Opening document: {value}", type="reports",
+        operation="open_document", path=value,
     )
-    return {"status": "requested", "activity_id": event["id"], "report_id": report.report_id}
+    return {"status": "requested", "activity_id": event["id"], "path": value}
 
 
 def open_tutorial_lesson(lesson: str) -> dict[str, Any]:
@@ -3907,20 +3904,11 @@ def inspect_dashboard(tab: str | None = None) -> dict[str, Any]:
                 ],
             }
         elif tab_name == "reports":
-            from dash_app.reports_tab.catalog import discover_reports
+            from dash_app.reports_tab.catalog import discover_documents
 
             entry["context"] = {
-                "root": "doc/reports",
-                "reports": [
-                    {
-                        "id": report.report_id,
-                        "title": report.title,
-                        "summary": report.summary,
-                        "tags": list(report.tags),
-                        "created_at": report.created_at,
-                    }
-                    for report in discover_reports()
-                ],
+                "root": "doc", "formats": ["pdf", "md", "txt"],
+                "documents": [{"path": document.path} for document in discover_documents()],
             }
         elif tab_name == "compile":
             entry["context"] = inspect_compile()
@@ -3973,7 +3961,7 @@ def _register_dashboard_operations() -> None:
     """Register top-level tabs once; handlers retain their normal tab-owned validation."""
     tabs = {
         "tutorial": ("Tutorial", "Interactive teaching demos and CLUBB-equation walkthroughs."),
-        "reports": ("Reports", "Immutable static investigation bundles published under doc/reports."),
+        "reports": ("Documents", "PDF, Markdown and plain-text files under doc/."),
         "misc": ("Misc", "Interactive investigations and focused diagnostics."),
         "compile": ("Compile", "Configured CLUBB builds, logs, and build status."),
         "run": ("Run", "Checked-in SCM case execution and live output."),
@@ -3992,11 +3980,9 @@ def _register_dashboard_operations() -> None:
         )
 
     register_operation(
-        "reports",
-        "open_report",
-        "Open one published static report by immutable report id.",
-        {"type": "object", "required": ["report_id"], "properties": {"report_id": {"type": "string"}}},
-        lambda arguments: open_static_report(arguments.get("report_id", "")),
+        "reports", "open_document", "Open a PDF, Markdown or plain-text document by its path relative to doc/.",
+        {"type": "object", "required": ["path"], "properties": {"path": {"type": "string"}}},
+        lambda arguments: open_document(arguments.get("path", "")),
     )
     register_operation(
         "misc",
@@ -4475,7 +4461,8 @@ def dispatch(action: str, payload: dict[str, Any]) -> dict[str, Any]:
             return manager().poll_many(payload["requests"])
         return manager().poll(str(payload.get("scope") or ""), int(payload.get("revision") or 0))
     if action == "launch_pyplotgen_request":
-        return launch_pyplotgen_request(list(payload.get("output_dirs") or []))
+        return launch_pyplotgen_request(list(payload.get("output_dirs") or []),
+                                        options=payload.get("options"), option_values=payload.get("option_values"))
     if action == "stop_pyplotgen_request":
         return stop_pyplotgen_request()
     if action == "stop_profile":

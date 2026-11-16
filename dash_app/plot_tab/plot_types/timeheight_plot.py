@@ -6,7 +6,7 @@ from plotly.subplots import make_subplots
 from dash_app.plot_tab.async_callbacks import task_callback
 from dash_app.plot_tab.case_cache import resolve_case_data
 
-from ..benchmark_overlay import extract_benchmark_timeheight_panels
+from ..benchmark_overlay import extract_benchmark_timeheight_panels, ready_benchmark_sources
 from . import shared
 from .base_plot import BasePlotType
 
@@ -26,7 +26,9 @@ class TimeHeightPlotType(BasePlotType):
         return list((case_data or {}).get("timeheight_vars") or [])
 
     def get_variable_options(self, collection, case_data):
-        return case_data.get("timeheight_vars") or shared.list_timeheight_vars(collection)
+        return case_data.get("timeheight_vars") or shared.list_timeheight_vars(
+            collection, require_all=bool(case_data.get("compare_mode"))
+        )
 
     def build_figure(self, state, global_context):
         case_data = global_context.get("case_data") or {}
@@ -35,40 +37,34 @@ class TimeHeightPlotType(BasePlotType):
         var_name = state.get("var")
         if not files or not var_name:
             return shared.make_empty_figure("Select a case and variable.", theme_name)
-        if case_data.get("compare_mode"):
-            return shared.make_empty_figure("Time-height plots are disabled in compare mode.", theme_name)
-        path, _meta = shared.dataset_info_for_var(files, var_name)
-        if path is None:
-            return shared.make_empty_figure(f"{var_name} is not available for this case.", theme_name)
         column_mode = global_context.get("column_mode") or "single"
-        result = shared.extract_time_height_for_path(
-            path,
-            var_name,
-            col_index=int(global_context.get("selected_column") or 0),
-            column_mode=column_mode,
-            column_filter_indices=global_context.get("column_filter_indices"),
-        )
-        if result is None:
-            return shared.make_empty_figure(f"{var_name} is not compatible with a time-height plot.", theme_name)
-        result = self._average_time_height(result, global_context)
-        benchmark_panels = extract_benchmark_timeheight_panels(case_data, var_name, global_context.get("enabled_benchmarks"))
-        if benchmark_panels:
-            global_context = {**global_context, "size": "large"}
-            return self._build_panel_figure(
-                [
-                    {
-                        "title": self._clubb_panel_title(global_context),
-                        "data": result,
-                    },
-                    *[
-                        {**panel, "data": self._average_time_height(panel["data"], global_context)}
-                        for panel in benchmark_panels
-                    ],
-                ],
+        panels = []
+        labels = case_data.get("source_labels") or []
+        for index, path in enumerate(files):
+            result = shared.extract_time_height_for_path(
+                path,
                 var_name,
-                global_context,
+                col_index=int(global_context.get("selected_column") or 0),
+                column_mode=column_mode,
+                column_filter_indices=global_context.get("column_filter_indices"),
             )
-        return self._build_single_figure(var_name, result, global_context)
+            if result is None:
+                return shared.make_empty_figure(
+                    f"{var_name} is not compatible with the selected time-height data or columns.", theme_name
+                )
+            title = self._clubb_panel_title(global_context)
+            if case_data.get("compare_mode"):
+                label = labels[index] if index < len(labels) else f"output {index + 1}"
+                title = label if column_mode == "all" else f"{label} · {title}"
+            panels.append({"title": title, "data": self._average_time_height(result, global_context)})
+        benchmark_panels = extract_benchmark_timeheight_panels(case_data, var_name, global_context.get("enabled_benchmarks"))
+        panels.extend(
+            {**panel, "data": self._average_time_height(panel["data"], global_context)}
+            for panel in benchmark_panels
+        )
+        if len(panels) > 1:
+            return self._build_panel_figure(panels, var_name, {**global_context, "size": "large"})
+        return self._build_single_figure(var_name, panels[0]["data"], global_context)
 
     def _average_time_height(self, result, global_context):
         time_vals, z_vals, data, var_units, var_long_name, z_units = result
@@ -169,8 +165,8 @@ class TimeHeightPlotType(BasePlotType):
             rows=len(panels),
             cols=1,
             shared_xaxes=True,
-            shared_yaxes=True,
-            vertical_spacing=0.055 if len(panels) > 1 else 0.0,
+            shared_yaxes="all",
+            vertical_spacing=min(0.055, 0.5 / (len(panels) - 1)) if len(panels) > 1 else 0.0,
             subplot_titles=[panel["title"] for panel in panels],
         )
         z_arrays = [np.asarray(panel["data"][2], dtype=float) for panel in panels]
@@ -241,7 +237,7 @@ class TimeHeightPlotType(BasePlotType):
             Input("plots-selected-column", "data"),
             Input("plots-column-mode", "value"),
             Input("plots-column-filters", "data"),
-            Input("plots-enabled-benchmarks", "data"),
+            Input("plots-ready-benchmarks", "data"),
             Input("theme-store", "data"),
             Input(self.size_store_id(MATCH), "data"),
             State(self.graph_id(MATCH), "relayoutData"),
@@ -262,6 +258,7 @@ class TimeHeightPlotType(BasePlotType):
             relayout_data,
         ):
             case_data = resolve_case_data(case_data)
+            enabled_benchmarks = ready_benchmark_sources(case_data, enabled_benchmarks)
             size_value = shared.normalize_plot_size(size_store_value)
             active_time = shared.resolve_active_time_values(case_data, time_range, time_point, time_override)
             fig = self.build_figure(

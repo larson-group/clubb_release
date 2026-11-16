@@ -19,7 +19,7 @@ def task_callback(app, name, *dependencies, **options):
         inputs = [item for item in dependencies if not isinstance(item, Output)]
         specs = [{"id": out.component_id, "property": out.component_property} for out in outputs]
         # MATCH output ids must be resolved using the mounted card's actual id.
-        graph = next((out for out in outputs if out.component_property == "figure"), None)
+        graph = next((out for out in outputs if out.component_property == "figure" and isinstance(out.component_id, dict)), None)
         if graph:
             inputs.append(State(graph.component_id, "id"))
             specs = [{"id": {**s["id"], "index": None}, "property": s["property"]} for s in specs]

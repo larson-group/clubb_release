@@ -203,7 +203,7 @@ PLOT_HELP = {
                 "bullets": (
                     "Single-column mode uses the selected CLUBB column. All-column mode averages enabled CLUBB columns before plotting rather than drawing overlapping heatmaps.",
                     "When compatible LES panels are enabled, CLUBB and benchmark panels use common color limits so colors have the same meaning. The card is locked to large size to keep stacked panels readable.",
-                    "Time–height plots are currently disabled for multi-directory comparison; use separate cards or runs for that comparison.",
+                    "Each selected output directory gets its own stacked panel. Panels share axes and a color scale; comparison variables must be available in every selected output.",
                 ),
             },
         ),

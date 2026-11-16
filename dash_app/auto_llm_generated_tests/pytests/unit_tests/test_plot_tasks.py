@@ -140,7 +140,7 @@ def test_real_worker_inspects_missing_directory_and_serializes_no_update(tmp_pat
     queue = tasks.PlotTasks()
     try:
         missing = str(tmp_path / 'missing')
-        payload = request(scope='test:catalog', task='catalog', args=[True, 0, [missing], []])
+        payload = request(scope='test:catalog', task='catalog', args=['plots-output-chooser', 0, [missing], [{'path': '/tmp/known'}]])
         payload['triggered'] = [{'prop_id': 'plots-output-dirs.data', 'value': [missing]}]
         queue.submit(payload)
         deadline = time.monotonic() + 20
@@ -150,8 +150,9 @@ def test_real_worker_inspects_missing_directory_and_serializes_no_update(tmp_pat
                 break
             time.sleep(.02)
         assert response['state'] == 'ready', response
-        assert response['result'][0]['available'] is False
-        assert 'No readable' in response['result'][0]['error']
+        record = next(item for item in response['result'] if item['path'] == missing)
+        assert record['available'] is False
+        assert 'No readable' in record['error']
     finally:
         queue.close()
 
@@ -197,7 +198,7 @@ const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
     const chosen = chooser.choose([], 0, [], ['/a'], '', [{path: '/b'}], paths);
     assert.deepEqual(chosen[0], ['/a', '/b']);
     assert.equal(submissions.length, 0, 'selection must never wait for an HTTP request');
-    const rendered = chooser.render([], ['/a'], false, null, paths);
+    const rendered = chooser.render([], ['/a'], null, paths);
     assert.equal(rendered[1][0].props.children[1].props.children, 'Loading…');
     dash_clientside.callback_context = {triggered_id: 'plots-add-extra-dir', triggered: [{value: 123}]};
     assert.deepEqual(chooser.choose([],1,[],[], '~/run/../data', [], paths)[0], ['/home/test/data']);

@@ -22,8 +22,12 @@ from dash._callback_context import context_value
 from dash._utils import AttributeDict, to_json
 
 GRADIENT_TASKS = frozenset({"gradient_matrix", "gradient_matrix_response", "gradient_matrix_response_gradients"})
-ALLOWED_TASKS = frozenset({"catalog", "case", "params", "profile", "budget", "custom",
-                           "pdf_contour", "subcolumn", "timeheight", "timeseries"}) | GRADIENT_TASKS
+BENCHMARK_TASKS = frozenset({"benchmark_sam", "benchmark_coamps"})
+RUNNER_TASKS = frozenset({"runner_info", "runner_catalog"})
+TUNE_TASKS = frozenset({"tune_controls", "tune_landscape", "tune_diagnostics"})
+PAGE_TASKS = frozenset({"catalog", "pyplotgen_help"}) | RUNNER_TASKS | TUNE_TASKS
+ALLOWED_TASKS = frozenset({"catalog", "case", "params", "pyplotgen_help", "profile", "budget", "custom",
+                           "pdf_contour", "subcolumn", "timeheight", "timeseries"}) | GRADIENT_TASKS | BENCHMARK_TASKS | PAGE_TASKS
 _HANDLERS = {}
 
 
@@ -33,6 +37,8 @@ def execute(request):
         from .callbacks_case import register_case_callbacks
         from .callbacks_params import register_param_callbacks
         from .plot_types.registry import register_plot_callbacks
+        from .callbacks_pyplotgen import register_pyplotgen_callbacks
+        from .output_chooser import register_output_chooser
 
         class Registry:
             worker_registry = True
@@ -41,15 +47,22 @@ def execute(request):
             def clientside_callback(self, *a, **kw):
                 pass
 
+        from dash_app.compile_tab.runner_selector import register_runner_selector
+        from dash_app.tune_tab.callbacks_display import register_display_callbacks
+
         registry = Registry()
+        register_runner_selector(registry)
+        register_display_callbacks(registry)
+        register_output_chooser(registry)
         register_case_callbacks(registry)
         register_param_callbacks(registry)
+        register_pyplotgen_callbacks(registry)
         register_plot_callbacks(registry)
     task = request["task"]
     if task not in ALLOWED_TASKS or task not in _HANDLERS:
         raise ValueError("Unknown Plot task")
     # Render state belongs to the browser's accepted figure, never another job.
-    if task not in {"case", "catalog", "params"}:
+    if task not in {"case", "params"} | PAGE_TASKS | BENCHMARK_TASKS:
         from .plot_types.registry import PLOT_TYPES
         plot = PLOT_TYPES[task]
         clear = getattr(plot, "clear_render_state", None)
@@ -79,9 +92,16 @@ class PlotTasks:
 
     @staticmethod
     def lane(request):
+        """Keep LES transfers, figure rendering, metadata and gradients in separate queues."""
+        if request["task"] in BENCHMARK_TASKS:
+            return "les"
+        if request["task"] in RUNNER_TASKS:
+            return "runner"
+        if request["task"] in TUNE_TASKS:
+            return "tune"
         if request["task"] in GRADIENT_TASKS:
             return "gradient_matrix"
-        return "metadata" if request["task"] in {"catalog", "case", "params"} else "figures"
+        return "metadata" if request["task"] in {"catalog", "case", "params", "pyplotgen_help"} else "figures"
 
     def _prune(self):
         now = time.monotonic()
@@ -108,9 +128,9 @@ class PlotTasks:
             self._prune()
             page = scope.split(":", 1)[0]
             selection = int(request.get("selection", 0))
-            if request["task"] != "catalog":
+            if request["task"] not in PAGE_TASKS:
                 related = [(key, value) for key, value in self.records.items()
-                           if key.split(":", 1)[0] == page and value.get("task") != "catalog"]
+                           if key.split(":", 1)[0] == page and value.get("task") not in PAGE_TASKS]
                 if any(value.get("selection", 0) > selection for _, value in related):
                     return {"state": "superseded", "revision": revision}
                 for key, value in related:

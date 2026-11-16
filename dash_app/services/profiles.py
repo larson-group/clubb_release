@@ -15,6 +15,7 @@ from dash_app.shared.output_discovery import discover_stats_directories
 from dash_app.shared.netcdf import file_signature
 from dash_app.plot_tab.plot_types.shared import (
     build_case_data,
+    normalize_output_directory,
     scan_output_cases,
     snap_start_time_to_step,
     time_start_max_for_duration,
@@ -36,6 +37,21 @@ def _average_length_bounds(case_data: dict[str, Any]) -> tuple[float, float, flo
 
 def _default_average_length(minimum: float, _maximum: float) -> float:
     return minimum
+
+
+def normalize_output_directories(output_dirs):
+    """Normalize and de-duplicate selection state without pruning missing paths."""
+    normalized = []
+    seen = set()
+    for raw_entry in output_dirs or []:
+        candidate = str(raw_entry or "").strip()
+        if not candidate:
+            continue
+        path = normalize_output_directory(candidate)
+        if path not in seen:
+            normalized.append(path)
+            seen.add(path)
+    return normalized
 
 
 def scan_case_outputs(output_dirs: list[str] | None = None) -> dict[str, list[str]]:

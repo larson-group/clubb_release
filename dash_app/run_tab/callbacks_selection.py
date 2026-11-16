@@ -1,6 +1,8 @@
 """Callbacks for run-tab case and stats selection state."""
 
-from dash import ALL, ClientsideFunction, Input, Output, State, callback_context, no_update
+import json
+
+from dash import ALL, ClientsideFunction, Input, Output, State
 
 from .layout import stats_button_style
 
@@ -23,48 +25,40 @@ def register_selection_callbacks(app, case_groups):
             for button_id in ids
         ], stats_button_style(selected_stats not in {"all", "standard", "core"})
 
-    @app.callback(
+    app.clientside_callback(
+        """function(clicks, selected) {
+            const ctx = dash_clientside.callback_context;
+            const event = (ctx.triggered || [])[0] || {};
+            const id = ctx.triggered_id;
+            if (!(Number(event.value) > 0) || !id || !id.name) return dash_clientside.no_update;
+            const next = Array.from(selected || []);
+            const index = next.indexOf(id.name);
+            if (index < 0) next.push(id.name); else next.splice(index, 1);
+            return next;
+        }""",
         Output("run-selected-cases", "data", allow_duplicate=True),
         Input({"type": "run-case-button", "name": ALL}, "n_clicks"),
         State("run-selected-cases", "data"),
         prevent_initial_call=True,
     )
-    def select_case(_n_clicks, selected_cases):
-        """Toggle one case in the next-submission selection."""
-        if not any(_n_clicks or []):
-            return no_update
-        trigger_id = callback_context.triggered_id
-        case_name = trigger_id.get("name") if isinstance(trigger_id, dict) else None
-        if not case_name:
-            return no_update
-        selected = list(selected_cases or [])
-        if case_name in selected:
-            selected.remove(case_name)
-        else:
-            selected.append(case_name)
-        return selected
-
-    @app.callback(
+    app.clientside_callback(
+        """function(clicks) {
+            const ctx = dash_clientside.callback_context;
+            const event = (ctx.triggered || [])[0] || {};
+            const id = ctx.triggered_id;
+            if (!(Number(event.value) > 0) || !id) return dash_clientside.no_update;
+            return GROUPS[id.name] || dash_clientside.no_update;
+        }""".replace("GROUPS", json.dumps(case_groups)),
         Output("run-selected-cases", "data", allow_duplicate=True),
         Input({"type": "run-group-button", "name": ALL}, "n_clicks"),
         prevent_initial_call=True,
     )
-    def select_case_group(_n_clicks):
-        """Replace the current selection with one predefined case group."""
-        trigger_id = callback_context.triggered_id
-        if not isinstance(trigger_id, dict):
-            return no_update
-        group_cases = case_groups.get(trigger_id.get("name") or "", [])
-        return list(group_cases) if group_cases else no_update
-
-    @app.callback(
+    app.clientside_callback(
+        "function(clicks) { return clicks > 0 ? [] : dash_clientside.no_update; }",
         Output("run-selected-cases", "data", allow_duplicate=True),
         Input("run-deselect", "n_clicks"),
         prevent_initial_call=True,
     )
-    def deselect_all(_deselect_clicks):
-        """Clear the next-submission case selection."""
-        return []
 
     app.clientside_callback(
         ClientsideFunction(

@@ -96,7 +96,7 @@ def test_initial_dashboard_defers_discovery_and_scientific_controls(monkeypatch)
         raise AssertionError("unvisited page was built at startup")
 
     for module, name in (
-        (compile_tab, "discover_compile_state"),
+        (compile_tab, "build_layout"),
         (profile_tab, "discover_profile_state"),
         (run_tab, "build_initial_run_state"),
         (tune_tab, "build_initial_tune_state"),
@@ -113,7 +113,7 @@ def test_initial_dashboard_defers_discovery_and_scientific_controls(monkeypatch)
 
     assert "tutorial-start-equations" in payload
     assert "compile-env-select" not in payload
-    assert "compile-build-selector-anchor" not in payload
+    assert "compile-build-selector-anchor" in payload
     assert "run-selected-cases" not in payload
     assert "plots-case-data" not in payload
     assert "notes-adg1-gaussian-figure" not in payload

@@ -22,6 +22,9 @@ class CallbackRegistry:
     def __init__(self):
         self.functions = {}
 
+    def clientside_callback(self, *args, **kwargs):
+        """Ignore browser-only callbacks when testing server request forwarding."""
+
     def callback(self, *args, **kwargs):
         def register(function):
             self.functions[function.__name__] = function
@@ -230,7 +233,7 @@ def test_workspace_hydration_keeps_output_count_on_empty_and_error_paths(monkeyp
     app = Dash(__name__)
     callbacks_runs.register_run_callbacks(app)
     entry = next(item for item in app.callback_map.values()
-                 if item['callback'].__wrapped__.__name__ == 'load_selected_workspace')
+                 if 'callback' in item and item['callback'].__wrapped__.__name__ == 'load_selected_workspace')
     load = entry['callback'].__wrapped__
     expected = len(entry['output'])
     assert len(load({}, {}, {})) == expected

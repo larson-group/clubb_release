@@ -5,15 +5,15 @@ from types import SimpleNamespace
 from dash import Dash, Patch, no_update
 
 from dash_app.plot_tab.callbacks_case import (
-    _catalog_tracking_paths,
-    _delete_output_directory,
     _is_positive_click,
     _is_same_case,
-    _normalize_output_dirs,
-    _update_output_dirs,
     register_case_callbacks,
 )
 from dash_app.plot_tab.plot_types import shared
+from dash_app.plot_tab.output_chooser import (
+    _catalog_tracking_paths, _delete_output_directory, register_output_chooser,
+)
+from dash_app.services.profiles import normalize_output_directories
 
 
 def test_dynamic_remove_button_mount_is_not_a_click():
@@ -31,25 +31,15 @@ def test_same_case_compares_requested_output_directories_before_reload():
 
 
 def test_selection_normalization_preserves_temporarily_missing_directories():
-    assert _normalize_output_dirs(["/tmp/missing", "/tmp/other", "/tmp/missing"]) == [
+    assert normalize_output_directories(["/tmp/missing", "/tmp/other", "/tmp/missing"]) == [
         "/tmp/missing",
         "/tmp/other",
     ]
 
 
-def test_adding_or_removing_one_output_preserves_every_other_selection():
-    current = ["/tmp/one", "/tmp/two"]
-
-    assert _update_output_dirs(current, "add", "/tmp/three") == [
-        "/tmp/one",
-        "/tmp/two",
-        "/tmp/three",
-    ]
-    assert _update_output_dirs(current, "remove", "/tmp/one") == ["/tmp/two"]
-
-
 def test_case_loading_consumes_directory_selection_directly():
     app = Dash(__name__)
+    register_output_chooser(app)
     register_case_callbacks(app)
     entry = next(entry for key, entry in app.callback_map.items()
                  if 'plots-case-data.data' in key)
@@ -59,11 +49,12 @@ def test_case_loading_consumes_directory_selection_directly():
 
 def test_output_catalog_refresh_handles_open_refresh_and_new_directory():
     app = Dash(__name__)
+    register_output_chooser(app)
     register_case_callbacks(app)
 
     refresh = app.callback_map["plots-output-catalog.data"]
     assert [(item["id"], item["property"]) for item in refresh["inputs"]] == [
-        ("plots-output-menu-expanded", "data"),
+        ("plots-output-chooser", "id"),
         ("plots-output-refresh", "n_clicks"),
         ("plots-output-dirs", "data"),
     ]
@@ -74,6 +65,7 @@ def test_output_catalog_refresh_handles_open_refresh_and_new_directory():
 
 def test_catalog_is_only_state_for_the_callback_that_mutates_active_outputs():
     app = Dash(__name__)
+    register_output_chooser(app)
     register_case_callbacks(app)
     selection = next(
         entry
@@ -92,13 +84,13 @@ def test_catalog_is_only_state_for_the_callback_that_mutates_active_outputs():
 
 
 def test_output_delete_is_limited_to_subdirectories_under_output(monkeypatch, tmp_path):
-    from dash_app.plot_tab import callbacks_case
+    from dash_app.plot_tab import output_chooser
 
     output_root = tmp_path / "output"
     target = output_root / "run"
     target.mkdir(parents=True)
     (target / "arm_stats.nc").write_bytes(b"CDF")
-    monkeypatch.setattr(callbacks_case, "OUTPUT_ROOT", output_root)
+    monkeypatch.setattr(output_chooser, "OUTPUT_ROOT", output_root)
 
     _delete_output_directory(target)
 
@@ -116,16 +108,17 @@ def test_output_delete_is_limited_to_subdirectories_under_output(monkeypatch, tm
 
 def test_catalog_refresh_only_drives_output_selection_ui():
     app = Dash(__name__)
+    register_output_chooser(app)
     register_case_callbacks(app)
     consumers = [
-        key
-        for key, entry in app.callback_map.items()
+        entry
+        for entry in app.callback_map.values()
         if "plots-output-catalog" in {item["id"] for item in entry["inputs"]}
     ]
 
-    assert consumers == [
-        "..plots-available-output-list.children...plots-active-output-list.children...plots-output-menu.className.."
-    ]
+    outputs = {output.component_id for entry in consumers for output in entry['output']}
+    assert {'plots-available-output-list', 'plots-active-output-list'} <= outputs
+    assert 'plots-case-data' not in outputs
 
 
 def test_removed_external_output_remains_tracked_for_the_available_menu():

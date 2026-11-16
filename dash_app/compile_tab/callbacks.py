@@ -3,27 +3,24 @@
 from __future__ import annotations
 
 import errno
+import json
 import os
 from pathlib import Path
 import shutil
 import time
 
-from dash import ALL, Input, Output, State, callback_context, dcc, html, no_update
+from dash import ALL, Input, Output, State, callback_context, dcc, html, no_update, set_props
 
 from dash_app.shared.notecard import information_body, notecard
 
 from .build_selector import (
-    BUILD_SELECTOR_TRIGGER_IDS,
     JAX_PROFILES,
+    jax_device_info,
     RUN_IMPLEMENTATIONS,
     build_implementation_capability,
-    build_selector_trigger_children,
-    inspect_jax_runtime_profiles,
     normalize_jax_profile,
     normalize_run_implementation,
-    register_build_selector_position_callback,
     selected_build_info,
-    selector_popover_style,
 )
 
 from .discovery import (
@@ -273,16 +270,13 @@ def render_detection(discovery):
 
 
 def clicked_trigger_id():
-    """Return the triggered id only when a button was actually clicked."""
-    triggered_id = callback_context.triggered_id
-    if not triggered_id:
-        return None
+    """Resolve the positive click itself when Dash batches it with zero-click mounts."""
     for item in callback_context.triggered:
-        if not item.get("prop_id", "").endswith(".n_clicks"):
-            continue
+        prop_id = item.get("prop_id", "")
         value = item.get("value")
-        if isinstance(value, (int, float)) and value > 0:
-            return triggered_id
+        if prop_id.endswith(".n_clicks") and isinstance(value, (int, float)) and value > 0:
+            component_id = prop_id.rsplit(".", 1)[0]
+            return json.loads(component_id) if component_id.startswith("{") else component_id
     return None
 
 
@@ -601,7 +595,7 @@ def render_build_selector_help(runtime_info):
 
 def jax_preallocation_available(runtime_info, profile, gpu):
     """Require a compatible selection, not stale metadata for a different GPU."""
-    info = (runtime_info or {}).get("gpu") or {}
+    info = jax_device_info((runtime_info or {}).get("gpu") or {}, gpu)
     selected = ((info.get("hardware") or {}).get("selected_gpu") or {}).get("uuid")
     return (
         profile == "gpu"
@@ -701,11 +695,13 @@ def render_compact_build_selector(
         effective_uuid = jax_gpu or inspected_uuid
         for gpu in gpus:
             uuid = gpu["uuid"]
-            # The wrapper report describes its selected device, not every card.
-            # Do not apply one card's compatibility result to another device.
-            info = dict(profile_info["gpu"]) if uuid == inspected_uuid else {
-                "status": "unchecked", "selectable": True,
-            }
+            # CUDA compatibility comes from each cached card's capabilities;
+            # environment readiness is shared by all cards using that backend.
+            info = (jax_device_info(profile_info["gpu"], uuid)
+                    if (profile_info["gpu"].get("runtime") or {}).get("accelerator") == "cuda13"
+                    else dict(profile_info["gpu"]) if uuid == inspected_uuid else {
+                        "status": "unchecked", "selectable": True,
+                    })
             info["hardware"] = {"selected_gpu": gpu, "gpus": [gpu]}
             add_tile("gpu", uuid, f"GPU {gpu.get('index', '?')}", info,
                      jax_profile == "gpu" and uuid == effective_uuid,
@@ -1259,206 +1255,7 @@ def delete_all_existing_builds(builds):
 
 
 def register_compile_callbacks(app):
-    register_build_selector_position_callback(app)
-
-    @app.callback(
-        Output("compile-build-selector-help", "children"),
-        Input({"type": "compile-selector-help-open", "index": ALL}, "n_clicks"),
-        Input({"type": "compile-selector-help-close", "index": ALL}, "n_clicks"),
-        State("compile-jax-runtime-info", "data"),
-        prevent_initial_call=True,
-    )
-    def toggle_selector_help(_open, _close, runtime_info):
-        trigger = clicked_trigger_id()
-        if not isinstance(trigger, dict):
-            return no_update
-        if trigger.get("type") == "compile-selector-help-close":
-            return ""
-        return render_build_selector_help(runtime_info)
-
-    selector_outputs = [
-        output
-        for component_id in BUILD_SELECTOR_TRIGGER_IDS
-        for output in (
-            Output(component_id, "children"),
-            Output(component_id, "className"),
-            Output(component_id, "title"),
-        )
-    ]
-
-    @app.callback(
-        Output("compile-run-implementation", "data"),
-        Input({"type": "compile-run-implementation-choice", "index": ALL}, "n_clicks"),
-        State("compile-run-implementation", "data"),
-        prevent_initial_call=True,
-    )
-    def select_run_implementation(_clicks, current):
-        triggered = clicked_trigger_id()
-        if not isinstance(triggered, dict):
-            return no_update
-        return normalize_run_implementation(triggered.get("index") or current)
-
-    @app.callback(
-        Output("compile-jax-runtime-info", "data"),
-        Input("compile-build-selector-anchor", "data"),
-        Input("compile-run-implementation", "data"),
-        Input("compile-run-jax-gpu", "data"),
-        Input("compile-run-jax-xla-prealloc", "data"),
-        prevent_initial_call=True,
-    )
-    def refresh_jax_runtime_info(anchor, implementation, jax_gpu, jax_xla_prealloc):
-        if not anchor or normalize_run_implementation(implementation) != "jax":
-            return no_update
-        return inspect_jax_runtime_profiles(jax_gpu=jax_gpu, jax_xla_prealloc=jax_xla_prealloc)
-
-    @app.callback(
-        Output("compile-run-jax-xla-prealloc", "data"),
-        Input({"type": "compile-jax-prealloc-choice", "index": ALL}, "value"),
-        State("compile-jax-runtime-info", "data"),
-        State("compile-run-jax-profile", "data"),
-        State("compile-run-jax-gpu", "data"),
-        State("compile-run-jax-xla-prealloc", "data"),
-        prevent_initial_call=True,
-    )
-    def select_jax_preallocation(values, runtime_info, profile, gpu, current):
-        if not values or not jax_preallocation_available(runtime_info, profile, gpu):
-            return no_update
-        enabled = "enabled" in (values[0] or [])
-        return enabled if enabled != current else no_update
-
-    @app.callback(
-        Output("compile-run-jax-profile", "data"),
-        Output("compile-run-jax-gpu", "data"),
-        Input({"type": "compile-run-jax-profile-choice", "index": ALL}, "n_clicks"),
-        State("compile-jax-runtime-info", "data"),
-        prevent_initial_call=True,
-    )
-    def select_run_jax_compute(_clicks, runtime_info):
-        """Select the backend and physical device atomically, even on reselect."""
-        trigger = clicked_trigger_id()
-        if not isinstance(trigger, dict):
-            return no_update, no_update
-        choice = trigger.get("index")
-        if choice == "cpu":
-            return "cpu", no_update
-        if choice == "gpu":
-            return "gpu", ""
-        gpus = ((runtime_info or {}).get("gpu", {}).get("hardware") or {}).get("gpus") or []
-        if choice in {gpu.get("uuid") for gpu in gpus}:
-            return "gpu", choice
-        return no_update, no_update
-
-    @app.callback(
-        Output("compile-build-selector-menu", "children"),
-        Output("compile-build-selector-popover", "className"),
-        Output("compile-build-selector-menu", "style"),
-        *selector_outputs,
-        Input("compile-build-selector-anchor", "data"),
-        Input("compile-discovery", "data"),
-        Input("compile-build-statuses", "data"),
-        Input("compile-build-failures", "data"),
-        Input("compile-job", "data"),
-        Input("compile-run-implementation", "data"),
-        Input("compile-run-jax-profile", "data"),
-        Input("compile-jax-runtime-info", "data"),
-        Input("compile-run-jax-gpu", "data"),
-        Input("compile-run-jax-xla-prealloc", "data"),
-    )
-    def update_build_selector(
-        anchor,
-        discovery,
-        statuses,
-        failures,
-        job,
-        implementation,
-        jax_profile,
-        jax_runtime_info,
-        jax_gpu,
-        jax_xla_prealloc,
-    ):
-        """Keep every trigger and the one shared selector on Compile's build state."""
-        implementation = normalize_run_implementation(implementation)
-        jax_profile = normalize_jax_profile(jax_profile)
-        visual = build_visual_state(statuses, failures, job)
-        menu = render_compact_build_selector(
-            discovery,
-            statuses,
-            failures,
-            job,
-            visual,
-            implementation,
-            (anchor or {}).get("trigger_id", ""),
-            jax_profile,
-            jax_runtime_info,
-            jax_gpu,
-            jax_xla_prealloc,
-        )
-        selected_info = selected_build_info() if implementation != "jax" else {}
-        selected_build = selected_build_from_discovery(discovery) if implementation != "jax" else None
-        if implementation == "jax":
-            available, reason = build_implementation_capability(
-                "", "jax", jax_profile=jax_profile
-            )
-            runtime_info = dict((jax_runtime_info or {}).get(jax_profile) or {})
-            runtime_status = str(runtime_info.get("status") or "checking")
-            if runtime_info.get("selectable") is False:
-                available = False
-                reason = str(runtime_info.get("reason") or "JAX profile unavailable")
-            selected_name = "CPU" if jax_profile == "cpu" else "GPU"
-            if jax_profile == "gpu" and jax_gpu:
-                gpus = (runtime_info.get("hardware") or {}).get("gpus") or []
-                selected_gpu = next((gpu for gpu in gpus if gpu.get("uuid") == jax_gpu), {})
-                selected_name = f"GPU {selected_gpu.get('index', '?')} · {selected_gpu.get('name', 'unavailable')}"
-            if not available:
-                status_class = "compile-build-card-failed"
-                status_label = reason
-            elif runtime_status == "ready":
-                status_class = "compile-build-card-current"
-                status_label = "ready"
-            else:
-                status_class = "compile-build-card-checking"
-                status_label = runtime_status.replace("_", " ")
-        elif selected_build:
-            selected_name = selected_info["name"]
-            status_info = displayed_build_status(selected_build, statuses, visual)
-            status = status_info.get("status", "checking")
-            status_class = build_card_status_class(selected_build, status, visual["failed_paths"])
-            selected_path = selected_build.get("path")
-            if selected_path == visual["active_path"]:
-                status_class += " compile-build-card-rebuild-active"
-            elif selected_path in visual["queued_paths"] or selected_path in visual["rebuilding_paths"]:
-                status_class += " compile-build-card-rebuild-queued"
-            status_label = status_info.get("label") or status.replace("_", " ")
-        else:
-            selected_name = selected_info["name"]
-            status_class = (
-                "compile-build-card-failed"
-                if selected_info["status"] in {"missing", "broken"}
-                else "compile-build-card-checking"
-            )
-            status_label = selected_info["status"]
-        trigger_values = []
-        for component_id in BUILD_SELECTOR_TRIGGER_IDS:
-            trigger_values.extend(
-                (
-                    build_selector_trigger_children(selected_name, implementation),
-                    " ".join(
-                        (
-                            "selected-build-badge",
-                            status_class,
-                            "selected-build-badge-open"
-                            if anchor and anchor.get("trigger_id") == component_id
-                            else "",
-                        )
-                    ).strip(),
-                    f"{implementation.title()} using {selected_name} — {status_label}. Click to configure.",
-                )
-            )
-        popover_class = "compile-build-selector-popover"
-        if not anchor:
-            popover_class += " compile-build-selector-popover-closed"
-        return menu, popover_class, selector_popover_style(anchor), *trigger_values
-
+    """Register Compile controls and broker job observations."""
     @app.callback(
         Output("compile-job", "data", allow_duplicate=True),
         Output("compile-log", "data", allow_duplicate=True),
@@ -1504,15 +1301,15 @@ def register_compile_callbacks(app):
         running = state in {"running", "stopping"}
         return job, log, int(record.get("log_offset") or len(tail)), not running, 0
 
-    """Register compile tab callbacks."""
 
     @app.callback(
         Output("compile-discovery", "data"),
-        Input("compile-refresh", "n_clicks"),
+        Input("compile-refresh", "n_clicks", allow_optional=True),
         prevent_initial_call=True,
     )
     def refresh_discovery(_n_clicks):
-        return discover_compile_state()
+        """Explicitly refresh the shared catalog from a mounted Compile tab."""
+        return discover_compile_state() if _n_clicks else no_update
 
     @app.callback(
         Output("compile-source-check", "data", allow_duplicate=True),
@@ -1534,20 +1331,27 @@ def register_compile_callbacks(app):
         Output("compile-extra-args", "value"),
         Output("compile-lmod-compiler", "value", allow_duplicate=True),
         Input({"type": "compile-build-select", "index": ALL}, "n_clicks"),
-        Input({"type": "compile-build-selector-select", "index": ALL}, "n_clicks"),
+        Input("runner-selected-build", "data"),
         State("compile-discovery", "data"),
         State("compile-build-statuses", "data"),
-        State("compile-build-failures", "data"),
-        State("compile-build-delete-target", "data"),
-        State("compile-job", "data"),
+        State("compile-build-failures", "data", allow_optional=True),
+        State("compile-build-delete-target", "data", allow_optional=True),
+        State("compile-job", "data", allow_optional=True),
         prevent_initial_call=True,
     )
     def select_existing_build(_n_clicks, _selector_clicks, discovery, statuses, failures, delete_target, job):
-        triggered = clicked_trigger_id()
+        """Apply the selected install and its settings when Compile is mounted."""
+        if job is None:
+            return (no_update,) * 10
+        triggered = callback_context.triggered_id if callback_context.triggered_id == "runner-selected-build" else clicked_trigger_id()
         if not triggered:
             return (no_update,) * 10
-        build_path = triggered.get("index")
-        build = find_build(discovery, build_path)
+        if triggered == "runner-selected-build":
+            build = (_selector_clicks or {}).get("build")
+            if not build:
+                return (no_update,) * 10
+        else:
+            build = find_build(discovery, triggered.get("index"))
         if not build:
             return (
                 no_update,
@@ -1592,6 +1396,8 @@ def register_compile_callbacks(app):
         settings = compile_settings_from_build(build, discovery)
         updated_discovery = discovery_with_selected_install(discovery, build.get("install_prefix", ""))
         updated_discovery["selected_build_settings"] = settings
+        if isinstance(triggered, dict):
+            set_props("runner-selected-build", {"data": {"build": build, "revision": time.time_ns()}})
         return (
             updated_discovery,
             render_build_list(updated_discovery, statuses, failures, delete_target, job),
@@ -1630,7 +1436,7 @@ def register_compile_callbacks(app):
         Input({"type": "compile-build-delete-confirm", "index": ALL}, "n_clicks"),
         Input({"type": "compile-build-delete-all-confirm", "index": ALL}, "n_clicks"),
         State("compile-discovery", "data"),
-        State("compile-job", "data"),
+        State("compile-job", "data", allow_optional=True),
         prevent_initial_call=True,
     )
     def confirm_delete_build(_confirm_clicks, _confirm_all_clicks, discovery, job):
@@ -1667,11 +1473,10 @@ def register_compile_callbacks(app):
         Output("compile-source-check", "data", allow_duplicate=True),
         Input("compile-rebuild-all", "n_clicks"),
         Input({"type": "compile-build-rebuild", "index": ALL}, "n_clicks"),
-        Input({"type": "compile-build-selector-rebuild", "index": ALL}, "n_clicks"),
         State("compile-discovery", "data"),
         prevent_initial_call=True,
     )
-    def start_rebuild(_all_clicks, _rebuild_clicks, _selector_rebuild_clicks, discovery):
+    def start_rebuild(_all_clicks, _rebuild_clicks, discovery):
         triggered = clicked_trigger_id()
         if not triggered:
             return (no_update,) * 7
@@ -1770,10 +1575,13 @@ def register_compile_callbacks(app):
     @app.callback(
         Output("compile-build-statuses", "data"),
         Input("compile-discovery", "data"),
-        Input("compile-build-status-interval", "n_intervals"),
-        Input("compile-job", "data"),
+        Input("compile-build-status-interval", "n_intervals", allow_optional=True),
+        Input("compile-job", "data", allow_optional=True),
     )
     def update_build_statuses(discovery, _tick, job):
+        """Check shared build status once Compile supplies its local controls."""
+        if _tick is None and job is None:
+            return no_update
         if not discovery:
             return {}
         if job_process_is_live(job):
@@ -2082,10 +1890,11 @@ def register_compile_callbacks(app):
 
     @app.callback(
         Output("compile-discovery", "data", allow_duplicate=True),
-        Input("compile-job", "data"),
+        Input("compile-job", "data", allow_optional=True),
         prevent_initial_call=True,
     )
     def refresh_discovery_after_job(job):
+        """Publish completed compilation results into the shared catalog."""
         if not job or job.get("status") == "running":
             return no_update
         if job.get("kind") not in {"compile", "rebuild"}:

@@ -1,13 +1,10 @@
-import os
-from pathlib import Path
-
 from dash import dcc, html
-from utilities.output_paths import OUTPUT_ROOT
 
 from .plot_types import shared
 from .case_cache import compact_case_data
 from .plot_types.registry import PLOT_TYPES
-from .state import DEFAULT_OUTPUT_DIR, DEFAULT_PLAYBACK_INTERVAL_S
+from .state import DEFAULT_PLAYBACK_INTERVAL_S
+from .output_chooser import build_output_chooser
 
 
 CASE_BUTTON_STYLE = {
@@ -49,14 +46,20 @@ def case_button(name, available, selected=False):
     )
 
 
-def benchmark_button(source, label, available, selected=False):
-    """Render one benchmark toggle button with case-button-like styling."""
-    return html.Button(
-        label,
+def benchmark_button(source, label, available, selected=False, acquisition=None):
+    """Show source selection, an animated preparation indicator, or its acquisition error."""
+    state = (acquisition or {}).get("state")
+    loading = state == "loading"
+    error = (acquisition or {}).get("error") if state == "error" else None
+    button = html.Button(
+        [html.Span(className="plots-les-spinner", **{"aria-hidden": "true"}), label,
+         html.Span(" · Loading…", className="plots-les-status")] if loading else label,
         id={"type": "plots-benchmark-button", "source": source},
         n_clicks=0,
         n_clicks_timestamp=-1,
         disabled=not available,
+        title=error or ("Finding or downloading LES data; plots remain usable." if loading else label),
+        **{"aria-busy": "true" if loading else "false"},
         style={
             **CASE_BUTTON_STYLE,
             "backgroundColor": "#2563eb" if available else "#c9c9c9",
@@ -65,136 +68,12 @@ def benchmark_button(source, label, available, selected=False):
             "cursor": "pointer" if available else "not-allowed",
         },
     )
-
-
-def _output_record_label(record, path):
-    label = str(record.get("label") or record.get("relative_path") or "").strip("/")
-    if label.startswith("output/"):
-        label = label.removeprefix("output/")
-    return label or os.path.basename(path.rstrip(os.sep)) or path
-
-
-def _output_case_summary(record):
-    names = list(record.get("case_names") or [])
-    return "Cases: " + (", ".join(names) if names else "none currently available")
-
-
-def _output_button_text(record, path):
-    count = int(record.get("case_count") or len(record.get("case_names") or []))
-    return f"{_output_record_label(record, path)} · {count}"
-
-
-def _output_delete_button(path, confirmation=None):
-    """Render the guarded permanent-delete action for one output subdirectory."""
-    target = Path(path).expanduser().resolve()
-    root = Path(OUTPUT_ROOT).resolve()
-    deletable = target != root and root in target.parents
-    confirming = deletable and (confirmation or {}).get("path") == str(target)
-    return html.Button(
-        "Confirm" if confirming else "×",
-        id={"type": "plots-delete-output-dir", "path": str(target)},
-        n_clicks=0,
-        n_clicks_timestamp=-1,
-        disabled=not deletable,
-        title=(
-            "Click again within 3 seconds to permanently delete this output"
-            if confirming
-            else "Permanently delete this output directory"
-            if deletable
-            else "Only subdirectories inside output/ can be deleted here"
-        ),
-        className=(
-            "plots-output-dir-delete plots-output-dir-delete--confirm"
-            if confirming
-            else "plots-output-dir-delete"
-        ),
-    )
-
-
-def available_output_buttons(records, selected_dirs=None, expanded=False, delete_confirmation=None):
-    """Render the three newest or all currently unselected outputs."""
-    selected = {str(path) for path in (selected_dirs or [])}
-    available = [
-        record
-        for record in (records or [])
-        if record.get("available", True) and str(record.get("path")) not in selected
-    ]
-    if not available:
-        return [html.Div("All outputs selected", className="plots-output-menu-empty")]
-    visible = available if expanded else available[:3]
-    buttons = []
-    for record in visible:
-        path = str(record["path"])
-        add_button = html.Button(
-            _output_button_text(record, path),
-            id={"type": "plots-add-output-dir", "path": path},
-            n_clicks=0,
-            n_clicks_timestamp=-1,
-            title=_output_case_summary(record),
-            className="plots-output-available-button",
-        )
-        buttons.append(
-            html.Div(
-                [add_button, _output_delete_button(path, delete_confirmation)],
-                className="plots-output-menu-row",
-            )
-            if expanded
-            else add_button
-        )
-    return buttons
-
-
-def active_output_items(records, selected_dirs, expanded=False, delete_confirmation=None):
-    """Render every persisted active output, including unavailable directories."""
-    records_by_path = {str(record.get("path")): record for record in (records or [])}
-    items = []
-    for raw_path in selected_dirs or []:
-        path = str(raw_path or "").strip()
-        if not path:
-            continue
-        record = records_by_path.get(path)
-        available = record is not None and bool(record.get("available", True))
-        if record is None:
-            record = {
-                "path": path,
-                "label": os.path.basename(path.rstrip(os.sep)) or path,
-                "case_names": [],
-                "case_count": 0,
-            }
-        label = _output_record_label(record, path)
-        status = [] if available else [
-            html.Span(
-                "Unavailable",
-                className="plots-output-active-status plots-output-active-status--unavailable",
-            )
-        ]
-        items.append(
-            html.Div(
-                [
-                    html.Span(
-                        _output_button_text(record, path),
-                        className="plots-output-active-label",
-                    ),
-                    *status,
-                    *([_output_delete_button(path, delete_confirmation)] if expanded else []),
-                    html.Button(
-                        "−",
-                        id={"type": "plots-remove-output-dir", "path": path},
-                        n_clicks=0,
-                        n_clicks_timestamp=-1,
-                        title=f"Remove {label} from the comparison",
-                        className="plots-output-dir-remove",
-                    ),
-                ],
-                title=_output_case_summary(record),
-                className=(
-                    "plots-output-active-item plots-output-active-item--unavailable"
-                    if not available
-                    else "plots-output-active-item"
-                ),
-            )
-        )
-    return items or [html.Small("No output folders selected.", className="plots-mutable-output-warning")]
+    if error:
+        return html.Div([button, html.Div(
+            ["LES unavailable: ", error, " Toggle off and on to retry."],
+            className="plots-les-error", role="alert",
+        )])
+    return button
 
 
 def render_plot_card(plot_id, plot_state, case_data):
@@ -277,92 +156,40 @@ def _initial_case_buttons(initial_state):
     return [case_button(name, True, selected=(name == selected_name)) for name in available_names]
 
 
-def _directory_case_selector(initial_state, initial_catalog):
+def _pyplotgen_controls():
+    """Keep static gallery export and its help-driven options in one header category."""
+    return html.Div(
+        [
+            html.Div([
+                html.Span('PyPlotGen'),
+                html.Button('?', id='plots-pyplotgen-help-open', n_clicks=0,
+                            title='About PyPlotGen and its command-line options',
+                            **{'aria-label': 'PyPlotGen help'}),
+            ], className='plots-pyplotgen-heading'),
+            dcc.Dropdown(id='plots-pyplotgen-options', options=[], value=['-les'],
+                         multi=True, searchable=True, closeOnSelect=False,
+                         placeholder='Search options…', className='clubb-dropdown'),
+            html.Small('Type an option and press Enter; repeat to add more.'),
+            html.Div(id='plots-pyplotgen-option-values', className='plots-pyplotgen-option-values'),
+            html.Div(id='plots-pyplotgen-help-status', role='status'),
+            html.Button(
+                html.Span('Generate PyPlotGen', id='plots-pyplotgen-run-label'),
+                id='plots-pyplotgen-run', n_clicks=0, className='plots-pyplotgen-button',
+                title='Generate a static PyPlotGen gallery from the active outputs',
+            ),
+            html.Div(id='plots-pyplotgen-status', className='plots-pyplotgen-status'),
+        ],
+        className='plots-pyplotgen-control',
+    )
+
+
+def _directory_case_selector(initial_state):
     """Build the combined directory/case selection header block."""
-    initial_dirs = [DEFAULT_OUTPUT_DIR]
     return html.Div(
         [
             html.Div(
                 [
-                    html.Div(
-                        [
-                            html.Div(
-                                [
-                                    html.Button(
-                                        [
-                                            html.Span(
-                                                ["Available data in ", html.Code("output/", className="plots-output-root-path")]
-                                            ),
-                                            html.Span("▾", className="plots-output-menu-chevron"),
-                                        ],
-                                        id="plots-output-menu-toggle",
-                                        n_clicks=0,
-                                        n_clicks_timestamp=-1,
-                                        className="plots-output-menu-header",
-                                        title="Show or hide all available output folders",
-                                    ),
-                                    html.Div(
-                                        [
-                                            html.Div(
-                                                available_output_buttons(initial_catalog, initial_dirs, expanded=False),
-                                                id="plots-available-output-list",
-                                                className="plots-available-output-list",
-                                            ),
-                                            html.Div(
-                                                [
-                                                    html.Button("Refresh outputs", id="plots-output-refresh", n_clicks=0),
-                                                    html.Button("Add extra folder", id="plots-show-extra-dir", n_clicks=0),
-                                                    html.Div(
-                                                        [
-                                                            dcc.Input(
-                                                                id="plots-extra-dir-input",
-                                                                type="text",
-                                                                placeholder="Path outside the discovered list",
-                                                            ),
-                                                            html.Button("Add", id="plots-add-extra-dir", n_clicks=0, n_clicks_timestamp=-1),
-                                                        ],
-                                                        id="plots-extra-dir-control",
-                                                        style={"display": "none"},
-                                                    ),
-                                                    html.Small(id="plots-extra-dir-message", className="plots-mutable-output-warning"),
-                                                ],
-                                                id="plots-output-menu-advanced",
-                                                className="plots-output-menu-advanced",
-                                            ),
-                                        ],
-                                        className="plots-output-menu-body",
-                                    ),
-                                ],
-                                id="plots-output-menu",
-                                className="plots-output-menu",
-                            ),
-                            html.Div(
-                                [
-                                    html.Div("Active outputs", className="plots-output-active-heading"),
-                                    html.Div(
-                                        active_output_items(initial_catalog, initial_dirs),
-                                        id="plots-active-output-list",
-                                        className="plots-output-active-list",
-                                    ),
-                                ],
-                                className="plots-output-active-tray",
-                            ),
-                            html.Div(
-                                [
-                                    html.Button(
-                                        html.Span("Generate PyPlotGen", id="plots-pyplotgen-run-label"),
-                                        id="plots-pyplotgen-run",
-                                        n_clicks=0,
-                                        className="plots-pyplotgen-button",
-                                        title="Generate a static PyPlotGen gallery from the active outputs",
-                                    ),
-                                    html.Div(id="plots-pyplotgen-status", className="plots-pyplotgen-status"),
-                                ],
-                                className="plots-pyplotgen-control",
-                            ),
-                        ],
-                        className="plots-output-picker-row",
-                    ),
+                    build_output_chooser(),
                     html.Div(className="plots-output-benchmark-divider"),
                     html.Div(
                         [
@@ -371,6 +198,8 @@ def _directory_case_selector(initial_state, initial_catalog):
                         ],
                         className="plots-benchmark-column",
                     ),
+                    html.Div(className="plots-output-benchmark-divider"),
+                    _pyplotgen_controls(),
                 ],
                 className="plots-output-benchmark-row",
             ),
@@ -379,7 +208,6 @@ def _directory_case_selector(initial_state, initial_catalog):
                 [
                     html.Div("Cases", style={"fontWeight": "600", "marginBottom": "8px"}),
                     html.Div(id="plots-case-button-container", children=_initial_case_buttons(initial_state)),
-                    html.Div(id="plots-catalog-status", role="status"),
                     html.Div(id="plots-load-status", role="status"),
                 ],
                 style={"padding": "12px", "minHeight": "100%"},
@@ -394,18 +222,15 @@ def _directory_case_selector(initial_state, initial_catalog):
     )
 
 
-def _plots_stores(initial_state, initial_catalog):
-    """Build the stores and interval used to coordinate the plots tab."""
+def _plots_stores(initial_state):
+    """Build plot/control state; the output chooser supplies its own stores."""
     return [
-        dcc.Store(id="plots-path-context", data={"repo": str(Path(__file__).resolve().parents[2]),
-                  "output": str(Path(OUTPUT_ROOT).resolve()), "home": str(Path.home())}),
-        dcc.Store(id="plots-output-dirs", data=[DEFAULT_OUTPUT_DIR]),
-        dcc.Store(id="plots-output-catalog", data=initial_catalog),
-        dcc.Store(id="plots-output-menu-expanded", data=False),
-        dcc.Store(id="plots-output-delete-confirm", data=None),
         dcc.Store(id="plots-case-data", data=compact_case_data(initial_state["case_data"])),
         dcc.Store(id="plots-case-selection", data=None),
         dcc.Store(id="plots-enabled-benchmarks", data=initial_state["enabled_benchmarks"]),
+        dcc.Store(id="plots-ready-benchmarks", data=None),
+        dcc.Store(id="plots-benchmark-sam", data=None),
+        dcc.Store(id="plots-benchmark-coamps", data=None),
         dcc.Store(id="plots-plot-order", data=initial_state["plot_order"]),
         dcc.Store(id="plots-plot-state", data=initial_state["plot_state"]),
         dcc.Store(id="plots-next-id", data=initial_state["next_id"]),
@@ -417,11 +242,11 @@ def _plots_stores(initial_state, initial_catalog):
         dcc.Store(id="plots-selected-column", data=initial_state["selected_column"]),
         dcc.Store(id="plots-time-override", data=None),
         dcc.Store(id="plots-pyplotgen-action", data=None),
+        dcc.Store(id="plots-pyplotgen-help", data=None),
         dcc.Store(id="plots-pyplotgen-popup", data=None),
         dcc.Store(id="plots-pyplotgen-opened-run", data=None),
         dcc.Store(id="plots-playback", data={"playing": False, "interval_s": DEFAULT_PLAYBACK_INTERVAL_S, "inflight": False, "target_point": None}),
         dcc.Interval(id="plots-pyplotgen-progress-interval", interval=500, disabled=True, n_intervals=0),
-        dcc.Interval(id="plots-output-delete-expiry", interval=250, disabled=True, n_intervals=0),
         dcc.Interval(id="plots-playback-interval", interval=int(DEFAULT_PLAYBACK_INTERVAL_S * 1000), disabled=True, n_intervals=0),
     ]
 
@@ -546,12 +371,12 @@ def _right_pane(initial_state):
 
 def build_layout(initial_state):
     """Assemble the full static plots-tab layout from the provided initial state."""
-    initial_catalog = []  # The browser requests discovery after mounting.
     return html.Div(
         [
-            html.Div([_directory_case_selector(initial_state, initial_catalog)], style={"marginBottom": "12px"}),
-            *_plots_stores(initial_state, initial_catalog),
+            html.Div([_directory_case_selector(initial_state)], style={"marginBottom": "12px"}),
+            *_plots_stores(initial_state),
             html.Div(id="plots-help-modal"),
+            html.Div(id="plots-pyplotgen-help-modal"),
             html.Div(
                 [_left_pane(initial_state), html.Div(id="plots-pane-divider", className="plots-pane-divider"), _right_pane(initial_state)],
                 id="plots-tab-layout",

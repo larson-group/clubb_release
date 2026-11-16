@@ -9,6 +9,7 @@ from dash_app.compile_tab.build_selector import build_selector_trigger
 
 from .figures import METRICS, X_AXES, empty_profile_figure
 from .library import profile_option
+from .runtime import CPU_COLUMN_DEFAULTS
 
 
 def _control_label(label: str, tooltip: str):
@@ -382,7 +383,7 @@ def _benchmark_controls(initial_state: dict[str, object]):
                                 dcc.Input(
                                     id="profile-columns",
                                     type="text",
-                                    value="1,2,4,8",
+                                    value=CPU_COLUMN_DEFAULTS,
                                     debounce=True,
                                     className="profile-input",
                                 ),
@@ -875,6 +876,7 @@ def build_layout(initial_state: dict[str, object]):
     return html.Div(
         [
             dcc.Store(id="profile-action", data={}),
+            dcc.Store(id="profile-sweep-device", data=None),
             dcc.Store(id="profile-job", data={}),
             dcc.Store(id="profile-active-results", data={}),
             dcc.Store(id="profile-catalog", data=[]),
