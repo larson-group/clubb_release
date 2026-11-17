@@ -79,7 +79,6 @@ def configure_environment(env: dict[str, str], tools_dir: Path, xla_prealloc: bo
     env.setdefault("XLA_PYTHON_CLIENT_PREALLOCATE", "false")
     flags = env.get("XLA_FLAGS", "")
     if has_gpu(110501):
-        env.setdefault("CLUBB_JAX_PORTABLE_CHOLESKY", "1")
         for flag, value in (("xla_gpu_autotune_level", "0"),
                             ("xla_gpu_enable_command_buffer", "")):
             if flag not in flags:

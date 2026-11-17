@@ -11,7 +11,7 @@ module matrix_operations
     get_lower_triangular_matrix, set_lower_triangular_matrix, &
     mirror_lower_triangular_matrix
 
-  private :: Symm_matrix_eigenvalues
+  private :: cholesky_lower, Symm_matrix_eigenvalues
 
   private ! Default scope
 
@@ -108,12 +108,12 @@ module matrix_operations
 !-------------------------------------------------------------------------------
   subroutine Cholesky_factor( ndim, a_input, a_scaling, a_Cholesky, l_scaled )
 !  Description:
-!    Create a Cholesky factorization of a_input.
+!    Factor the lower triangle of a_input, preserving the upper triangle.
+!    Return reciprocal-diagonal scaling factors and whether scaling was applied.
 !    If the factorization fails we use a modified a_input matrix and attempt
 !    to factorize again.
 !
 !  References:
-!    <http://www.netlib.org/lapack/explore-html/a00868.html> dpotrf
 !    <http://www.netlib.org/lapack/explore-html/a00860.html> dpoequ
 !    <http://www.netlib.org/lapack/explore-html/a00753.html> dlaqsy
 !-------------------------------------------------------------------------------
@@ -125,81 +125,80 @@ module matrix_operations
 
     use clubb_precision, only: & 
         core_rknd
-      
-    use lapack_interfaces, only: &
-        lapack_potrf, &   ! Procedures
-        lapack_poequ, &
-        lapack_laqsy
 
     implicit none
 
     ! Constant Parameters
     integer, parameter :: itermax = 10 ! Max iterations of the modified method
 
-    real( kind = core_rknd), parameter :: d_coef = 0.1_core_rknd 
-       ! Coefficient applied if the decomposition doesn't work
+    real( kind = core_rknd ), parameter :: d_coef = 0.1_core_rknd ! Diagonal retry coefficient [-]
 
     !--------------------------- Input Variables ---------------------------
-    integer, intent(in) :: ndim
+    integer, intent(in) :: ndim ! Matrix order [-]
 
-    real( kind = core_rknd ), dimension(ndim,ndim), intent(in) :: a_input
+    real( kind = core_rknd ), dimension(ndim,ndim), intent(in) :: a_input ! Input covariance or correlation matrix [units vary]
 
     !--------------------------- Output Variables ---------------------------
-    real( kind = core_rknd ), dimension(ndim), intent(out) :: a_scaling
+    real( kind = core_rknd ), dimension(ndim), intent(out) :: a_scaling ! Reciprocal diagonal square roots [units vary]
 
-    real( kind = core_rknd ), dimension(ndim,ndim), intent(out) :: a_Cholesky
+    real( kind = core_rknd ), dimension(ndim,ndim), intent(out) :: a_Cholesky ! Factor in the lower triangle [units vary]
 
-    logical, intent(out) :: l_scaled
+    logical, intent(out) :: l_scaled ! Whether diagonal equilibration was applied
 
-    ! Local Variables
-    real( kind = core_rknd ), dimension(ndim) :: a_eigenvalues
-    real( kind = core_rknd ), dimension(ndim,ndim) ::  a_corr, a_scaled
+    !--------------------------- Local Variables ---------------------------
+    real( kind = core_rknd ), dimension(ndim) :: a_eigenvalues ! Diagnostic eigenvalues [units vary]
+    real( kind = core_rknd ), dimension(ndim,ndim) :: a_corr, a_scaled ! Diagnostic correlations and equilibrated matrix
 
-    real( kind = core_rknd ) :: tau, d_smallest
+    real( kind = core_rknd ) :: tau, d_smallest ! Diagonal shift and smallest input diagonal [units vary]
 
-    real( kind = core_rknd ) :: amax, scond
-    integer :: info
-    integer :: i, j, iter
-
-    character :: equed
+    real( kind = core_rknd ) :: amin, amax, scond, small, large
+      ! Diagonal range, scaling condition ratio and safe scaling limits [-]
+    integer :: info ! Factorization status / first failing pivot [-]
+    integer :: i, j, iter ! Matrix indices and factorization attempt [-]
 
     ! ---- Begin code ----
 
-    a_scaled = a_input ! Copy input array into output array
+    a_scaled = a_input
+    l_scaled = .false.
 
-!   do i = 1, n
-!     do j = 1, n
-!       write(6,'(e10.3)',advance='no') a(i,j)
-!     end do
-!     write(6,*) ""
-!   end do
-!   pause
-
-    equed = 'N'
-
-    ! Compute scaling for a_input, using Lapack routine spoequ for single precision,
-    ! or dpoequ for double precision
-    call lapack_poequ( ndim, a_input, ndim, a_scaling, scond, amax, info )
-
-    if ( info == 0 ) then
-      ! Apply scaling to a_input, using Lapack routine slaqsy for single precision,
-      ! or dlaqsy for double precision
-      call lapack_laqsy( 'Lower', ndim, a_scaled, ndim, a_scaling, scond, amax, equed )
-    end if
-
-    ! Determine if scaling was necessary
-    if ( equed == 'Y' ) then
-      l_scaled = .true.
-      a_Cholesky = a_scaled
-    else
-      l_scaled = .false.
+    if ( ndim == 0 ) then
       a_Cholesky = a_input
+      return
     end if
+
+    ! Compute reciprocal-diagonal scaling, retaining the diagonal on invalid input.
+    do i = 1, ndim
+      a_scaling(i) = a_input(i,i)
+    end do
+
+    amin = minval( a_scaling )
+    amax = maxval( a_scaling )
+
+    if ( amin > 0._core_rknd ) then
+
+      a_scaling = 1._core_rknd / sqrt( a_scaling )
+      scond = sqrt( amin ) / sqrt( amax )
+      small = tiny( 1._core_rknd ) / epsilon( 1._core_rknd )
+      large = 1._core_rknd / small
+      l_scaled = .not. ( scond >= 0.1_core_rknd .and. amax >= small .and. amax <= large )
+
+      if ( l_scaled ) then
+
+        do j = 1, ndim
+          do i = j, ndim
+            a_scaled(i,j) = a_scaling(j) * a_scaling(i) * a_input(i,j)
+          end do
+        end do
+
+      end if
+
+    end if
+
+    a_Cholesky = a_scaled
 
     do iter = 1, itermax
 
-      ! Lapack Cholesky factorization, spotrf for single or dpotrf for double precision
-      call lapack_potrf( 'Lower', ndim, a_Cholesky, ndim, info )
+      call cholesky_lower( ndim, a_Cholesky, info )
 
       select case( info )
       case( :-1 )
@@ -316,6 +315,130 @@ module matrix_operations
 
     return
   end subroutine Cholesky_factor
+
+!-------------------------------------------------------------------------------
+  subroutine cholesky_lower( ndim, a, info )
+! Description:
+!   Factor a symmetric positive-definite matrix in place, reading and updating
+!   only its lower triangle. Return info = 0 on success, or the one-based index
+!   of the first non-positive or NaN pivot; earlier columns remain factored.
+!   At debug level 2, verify that L L^T recovers the lower triangle on entry.
+! References:
+!   A = L L^T, with each column computed from previously factored columns.
+!-------------------------------------------------------------------------------
+    use clubb_precision, only: &
+        core_rknd ! Floating-point precision
+
+    use error_code, only: &
+        clubb_at_least_debug_level_api ! Procedure
+
+    use constants_clubb, only: &
+        fstderr ! Diagnostic output unit
+
+    use, intrinsic :: ieee_arithmetic, only: &
+        ieee_is_nan, ieee_is_finite ! Procedures
+
+    implicit none
+
+    !--------------------------- Input Variables ---------------------------
+    integer, intent(in) :: ndim ! Matrix order [-]
+
+    !--------------------------- Input/Output Variables ---------------------------
+    real( kind = core_rknd ), dimension(ndim,ndim), intent(inout) :: &
+      a ! Matrix on entry; lower-triangular factor on success [units vary]
+
+    !--------------------------- Output Variables ---------------------------
+    integer, intent(out) :: info ! Zero on success, failing pivot, or -1 for ndim < 0
+
+    !--------------------------- Local Variables ---------------------------
+    integer :: i, j, k ! Row, column and previously factored column indices [-]
+
+    real( kind = core_rknd ) :: &
+      value, & ! Remaining diagonal or column entry [units vary]
+      recovered, tolerance ! Reconstructed entry and allowed roundoff [units vary]
+
+    real( kind = core_rknd ), allocatable :: &
+      a_original(:,:) ! Lower triangle before factorization [units vary]
+
+    !--------------------------- Begin Code ---------------------------
+    info = 0
+
+    if ( ndim < 0 ) then
+      info = -1
+      return
+    end if
+
+    if ( clubb_at_least_debug_level_api( 2 ) ) then
+
+      ! Save the actual attempt, including any equilibration or diagonal shift.
+      allocate( a_original(ndim,ndim) )
+      do j = 1, ndim
+        a_original(j:ndim,j) = a(j:ndim,j)
+      end do
+
+    end if
+
+    do j = 1, ndim
+
+      value = a(j,j)
+      do k = 1, j-1
+        value = value - a(j,k) * a(j,k)
+      end do
+      a(j,j) = value
+
+      if ( value <= 0._core_rknd .or. ieee_is_nan( value ) ) then
+        info = j
+        return
+      end if
+
+      a(j,j) = sqrt( value )
+
+      do i = j+1, ndim
+
+        value = a(i,j)
+        do k = 1, j-1
+          value = value - a(i,k) * a(j,k)
+        end do
+        a(i,j) = value / a(j,j)
+
+      end do
+
+    end do
+
+    if ( clubb_at_least_debug_level_api( 2 ) ) then
+
+      ! Use epsilon * max(abs(A)) as a matrix-wide absolute tolerance. Scaling
+      ! by A's largest entry permits residuals at zero entries and adapts to
+      ! precision and matrix magnitude. This strict check allows one epsilon
+      ! relative to that scale, without extra allowance for accumulated roundoff.
+      ! Only the stored lower triangle participates in the maximum.
+      tolerance = 0._core_rknd
+      do j = 1, ndim
+        tolerance = max( tolerance, maxval( abs( a_original(j:ndim,j) ) ) )
+      end do
+      tolerance = epsilon( 1._core_rknd ) * tolerance
+
+      do j = 1, ndim
+        do i = j, ndim
+
+          recovered = dot_product( a(i,1:j), a(j,1:j) )
+
+          if ( .not. ieee_is_finite( recovered ) &
+               .or. .not. ( abs( recovered - a_original(i,j) ) <= tolerance ) ) then
+
+            write(fstderr,*) "cholesky_lower: L L^T reconstruction failed at row, column:", i, j
+            write(fstderr,*) "expected, recovered, tolerance:", a_original(i,j), recovered, tolerance
+            error stop "Cholesky reconstruction failed"
+
+          end if
+
+        end do
+      end do
+
+    end if
+
+    return
+  end subroutine cholesky_lower
 
 !----------------------------------------------------------------------
   subroutine Symm_matrix_eigenvalues( ndim, a_input, &

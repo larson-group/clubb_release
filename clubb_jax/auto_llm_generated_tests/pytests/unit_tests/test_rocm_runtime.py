@@ -175,7 +175,6 @@ def test_gfx1151_disables_unsupported_autotuning_kernels_but_preserves_other_fla
         "--xla_gpu_enable_fast_min_max=false --xla_gpu_autotune_level=0 "
         "--xla_gpu_enable_command_buffer="
     )
-    assert env["CLUBB_JAX_PORTABLE_CHOLESKY"] == "1"
 
 
 def test_rocm_preserves_an_explicit_autotuning_override(tmp_path, monkeypatch):
@@ -199,14 +198,6 @@ def test_other_amd_targets_do_not_receive_the_gfx1151_workaround(tmp_path, monke
     env = {}
     rocm.configure_environment(env, tmp_path)
     assert "XLA_FLAGS" not in env
-    assert "CLUBB_JAX_PORTABLE_CHOLESKY" not in env
-
-
-def test_rocm_preserves_an_explicit_cholesky_override(tmp_path, monkeypatch):
-    monkeypatch.setattr(rocm, "has_gpu", lambda target=None: True)
-    env = {"CLUBB_JAX_PORTABLE_CHOLESKY": "0"}
-    rocm.configure_environment(env, tmp_path)
-    assert env["CLUBB_JAX_PORTABLE_CHOLESKY"] == "0"
 
 
 @pytest.mark.parametrize("missing_component", [None, "_linalg", "_solver", "_sparse"])

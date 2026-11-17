@@ -140,15 +140,6 @@
       "append": "The Fortran out-argument lhs is returned as an array with diagonal order\n[superdiagonal, main diagonal, subdiagonal]; Fortran 1-based grid indices\nare represented by 0-based Python slices."
     }
   },
-  "matrix_operations": {
-    "Cholesky_factor": {
-      "drop": [
-        "dpotrf",
-        "dpoequ",
-        "dlaqsy"
-      ]
-    }
-  },
   "mean_adv": {
     "term_ma_zm_lhs": {
       "append": "The Fortran out-argument lhs_ma is returned as an array with diagonal\norder [superdiagonal, main diagonal, subdiagonal]; Fortran 1-based grid\nindices are represented by 0-based Python slices."

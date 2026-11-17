@@ -1,42 +1,21 @@
-"""JAX implementations of selected routines from ``matrix_operations.F90``.
+"""JAX counterparts of the matrix helpers used by the hydrometeor PDF.
 
-Porting deviations:
-The JAX code implements only the routines currently used by the JAX PDF path:
-``Cholesky_factor`` and ``mirror_lower_triangular_matrix``.  Fortran helpers
-``symm_covar_matrix_2_corr_matrix``, ``row_mult_lower_tri_matrix``,
-``set_lower_triangular_matrix``, ``get_lower_triangular_matrix``,
-``print_lower_triangular_matrix``, and ``Symm_matrix_eigenvalues`` are omitted
-because no JAX source currently calls them.  LAPACK ``poequ``/``laqsy``/``potrf``
-are represented with JAX/NumPy-equivalent algebra.  The tau-on-diagonal fallback
-only triggers on a concrete non-positive-definite input and is skipped under a
-JAX trace; the positive-definite path remains differentiable.
-With ``CLUBB_JAX_PORTABLE_CHOLESKY=1``, small PDF matrices use a native JAX
-Cholesky factorization instead of the vendor's batched solver kernel. Scaling,
-dtype, lower-triangle ownership, and the concrete diagonal-retry path are retained.
-
-Observed Fortran differences retained in this diagnostic pass:
-- LAPACK argument status/failing-minor numbers and eigenvalue/correlation diagnostic helpers are absent; only available matrices and retry messages are printed.
-- The concrete retry path allows an initial factorization plus ten retries;
-  Fortran limits its factorization loop to ten attempts total.
+Cholesky_factor follows Fortran's scaling, lower-triangle factorization and
+at most ten attempts, including under JIT. cholesky_lower returns the same
+one-based failing-pivot status. Matrix order is inferred at the existing public
+Cholesky_factor boundary; the private kernel retains the Fortran argument.
+Independent rows are vectorized and the small, shape-static column/reduction
+loops are unrolled. Host callbacks format diagnostics; NumPy eigenvalues are
+used only in debug-level-2 failure dumps. Other unused Fortran matrix helpers
+remain outside this port.
 """
-import os
 import sys
-from clubb_jax.src.CLUBB_core.clubb_precision import core_rknd
-from clubb_jax.src.CLUBB_core.error_code import clubb_at_least_debug_level
 
 import jax
 import jax.numpy as jnp
 
-_ITERMAX = 10      # matrix_operations.F90:137
-_D_COEF = 0.1      # matrix_operations.F90:139
-_THRESH = 0.1      # LAPACK dlaqsy equilibration threshold
-
-
-def _lower_mask(n):
-    """Boolean (n,n) mask, True on and below the diagonal."""
-    r = jnp.arange(n)
-    l_lower = r[:, None] >= r[None, :]
-    return l_lower
+from clubb_jax.src.CLUBB_core.clubb_precision import core_rknd
+from clubb_jax.src.CLUBB_core.error_code import clubb_at_least_debug_level
 
 
 def mirror_lower_triangular_matrix(matrix):
@@ -62,132 +41,180 @@ def mirror_lower_triangular_matrix(matrix):
     return matrix
 
 
-def _portable_cholesky(matrix):
-    matrix = (matrix + matrix.T) * 0.5
-    factor = jnp.zeros_like(matrix)
-    for column in range(matrix.shape[0]):
-        diagonal = jnp.sqrt(matrix[column, column] - jnp.sum(factor[column, :column] ** 2))
-        factor = factor.at[column, column].set(diagonal)
-        product = jnp.sum(factor[column + 1:, :column] * factor[column, :column], axis=-1)
-        entries = (matrix[column + 1:, column] - product) / diagonal
-        factor = factor.at[column + 1:, column].set(entries)
-    diagonal = jnp.diagonal(factor)
-    factor = jnp.where(jnp.any(jnp.isnan(diagonal) | (diagonal <= 0.0)), jnp.nan, factor)
-    return factor
-
-
 def Cholesky_factor(a_input):
-    """Create a Cholesky factorization of a_input.
+    """Factor the lower triangle of a_input, preserving the upper triangle.
+    Return reciprocal-diagonal scaling factors and whether scaling was applied.
     If the factorization fails we use a modified a_input matrix and attempt
     to factorize again.
 
     References:
+    <http://www.netlib.org/lapack/explore-html/a00860.html> dpoequ
+    <http://www.netlib.org/lapack/explore-html/a00753.html> dlaqsy
 
     Returns:
-        (a_scaling, a_cholesky, l_scaled)
+        (a_scaling, a_Cholesky, l_scaled)
 
     Fortran declarations (Cholesky_factor in src/CLUBB_core/matrix_operations.F90):
 
-           ! Coefficient applied if the decomposition doesn't work
-
         !--------------------------- Input Variables ---------------------------
-        integer, intent(in) :: ndim
+        integer, intent(in) :: ndim ! Matrix order [-]
 
-        real( kind = core_rknd ), dimension(ndim,ndim), intent(in) :: a_input
+        real( kind = core_rknd ), dimension(ndim,ndim), intent(in) :: a_input ! Input covariance or correlation matrix [units vary]
 
         !--------------------------- Output Variables ---------------------------
-        real( kind = core_rknd ), dimension(ndim), intent(out) :: a_scaling
+        real( kind = core_rknd ), dimension(ndim), intent(out) :: a_scaling ! Reciprocal diagonal square roots [units vary]
 
-        real( kind = core_rknd ), dimension(ndim,ndim), intent(out) :: a_Cholesky
+        real( kind = core_rknd ), dimension(ndim,ndim), intent(out) :: a_Cholesky ! Factor in the lower triangle [units vary]
 
-        logical, intent(out) :: l_scaled
+        logical, intent(out) :: l_scaled ! Whether diagonal equilibration was applied
     """
-    n = a_input.shape[0]
-    diag = jnp.diagonal(a_input)
+    ndim = a_input.shape[0]
+    itermax = 10
+    d_coef = 0.1
 
     # ---- Begin code ----
+    a_scaled = a_input
+    l_scaled = jnp.asarray(False)
+    if ndim == 0:
+        a_scaling = jnp.empty((0,), dtype=a_input.dtype)
+        a_Cholesky = a_input
+        return a_scaling, a_Cholesky, l_scaled
 
-    # Copy input array into output array
+    # Compute reciprocal-diagonal scaling, retaining the diagonal on invalid input.
+    a_scaling = jnp.diagonal(a_input)
+    amin = jnp.min(a_scaling)
+    amax = jnp.max(a_scaling)
+    l_positive = amin > 0.0
+    # Safe operands also protect inactive branches when vmap batches a condition.
+    diagonal = jnp.where(l_positive, a_scaling, 1.0)
+    a_scaling = jnp.where(l_positive, 1.0 / jnp.sqrt(diagonal), a_scaling)
+    scond = jnp.sqrt(jnp.where(l_positive, amin, 1.0)) / jnp.sqrt(jnp.where(l_positive, amax, 1.0))
+    small = jnp.finfo(core_rknd).tiny / jnp.finfo(core_rknd).eps
+    large = 1.0 / small
+    l_scaled = l_positive & ~((scond >= 0.1) & (amax >= small) & (amax <= large))
+    indices = jnp.arange(ndim)
+    lower = indices[:, None] >= indices[None, :]
+    scaling = jnp.where(l_scaled, a_scaling, 1.0)
+    a_scaled = jnp.where(lower, scaling[None, :] * scaling[:, None] * a_input, a_input)
+    a_Cholesky = a_scaled
 
-    # Compute scaling for a_input, using Lapack routine spoequ for single precision,
-    # or dpoequ for double precision
-    a_scaling = 1.0 / jnp.sqrt(diag)
-    amax = jnp.max(diag)
-    amin = jnp.min(diag)
-    scond = jnp.sqrt(amin / amax)
-
-    fi = jnp.finfo(core_rknd)
-    small, large = fi.tiny, 1.0 / fi.tiny
-
-    # Apply scaling to a_input, using Lapack routine slaqsy for single precision,
-    # or dlaqsy for double precision
-    l_scaled = ~((scond >= _THRESH) & (amax >= small) & (amax <= large))
-
-    a_scaled = a_scaling[:, None] * a_input * a_scaling[None, :]
-    a_work = jnp.where(l_scaled, a_scaled, a_input)
-
-    mask = _lower_mask(n)
-
-    def _factor(m):
-        # Lapack Cholesky factorization, spotrf for single or dpotrf for double precision
-        if os.environ.get("CLUBB_JAX_PORTABLE_CHOLESKY") == "1":
-            factor = _portable_cholesky(m)
-        else:
-            factor = jnp.linalg.cholesky(m)
-        return jnp.where(mask, factor, m)
-
-    a_cholesky = _factor(a_work)
-    if clubb_at_least_debug_level(1):
-        # Host formatting only; LAPACK's failing-minor info is unavailable in JAX.
-        def print_cholesky_error(original, factored):
+    # Host formatting is an adaptation of the Fortran write statements. The
+    # predicate remains explicit because vmap can evaluate both cond branches.
+    def report(a_input_host, iter, info, l_active, factored, modified):
+        """Print the source's success, failed-pivot and retry diagnostics."""
+        if not l_active:
+            return
+        if info == 0:
+            if clubb_at_least_debug_level(1) and iter > 1:
+                print("a_factored (worked)=", file=sys.stderr)
+                for i in range(ndim):
+                    print(" ".join(f"{value:10.3g}" for value in factored[i, :i+1]), file=sys.stderr)
+            return
+        if clubb_at_least_debug_level(1):
+            print("Cholesky_factor: leading minor of order", info, "is not positive definite.", file=sys.stderr)
             print("factorization failed.", file=sys.stderr)
-            for label, values in (("a_input=", original), ("a_Cholesky=", factored)):
+            for label, values in (("a_input=", a_input_host), ("a_Cholesky=", factored)):
                 print(label, file=sys.stderr)
-                for i in range(values.shape[0]):
+                for i in range(ndim):
                     print(" ".join(f"{value:10.3g}" for value in values[i, :i+1]), file=sys.stderr)
-        jax.lax.cond(
-            jnp.any(jnp.isnan(jnp.diagonal(a_cholesky))),
-            lambda _: jax.debug.callback(print_cholesky_error, a_input, a_cholesky, ordered=True),
-            lambda _: None, operand=None,
-        )
-    # TODO: Skip LAPACK argument/minor info and eigenvalue/correlation dumps;
-    # those diagnostic capabilities are absent and exceed print-only restoration.
+        if clubb_at_least_debug_level(2):
+            import numpy as np
+            original = np.tril(a_input_host) + np.tril(a_input_host, -1).T
+            print("a_eigenvalues=", np.linalg.eigvalsh(original), file=sys.stderr)
+            print("a_correlations=", file=sys.stderr)
+            for i in range(ndim):
+                print(" ".join(f"{original[i,j] / np.sqrt(original[i,i] * original[j,j]):10.3g}"
+                               for j in range(i+1)), file=sys.stderr)
+        if iter == itermax:
+            print("iteration =", iter, "itermax =", itermax, file=sys.stderr)
+            print("Fatal error in Cholesky_factor", file=sys.stderr)
+        elif clubb_at_least_debug_level(1):
+            print("Fatal error in Cholesky_factor", file=sys.stderr)
+            print("Attempting to modify matrix to allow factorization.", file=sys.stderr)
+        if clubb_at_least_debug_level(2):
+            symmetric = np.tril(modified) + np.tril(modified, -1).T
+            print("a_modified eigenvalues=", np.linalg.eigvalsh(symmetric), file=sys.stderr)
+
+    def iteration(iter, state):
+        """Carry Fortran's early-exit state through a fixed differentiable loop."""
+        a_Cholesky, l_done = state
+        factored, info = cholesky_lower(ndim, a_Cholesky)
+        l_failed = info > 0
+        # The number used for tau here is case specific to the Sigma covariance
+        # matrix in the latin hypercube code and is not at all general.
+        # Tau should be a number that is small relative to the other diagonal
+        # elements of the matrix to have keep the error caused by modifying 'a' low.
+        # -dschanen 30 Aug 2010
+        d_smallest = jnp.min(jnp.diagonal(a_scaled))
+        # Use the smallest element * d_coef * iteration
+        tau = d_smallest * d_coef * jnp.asarray(iter, dtype=a_input.dtype)
+        modified = a_scaled.at[indices, indices].add(tau)
+
+        def emit(_):
+            jax.debug.callback(report, a_input, iter, info, ~l_done, factored, modified, ordered=True)
+
+        l_report = (~l_done) & (clubb_at_least_debug_level(1) | (l_failed & (iter == itermax)))
+        jax.lax.cond(l_report, emit, lambda _: None, operand=None)
+        candidate = jnp.where(l_failed, modified, factored)
+        a_Cholesky = jnp.where(l_done, a_Cholesky, candidate)
+        l_done = l_done | ~l_failed
+        return a_Cholesky, l_done
+
+    def advance(iter, state):
+        """Skip completed factorizations while retaining static loop bounds for AD."""
+        return jax.lax.cond(state[1], lambda state: state,
+                            lambda state: iteration(iter, state), state)
+
+    a_Cholesky, _ = jax.lax.fori_loop(1, itermax + 1, advance, (a_Cholesky, jnp.asarray(False)))
+    return a_scaling, a_Cholesky, l_scaled
 
 
-    try:
-        failed = bool(jnp.isnan(jnp.diagonal(a_cholesky)).any())
-    except (jax.errors.TracerBoolConversionError, jax.errors.ConcretizationTypeError):
-        failed = False
-    if failed:
-        d_smallest = float(jnp.min(jnp.diagonal(a_work)))
-        for it in range(1, _ITERMAX + 1):
-            # This shouldn't happen now that the s and t Mellor(chi/eta) elements have been
-            # modified to never be perfectly correlated, but it's here just in case.
-            # -dschanen 10 Sept 2010
+def cholesky_lower(ndim, a):
+    """Factor a symmetric positive-definite matrix in place, reading and updating
+    only its lower triangle. Return info = 0 on success, or the one-based index
+    of the first non-positive or NaN pivot; earlier columns remain factored.
 
-            # The number used for tau here is case specific to the Sigma covariance
-            # matrix in the latin hypercube code and is not at all general.
-            # Tau should be a number that is small relative to the other diagonal
-            # elements of the matrix to have keep the error caused by modifying 'a' low.
-            # -dschanen 30 Aug 2010
+    References:
+    A = L L^T, with each column computed from previously factored columns.
 
-            # Use the smallest element * d_coef * iteration
-            if clubb_at_least_debug_level(1):
-                print("Fatal error in Cholesky_factor", file=sys.stderr)
-                print("Attempting to modify matrix to allow factorization.", file=sys.stderr)
-            tau = d_smallest * _D_COEF * it
-            m = a_work + tau * jnp.eye(n)
-            cand = _factor(m)
-            if not bool(jnp.isnan(jnp.diagonal(cand)).any()):
-                a_cholesky = cand
-                if clubb_at_least_debug_level(1):
-                    print("a_factored (worked)=", file=sys.stderr)
-                    for i in range(n):
-                        print(" ".join(f"{float(value):10.3g}" for value in cand[i, :i+1]), file=sys.stderr)
-                break
-            a_cholesky = cand
-            if it == _ITERMAX:
-                print("iteration =", it, "itermax =", _ITERMAX, file=sys.stderr)
-                print("Fatal error in Cholesky_factor", file=sys.stderr)
+    Returns:
+        (a, info)
 
-    return a_scaling, a_cholesky, l_scaled
+    Fortran declarations (cholesky_lower in src/CLUBB_core/matrix_operations.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: ndim ! Matrix order [-]
+
+        !--------------------------- Input/Output Variables ---------------------------
+        real( kind = core_rknd ), dimension(ndim,ndim), intent(inout) :: &
+          a ! Matrix on entry; lower-triangular factor on success [units vary]
+
+        !--------------------------- Output Variables ---------------------------
+        integer, intent(out) :: info ! Zero on success, failing pivot, or -1 for ndim < 0
+    """
+    info = jnp.asarray(0, dtype=jnp.int32)
+    if ndim < 0:
+        info = jnp.asarray(-1, dtype=jnp.int32)
+        return a, info
+
+    for j in range(ndim):
+        l_active = info == 0
+        value = jnp.where(l_active, a[j, j], 1.0)
+        for k in range(j):
+            entry = jnp.where(l_active, a[j, k], 0.0)
+            value = value - entry * entry
+        a = a.at[j, j].set(jnp.where(l_active, value, a[j, j]))
+        l_failed = (value <= 0.0) | jnp.isnan(value)
+        info = jnp.where(l_active & l_failed, j + 1, info)
+        l_active = info == 0
+        diagonal = jnp.sqrt(jnp.where(l_active, value, 1.0))
+        a = a.at[j, j].set(jnp.where(l_active, diagonal, a[j, j]))
+
+        # Rows below the pivot are independent; preserve k's reduction order.
+        value = jnp.where(l_active, a[j+1:, j], 0.0)
+        for k in range(j):
+            entry = jnp.where(l_active, a[j+1:, k], 0.0)
+            pivot_entry = jnp.where(l_active, a[j, k], 0.0)
+            value = value - entry * pivot_entry
+        a = a.at[j+1:, j].set(jnp.where(l_active, value / diagonal, a[j+1:, j]))
+    return a, info

@@ -32,3 +32,30 @@ def test_f2py_oracle():
         assert rel < 1e-11, f"cholesky lower mismatch n={n}: {rel:.2e}"
         assert rel_s < 1e-12, f"scaling mismatch n={n}: {rel_s:.2e}"
         assert bool(j_lscaled) == bool(f_lscaled), f"l_scaled mismatch n={n}"
+
+
+
+def test_compiled_scaling_retry_and_lower_triangle_contracts():
+    """Compare the actual Fortran/JAX routines on paths normal PD cases miss."""
+    import jax
+    import jax.numpy as jnp
+    from clubb_python.CLUBB_core.matrix_operations import cholesky_factor
+
+    inputs = [
+        np.array([[1e-4, np.nan], [0.002, 4.0]]),
+        np.diag([1e-300, 2e-300]),
+        np.diag([1e300, 2e300]),
+        np.array([[1.0, 17.0], [1.05, 1.0]]),
+        np.array([[1.0, 17.0], [4.0, 1.0]]),
+        np.array([[-1.0, 17.0], [0.0, 1.0]]),
+        np.empty((0, 0)),
+    ]
+    compiled = jax.jit(Cholesky_factor)
+    for a in inputs:
+        f_scaling, f_chol, f_lscaled = cholesky_factor(a.shape[0], a.copy())
+        j_scaling, j_chol, j_lscaled = compiled(jnp.asarray(a))
+        assert j_chol.shape == f_chol.shape == a.shape
+        assert j_scaling.shape == f_scaling.shape == (a.shape[0],)
+        np.testing.assert_allclose(j_scaling, f_scaling, atol=0.0, rtol=1e-13)
+        np.testing.assert_allclose(j_chol, f_chol, atol=1e-14, rtol=1e-13, equal_nan=True)
+        assert bool(j_lscaled) == bool(f_lscaled)
