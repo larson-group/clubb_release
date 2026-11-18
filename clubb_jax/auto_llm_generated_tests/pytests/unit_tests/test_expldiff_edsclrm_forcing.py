@@ -11,7 +11,6 @@ from clubb_jax.src.Benchmark_cases.time_dependent_input import (
     apply_time_dependent_forcings_from_array,
 )
 from clubb_jax.src.CLUBB_core.sclr_idx import SclrIdx
-from clubb_jax.src.Input_fields.input_reader import two_dim_read_var
 from clubb_jax.src.Input_fields.input_names import rt_f_name, thetal_f_name
 
 
@@ -20,16 +19,13 @@ def test_expldiff_copies_get_no_time_dependent_forcing(monkeypatch, l_do_expldif
     nzt, ngrdcol, edsclr_dim = 4, 2, 3
     names = [thetal_f_name, rt_f_name]
     names += [rt_f_name] * (time_dependent_input.nforcings - 1 - len(names))
-    forcing_data = [two_dim_read_var("z[m]", "Time[s]", "z[m]", np.zeros((nzt, 1)))]
-    forcing_data += [two_dim_read_var(name, "Time[s]", "z[m]", np.zeros((nzt, 1)))
-                     for name in names]
-    monkeypatch.setattr(time_dependent_input, "t_dependent_forcing_data", forcing_data)
+    monkeypatch.setattr(time_dependent_input, "forcing_names", ("z[m]", *names))
 
     thl_forcing = jnp.linspace(-2.0e-5, 1.0e-5, nzt)
     rt_forcing = jnp.linspace(-4.0e-8, 1.0e-8, nzt)
     # Rows after thetal_f and rtm_f are -999.9, i.e. missing, and are skipped.
-    forcings_array = jnp.full((ngrdcol, time_dependent_input.nforcings, nzt), -999.9)
-    forcings_array = forcings_array.at[:, 1, :].set(thl_forcing).at[:, 2, :].set(rt_forcing)
+    forcings_array = jnp.full((ngrdcol, nzt, time_dependent_input.nforcings), -999.9)
+    forcings_array = forcings_array.at[:, :, 1].set(thl_forcing).at[:, :, 2].set(rt_forcing)
 
     sclr_idx = SclrIdx(iisclr_rt=-1, iisclr_thl=-1, iisclr_CO2=-1,
                        iiedsclr_rt=3, iiedsclr_thl=2, iiedsclr_CO2=1)

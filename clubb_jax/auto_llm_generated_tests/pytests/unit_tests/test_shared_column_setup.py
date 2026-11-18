@@ -10,8 +10,7 @@ from clubb_jax.src.CLUBB_core.sponge_layer_damping import (
     initialize_tau_sponge_damp_api, sponge_damp_settings, sponge_damp_xm,
 )
 from clubb_jax.src.Benchmark_cases import time_dependent_input as forcing
-from clubb_jax.src.Input_fields.input_reader import two_dim_read_var, one_dim_read_var
-from clubb_jax.src.Input_fields.input_names import z_name, thetal_f_name, time_name
+from clubb_jax.src.Input_fields.input_names import z_name, thetal_f_name
 
 
 @pytest.mark.parametrize("grid_type", [1, 2, 3])
@@ -52,15 +51,15 @@ def test_sponge_uses_column_heights_with_shared_domain():
 def test_shared_forcing_file_interpolates_each_columns_grid(monkeypatch):
     """A shared file produces different profiles on grids with common endpoints."""
     z = np.array([[0., 0.], [1000., 1000.]])
-    raw = [two_dim_read_var(z_name, time_name, z_name, z.copy())]
-    raw += [two_dim_read_var(thetal_f_name, time_name, z_name, z.copy() / 1000.)
-            for _ in range(forcing.nforcings - 1)]
+    raw = np.stack([z.copy()] + [z.copy() / 1000. for _ in range(forcing.nforcings - 1)], axis=1)
+    names = (z_name,) + (thetal_f_name,) * (forcing.nforcings - 1)
     monkeypatch.setattr(forcing, "t_dependent_forcing_data_f_grid", raw)
-    monkeypatch.setattr(forcing, "t_dependent_forcing_data", [])
-    monkeypatch.setattr(forcing, "dimension_var", one_dim_read_var(time_name, time_name, np.array([0., 10.])))
+    monkeypatch.setattr(forcing, "t_dependent_forcing_data", None)
+    monkeypatch.setattr(forcing, "forcing_names", names)
+    monkeypatch.setattr(forcing, "time_forcing_given", np.array([0., 10.]))
     grids = np.array([[0., 100., 300., 1000.], [0., 200., 600., 1000.]])
     forcing.initialize_t_dependent_forcings(2, 0, "unused", 4, grids, np.ones((2, 4)), 0)
-    values = np.asarray(forcing.t_dependent_forcing_data[1].values)
+    values = np.asarray(forcing.t_dependent_forcing_data[:, :, 1, :])
     assert values.shape == (2, 4, 2)
     np.testing.assert_allclose(values, np.repeat(grids[:, :, None] / 1000., 2, axis=2), rtol=1e-15)
 

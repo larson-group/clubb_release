@@ -4,6 +4,14 @@
 // unchanged. Keys are {JAX module: {function: edit}}; see README.md for the
 // edit keys. Comments are allowed.
 {
+  "time_dependent_input": {
+    "initialize_t_dependent_forcings": {
+      "append": "JAX batches fields and model columns with vmap around the compiled\nread_to_grid routine. The result stays on the device with axes\n(column, level, variable, time). The dycore-only l_add_dycore_grid argument\nis omitted as described in the module support note."
+    },
+    "apply_time_dependent_forcings_from_array": {
+      "append": "JAX uses masked array updates for the Fortran per-column validity\nchecks. OpenACC data regions and host/device updates are unnecessary."
+    }
+  },
   "adg1_adg2_3d_luhar_pdf": {
     "backsolve_Luhar_params": {
       "append": "Only the cubic-formula branch is ported: in Fortran,\nl_use_cubic_backsolve is a parameter set to .true., so the quadratic\napproximation is never used."

@@ -12,6 +12,8 @@ References:
 
 from __future__ import annotations
 
+from functools import partial
+
 import jax
 import jax.numpy as jnp
 import numpy as np
@@ -54,12 +56,9 @@ from clubb_jax.src.Input_fields.input_reader import (
     fill_blanks_one_dim_vars,
     fill_blanks_two_dim_vars,
     get_target_index,
-    one_dim_read_var,
     read_one_dim_file,
     read_two_dim_file,
     read_x_profile,
-    read_x_table,
-    two_dim_read_var,
 )
 
 
@@ -78,11 +77,11 @@ T_sfc_given = None
 wpthlp_sfc_given = None
 wpqtp_sfc_given = None
 
-# Fortran stores a (level,time) record for each forcing/column pair. JAX shares
-# each forcing's metadata and batches its values as (column,level,time).
-t_dependent_forcing_data: list[two_dim_read_var] = []
-t_dependent_forcing_data_f_grid: list[two_dim_read_var] = []
-dimension_var: one_dim_read_var | None = None
+# Dense forcing values follow the source's (column, level, variable, time) axes.
+t_dependent_forcing_data = None
+t_dependent_forcing_data_f_grid = None
+time_forcing_given = None
+forcing_names = ()
 
 l_t_dependent = False
 l_input_xpwp_sfc = False
@@ -266,6 +265,11 @@ def initialize_t_dependent_forcings(
     """This subroutine reads in a file that details time dependent
       input values that vary in two dimensions.
 
+    JAX batches fields and model columns with vmap around the compiled
+    read_to_grid routine. The result stays on the device with axes
+    (column, level, variable, time). The dycore-only l_add_dycore_grid argument
+    is omitted as described in the module support note.
+
     Fortran declarations (initialize_t_dependent_forcings in src/Benchmark_cases/time_dependent_input.F90):
 
         ! Input Variable(s)
@@ -286,68 +290,52 @@ def initialize_t_dependent_forcings(
         integer, intent(in) :: &
           grid_adapt_in_time_method   ! flag that says whether the grid should be adapted over
     """
-    global t_dependent_forcing_data, t_dependent_forcing_data_f_grid, dimension_var
+    global t_dependent_forcing_data, t_dependent_forcing_data_f_grid
+    global time_forcing_given, forcing_names
 
-    # ----------------- Begin Code --------------------
-    if not t_dependent_forcing_data_f_grid:
-        t_dependent_forcing_data_f_grid, dimension_var = read_two_dim_file(
-            iunit, nforcings, input_file
+    if t_dependent_forcing_data_f_grid is None:
+        forcing_input, forcing_times = read_two_dim_file(
+            iunit, nforcings, input_file,
+        )
+        # Fill source-file gaps before packing the temporary records into arrays.
+        fill_blanks_two_dim_vars(nforcings, forcing_times, forcing_input)
+        forcing_names = tuple(field.name for field in forcing_input)
+        time_forcing_given = forcing_times.values
+        t_dependent_forcing_data_f_grid = np.stack(
+            [field.values for field in forcing_input], axis=1,
         )
 
-    n_f_grid_z = t_dependent_forcing_data_f_grid[0].values.shape[0]
-    n_f_grid_t = dimension_var.values.size
-
-    # Fill in blanks with linear interpolation. Whole profiles of -999.9 will
-    # remain that way, thus marking them blank.
-    fill_blanks_two_dim_vars(
-        nforcings,
-        dimension_var,
-        t_dependent_forcing_data_f_grid,
-    )
-
-    if t_dependent_forcing_data_f_grid[0].name == z_name:
-        model_grid = np.asarray(grid)
-    elif t_dependent_forcing_data_f_grid[0].name == pressure_name:
-        model_grid = -np.asarray(p_in_Pa)
-        t_dependent_forcing_data_f_grid[0].values = -np.abs(t_dependent_forcing_data_f_grid[0].values)
+    n_f_grid_z = t_dependent_forcing_data_f_grid.shape[0]
+    n_f_grid_t = time_forcing_given.size
+    if forcing_names[0] == z_name:
+        model_grid = jnp.asarray(grid)
+    elif forcing_names[0] == pressure_name:
+        model_grid = -jnp.asarray(p_in_Pa)
+        t_dependent_forcing_data_f_grid[:, 0, :] = -np.abs(t_dependent_forcing_data_f_grid[:, 0, :])
     else:
         raise ValueError("Incompatible grid type in first element of t_dependent_forcings")
 
-    t_dependent_forcing_data = [
-        two_dim_read_var(
-            name=t_dependent_forcing_data_f_grid[0].name,
-            dim1_name=time_name,
-            dim2_name=t_dependent_forcing_data_f_grid[0].name,
-            values=jnp.broadcast_to(jnp.asarray(model_grid)[:, :, None], (ngrdcol, nz, n_f_grid_t)),
-        )
-    ]
+    source_indices = np.array([forcing_names.index(name) for name in forcing_names[1:]])
+    source_values = jnp.asarray(t_dependent_forcing_data_f_grid[:, source_indices, :])
+    source_grid = jnp.asarray(t_dependent_forcing_data_f_grid[:, 0, :])
 
-    # Host-only setup: forcing names are file metadata, so this loop builds the
-    # heterogeneous named records once before any compiled timestep runs.
-    for i in range(1, nforcings):
-        target_name = t_dependent_forcing_data_f_grid[i].name
-        values = jnp.stack([
-            read_to_grid(
-                nforcings, n_f_grid_z, n_f_grid_t, nz, model_grid[i, :],
-                t_dependent_forcing_data_f_grid, target_name,
-            )
-            for i in range(ngrdcol)
-        ])
-        t_dependent_forcing_data.append(
-            two_dim_read_var(
-                name=target_name,
-                dim1_name=time_name,
-                dim2_name=t_dependent_forcing_data_f_grid[0].name,
-                values=jnp.asarray(values),
-            )
-        )
+    # Batch independent fields and columns around the compiled interpolation.
+    # No column result is converted back to NumPy during table construction.
+    interpolate_columns = jax.vmap(read_to_grid, in_axes=(None, None, None, 0, None, None))
+    interpolate_variables = jax.vmap(
+        interpolate_columns, in_axes=(None, None, None, None, None, 1),
+    )
+    profiles = interpolate_variables(
+        n_f_grid_z, n_f_grid_t, nz, model_grid, source_grid, source_values,
+    )
+    coordinates = jnp.broadcast_to(model_grid[:, :, None, None], (ngrdcol, nz, 1, n_f_grid_t))
+    t_dependent_forcing_data = jnp.concatenate(
+        (coordinates, jnp.transpose(profiles, (1, 2, 0, 3))), axis=2,
+    )
+    time_forcing_given = jnp.asarray(time_forcing_given)
 
-    dimension_var.values = jnp.asarray(dimension_var.values)
-
-    # Keep the source-grid data only when grid adaptation may require the input
-    # to be interpolated again during the run.
     if grid_adapt_in_time_method == 0:
-        t_dependent_forcing_data_f_grid = []
+        t_dependent_forcing_data_f_grid = None
 
 
 # ================================================================================================
@@ -355,12 +343,12 @@ def finalize_t_dependent_forcings():
     """Clear memory initialized in initialize_t_dependent_forcings.
     This should be called at the end of the model.
     """
-    global t_dependent_forcing_data, t_dependent_forcing_data_f_grid, dimension_var
+    global t_dependent_forcing_data, t_dependent_forcing_data_f_grid, time_forcing_given
 
     # ----------------- Begin Code --------------------
-    t_dependent_forcing_data_f_grid = []
-    t_dependent_forcing_data = []
-    dimension_var = None
+    t_dependent_forcing_data_f_grid = None
+    t_dependent_forcing_data = None
+    time_forcing_given = None
 
 
 # ================================================================================================
@@ -391,56 +379,33 @@ def finalize_t_dependent_sfc():
 
 
 # ================================================================================================
-def read_to_grid(
-    ntwo_dim_vars,
-    dim_size,
-    other_dim_size,
-    nz,
-    grid,
-    two_dim_vars,
-    target_name,
-):
-    """This is a helper function for doing the translation from the
-      forcing grid to the model grid.
+@partial(jax.jit, static_argnums=(0, 1, 2))
+def read_to_grid(dim_size, other_dim_size, nz, grid, grid_src, var_src):
+    """Interpolate a source field onto one column's model grid at every input time.
+    Independent time samples form the batch passed to vertical interpolation.
 
     Returns:
         var
 
     Fortran declarations (read_to_grid in src/Benchmark_cases/time_dependent_input.F90):
 
-        integer, intent(in) :: &
-          ntwo_dim_vars, &
-          dim_size, &
-          other_dim_size, &
-          nz
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: dim_size ! Source level count [-]
+        integer, intent(in) :: other_dim_size ! Time sample count [-]
+        integer, intent(in) :: nz ! Model level count [-]
+        real( kind = core_rknd ), intent(in) :: grid(nz) ! Model heights [m] or negative pressures [Pa]
+        real( kind = core_rknd ), intent(in) :: &
+          grid_src(dim_size,other_dim_size), & ! Source heights [m] or negative pressures [Pa]
+          var_src(dim_size,other_dim_size) ! Source field [units vary]
 
-        real( kind = core_rknd ), dimension(nz), intent(in) :: &
-          grid
-
-        type(two_dim_read_var), dimension(ntwo_dim_vars), intent(in) :: &
-          two_dim_vars
-
-        character(len=*), intent(in) :: &
-          target_name
-
-        real( kind = core_rknd ), dimension(nz, other_dim_size) :: var
+        !--------------------------- Output Variables ---------------------------
+        real( kind = core_rknd ) :: var(nz,other_dim_size) ! Interpolated field [units vary]
     """
-    # ----------------- Begin Code --------------------
-    temp_var = read_x_table(
-        ntwo_dim_vars,
-        dim_size,
-        other_dim_size,
-        target_name,
-        two_dim_vars,
-    )
-    # Treat independent time slices as the interpolation batch; model heights are shared.
-    source_grid = jnp.asarray(two_dim_vars[0].values).T
-    source_values = jnp.asarray(temp_var).T
-    target_grid = jnp.broadcast_to(jnp.asarray(grid), (other_dim_size, nz))
-    interpolated = np.asarray(zlinterp(
-        other_dim_size, nz, dim_size, target_grid, source_grid, source_values,
-    )).T
-    return interpolated.reshape(nz, other_dim_size)
+    var = zlinterp(
+        other_dim_size, nz, dim_size,
+        jnp.broadcast_to(grid, (other_dim_size, nz)), grid_src.T, var_src.T,
+    ).T
+    return var
 
 
 # ================================================================================================
@@ -474,6 +439,9 @@ def apply_time_dependent_forcings_from_array(
                    in a 3D array (one set of forcing profiles per column) and
                    initializes the forcing variables.
 
+    JAX uses masked array updates for the Fortran per-column validity
+    checks. OpenACC data regions and host/device updates are unnecessary.
+
     Returns:
         (thlm_f, rtm_f, um_ref, vm_ref, um_f, vm_f, wm_zt, wm_zm, ug, vg,
           sclrm_forcing, edsclrm_forcing)
@@ -503,8 +471,8 @@ def apply_time_dependent_forcings_from_array(
           rho,     & ! Air Density                                [kg/m^3]
           rtm        ! Total Water Mixing Ratio                   [kg/kg]
 
-        real( kind = core_rknd ), dimension(ngrdcol,nforcings,nzt), intent(in) :: &
-          forcings_array ! Forcing profiles for every column
+        real( kind = core_rknd ), dimension(ngrdcol,nzt,nforcings), intent(in) :: &
+          forcings_array ! Forcing profiles (column, level, variable) [units vary]
 
         !--------------------- Output Variables ---------------------
         real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(inout) :: &
@@ -540,8 +508,8 @@ def apply_time_dependent_forcings_from_array(
     # resolved while JAX traces the ten-entry forcing schema; it is not a loop
     # over columns, vertical levels, or another runtime-sized device dimension.
     for n in range(1, nforcings):
-        name = t_dependent_forcing_data[n].name
-        temp_array = forcings_array[:, n, :]
+        name = forcing_names[n]
+        temp_array = forcings_array[:, :, n]
         eps = jnp.finfo(temp_array.dtype).eps
 
         # Check to see if temp_array is an actual profile or a dummy profile
@@ -719,22 +687,16 @@ def apply_time_dependent_forcings(
     # --------------------- Begin Code ---------------------
     time_frac = -1.0
     before_time, after_time, time_frac = time_select(
-        time,
-        dimension_var.values.size,
-        dimension_var.values,
-    )
-
-    forcing_values = jnp.stack(
-        [forcing.values for forcing in t_dependent_forcing_data[1:nforcings]]
+        time, time_forcing_given.size, time_forcing_given,
     )
     interpolated = linear_interp_factor(
         time_frac,
-        forcing_values[:, :, :, after_time],
-        forcing_values[:, :, :, before_time],
+        t_dependent_forcing_data[:, :, 1:, after_time],
+        t_dependent_forcing_data[:, :, 1:, before_time],
     )
-    # The source leaves row 1 unused; JAX arrays initialize it explicitly.
+    # The source leaves the coordinate field unused during forcing application.
     forcings_array = jnp.concatenate(
-        (jnp.zeros((ngrdcol, 1, nzt), dtype=thlm_f.dtype), jnp.swapaxes(interpolated, 0, 1)), axis=1
+        (jnp.zeros((ngrdcol, nzt, 1), dtype=thlm_f.dtype), interpolated), axis=2,
     )
 
     return apply_time_dependent_forcings_from_array(

@@ -11,10 +11,6 @@ module time_dependent_input
 
   use constants_clubb, only: eps, one
 
-  use input_reader, only: &
-    two_dim_read_var, &
-    one_dim_read_var
-
   use clubb_precision, only: &
     core_rknd ! Variable(s)
 
@@ -52,22 +48,15 @@ module time_dependent_input
 !$omp   rtm_sfc_given, CO2_sfc_given,  upwp_sfc_given, vpwp_sfc_given, &
 !$omp   T_sfc_given, wpthlp_sfc_given, wpqtp_sfc_given )
 
-  type(two_dim_read_var), private, allocatable, dimension(:,:) :: &
-    t_dependent_forcing_data ! Interpolated records indexed by (forcing,column).
-                             ! Each holds (level,time) values on that column's grid.
-!$omp threadprivate( t_dependent_forcing_data )
+  real( kind = core_rknd ), private, allocatable :: &
+    t_dependent_forcing_data(:,:,:,:), & ! (Column, level, variable, time) [units vary]
+    t_dependent_forcing_data_f_grid(:,:,:), & ! Source (level, variable, time) [units vary]
+    time_forcing_given(:) ! Shared forcing times [s]
 
-  type(two_dim_read_var), private, dimension(nforcings) :: &
-    t_dependent_forcing_data_f_grid ! Data structure that defines the change in input
-                                    ! files over time but stores the raw file input.
-                                    ! Is only set if we want to adapt grid but dont want to
-                                    ! simulate forcings input from the host model (dycore grid)
-!$omp threadprivate( t_dependent_forcing_data_f_grid )
+  character(len=30), private :: forcing_names(nforcings) ! Source field names and units
 
-  type(one_dim_read_var), private :: dimension_var ! Data structure that describes other 
-                                                   ! dimension of the two_dim_read_var
-
-!$omp threadprivate( dimension_var )
+!$omp threadprivate( t_dependent_forcing_data, t_dependent_forcing_data_f_grid, &
+!$omp                time_forcing_given, forcing_names )
 
   logical, public :: l_t_dependent ! Flag used to determine when
   !                                  time dependent information is read in.
@@ -233,7 +222,7 @@ module time_dependent_input
               ! the time-dependent values of the variable to be input into CLUBB.
 
     integer ::  &
-      dim_size, & ! Number of time-dependent values of a variable to be input into CLUBB 
+      dim_size, & ! Number of time-dependent values of a variable to be input into CLUBB
       nforcings       ! Number of variables with time-dependent input data
 
 
@@ -263,7 +252,7 @@ module time_dependent_input
       dim_size = size( retVars(1)%values )
 
       ! Store the data read from the file in each [variable]_sfc_given
-    
+
       if( get_target_index(nforcings, time_name, retVars) > 0 ) then
         allocate( time_sfc_given(1:dim_size) )
         time_sfc_given = read_x_profile( nforcings, dim_size, time_name, retVars, &
@@ -275,39 +264,39 @@ module time_dependent_input
         latent_ht_given = read_x_profile( nforcings, dim_size, latent_ht_name, retVars, &
                                 input_file )
       end if
-    
+
       if( get_target_index(nforcings, sens_ht_name, retVars) > 0 ) then
         allocate( sens_ht_given(1:dim_size) )
         sens_ht_given = read_x_profile( nforcings, dim_size, sens_ht_name, retVars, &
                                 input_file )
       end if
-    
+
       if( get_target_index(nforcings, thetal_name, retVars) > 0 ) then
         allocate( thlm_sfc_given(1:dim_size) )
         thlm_sfc_given = read_x_profile( nforcings, dim_size, thetal_name, retVars, &
                                       input_file )
       end if
-      
+
       if( get_target_index(nforcings, rt_name, retVars) > 0 ) then
         allocate( rtm_sfc_given(1:dim_size) )
         rtm_sfc_given = read_x_profile( nforcings, dim_size, rt_name, retVars, &
                                       input_file )
       end if
-      
+
       ! As of July 2010, this is only in cobra
       if( get_target_index(nforcings, CO2_umol_name, retVars) > 0 ) then
         allocate( CO2_sfc_given(1:dim_size) )
         CO2_sfc_given = read_x_profile( nforcings, dim_size, CO2_umol_name, retVars, &
                                         input_file )
       end if
-      
+
       ! As of July 2010, this is only in gabls3_night
       if( get_target_index(nforcings, upwp_sfc_name, retVars) > 0 ) then
         allocate( upwp_sfc_given(1:dim_size) )
         upwp_sfc_given = read_x_profile( nforcings, dim_size, upwp_sfc_name, retVars, &
                                         input_file )
       end if
-      
+
       ! As of July 2010, this is only in gabls3_night
       if( get_target_index(nforcings, vpwp_sfc_name, retVars) > 0 ) then
         allocate( vpwp_sfc_given(1:dim_size) )
@@ -320,28 +309,28 @@ module time_dependent_input
         allocate( T_sfc_given(1:dim_size) )
         T_sfc_given = read_x_profile( nforcings, dim_size, T_sfc_name, retVars, &
                                         input_file )
-      end if 
+      end if
 
 
       if( get_target_index(nforcings, wpthlp_sfc_name, retVars) > 0 ) then
         allocate( wpthlp_sfc_given(1:dim_size) )
         wpthlp_sfc_given = read_x_profile( nforcings, dim_size, wpthlp_sfc_name, &
                                         retVars, input_file )
-      end if 
+      end if
 
       if( get_target_index(nforcings, wpqtp_sfc_name, retVars) > 0 ) then
         allocate( wpqtp_sfc_given(1:dim_size) )
         wpqtp_sfc_given = read_x_profile( nforcings, dim_size, wpqtp_sfc_name, &
                                         retVars, input_file )
       end if
-  
+
       ! Deallocate memory
       call deallocate_one_dim_vars( nforcings, retVars )
     end if
-    
+
     l_sfc_already_initialized = .true.
 
-    return 
+    return
   end subroutine initialize_t_dependent_sfc
 
   !================================================================================================
@@ -355,7 +344,8 @@ module time_dependent_input
     !
     !-------------------------------------------------------------------------------------
 
-    use input_reader, only: read_two_dim_file, fill_blanks_two_dim_vars
+    use input_reader, only: read_two_dim_file, fill_blanks_two_dim_vars, &
+      two_dim_read_var, one_dim_read_var
 
     use input_names, only: &
       z_name, &
@@ -394,70 +384,89 @@ module time_dependent_input
 
     ! Local Variables
 
-    integer :: i, n, n_f_grid_z, n_f_grid_t ! Column, forcing and input dimensions [-]
+    integer :: i, n, source_index ! Column and forcing indices [-]
+    integer :: n_f_grid_z, n_f_grid_t ! Source level and time counts [-]
+
+    type(two_dim_read_var) :: forcing_input(nforcings) ! Temporary source-file records [units vary]
+    type(one_dim_read_var) :: forcing_times ! Temporary source time coordinate [s]
 
     ! ----------------- Begin Code --------------------
 
-    if ( .not. allocated(t_dependent_forcing_data_f_grid(1)%values) ) then
-      ! Only read in the forcing data from the input file if they aren't already
-      ! stored in the global variable
-      call read_two_dim_file( iunit, nforcings, input_file, &
-                              t_dependent_forcing_data_f_grid, dimension_var )
-    end if
+    if ( .not. allocated(t_dependent_forcing_data_f_grid) ) then
 
-    n_f_grid_z = size( t_dependent_forcing_data_f_grid(1)%values, 1 )
+      call read_two_dim_file( iunit, nforcings, input_file, & ! In
+                              forcing_input, forcing_times ) ! Out
 
-    n_f_grid_t = size( dimension_var%values )
+      ! Fill source-file gaps before packing the temporary records into arrays.
+      call fill_blanks_two_dim_vars( nforcings, forcing_times, forcing_input )
 
-    ! Fill in blanks with linear interpolation. Whole profiles of -999.9 will
-    ! remain that way thus marking them blank.
-    call fill_blanks_two_dim_vars( nforcings, dimension_var, t_dependent_forcing_data_f_grid )
-
-    if ( .not. allocated(t_dependent_forcing_data) ) then
-      allocate( t_dependent_forcing_data(nforcings,ngrdcol) )
-    end if
-
-    ! The file is shared, but its interpolation coordinates belong to each column.
-    do i = 1, ngrdcol
+      forcing_names = forcing_input%name
+      time_forcing_given = forcing_times%values
+      allocate( t_dependent_forcing_data_f_grid(size(forcing_input(1)%values,1), &
+                                                nforcings,size(time_forcing_given)) )
       do n = 1, nforcings
-        if ( .not. allocated(t_dependent_forcing_data(n,i)%values) ) then
-          allocate( t_dependent_forcing_data(n,i)%values(nz,n_f_grid_t) )
-        end if
+
+        t_dependent_forcing_data_f_grid(:,n,:) = forcing_input(n)%values
+
       end do
 
-      select case ( t_dependent_forcing_data_f_grid(1)%name )
+    end if
+
+    n_f_grid_z = size(t_dependent_forcing_data_f_grid,1)
+    n_f_grid_t = size(time_forcing_given)
+
+    if ( allocated(t_dependent_forcing_data) ) then
+
+      if ( any(shape(t_dependent_forcing_data) /= [ngrdcol,nz,nforcings,n_f_grid_t]) ) then
+        !$acc exit data delete( t_dependent_forcing_data )
+        deallocate( t_dependent_forcing_data )
+      end if
+
+    end if
+
+    if ( .not. allocated(t_dependent_forcing_data) ) then
+      allocate( t_dependent_forcing_data(ngrdcol,nz,nforcings,n_f_grid_t) )
+      !$acc enter data create( t_dependent_forcing_data )
+    end if
+
+    ! Preserve each column's interpolation coordinates on the model grid.
+    do i = 1, ngrdcol
+
+      select case ( forcing_names(1) )
       case ( z_name )
-        t_dependent_forcing_data(1,i)%values = spread(grid(i,:),2,n_f_grid_t)
+        t_dependent_forcing_data(i,:,1,:) = spread(grid(i,:),2,n_f_grid_t)
       case ( pressure_name )
-        t_dependent_forcing_data(1,i)%values = spread(-p_in_Pa(i,:),2,n_f_grid_t)
+        t_dependent_forcing_data(i,:,1,:) = spread(-p_in_Pa(i,:),2,n_f_grid_t)
       case default
         error stop "Incompatible grid type in first element of t_dependent_forcings."
       end select
+
     end do
 
-    if ( t_dependent_forcing_data_f_grid(1)%name == pressure_name ) then
+    if ( forcing_names(1) == pressure_name ) then
       ! Retained raw pressure coordinates must stay negative across grid updates.
-      t_dependent_forcing_data_f_grid(1)%values = -abs(t_dependent_forcing_data_f_grid(1)%values)
+      t_dependent_forcing_data_f_grid(:,1,:) = -abs(t_dependent_forcing_data_f_grid(:,1,:))
     end if
 
     do n = 2, nforcings
+
+      source_index = findloc( forcing_names, forcing_names(n), dim=1 )
       do i = 1, ngrdcol
-        t_dependent_forcing_data(n,i)%values = read_to_grid( nforcings, n_f_grid_z, n_f_grid_t, & ! In
-          nz, t_dependent_forcing_data(1,i)%values(:,1), & ! In
-          t_dependent_forcing_data_f_grid, t_dependent_forcing_data_f_grid(n)%name ) ! In
+
+        t_dependent_forcing_data(i,:,n,:) = read_to_grid( n_f_grid_z, n_f_grid_t, nz, & ! In
+          t_dependent_forcing_data(i,:,1,1), t_dependent_forcing_data_f_grid(:,1,:), & ! In
+          t_dependent_forcing_data_f_grid(:,source_index,:) ) ! In
+
       end do
+
     end do
 
+    ! Refresh the device table after initialization or a model-grid change.
+    !$acc update device( t_dependent_forcing_data )
+
+    ! Grid adaptation needs the source profiles again when the model grid changes.
     if ( l_add_dycore_grid .or. grid_adapt_in_time_method == no_grid_adaptation ) then
-      ! the array should only be kept in memory, if we want to use grid adaptation
-      ! (grid_adapt_in_time_method > no_grid_adaptation) and no simulating forcings input from the
-      ! host model on the dycore grid (l_add_dycore_grid == .true.), since then we
-      ! need the raw input from the file during the CLUBB run if the grid changes
-      do i = 1, nforcings
-        if ( allocated( t_dependent_forcing_data_f_grid(i)%values ) ) then
-          deallocate( t_dependent_forcing_data_f_grid(i)%values )
-        end if
-      end do
+      deallocate( t_dependent_forcing_data_f_grid )
     end if
 
     return
@@ -466,33 +475,24 @@ module time_dependent_input
 
   !================================================================================================
   subroutine finalize_t_dependent_forcings()
-    !
-    !   Description: Clears memory initialized in initialize_t_dependent_forcings.
-    !   This should be called at the end of the model
-    !----------------------------------------------------------
+    ! Description:
+    ! Release the source forcing table, model-grid profiles and shared times.
 
     implicit none
 
-    ! Local Variable
-    integer :: i
-
-    ! ----------------- Begin Code --------------------
-
-    ! for the case that we use grid adaptation and do not want to simulate the forcings
-    ! input from the host model on the dycore grid, we keep the raw input also in memory
-    do i = 1, nforcings
-      if ( allocated( t_dependent_forcing_data_f_grid(i)%values ) ) then
-        deallocate( t_dependent_forcing_data_f_grid(i)%values )
-      end if
-    end do
-
-    if ( allocated(t_dependent_forcing_data) ) deallocate( t_dependent_forcing_data )
-
-    if ( allocated( dimension_var%values ) ) then
-      deallocate( dimension_var%values )
+    !--------------------------- Begin Code ---------------------------
+    if ( allocated(t_dependent_forcing_data_f_grid) ) then
+      deallocate( t_dependent_forcing_data_f_grid )
     end if
 
-    return
+    if ( allocated(t_dependent_forcing_data) ) then
+
+      !$acc exit data delete( t_dependent_forcing_data )
+      deallocate( t_dependent_forcing_data )
+
+    end if
+    if ( allocated(time_forcing_given) ) deallocate( time_forcing_given )
+
   end subroutine finalize_t_dependent_forcings
   
   !================================================================================================
@@ -522,53 +522,31 @@ module time_dependent_input
   end subroutine finalize_t_dependent_sfc
 
   !================================================================================================
-  function read_to_grid( ntwo_dim_vars, dim_size, other_dim_size, &
-                         nz, grid, two_dim_vars, target_name ) result(var)
-    !
-    !  Description: This is a helper function for doing the translation from the
-    !  forcing grid to the model grid.
-    !
-    !------------------------------------------------------------------------------------
-
-    use input_reader, only: read_x_table, two_dim_read_var
+  function read_to_grid( dim_size, other_dim_size, nz, grid, grid_src, var_src ) result(var)
+    ! Description:
+    ! Interpolate a source field onto one column's model grid at every input time.
+    ! Independent time samples form the batch passed to vertical interpolation.
 
     use interpolation, only: zlinterp
 
-    use clubb_precision, only: &
-      core_rknd ! Variable(s)
-
     implicit none
 
-    integer, intent(in) :: &
-      ntwo_dim_vars, &
-      dim_size, &
-      other_dim_size, &
-      nz
+    !--------------------------- Input Variables ---------------------------
+    integer, intent(in) :: dim_size ! Source level count [-]
+    integer, intent(in) :: other_dim_size ! Time sample count [-]
+    integer, intent(in) :: nz ! Model level count [-]
+    real( kind = core_rknd ), intent(in) :: grid(nz) ! Model heights [m] or negative pressures [Pa]
+    real( kind = core_rknd ), intent(in) :: &
+      grid_src(dim_size,other_dim_size), & ! Source heights [m] or negative pressures [Pa]
+      var_src(dim_size,other_dim_size) ! Source field [units vary]
 
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      grid
+    !--------------------------- Output Variables ---------------------------
+    real( kind = core_rknd ) :: var(nz,other_dim_size) ! Interpolated field [units vary]
 
-    type(two_dim_read_var), dimension(ntwo_dim_vars), intent(in) :: &
-      two_dim_vars
-
-    character(len=*), intent(in) :: &
-      target_name
-
-    real( kind = core_rknd ), dimension(dim_size, other_dim_size) :: temp_var
-
-    real( kind = core_rknd ), dimension(nz, other_dim_size) :: var
-
-
-    ! ----------------- Begin Code --------------------
-
-    temp_var = read_x_table( ntwo_dim_vars,  dim_size, other_dim_size, target_name, two_dim_vars )
-
-    ! Batch the file's time samples, then restore its level/time layout.
-    var = transpose( zlinterp( other_dim_size, nz, & ! In
-                               dim_size, spread(grid, 1, other_dim_size), & ! In
-                               transpose(two_dim_vars(1)%values), transpose(temp_var) ) ) ! In
-
-    return
+    !--------------------------- Begin Code ---------------------------
+    var = transpose( zlinterp( other_dim_size, nz, dim_size, & ! In
+                               spread(grid,1,other_dim_size), & ! In
+                               transpose(grid_src), transpose(var_src) ) ) ! In
 
   end function read_to_grid
 
@@ -648,8 +626,8 @@ module time_dependent_input
       rho,     & ! Air Density                                [kg/m^3]
       rtm        ! Total Water Mixing Ratio                   [kg/kg]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nforcings,nzt), intent(in) :: &
-      forcings_array ! Forcing profiles for every column
+    real( kind = core_rknd ), dimension(ngrdcol,nzt,nforcings), intent(in) :: &
+      forcings_array ! Forcing profiles (column, level, variable) [units vary]
 
     !--------------------- Output Variables ---------------------
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(inout) :: &
@@ -674,269 +652,285 @@ module time_dependent_input
 
     !--------------------- Local Variables ---------------------
     logical :: l_valid(ngrdcol) ! Columns with a complete forcing profile [-]
+    logical :: l_column_valid ! Current column has no missing input levels [-]
     real( kind = core_rknd ) :: wm_zm_new(ngrdcol,nzm) ! Interpolated subsidence [m/s]
 
-    integer :: i, k, n
+    integer :: i, k, n ! Column, level and forcing indices [-]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt) :: temp_array
 
     !--------------------- Begin Code ---------------------
 
-    !$acc data create( temp_array, l_valid )
+    !$acc data copyin( forcings_array ) create( temp_array, l_valid, wm_zm_new )
 
-    ! Parse the values in t_dependent_forcing_data for CLUBB compatible forcing
-    ! data.
+    ! Apply each named forcing field to its corresponding model array.
     do n=2, nforcings
 
-      temp_array = forcings_array(:,n,:)
+      ! Each device thread copies and checks one column's complete profile.
+      !$acc parallel loop gang vector default(present) private(l_column_valid)
+      do i = 1, ngrdcol
 
-      ! Check to see if temp_array is an actual profile or a dummy profile
-      ! If it is a dummy profile we dont want it to apply itself as it may
-      ! overwrite legitimate information from another source.
-      l_valid = .not. any( abs(temp_array - (-999.9_core_rknd)) < &
-        abs(temp_array + (-999.9_core_rknd)) / 2 * eps, dim=2 )
+        l_column_valid = .true.
+        !$acc loop seq
+        do k = 1, nzt
 
-      if ( any(l_valid) ) then
-
-        !$acc update device( temp_array, l_valid )
-          
-        select case (t_dependent_forcing_data_f_grid(n)%name)
-        case(temperature_f_name, theta_f_name, thetal_f_name)
-
-          select case(t_dependent_forcing_data_f_grid(n)%name)
-          case(temperature_f_name)
-
-            !$acc parallel loop gang vector collapse(2) default(present)
-            do k = 1, nzt
-              do i = 1, ngrdcol
-                if ( .not. l_valid(i) ) cycle
-                thlm_f(i,k) = temp_array(i,k) / exner(i,k)
-              end do
-            end do
-
-          case(theta_f_name)
-
-            !$acc parallel loop gang vector collapse(2) default(present)
-            do k = 1, nzt
-              do i = 1, ngrdcol
-                if ( .not. l_valid(i) ) cycle
-                thlm_f(i,k) = temp_array(i,k) ! n am not sure on the conversion of this
-              end do
-            end do
-
-          case(thetal_f_name)
-
-            !$acc parallel loop gang vector collapse(2) default(present)
-            do k = 1, nzt
-              do i = 1, ngrdcol
-                if ( .not. l_valid(i) ) cycle
-                thlm_f(i,k) = temp_array(i,k)
-              end do
-            end do
-
-          end select
-
-          if ( sclr_idx%iisclr_thl > 0 ) then
-
-            !$acc parallel loop gang vector collapse(2) default(present)
-            do k = 1, nzt
-              do i = 1, ngrdcol
-                if ( .not. l_valid(i) ) cycle
-                sclrm_forcing(i,k,sclr_idx%iisclr_thl) = thlm_f(i,k)
-              end do
-            end do
-
+          temp_array(i,k) = forcings_array(i,k,n)
+          if ( abs(temp_array(i,k) - (-999.9_core_rknd)) < &
+               abs(temp_array(i,k) + (-999.9_core_rknd)) / 2 * eps ) then
+            l_column_valid = .false.
           end if
 
-          if ( sclr_idx%iiedsclr_thl > 0 ) then
+        end do
+        l_valid(i) = l_column_valid
 
-            ! With l_do_expldiff_rtm_thlm, advance_windm_edsclrm puts a copy of thlm
-            ! in this eddy scalar. thlm is already forced with thlm_f in
-            ! advance_xm_wpxp, so the copy must not be forced again.
-            !$acc parallel loop gang vector collapse(2) default(present)
-            do k = 1, nzt
-              do i = 1, ngrdcol
-                if ( .not. l_valid(i) ) cycle
-                if ( l_do_expldiff_rtm_thlm .and. edsclr_dim > 1 ) then
-                  edsclrm_forcing(i,k,sclr_idx%iiedsclr_thl) = zero
-                else
-                  edsclrm_forcing(i,k,sclr_idx%iiedsclr_thl) = thlm_f(i,k)
-                end if
-              end do
-            end do
+      end do
 
-          end if
+      select case (forcing_names(n))
+      case(temperature_f_name, theta_f_name, thetal_f_name)
 
-        case(rt_f_name, sp_humidity_f_name)
-
-          select case(t_dependent_forcing_data_f_grid(n)%name)
-          case(sp_humidity_f_name)
-
-            !$acc parallel loop gang vector collapse(2) default(present)
-            do k = 1, nzt
-              do i = 1, ngrdcol
-                if ( .not. l_valid(i) ) cycle
-                rtm_f(i,k) = temp_array(i,k) * ( 1._core_rknd + rtm(i,k) )**2
-              end do
-            end do
-
-          case(rt_f_name )
-
-            !$acc parallel loop gang vector collapse(2) default(present)
-            do k = 1, nzt
-              do i = 1, ngrdcol
-                if ( .not. l_valid(i) ) cycle
-                rtm_f(i,k) = temp_array(i,k)
-              end do
-            end do
-
-          end select
-
-          if ( sclr_idx%iisclr_rt  > 0 ) then
-
-            !$acc parallel loop gang vector collapse(2) default(present)
-            do k = 1, nzt
-              do i = 1, ngrdcol
-                if ( .not. l_valid(i) ) cycle
-                sclrm_forcing(i,k,sclr_idx%iisclr_rt)  = rtm_f(i,k)
-              end do
-            end do
-
-          end if
-
-          if ( sclr_idx%iiedsclr_rt  > 0 ) then
-
-            ! Copy of rtm with l_do_expldiff_rtm_thlm; see the thlm case above.
-            !$acc parallel loop gang vector collapse(2) default(present)
-            do k = 1, nzt
-              do i = 1, ngrdcol
-                if ( .not. l_valid(i) ) cycle
-                if ( l_do_expldiff_rtm_thlm .and. edsclr_dim > 1 ) then
-                  edsclrm_forcing(i,k,sclr_idx%iiedsclr_rt)  = zero
-                else
-                  edsclrm_forcing(i,k,sclr_idx%iiedsclr_rt)  = rtm_f(i,k)
-                end if
-              end do
-            end do
-
-          end if
-
-        case(um_ref_name)
-
-          !$acc parallel loop gang vector collapse(2) default(present)
-            do k = 1, nzt
-            do i = 1, ngrdcol
-              if ( .not. l_valid(i) ) cycle
-              um_ref(i,k) = temp_array(i,k)
-            end do
-          end do
-
-        case(vm_ref_name)
+        select case(forcing_names(n))
+        case(temperature_f_name)
 
           !$acc parallel loop gang vector collapse(2) default(present)
           do k = 1, nzt
             do i = 1, ngrdcol
               if ( .not. l_valid(i) ) cycle
-              vm_ref(i,k) = temp_array(i,k)
+              thlm_f(i,k) = temp_array(i,k) / exner(i,k)
             end do
           end do
 
-        case(um_f_name)
+        case(theta_f_name)
 
           !$acc parallel loop gang vector collapse(2) default(present)
           do k = 1, nzt
             do i = 1, ngrdcol
               if ( .not. l_valid(i) ) cycle
-              um_f(i,k) = temp_array(i,k)
+              thlm_f(i,k) = temp_array(i,k) ! n am not sure on the conversion of this
             end do
           end do
 
-        case(vm_f_name)
+        case(thetal_f_name)
 
           !$acc parallel loop gang vector collapse(2) default(present)
           do k = 1, nzt
             do i = 1, ngrdcol
               if ( .not. l_valid(i) ) cycle
-              vm_f(i,k) = temp_array(i,k)
+              thlm_f(i,k) = temp_array(i,k)
             end do
           end do
-
-        case(wm_name, omega_name, omega_mb_hr_name)
-
-          select case(t_dependent_forcing_data_f_grid(n)%name)
-          case(wm_name)
-
-            !$acc parallel loop gang vector collapse(2) default(present)
-            do k = 1, nzt
-              do i = 1, ngrdcol
-                if ( .not. l_valid(i) ) cycle
-                wm_zt(i,k) = temp_array(i,k)
-              end do
-            end do
-
-          case(omega_name)
-
-            !$acc parallel loop gang vector collapse(2) default(present)
-            do k = 1, nzt
-              do i = 1, ngrdcol
-                if ( .not. l_valid(i) ) cycle
-                wm_zt(i,k) = - temp_array(i,k) / (grav * rho(i,k))
-              end do
-            end do
-
-          case(omega_mb_hr_name)
-
-            !$acc parallel loop gang vector collapse(2) default(present)
-            do k = 1, nzt
-              do i = 1, ngrdcol
-                if ( .not. l_valid(i) ) cycle
-                temp_array(i,k) = temp_array(i,k) * pascal_per_mb / sec_per_hr
-              end do
-            end do
-
-            !$acc parallel loop gang vector collapse(2) default(present)
-            do k = 1, nzt
-              do i = 1, ngrdcol
-                if ( .not. l_valid(i) ) cycle
-
-                wm_zt(i,k) = - temp_array(i,k) / (grav * rho(i,k))
-
-              end do
-            end do
-
-          end select
-
-          wm_zm_new = zt2zm_api( nzm, nzt, ngrdcol, gr, wm_zt )
-          where ( spread(l_valid, 2, nzm) ) wm_zm = wm_zm_new
-
-        case(ug_name)
-
-          !$acc parallel loop gang vector collapse(2) default(present)
-          do k = 1, nzt
-            do i = 1, ngrdcol
-              if ( .not. l_valid(i) ) cycle
-              ug(i,k) = temp_array(i,k)
-            end do
-          end do
-
-        case(vg_name)
-
-          !$acc parallel loop gang vector collapse(2) default(present)
-          do k = 1, nzt
-            do i = 1, ngrdcol
-              if ( .not. l_valid(i) ) cycle
-              vg(i,k) = temp_array(i,k)
-            end do
-          end do
-
-        case default
-
-          write(fstderr, *) "Incompatable forcing type: "//t_dependent_forcing_data_f_grid(n)%name
-          error stop
 
         end select
 
-      end if 
+        if ( sclr_idx%iisclr_thl > 0 ) then
+
+          !$acc parallel loop gang vector collapse(2) default(present)
+          do k = 1, nzt
+            do i = 1, ngrdcol
+              if ( .not. l_valid(i) ) cycle
+              sclrm_forcing(i,k,sclr_idx%iisclr_thl) = thlm_f(i,k)
+            end do
+          end do
+
+        end if
+
+        if ( sclr_idx%iiedsclr_thl > 0 ) then
+
+          ! With l_do_expldiff_rtm_thlm, advance_windm_edsclrm puts a copy of thlm
+          ! in this eddy scalar. thlm is already forced with thlm_f in
+          ! advance_xm_wpxp, so the copy must not be forced again.
+          !$acc parallel loop gang vector collapse(2) default(present)
+          do k = 1, nzt
+            do i = 1, ngrdcol
+              if ( .not. l_valid(i) ) cycle
+              if ( l_do_expldiff_rtm_thlm .and. edsclr_dim > 1 ) then
+                edsclrm_forcing(i,k,sclr_idx%iiedsclr_thl) = zero
+              else
+                edsclrm_forcing(i,k,sclr_idx%iiedsclr_thl) = thlm_f(i,k)
+              end if
+            end do
+          end do
+
+        end if
+
+      case(rt_f_name, sp_humidity_f_name)
+
+        select case(forcing_names(n))
+        case(sp_humidity_f_name)
+
+          !$acc parallel loop gang vector collapse(2) default(present)
+          do k = 1, nzt
+            do i = 1, ngrdcol
+              if ( .not. l_valid(i) ) cycle
+              rtm_f(i,k) = temp_array(i,k) * ( 1._core_rknd + rtm(i,k) )**2
+            end do
+          end do
+
+        case(rt_f_name )
+
+          !$acc parallel loop gang vector collapse(2) default(present)
+          do k = 1, nzt
+            do i = 1, ngrdcol
+              if ( .not. l_valid(i) ) cycle
+              rtm_f(i,k) = temp_array(i,k)
+            end do
+          end do
+
+        end select
+
+        if ( sclr_idx%iisclr_rt  > 0 ) then
+
+          !$acc parallel loop gang vector collapse(2) default(present)
+          do k = 1, nzt
+            do i = 1, ngrdcol
+              if ( .not. l_valid(i) ) cycle
+              sclrm_forcing(i,k,sclr_idx%iisclr_rt)  = rtm_f(i,k)
+            end do
+          end do
+
+        end if
+
+        if ( sclr_idx%iiedsclr_rt  > 0 ) then
+
+          ! Copy of rtm with l_do_expldiff_rtm_thlm; see the thlm case above.
+          !$acc parallel loop gang vector collapse(2) default(present)
+          do k = 1, nzt
+            do i = 1, ngrdcol
+              if ( .not. l_valid(i) ) cycle
+              if ( l_do_expldiff_rtm_thlm .and. edsclr_dim > 1 ) then
+                edsclrm_forcing(i,k,sclr_idx%iiedsclr_rt)  = zero
+              else
+                edsclrm_forcing(i,k,sclr_idx%iiedsclr_rt)  = rtm_f(i,k)
+              end if
+            end do
+          end do
+
+        end if
+
+      case(um_ref_name)
+
+        !$acc parallel loop gang vector collapse(2) default(present)
+        do k = 1, nzt
+          do i = 1, ngrdcol
+            if ( .not. l_valid(i) ) cycle
+            um_ref(i,k) = temp_array(i,k)
+          end do
+        end do
+
+      case(vm_ref_name)
+
+        !$acc parallel loop gang vector collapse(2) default(present)
+        do k = 1, nzt
+          do i = 1, ngrdcol
+            if ( .not. l_valid(i) ) cycle
+            vm_ref(i,k) = temp_array(i,k)
+          end do
+        end do
+
+      case(um_f_name)
+
+        !$acc parallel loop gang vector collapse(2) default(present)
+        do k = 1, nzt
+          do i = 1, ngrdcol
+            if ( .not. l_valid(i) ) cycle
+            um_f(i,k) = temp_array(i,k)
+          end do
+        end do
+
+      case(vm_f_name)
+
+        !$acc parallel loop gang vector collapse(2) default(present)
+        do k = 1, nzt
+          do i = 1, ngrdcol
+            if ( .not. l_valid(i) ) cycle
+            vm_f(i,k) = temp_array(i,k)
+          end do
+        end do
+
+      case(wm_name, omega_name, omega_mb_hr_name)
+
+        select case(forcing_names(n))
+        case(wm_name)
+
+          !$acc parallel loop gang vector collapse(2) default(present)
+          do k = 1, nzt
+            do i = 1, ngrdcol
+              if ( .not. l_valid(i) ) cycle
+              wm_zt(i,k) = temp_array(i,k)
+            end do
+          end do
+
+        case(omega_name)
+
+          !$acc parallel loop gang vector collapse(2) default(present)
+          do k = 1, nzt
+            do i = 1, ngrdcol
+              if ( .not. l_valid(i) ) cycle
+              wm_zt(i,k) = - temp_array(i,k) / (grav * rho(i,k))
+            end do
+          end do
+
+        case(omega_mb_hr_name)
+
+          !$acc parallel loop gang vector collapse(2) default(present)
+          do k = 1, nzt
+            do i = 1, ngrdcol
+              if ( .not. l_valid(i) ) cycle
+              temp_array(i,k) = temp_array(i,k) * pascal_per_mb / sec_per_hr
+            end do
+          end do
+
+          !$acc parallel loop gang vector collapse(2) default(present)
+          do k = 1, nzt
+            do i = 1, ngrdcol
+              if ( .not. l_valid(i) ) cycle
+
+              wm_zt(i,k) = - temp_array(i,k) / (grav * rho(i,k))
+
+            end do
+          end do
+
+        end select
+
+        wm_zm_new(:,:) = zt2zm_api( nzm, nzt, ngrdcol, gr, wm_zt(:,:) )
+
+        !$acc parallel loop gang vector collapse(2) default(present)
+        do k = 1, nzm
+          do i = 1, ngrdcol
+            if ( l_valid(i) ) wm_zm(i,k) = wm_zm_new(i,k)
+          end do
+        end do
+
+      case(ug_name)
+
+        !$acc parallel loop gang vector collapse(2) default(present)
+        do k = 1, nzt
+          do i = 1, ngrdcol
+            if ( .not. l_valid(i) ) cycle
+            ug(i,k) = temp_array(i,k)
+          end do
+        end do
+
+      case(vg_name)
+
+        !$acc parallel loop gang vector collapse(2) default(present)
+        do k = 1, nzt
+          do i = 1, ngrdcol
+            if ( .not. l_valid(i) ) cycle
+            vg(i,k) = temp_array(i,k)
+          end do
+        end do
+
+      case default
+
+        ! Unknown fields are errors only when at least one profile is valid.
+        !$acc update host( l_valid )
+        if ( any(l_valid) ) then
+          write(fstderr, *) "Incompatable forcing type: "//forcing_names(n)
+          error stop
+        end if
+
+      end select
+
 
     end do ! 1 .. nforcings
 
@@ -1025,25 +1019,30 @@ module time_dependent_input
       edsclrm_forcing ! Edscalar forcing [-]
 
     !--------------------- Local Variables ---------------------
-    integer :: i, k, n, before_time, after_time
+    integer :: i, k, n ! Column, level and forcing indices [-]
+    integer :: before_time, after_time ! Bracketing forcing time indices [-]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nforcings,nzt) :: forcings_array
+    real( kind = core_rknd ), dimension(ngrdcol,nzt,nforcings) :: &
+      forcings_array ! Time-interpolated fields (column, level, variable) [units vary]
 
-    real( kind = core_rknd ) :: time_frac
+    real( kind = core_rknd ) :: time_frac ! Fraction between bracketing input times [-]
 
     !--------------------- Begin Code ---------------------
 
     time_frac = -one ! Default initialization
 
-    call time_select( time, size(dimension_var%values), dimension_var%values, &
+    call time_select( time, size(time_forcing_given), time_forcing_given, &
                                  before_time, after_time, time_frac )
 
+    !$acc data create( forcings_array )
+
+    !$acc parallel loop gang vector collapse(3) default(present)
     do n = 2, nforcings
       do k = 1, nzt
         do i = 1, ngrdcol
-          forcings_array(i,n,k) = linear_interp_factor &
-            ( time_frac, t_dependent_forcing_data(n,i)%values(k,after_time), &
-              t_dependent_forcing_data(n,i)%values(k,before_time) )
+          forcings_array(i,k,n) = linear_interp_factor &
+            ( time_frac, t_dependent_forcing_data(i,k,n,after_time), &
+              t_dependent_forcing_data(i,k,n,before_time) )
         end do
       end do
     end do
@@ -1057,6 +1056,8 @@ module time_dependent_input
                                                    thlm_f, rtm_f, um_ref, vm_ref, um_f, vm_f, &
                                                    wm_zt, wm_zm,  ug, vg, &
                                                    sclrm_forcing, edsclrm_forcing )
+
+    !$acc end data
 
     return
 
@@ -1161,25 +1162,29 @@ module time_dependent_input
       edsclrm_forcing ! Edscalar forcing [-]
 
     !--------------------- Local Variables ---------------------
-    integer :: n, before_time, after_time, iv
+    integer :: n ! Forcing field index [-]
+    integer :: before_time, after_time ! Bracketing forcing time indices [-]
+    integer :: iv ! Index of the field passed to remapping [-]
 
     integer :: i, k ! Column and level indices [-]
 
-    real( kind = core_rknd ), dimension(ngrdcol,gr_dycore%nzt) :: temp_array_dycore
+    real( kind = core_rknd ), dimension(ngrdcol,gr_dycore%nzt) :: &
+      temp_array_dycore ! Time-interpolated forcing on the dycore grid [units vary]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nforcings,nzt) :: forcings_array
+    real( kind = core_rknd ), dimension(ngrdcol,nzt,nforcings) :: &
+      forcings_array ! Time-interpolated fields (column, level, variable) [units vary]
 
-    real( kind = core_rknd ) :: time_frac
+    real( kind = core_rknd ) :: time_frac ! Fraction between bracketing input times [-]
 
     logical :: &
-      l_zt_variable
+      l_zt_variable ! Remap a field on thermodynamic levels [-]
 
     !--------------------- Begin Code ---------------------
     time_frac = -one ! Default initialization
     iv = 1
     l_zt_variable = .true.
 
-    call time_select( time, size(dimension_var%values), dimension_var%values, &
+    call time_select( time, size(time_forcing_given), time_forcing_given, &
                                  before_time, after_time, time_frac )
 
     do n = 2, nforcings
@@ -1187,12 +1192,12 @@ module time_dependent_input
       do k = 1, gr_dycore%nzt
         do i = 1, ngrdcol
           temp_array_dycore(i,k) = linear_interp_factor &
-            ( time_frac, t_dependent_forcing_data(n,i)%values(k,after_time), &
-              t_dependent_forcing_data(n,i)%values(k,before_time) )
+            ( time_frac, t_dependent_forcing_data(i,k,n,after_time), &
+              t_dependent_forcing_data(i,k,n,before_time) )
         end do
       end do
 
-      forcings_array(:,n,:) = remap_vals_to_target( ngrdcol, &
+      forcings_array(:,:,n) = remap_vals_to_target( ngrdcol, &
                                                     gr_dycore, gr, &
                                                     gr_dycore%nzt, &
                                                     temp_array_dycore, &
