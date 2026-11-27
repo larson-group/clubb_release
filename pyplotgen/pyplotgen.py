@@ -176,7 +176,6 @@ class PyPlotGen:
     def run(self):
         """
         Main driver of the pyplotgen program executing the following steps:
-        - Download benchmark files if needed
         - Loop through cases listed in Case_definitions.CASES_TO_PLOT
         - Create instances of these cases
         - Call plot function on the instances
@@ -195,9 +194,7 @@ class PyPlotGen:
             self.diff_datasets = self.diff_files_data_reader.loadFolder(self.diff)
         all_enabled_cases = Case_definitions.CASES_TO_PLOT
 
-        # Downloads model output (sam, les, clubb) if it doesn't exist
-        if self.__benchmarkFilesNeeded__():
-            self.__downloadModelOutputs__()
+        # Benchmark files are found or downloaded per case by CaseGallerySetup
         self.num_cases_plotted = 0
         # Loop through cases listed in Case_definitions.CASES_TO_PLOT
         # for case_def in all_enabled_cases:
@@ -529,35 +526,6 @@ class PyPlotGen:
                 if os.path.exists(copy_dest_folder):
                     shutil.copy(file, copy_dest_file)
                     logToFile("\tFound setup file " + str(file))
-
-    def __benchmarkFilesNeeded__(self):
-        """
-        Returns true if the user requested to plot model output
-        that needs to be downloaded
-
-        :return: True if any of self.les or self.hoc or self.cgbest is True, else False
-        """
-        return self.les or self.hoc or self.cgbest
-
-    def __downloadModelOutputs__(self):
-        """
-        Checks for model output in the folder specified under Case_definitions.BENCHMARK_OUTPUT_ROOT,
-        e.g. sam benchmark runs, and if it doesn't exist, downloads it.
-        Supports: SAM, COAMPS, CLUBB
-
-        :return: None
-        """
-        # Ensure benchmark output is available
-        logToFileAndConsole("Checking for model benchmark output...")
-        # Check if the folder specified in Case_definitions.BENCHMARK_OUTPUT_ROOT exists
-        if not os.path.isdir(Case_definitions.BENCHMARK_OUTPUT_ROOT) and \
-                not os.path.islink(Case_definitions.BENCHMARK_OUTPUT_ROOT):
-            logToFileAndConsole("\tDownloading the benchmarks to {}.".format(Case_definitions.BENCHMARK_OUTPUT_ROOT))
-            subprocess.run(['git', 'clone', 'https://carson.math.uwm.edu/les_and_clubb_benchmark_runs.git',
-                            Case_definitions.BENCHMARK_OUTPUT_ROOT])
-        else:
-            logToFileAndConsole("Benchmark output found in {}.".format(Case_definitions.BENCHMARK_OUTPUT_ROOT))
-        logToFileAndConsole('-------------------------------------------')
 
 
 def __convertCasenamesToCaseInstances__(casenames_list):

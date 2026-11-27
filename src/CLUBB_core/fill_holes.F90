@@ -2525,7 +2525,9 @@ module fill_holes
     ! Increases the value of a hydrometeor concentration when it is too small,
     ! according to the hydrometeor mixing ratio (which remains unchanged) and
     ! the maximum acceptable drop or particle mean volume radius for that
-    ! hydrometeor species.
+    ! hydrometeor species. P3 rime mass is bounded by total ice mass; its
+    ! volume is reduced proportionally to retain density. Rime fields are
+    ! zero when their mass or volume is nonpositive. Total ice is unchanged.
 
     ! References:
     !-----------------------------------------------------------------------
@@ -2559,7 +2561,7 @@ module fill_holes
       hydromet_dim    ! Number of hydrometeor fields
 
     type (hm_metadata_type), intent(in) :: &
-          hm_metadata
+          hm_metadata ! Hydrometeor species, field roles and indices
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt,hydromet_dim), intent(in) :: &
       hydromet    ! Mean of hydrometeor fields    [units vary]
@@ -2570,18 +2572,66 @@ module fill_holes
 
     !--------------------------- Local Variables ---------------------------
     real( kind = core_rknd ) :: &
-      Nxm_min_coef    ! Coefficient for min mean value of a concentration [1/kg]
+      Nxm_min_coef, & ! Coefficient for min mean value of a concentration [1/kg]
+      rime_mass,   & ! Nonnegative rime mass mixing ratio before bounding [kg/kg]
+      bounded_rime   ! Rime mass mixing ratio bounded by total ice [kg/kg]
 
     integer :: &
       i,   & ! Column index [-]
       k,   & ! Vertical grid index
       idx    ! Hydrometeor species index
 
+    logical :: l_p3_rime ! Total ice and both P3 rime fields are present [-]
+
+    !--------------------------- Begin Code ---------------------------
+
+    l_p3_rime = hm_metadata%iiri > 0 .and. hm_metadata%iiqirim > 0 &
+                .and. hm_metadata%iibirim > 0
 
     ! Clipping for hydrometeor concentrations.
     do idx = 1, hydromet_dim
 
-       if ( .not. hm_metadata%l_mix_rat_hm(idx) ) then
+       if ( Nx2rx_hm_idx(idx,hm_metadata) == 0 &
+            .and. .not. hm_metadata%l_mix_rat_hm(idx) ) then
+
+          ! Rime is part of total ice. Sampling error, transport and hole
+          ! filling can leave more mean rime than total ice. Bound its mass and
+          ! scale volume proportionally to retain density without changing
+          ! total ice. Read both original fields so index order is irrelevant.
+          if ( l_p3_rime .and. ( idx == hm_metadata%iiqirim .or. idx == hm_metadata%iibirim ) ) then
+
+            do k = 1, nzt
+              do i = 1, ngrdcol
+
+                rime_mass = max( hydromet(i,k,hm_metadata%iiqirim), zero )
+
+                if ( rime_mass > zero .and. hydromet(i,k,hm_metadata%iibirim) > zero ) then
+
+                  bounded_rime = min( rime_mass, max( hydromet(i,k,hm_metadata%iiri), zero ) )
+
+                  if ( idx == hm_metadata%iiqirim ) then
+                    hydromet_clipped(i,k,idx) = bounded_rime
+                  else
+                    hydromet_clipped(i,k,idx) &
+                      = hydromet(i,k,hm_metadata%iibirim) * ( bounded_rime / rime_mass )
+                  endif
+
+                else
+
+                  hydromet_clipped(i,k,idx) = zero
+
+                endif
+
+              enddo
+            enddo
+
+          else
+
+            hydromet_clipped(:,:,idx) = max( hydromet(:,:,idx), zero )
+
+          endif
+
+       elseif ( .not. hm_metadata%l_mix_rat_hm(idx) ) then
 
           ! The field is a hydrometeor concentration.
 
@@ -2659,7 +2709,6 @@ module fill_holes
        endif ! .not. l_mix_rat_hm(idx)
 
     enddo ! idx = 1, hydromet_dim, 1
-
 
     return
 

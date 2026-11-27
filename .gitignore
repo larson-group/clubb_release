@@ -42,3 +42,6 @@ run_scripts/clubb_params_multi_col.json
 # Local benchmark data and acquisition locks.
 /input/les_and_clubb_benchmark_runs
 /input/.les_and_clubb_benchmark_runs.locks/
+
+# P3 lookup tables downloaded from the CM1 release.
+/input/p3_lookup_tables/

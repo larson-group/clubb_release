@@ -35,7 +35,7 @@ module index_mapping
   ! ii indices:
   ! 
   ! Included indices:  
-  ! iirr, iiNr, iiri, iiNi, iirs, iiNs, iirg, iiNg
+  ! iirr, iiNr, iiri, iiNi, iirs, iiNs, iirg, iiNg, iiqirim, iibirim
   ! 
   ! Number of indices:  hydromet_dim
   ! 
@@ -135,6 +135,16 @@ contains
        ! Index for ice concentration, Ni.
        hydromet_idx = hm_metadata%iiNi
 
+    elseif ( pdf_idx == hm_metadata%iiPDF_qirim ) then
+
+       ! Index for rime ice mixing ratio, qirim.
+       hydromet_idx = hm_metadata%iiqirim
+
+    elseif ( pdf_idx == hm_metadata%iiPDF_birim ) then
+
+       ! Index for rime ice volume, birim.
+       hydromet_idx = hm_metadata%iibirim
+
     endif
 
     return
@@ -211,6 +221,16 @@ contains
 
        ! Index for graupel concentration, Ng.
        pdf_idx = hm_metadata%iiPDF_Ng
+
+    elseif ( hydromet_idx == hm_metadata%iiqirim ) then
+
+       ! Index for rime ice mixing ratio, qirim.
+       pdf_idx = hm_metadata%iiPDF_qirim
+
+    elseif ( hydromet_idx == hm_metadata%iibirim ) then
+
+       ! Index for rime ice volume, birim.
+       pdf_idx = hm_metadata%iiPDF_birim
 
     endif
 

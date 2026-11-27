@@ -484,6 +484,8 @@ def stats_accumulate_hydromet_api(
         ("Nrm", hm_metadata.iiNr),
         ("Nsm", hm_metadata.iiNs),
         ("Ngm", hm_metadata.iiNg),
+        ("qirim", hm_metadata.iiqirim),
+        ("birim", hm_metadata.iibirim),
     ]:
         if idx >= 0:
             stats = stats.update(name, hydromet[..., idx])

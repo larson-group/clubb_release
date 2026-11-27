@@ -58,7 +58,8 @@ module pdf_hydromet_microphys_wrapper
         clip_transform_silhs_output_api
 
     use latin_hypercube_driver_module, only: &
-        stats_accumulate_lh_api
+        stats_accumulate_lh_api, & ! Procedure(s)
+        construct_p3_rime_samples
 
     use pdf_parameter_module, only: &
         pdf_parameter    ! Type(s)
@@ -364,6 +365,17 @@ module pdf_hydromet_microphys_wrapper
                                             lh_rc_clipped, lh_rv_clipped,           & ! Out
                                             lh_Nc_clipped                           ) ! Out
       call timer_stop( "clip_transform_silhs_output_api" )
+
+      if ( trim( microphys_scheme ) == "p3" ) then
+
+        ! Derive rime properties from the final ice samples before statistics
+        ! and microphysics read the prepared sample array.
+        call construct_p3_rime_samples( &
+               gr%nzt, ngrdcol, lh_num_samples, pdf_dim, hydromet_dim, & ! In
+               hm_metadata, hydromet, & ! In
+               X_nl_all_levs ) ! InOut
+
+      endif
 
       if ( stats%l_sample ) then
         !$acc update host( rho_ds_zt, lh_sample_point_weights, X_nl_all_levs, &

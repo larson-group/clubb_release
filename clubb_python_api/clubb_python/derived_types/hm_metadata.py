@@ -19,6 +19,10 @@ class HmMetadata:
     iiNi: int = 0
     iiNg: int = 0
 
+    # Ice rime properties (P3); rime mass is part of ri. -1 when not predicted.
+    iiqirim: int = -1
+    iibirim: int = -1
+
     l_frozen_hm: np.ndarray = field(default_factory=lambda: np.zeros(0, dtype=bool))
     l_mix_rat_hm: np.ndarray = field(default_factory=lambda: np.zeros(0, dtype=bool))
     hydromet_list: list[str] = field(default_factory=list)
@@ -38,6 +42,9 @@ class HmMetadata:
     iiPDF_Ni: int = -1
     iiPDF_Ng: int = -1
     iiPDF_Ncn: int = -1
+
+    iiPDF_qirim: int = -1
+    iiPDF_birim: int = -1
 
     hmp2_ip_on_hmm2_ip: np.ndarray = field(default_factory=lambda: np.zeros(0, dtype=np.float64))
     Ncnp2_on_Ncnm2: float = 1.0

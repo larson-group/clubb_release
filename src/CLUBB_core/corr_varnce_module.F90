@@ -95,10 +95,18 @@ module corr_varnce_module
       iiNi,   & ! Hydrometeor array index for ice concentration, Ni
       iiNg      ! Hydrometeor array index for graupel concentration, Ng
 
+    ! Microphysics ice rime properties for the P3 microphysics scheme. Rime mass is part of the ice mixing
+    ! ratio ri, so neither field is an independent amount of water.
+    integer :: &
+      iiqirim, & ! Hydrometeor array index for rime ice mixing ratio, qirim
+      iibirim    ! Hydrometeor array index for rime ice volume, birim
+
     ! Logical fields
     logical, dimension(:), allocatable :: &
       l_frozen_hm, & ! if true, then the hydrometeor is frozen; otherwise liquid
       l_mix_rat_hm   ! if true, then the quantity is a hydrometeor mixing ratio
+                     ! that holds its own water; false for concentrations and
+                     ! for the rime fields
 
     character(len=10), dimension(:), allocatable :: & 
       hydromet_list
@@ -124,6 +132,10 @@ module corr_varnce_module
      iiPDF_Ni  = -1, &
      iiPDF_Ng  = -1, &
      iiPDF_Ncn = -1
+
+    integer :: &
+     iiPDF_qirim = -1, &
+     iiPDF_birim = -1
 
     real( kind = core_rknd ), dimension(:), allocatable :: &
        hmp2_ip_on_hmm2_ip
@@ -199,7 +211,8 @@ module corr_varnce_module
 
     ! Description:
     !   Map from a iiPDF index to the corresponding index in the default 
-    !   correlation arrays.
+    !   correlation arrays. Returns -1 for variables without default
+    !   correlations (the rime fields qirim and birim).
     !-----------------------------------------------------------------------------
 
     implicit none
@@ -324,7 +337,11 @@ module corr_varnce_module
         idx_i = def_corr_idx(i,hm_metadata)
         idx_j = def_corr_idx(j,hm_metadata)
 
-        if ( idx_i > idx_j ) then
+        if ( idx_i < 0 .or. idx_j < 0 ) then
+          ! No default correlation; the variables are taken as uncorrelated.
+          corr_array_n_cloud(j, i) = zero
+          corr_array_n_below(j, i) = zero
+        elseif ( idx_i > idx_j ) then
           corr_array_n_cloud(j, i) = corr_array_n_cloud_def( idx_i, idx_j )
           corr_array_n_below(j, i) = corr_array_n_below_def( idx_i, idx_j )
         else
@@ -398,6 +415,12 @@ module corr_varnce_module
     case( "Ng" )
       i = hm_metadata%iiPDF_Ng
 
+    case( "qirim" )
+      i = hm_metadata%iiPDF_qirim
+
+    case( "birim" )
+      i = hm_metadata%iiPDF_birim
+
     end select
 
     return
@@ -441,13 +464,15 @@ module corr_varnce_module
   !         for each different hyrometeor that is enabled. Setting one of these
   !         indices to -1 disables that hydrometeor
   !     iirr (integer) - Index of rain water mixing ratio
-  !     iiri (integer) - Index of rain drop concentration
-  !     iirs (integer) - Index of ice mixing ratio
-  !     iirg (integer) - Index of ice crystal concentration
-  !     iiNr (integer) - Index of snow mixing ratio
-  !     iiNi (integer) - Index of snow flake concentration
-  !     iiNs (integer) - Index of graupel mixing ratio
+  !     iiNr (integer) - Index of rain drop concentration
+  !     iiri (integer) - Index of ice mixing ratio
+  !     iiNi (integer) - Index of ice crystal concentration
+  !     iirs (integer) - Index of snow mixing ratio
+  !     iiNs (integer) - Index of snow flake concentration
+  !     iirg (integer) - Index of graupel mixing ratio
   !     iiNg (integer) - Index of graupel concentration
+  !     iiqirim (integer) - Index of rime ice mixing ratio (P3)
+  !     iibirim (integer) - Index of rime ice volume (P3)
   ! 
   !     hmp2_ip_on_hmm2_ip_slope_in (hmp2_ip_on_hmm2_ip_slope_type) - Custom slope values
   !     hmp2_ip_on_hmm2_ip_intrcpt_in (hmp2_ip_on_hmm2_ip_intrcpt_type) - Custom intercept values
@@ -456,6 +481,7 @@ module corr_varnce_module
   subroutine init_pdf_hydromet_arrays_api( host_dx, host_dy, hydromet_dim,  & ! intent(in)
                                            iirr, iiNr, iiri, iiNi,          & ! intent(in)
                                            iirs, iiNs, iirg, iiNg,          & ! intent(in)
+                                           iiqirim, iibirim,                & ! intent(in)
                                            Ncnp2_on_Ncnm2,                  & ! intent(in)
                                            hm_metadata, pdf_dim,         & ! intent(out)
                                            hmp2_ip_on_hmm2_ip_slope_in,     & ! optional(in)
@@ -475,7 +501,8 @@ module corr_varnce_module
         Nr_tol, &
         Ni_tol, &
         Ns_tol, &
-        Ng_tol
+        Ng_tol, &
+        rho_ice
 
     implicit none
 
@@ -492,7 +519,9 @@ module corr_varnce_module
       iirs,         & ! Index of snow mixing ratio
       iiNs,         & ! Index of snow flake concentration
       iirg,         & ! Index of graupel mixing ratio
-      iiNg            ! Index of graupel concentration
+      iiNg,         & ! Index of graupel concentration
+      iiqirim,      & ! Index of rime ice mixing ratio
+      iibirim         ! Index of rime ice volume
 
     real( kind = core_rknd ), intent(in) :: &
       Ncnp2_on_Ncnm2
@@ -534,6 +563,8 @@ module corr_varnce_module
     hm_metadata%iiNi = iiNi
     hm_metadata%iiNs = iiNs
     hm_metadata%iiNg = iiNg
+    hm_metadata%iiqirim = iiqirim
+    hm_metadata%iibirim = iibirim
 
     ! Overwrite default Ncnp2_on_Ncnm2
     hm_metadata%Ncnp2_on_Ncnm2 = Ncnp2_on_Ncnm2
@@ -600,6 +631,19 @@ module corr_varnce_module
       hm_metadata%hmp2_ip_on_hmm2_ip(iiNg) &
                                   = hmp2_ip_on_hmm2_ip_intrcpt%Ng &
                                   + hmp2_ip_on_hmm2_ip_slope%Ng * max( host_dx, host_dy )
+    endif
+
+    ! The rime fields use the ice mixing ratio values.
+    if ( iiqirim > 0 ) then
+      hm_metadata%hmp2_ip_on_hmm2_ip(iiqirim) &
+                                  = hmp2_ip_on_hmm2_ip_intrcpt%ri &
+                                  + hmp2_ip_on_hmm2_ip_slope%ri * max( host_dx, host_dy )
+    endif
+
+    if ( iibirim > 0 ) then
+      hm_metadata%hmp2_ip_on_hmm2_ip(iibirim) &
+                                  = hmp2_ip_on_hmm2_ip_intrcpt%ri &
+                                  + hmp2_ip_on_hmm2_ip_slope%ri * max( host_dx, host_dy )
     endif
 
 
@@ -675,6 +719,23 @@ module corr_varnce_module
        hm_metadata%hydromet_tol(iiNg)       = Ng_tol
     endif
 
+    if ( iiqirim > 0 ) then
+       ! The microphysics scheme predicts rime ice mixing ratio, qirim, which is
+       ! part of ri.
+       hm_metadata%hydromet_list(iiqirim)   = "qirim"
+       hm_metadata%l_mix_rat_hm(iiqirim)    = .false.
+       hm_metadata%l_frozen_hm(iiqirim)     = .true.
+       hm_metadata%hydromet_tol(iiqirim)    = ri_tol
+    endif
+
+    if ( iibirim > 0 ) then
+       ! The microphysics scheme predicts rime ice volume, birim.
+       hm_metadata%hydromet_list(iibirim)   = "birim"
+       hm_metadata%l_mix_rat_hm(iibirim)    = .false.
+       hm_metadata%l_frozen_hm(iibirim)     = .true.
+       hm_metadata%hydromet_tol(iibirim)    = ri_tol / rho_ice
+    endif
+
 
     !-----------------------------------------------------------
     ! Set up the PDF indices
@@ -733,6 +794,16 @@ module corr_varnce_module
              pdf_count = pdf_count + 1
              hm_metadata%iiPDF_Ng = pdf_count
           endif   
+
+          if ( i == iiqirim ) then
+             pdf_count = pdf_count + 1
+             hm_metadata%iiPDF_qirim = pdf_count
+          endif
+
+          if ( i == iibirim ) then
+             pdf_count = pdf_count + 1
+             hm_metadata%iiPDF_birim = pdf_count
+          endif
 
        enddo ! i = 1, hydromet_dim, 1
 

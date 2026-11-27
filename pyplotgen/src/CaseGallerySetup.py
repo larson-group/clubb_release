@@ -12,6 +12,7 @@ from config.VariableGroupBaseBudgetsLumpedBuoy import VariableGroupBaseBudgetsLu
 from config.VariableGroupSamBudgets import VariableGroupSamBudgets
 from config.VariableGroupSubcolumns import VariableGroupSubcolumns
 from config.VariableGroupSamProfiles import VariableGroupSamProfiles
+from input.scripts.confirm_les_data import confirm_les_data
 from src.DataReader import DataReader
 from src.Panel import Panel
 from src.OutputHandler import logToFile, logToFileAndConsole, updateProgress
@@ -281,7 +282,12 @@ class CaseGallerySetup:
         elif folders is None and case_definition[model_name +'_benchmark_file'] is not None:
             filename_dict = case_definition[model_name +'_benchmark_file']
             for key in filename_dict:
-                filename = filename_dict[key]
+                # Use an existing benchmark copy, or download it when no data location has one
+                try:
+                    filename = str(confirm_les_data(filename_dict[key]))
+                except (OSError, RuntimeError, ValueError) as exc:
+                    logToFileAndConsole("Benchmark file unavailable for case " + self.name + ": " + str(exc))
+                    continue
                 ncdf_file = datareader.__loadNcFile__(filename)
                 if ncdf_file is not None:
                     model_datasets[key] = ncdf_file

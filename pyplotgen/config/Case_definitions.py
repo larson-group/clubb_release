@@ -82,12 +82,10 @@ from config.VariableGroupNormalizedVariations import VariableGroupNormalizedVari
 
 # ---------------------------
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), "../.."))
+# Benchmark paths name files within the collection. CaseGallerySetup passes them to
+# confirm_les_data, which uses an existing copy (this input location, /home/pub or
+# ~/les_and_clubb_benchmark_runs) or downloads a missing file.
 BENCHMARK_OUTPUT_ROOT = os.path.join(REPO_ROOT, "input", "les_and_clubb_benchmark_runs") + os.sep
-if not os.path.isdir(BENCHMARK_OUTPUT_ROOT) and \
-        not os.path.islink(BENCHMARK_OUTPUT_ROOT):
-    print("Benchmark output was not found in " + BENCHMARK_OUTPUT_ROOT + ".\n\tChecking local location: " +
-          os.path.dirname(os.path.realpath(__file__)) + "/../les_and_clubb_benchmark_runs/")
-    BENCHMARK_OUTPUT_ROOT = os.path.dirname(os.path.realpath(__file__)) + "/../les_and_clubb_benchmark_runs/"
 SAM_BENCHMARK_OUTPUT_ROOT = BENCHMARK_OUTPUT_ROOT + "sam_benchmark_runs"
 COAMPS_BENCHMARK_OUTPUT_ROOT = BENCHMARK_OUTPUT_ROOT + "les_runs"
 WRF_LASSO_BENCHMARK_OUTPUT_ROOT = BENCHMARK_OUTPUT_ROOT + "wrf_lasso_runs"

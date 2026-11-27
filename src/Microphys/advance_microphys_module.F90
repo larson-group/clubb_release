@@ -489,7 +489,9 @@ module advance_microphys_module
       ! Store values of surface fluxes for statistics
       ! See notes above.
 
-      if ( trim( microphys_scheme ) /= "morrison" ) then
+      ! Morrison and P3 sediment rain themselves and output precip_rate_sfc.
+      if ( trim( microphys_scheme ) /= "morrison" .and. &
+           trim( microphys_scheme ) /= "p3" ) then
       if ( stats%l_sample ) then
         do i = 1, ngrdcol
           precip_rate_sfc(i) = max( - ( hydromet(i,1,iirr) &
@@ -499,7 +501,7 @@ module advance_microphys_module
         enddo
         call stats_update( "precip_rate_sfc", precip_rate_sfc, stats )
       end if
-      endif ! microphys_scheme /= "morrison"
+      endif ! microphys_scheme /= "morrison" and /= "p3"
 
       if ( stats%l_sample ) then
         do i = 1, ngrdcol
@@ -884,6 +886,25 @@ module advance_microphys_module
                                      hm_metadata, l_fill_holes_hm, & ! Intent(in)
                                      rho_ds_zt, exner, fill_holes_type, & ! Intent(in)
                                      stats, thlm_mc, rvm_mc, hydromet ) ! Intent(inout)
+
+    ! The lower-boundary tolerance can remove either rime property. Remove
+    ! mass and volume together before computing their variances and fluxes.
+    if ( hm_metadata%iiqirim > 0 .and. hm_metadata%iibirim > 0 ) then
+
+      do i = 1, ngrdcol
+
+        if ( hydromet(i,1,hm_metadata%iiqirim) < hm_metadata%hydromet_tol(hm_metadata%iiqirim) &
+             .or. hydromet(i,1,hm_metadata%iibirim) &
+                  < hm_metadata%hydromet_tol(hm_metadata%iibirim) ) then
+
+          hydromet(i,1,hm_metadata%iiqirim) = zero
+          hydromet(i,1,hm_metadata%iibirim) = zero
+
+        endif
+
+      enddo
+
+    endif
 
     ! Loop over each type of precipitating hydrometeor and calculate hydrometeor
     ! covariances (<w'hm'> and <V_hm'hm'>) and other quantities requiring the

@@ -1,13 +1,15 @@
 add_subdirectory(KK_microphys)          # provides:  KK_microphys_lib
 add_subdirectory(COAMPS_microphys)      # provides:  coamps_lib
 add_subdirectory(Morrison_microphys)       # provides:  morrison_microphys_lib
+add_subdirectory(P3_microphys)             # provides:  p3_microphys_lib
 
 set(MICROPHYS_SOURCES advance_microphys_module.F90
                       coamps_microphys_driver_module.F90  
                       microphys_driver.F90                
                       cloud_sed_module.F90
                       morrison_microphys_module.F90
-                      KK_microphys_module.F90  
+                      p3_microphys_module.F90
+                      KK_microphys_module.F90
                       microphys_init_cleanup.F90
                       estimate_scm_microphys_module.F90
                       lh_microphys_driver_module.F90
@@ -30,6 +32,7 @@ target_link_libraries(microphys_lib PRIVATE clubb_core_lib
                                             coamps_lib
                                             silhs_lib
                                             morrison_microphys_lib
+                                            p3_microphys_lib
                                           )
 
 if(${ENABLE_OMP})

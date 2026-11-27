@@ -6535,6 +6535,21 @@ module clubb_driver
         l_input_Ncm = .false.
       end if
 
+    case ( "p3" )
+      ! The rime fields have no input files
+      l_input_rrm = .true.
+      l_input_rsm = .false.
+      l_input_rim = l_ice_microphys
+      l_input_rgm = .false.
+      l_input_Nccnm = .false.
+      l_input_Nrm = .true.
+      l_input_Nim = l_ice_microphys
+      if ( l_predict_Nc ) then
+        l_input_Ncm = .true.
+      else
+        l_input_Ncm = .false.
+      end if
+
     case ( "khairoutdinov_kogan" )
       l_input_rrm = .true.
       l_input_rsm = .false.

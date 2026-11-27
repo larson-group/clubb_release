@@ -27,6 +27,10 @@ def pdf2hydromet_idx(pdf_idx: int, hm_metadata: HmMetadata) -> int:
         return hm_metadata.iiri
     if pdf_idx == hm_metadata.iiPDF_Ni:
         return hm_metadata.iiNi
+    if pdf_idx == hm_metadata.iiPDF_qirim:
+        return hm_metadata.iiqirim
+    if pdf_idx == hm_metadata.iiPDF_birim:
+        return hm_metadata.iibirim
     return 0
 
 
@@ -48,6 +52,10 @@ def hydromet2pdf_idx(hydromet_idx: int, hm_metadata: HmMetadata) -> int:
         return hm_metadata.iiPDF_rg
     if hydromet_idx == hm_metadata.iiNg:
         return hm_metadata.iiPDF_Ng
+    if hydromet_idx == hm_metadata.iiqirim:
+        return hm_metadata.iiPDF_qirim
+    if hydromet_idx == hm_metadata.iibirim:
+        return hm_metadata.iiPDF_birim
     return 0
 
 

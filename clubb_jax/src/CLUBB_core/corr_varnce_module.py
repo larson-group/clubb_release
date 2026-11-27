@@ -33,6 +33,7 @@ from clubb_jax.src.CLUBB_core.constants_clubb import (
     Nr_tol,
     Ns_tol,
     rg_tol,
+    rho_ice,
     ri_tol,
     rr_tol,
     rs_tol,
@@ -177,6 +178,9 @@ class hm_metadata_type:
     iiNs: int = -1
     iiNi: int = -1
     iiNg: int = -1
+    # Ice rime properties (P3); rime mass is part of ri
+    iiqirim: int = -1
+    iibirim: int = -1
     l_frozen_hm: np.ndarray | None = None
     l_mix_rat_hm: np.ndarray | None = None
     hydromet_list: tuple[str, ...] = ()
@@ -193,6 +197,8 @@ class hm_metadata_type:
     iiPDF_Ni: int = -1
     iiPDF_Ng: int = -1
     iiPDF_Ncn: int = -1
+    iiPDF_qirim: int = -1
+    iiPDF_birim: int = -1
     hmp2_ip_on_hmm2_ip: np.ndarray | None = None
     Ncnp2_on_Ncnm2: float = 1.0
 
@@ -211,6 +217,8 @@ class hm_metadata_type:
             self.iiNs,
             self.iiNi,
             self.iiNg,
+            self.iiqirim,
+            self.iibirim,
         ) + 1
         return hydromet_dim
 
@@ -229,6 +237,8 @@ class hm_metadata_type:
             self.iiPDF_Ni,
             self.iiPDF_Ng,
             self.iiPDF_Ncn,
+            self.iiPDF_qirim,
+            self.iiPDF_birim,
         ) + 1
         return pdf_dim
 
@@ -248,6 +258,8 @@ class hm_metadata_type:
             self.iiNs,
             self.iiNi,
             self.iiNg,
+            self.iiqirim,
+            self.iibirim,
             self.hydromet_list,
             self.iiPDF_chi,
             self.iiPDF_eta,
@@ -261,6 +273,8 @@ class hm_metadata_type:
             self.iiPDF_Ni,
             self.iiPDF_Ng,
             self.iiPDF_Ncn,
+            self.iiPDF_qirim,
+            self.iiPDF_birim,
             self.Ncnp2_on_Ncnm2,
         )
         return children, aux_data
@@ -276,6 +290,8 @@ class hm_metadata_type:
             iiNs,
             iiNi,
             iiNg,
+            iiqirim,
+            iibirim,
             hydromet_list,
             iiPDF_chi,
             iiPDF_eta,
@@ -289,6 +305,8 @@ class hm_metadata_type:
             iiPDF_Ni,
             iiPDF_Ng,
             iiPDF_Ncn,
+            iiPDF_qirim,
+            iiPDF_birim,
             Ncnp2_on_Ncnm2,
         ) = aux_data
         (
@@ -306,6 +324,8 @@ class hm_metadata_type:
             iiNs=iiNs,
             iiNi=iiNi,
             iiNg=iiNg,
+            iiqirim=iiqirim,
+            iibirim=iibirim,
             l_frozen_hm=l_frozen_hm,
             l_mix_rat_hm=l_mix_rat_hm,
             hydromet_list=hydromet_list,
@@ -322,6 +342,8 @@ class hm_metadata_type:
             iiPDF_Ni=iiPDF_Ni,
             iiPDF_Ng=iiPDF_Ng,
             iiPDF_Ncn=iiPDF_Ncn,
+            iiPDF_qirim=iiPDF_qirim,
+            iiPDF_birim=iiPDF_birim,
             hmp2_ip_on_hmm2_ip=hmp2_ip_on_hmm2_ip,
             Ncnp2_on_Ncnm2=Ncnp2_on_Ncnm2,
         )
@@ -374,7 +396,8 @@ CORR_ARRAY_N_BELOW_DEF = corr_array_n_below_def
 
 def def_corr_idx(iiPDF_x, hm_metadata):
     """Map from a iiPDF index to the corresponding index in the default
-    correlation arrays.
+    correlation arrays. Returns -1 for variables without default
+    correlations (the rime fields qirim and birim).
 
     Returns:
         ii_def_corr
@@ -478,7 +501,11 @@ def set_corr_arrays_to_default(pdf_dim, hm_metadata):
             idx_i = _def_corr_idx_from(i, hm_metadata)
             idx_j = _def_corr_idx_from(j, hm_metadata)
 
-            if idx_i > idx_j:
+            if idx_i < 0 or idx_j < 0:
+                # No default correlation; the variables are taken as uncorrelated.
+                corr_array_n_cloud[j, i] = 0.0
+                corr_array_n_below[j, i] = 0.0
+            elif idx_i > idx_j:
                 corr_array_n_cloud[j, i] = corr_array_n_cloud_def[idx_i, idx_j]
                 corr_array_n_below[j, i] = corr_array_n_below_def[idx_i, idx_j]
             else:
@@ -552,6 +579,10 @@ def get_corr_var_index(var_name, hm_metadata):
         i = hm_metadata.iiPDF_rg
     elif var_name == "Ng":
         i = hm_metadata.iiPDF_Ng
+    elif var_name == "qirim":
+        i = hm_metadata.iiPDF_qirim
+    elif var_name == "birim":
+        i = hm_metadata.iiPDF_birim
 
     return i
 
@@ -568,6 +599,8 @@ def init_pdf_hydromet_arrays_api(
     iiNs,
     iirg,
     iiNg,
+    iiqirim,
+    iibirim,
     Ncnp2_on_Ncnm2,
     hmp2_ip_on_hmm2_ip_slope_in=None,
     hmp2_ip_on_hmm2_ip_intrcpt_in=None,
@@ -601,7 +634,9 @@ def init_pdf_hydromet_arrays_api(
           iirs,         & ! Index of snow mixing ratio
           iiNs,         & ! Index of snow flake concentration
           iirg,         & ! Index of graupel mixing ratio
-          iiNg            ! Index of graupel concentration
+          iiNg,         & ! Index of graupel concentration
+          iiqirim,      & ! Index of rime ice mixing ratio
+          iibirim         ! Index of rime ice volume
 
         real( kind = core_rknd ), intent(in) :: &
           Ncnp2_on_Ncnm2
@@ -632,6 +667,8 @@ def init_pdf_hydromet_arrays_api(
         iiNs=iiNs,
         iiNi=iiNi,
         iiNg=iiNg,
+        iiqirim=iiqirim,
+        iibirim=iibirim,
         Ncnp2_on_Ncnm2=Ncnp2_on_Ncnm2,
     )
 
@@ -694,6 +731,17 @@ def init_pdf_hydromet_arrays_api(
             hmp2_ip_on_hmm2_ip_intrcpt.Ng
             + hmp2_ip_on_hmm2_ip_slope.Ng * max_host_delta
         )
+    # The rime fields use the ice mixing ratio values.
+    if iiqirim >= 0:
+        hmp2_ip_on_hmm2_ip[iiqirim] = (
+            hmp2_ip_on_hmm2_ip_intrcpt.ri
+            + hmp2_ip_on_hmm2_ip_slope.ri * max_host_delta
+        )
+    if iibirim >= 0:
+        hmp2_ip_on_hmm2_ip[iibirim] = (
+            hmp2_ip_on_hmm2_ip_intrcpt.ri
+            + hmp2_ip_on_hmm2_ip_slope.ri * max_host_delta
+        )
 
     hydromet_list = [""] * hydromet_dim
     hydromet_tol = np.zeros(hydromet_dim, dtype=np.float64)
@@ -748,6 +796,19 @@ def init_pdf_hydromet_arrays_api(
         l_mix_rat_hm[iiNg] = False
         l_frozen_hm[iiNg] = True
         hydromet_tol[iiNg] = Ng_tol
+    if iiqirim >= 0:
+        # The microphysics scheme predicts rime ice mixing ratio, qirim, which is
+        # part of ri.
+        hydromet_list[iiqirim] = "qirim"
+        l_mix_rat_hm[iiqirim] = False
+        l_frozen_hm[iiqirim] = True
+        hydromet_tol[iiqirim] = ri_tol
+    if iibirim >= 0:
+        # The microphysics scheme predicts rime ice volume, birim.
+        hydromet_list[iibirim] = "birim"
+        l_mix_rat_hm[iibirim] = False
+        l_frozen_hm[iibirim] = True
+        hydromet_tol[iibirim] = ri_tol / rho_ice
 
     hm_metadata = replace(
         hm_metadata,
@@ -797,6 +858,12 @@ def init_pdf_hydromet_arrays_api(
             if i == iiNg:
                 pdf_count += 1
                 hm_metadata = replace(hm_metadata, iiPDF_Ng=pdf_count)
+            if i == iiqirim:
+                pdf_count += 1
+                hm_metadata = replace(hm_metadata, iiPDF_qirim=pdf_count)
+            if i == iibirim:
+                pdf_count += 1
+                hm_metadata = replace(hm_metadata, iiPDF_birim=pdf_count)
 
     pdf_dim = pdf_count + 1
 
@@ -815,6 +882,8 @@ def init_pdf_hydromet_arrays(
     iiNs=-1,
     iirg=-1,
     iiNg=-1,
+    iiqirim=-1,
+    iibirim=-1,
     Ncnp2_on_Ncnm2=1.0,
 ):
     """Compatibility wrapper returning only hydrometeor metadata."""
@@ -830,6 +899,8 @@ def init_pdf_hydromet_arrays(
         iiNs,
         iirg,
         iiNg,
+        iiqirim,
+        iibirim,
         Ncnp2_on_Ncnm2,
     )
     return hm_metadata

@@ -28,7 +28,7 @@ Initialized in subroutine setup_pdf_indices
 ii indices:
 
 Included indices:
-iirr, iiNr, iiri, iiNi, iirs, iiNs, iirg, iiNg
+iirr, iiNr, iiri, iiNi, iirs, iiNs, iirg, iiNg, iiqirim, iibirim
 
 Number of indices:  hydromet_dim
 
@@ -99,6 +99,10 @@ def pdf2hydromet_idx(pdf_idx, hm_metadata):
         ("iiPDF_ri", "iiri"),
         # Index for ice concentration, Ni.
         ("iiPDF_Ni", "iiNi"),
+        # Index for rime ice mixing ratio, qirim.
+        ("iiPDF_qirim", "iiqirim"),
+        # Index for rime ice volume, birim.
+        ("iiPDF_birim", "iibirim"),
     )
     for pdf_name, hm_name in pairs:
         idx = _hm(hm_metadata, pdf_name)
@@ -147,6 +151,10 @@ def hydromet2pdf_idx(hydromet_idx, hm_metadata):
         ("iirg", "iiPDF_rg"),
         # Index for graupel concentration, Ng.
         ("iiNg", "iiPDF_Ng"),
+        # Index for rime ice mixing ratio, qirim.
+        ("iiqirim", "iiPDF_qirim"),
+        # Index for rime ice volume, birim.
+        ("iibirim", "iiPDF_birim"),
     )
     for hm_name, pdf_name in pairs:
         idx = _hm(hm_metadata, hm_name)

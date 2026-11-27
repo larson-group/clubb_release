@@ -88,6 +88,7 @@ module read_corr_mtx_test
     call init_pdf_hydromet_arrays_api( one, one, 12,              & ! intent(in)
                                        5, 6, 7, 8,                & ! intent(in)
                                        9, 10, 11, 12,             & ! intent(in)
+                                       -1, -1,                    & ! intent(in)
                                        one,                       & ! intent(in)
                                        hm_metadata, pdf_dim )       ! intent(out)
 

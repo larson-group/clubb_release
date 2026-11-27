@@ -170,6 +170,9 @@ program G_unit_tests
   use cubic_solve_tests, only: &
       cubic_solve_tests_driver   ! Procedure
 
+  use p3_silhs_rime_test, only: &
+      p3_silhs_rime_unit_test    ! Procedure
+
   use grid_class, only: grid ! Type
 
   use error_code, only: &
@@ -203,7 +206,8 @@ program G_unit_tests
     l_smooth_min_max_test = .true.,     & ! Flag for the smooth_min_max test
     l_rev_direction_grid_test = .true., & ! Flag for reverse direction grid test
     l_fill_holes_test = .true.,         & ! Flag for hole filling test
-    l_cubic_solve_test = .true.           ! Flag for cubic_solve test
+    l_cubic_solve_test = .true.,        & ! Flag for cubic_solve test
+    l_p3_silhs_rime_test = .true.         ! Flag for P3 SILHS rime test
 
   ! Definition of namelist
   namelist /G_unit_namelist/ &
@@ -212,7 +216,7 @@ program G_unit_tests
     l_mu_sigma_hm_tests, l_pdf_parameter_tests, l_spurious_source_test, &
     l_w_up_in_cloud_test, l_smooth_heaviside_test, &
     l_smooth_min_max_test, l_rev_direction_grid_test, l_fill_holes_test, &
-    l_cubic_solve_test
+    l_cubic_solve_test, l_p3_silhs_rime_test
 
 
   ! Read namelist file
@@ -324,6 +328,12 @@ program G_unit_tests
 
   if ( l_cubic_solve_test ) then
      if ( cubic_solve_tests_driver() /= 0 ) then
+        exit_code = 1
+     endif
+  endif
+
+  if ( l_p3_silhs_rime_test ) then
+     if ( p3_silhs_rime_unit_test() /= 0 ) then
         exit_code = 1
      endif
   endif

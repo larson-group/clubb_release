@@ -116,6 +116,26 @@ module parameters_microphys
 
 !$omp threadprivate( sigma_g )
 
+  ! Defaults for the P3 namelist settings below. init_microphys resets the
+  ! settings to these before each namelist read, so a value from one case does
+  ! not carry into the next case run in the same process.
+  integer, parameter, public :: &
+    p3_iparam_default = 1
+
+  character(len=*), parameter, public :: &
+    p3_lookup_table_dir_default = "../input/p3_lookup_tables"
+
+  ! P3 warm-rain scheme for autoconversion and accretion: 1 = Seifert and Beheng (2001),
+  ! 2 = Beheng (1994), 3 = Khairoutdinov and Kogan (2000)
+  integer, public :: &
+    p3_iparam = p3_iparam_default
+
+  ! Directory holding the P3 ice lookup table, relative to the run directory
+  character(len=250), public :: &
+    p3_lookup_table_dir = p3_lookup_table_dir_default
+
+!$omp threadprivate( p3_iparam, p3_lookup_table_dir )
+
   private ! Default Scope
 
 end module parameters_microphys

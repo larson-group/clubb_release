@@ -355,6 +355,8 @@ def init_microphys(
 
     # Set indices to the various hydrometeor species and define hydromet_dim.
     iirr = iiNr = iiri = iiNi = iirs = iiNs = iirg = iiNg = -1
+    # Only P3 predicts the rime fields
+    iiqirim = iibirim = -1
     hydromet_dim = 0
     if parameters.microphys_scheme == "morrison":
         # GRAUPEL_INIT constructs a pure parameter mapping when the core is
@@ -394,6 +396,7 @@ def init_microphys(
         host_dx, host_dy, hydromet_dim,                # In
         iirr, iiNr, iiri, iiNi,                        # In
         iirs, iiNs, iirg, iiNg,                        # In
+        iiqirim, iibirim,                              # In
         float(cfg.get("ncnp2_on_ncnm2", 1.0)),         # In
         hmp2_ip_on_hmm2_ip_slope_type(**slope),        # In
         hmp2_ip_on_hmm2_ip_intrcpt_type(**intercept),  # In

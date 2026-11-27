@@ -68,7 +68,15 @@ module microphys_init_cleanup
         l_hydromet_sed,               & ! Flag to sediment a hydrometeor
         microphys_start_time,         & ! When to start the microphysics [s]
         sigma_g,                      & ! Parameter used in the cloud droplet sedimentation code
-        Nc0_in_cloud                    ! Initial value for Nc (K&K, l_cloud_sed, Morrison)
+        Nc0_in_cloud,                 & ! Initial value for Nc (K&K, l_cloud_sed, Morrison)
+        p3_iparam,                    & ! P3 warm-rain scheme
+        p3_lookup_table_dir,          & ! Directory holding the P3 ice lookup table
+        p3_iparam_default,            & ! Default for p3_iparam
+        p3_lookup_table_dir_default     ! Default for p3_lookup_table_dir
+
+    use p3_microphys_module, only: &
+        p3_microphys_init, & ! Procedure(s)
+        p3_ice_tol           ! Constant(s)
 
     use parameters_silhs, only: &
         silhs_config_flags_type,             & ! Type(s)
@@ -115,7 +123,8 @@ module microphys_init_cleanup
     use constants_clubb, only: &
         cm3_per_m3, &
         zero,           &
-        eps
+        eps,            &
+        ri_tol
 
     ! The version of the Morrison 2005 microphysics that is in SAM.
     use module_mp_GRAUPEL, only: &
@@ -287,7 +296,9 @@ module microphys_init_cleanup
       iiNr, & ! Hydrometeor array index for rain drop concentration, Nr
       iiNs, & ! Hydrometeor array index for snow concentration, Ns
       iiNi, & ! Hydrometeor array index for ice concentration, Ni
-      iiNg    ! Hydrometeor array index for graupel concentration, Ng
+      iiNg, & ! Hydrometeor array index for graupel concentration, Ng
+      iiqirim, & ! Hydrometeor array index for rime ice mixing ratio, qirim
+      iibirim    ! Hydrometeor array index for rime ice volume, birim
 
     integer, parameter :: &
       one_lev = 1    ! Constant for calling a subroutine using 1 vertical level
@@ -325,7 +336,8 @@ module microphys_init_cleanup
       hmp2_ip_on_hmm2_ip_intrcpt, Ncnp2_on_Ncnm2, &
       C_evap, r_0, microphys_start_time, &
       Nc0_in_cloud, ccnconst, ccnexpnt, aer_rm1, aer_rm2, &
-      aer_n1, aer_n2, aer_sig1, aer_sig2, pgam_fixed
+      aer_n1, aer_n2, aer_sig1, aer_sig2, pgam_fixed, &
+      p3_iparam, p3_lookup_table_dir
 
     namelist /silhs_params_nl/ &
       eight_cluster_presc_probs, vert_decorr_coef, importance_prob_thresh
@@ -408,6 +420,9 @@ module microphys_init_cleanup
     ccnexpnt = 0.4
 
     pgam_fixed = 5.
+
+    p3_iparam = p3_iparam_default
+    p3_lookup_table_dir = p3_lookup_table_dir_default
 
     lh_microphys_type = "disabled"
 
@@ -600,6 +615,9 @@ module microphys_init_cleanup
                          l_write_to_file, iunit )
        call write_text ( "pgam_fixed = ", real(pgam_fixed, kind = core_rknd), &
                          l_write_to_file, iunit )
+       call write_text ( "p3_iparam = ", p3_iparam, l_write_to_file, iunit )
+       call write_text ( "p3_lookup_table_dir = " // trim( p3_lookup_table_dir ), &
+                         l_write_to_file, iunit )
        call write_text ( "precip_frac_calc_type = ", precip_frac_calc_type, &
                          l_write_to_file, iunit )
 
@@ -619,6 +637,10 @@ module microphys_init_cleanup
     ! The location of the fields in the hydromet array are arbitrary,
     ! and don't need to be set consistently among schemes so long as
     ! the 'i' indices point to the correct parts of the array.
+
+    ! Only P3 predicts the rime fields
+    iiqirim = -1
+    iibirim = -1
 
     select case ( trim( microphys_scheme ) )
 
@@ -758,6 +780,48 @@ module microphys_init_cleanup
 
        call GRAUPEL_INIT()
 
+    case ( "p3" )
+
+       if ( l_cloud_sed ) then
+          write(fstderr,*) "P3 microphysics sediments cloud water itself," &
+                           //" therefore l_cloud_sed should be set to .false."
+          error stop "Fatal error."
+       endif
+
+       ! P3 has one free ice category instead of snow and graupel
+       iirr = 1
+       iirs = -1
+       iirg = -1
+
+       iiNr = 2
+       iiNs = -1
+       iiNg = -1
+
+       if ( l_ice_microphys ) then
+
+          iiri    = 3
+          iiNi    = 4
+          iiqirim = 5
+          iibirim = 6
+
+          hydromet_dim = 6
+
+       else
+
+          iiri = -1
+          iiNi = -1
+
+          hydromet_dim = 2
+
+       endif
+
+       allocate( l_hydromet_sed(hydromet_dim) )
+
+       ! Sedimentation is handled within the P3 microphysics
+       l_hydromet_sed(:) = .false.
+
+       call p3_microphys_init( p3_iparam, p3_lookup_table_dir )
+
     case ( "coamps" )
 
        if ( .not. l_predict_Nc ) then
@@ -841,10 +905,20 @@ module microphys_init_cleanup
     call init_pdf_hydromet_arrays_api( host_dx, host_dy, hydromet_dim,  & ! intent(in)
                                        iirr, iiNr, iiri, iiNi,          & ! intent(in)
                                        iirs, iiNs, iirg, iiNg,          & ! intent(in)
+                                       iiqirim, iibirim,                & ! intent(in)
                                        Ncnp2_on_Ncnm2,                  & ! intent(in)
                                        hm_metadata, pdf_dim,         & ! intent(out)
                                        hmp2_ip_on_hmm2_ip_slope,        & ! optional(in)
                                        hmp2_ip_on_hmm2_ip_intrcpt       ) ! optional(in)
+
+    ! P3 nucleates ice in amounts far below ri_tol, which CLUBB would remove each
+    ! timestep, so the ice tolerances are scaled down to P3's smallest ice mass.
+    if ( iiqirim > 0 ) then
+       hm_metadata%hydromet_tol(iiri)    = hm_metadata%hydromet_tol(iiri) * p3_ice_tol / ri_tol
+       hm_metadata%hydromet_tol(iiNi)    = hm_metadata%hydromet_tol(iiNi) * p3_ice_tol / ri_tol
+       hm_metadata%hydromet_tol(iiqirim) = hm_metadata%hydromet_tol(iiqirim) * p3_ice_tol / ri_tol
+       hm_metadata%hydromet_tol(iibirim) = hm_metadata%hydromet_tol(iibirim) * p3_ice_tol / ri_tol
+    endif
 
     select case ( trim( lh_microphys_type ) )
     case ( "interactive" )
@@ -862,13 +936,40 @@ module microphys_init_cleanup
     end select
 
     ! Make sure the user didn't select LH sampling using
-    ! coamps, morrison-gettelman, or simplified_ice microphysics
+    ! coamps or simplified_ice microphysics
     if ( ( .not. ( lh_microphys_type_int == lh_microphys_disabled ) ) &
            .and. ( trim( microphys_scheme ) == "coamps" .or. &
                    trim( microphys_scheme ) == "simplified_ice" ) ) then
-       error stop "LH sampling can not be enabled when using coamps," &
+       error stop "LH sampling can not be enabled when using coamps" &
             // " or simplified_ice microphysics types"
     endif
+
+    ! The P3/LH coupling currently requires prescribed cloud droplet number.
+    ! Its predicted-droplet-number budget has not been validated.
+    ! Ice samples retain the grid-mean rime fraction and density.
+    if ( ( .not. ( lh_microphys_type_int == lh_microphys_disabled ) ) &
+           .and. trim( microphys_scheme ) == "p3" &
+           .and. l_predict_Nc ) then
+       error stop "LH sampling with p3 microphysics requires" &
+            // " l_predict_Nc = .false."
+    endif
+
+    ! P3 assumes each grid box is fully cloudy or clear and uses no cloud
+    ! fraction. Only interactive SILHS samples meet that assumption; otherwise
+    ! the microphysics that feeds back runs on partly cloudy grid means.
+    if ( trim( microphys_scheme ) == "p3" .and. &
+         lh_microphys_type_int /= lh_microphys_interactive ) then
+       write(fstderr,*) "=================================================================="
+       write(fstderr,*) "WARNING: P3 microphysics is running without interactive SILHS."
+       write(fstderr,*) "P3 uses no cloud fraction: it treats each grid box as fully"
+       write(fstderr,*) "cloudy, but here it receives CLUBB's partly cloudy grid means."
+       write(fstderr,*) "Rain formation and evaporation will likely be wrong. With the"
+       write(fstderr,*) "default Seifert and Beheng (2001) scheme, autoconversion is"
+       write(fstderr,*) "too small by about the cloud fraction (10x at 10% cloud)."
+       write(fstderr,*) "Use lh_microphys_type = ""interactive"" so that P3 runs on SILHS"
+       write(fstderr,*) "samples, which are fully cloudy or clear at each level."
+       write(fstderr,*) "=================================================================="
+    end if
 
     ! Make sure user hasn't selected l_silhs_KK_convergence_adj_mean when using
     ! a microphysics scheme other than khairoutdinov_kogan (KK)

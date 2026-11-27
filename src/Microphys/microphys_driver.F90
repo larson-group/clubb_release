@@ -102,6 +102,9 @@ module microphys_driver
     use morrison_microphys_module, only: &
         morrison_microphys_driver  ! Procedure(s)
 
+    use p3_microphys_module, only: &
+        p3_microphys_driver  ! Procedure(s)
+
 #ifdef COAMPS_MICRO
     use coamps_microphys_driver_module, only:  &
         coamps_microphys_driver  ! Procedure(s)
@@ -580,6 +583,68 @@ module microphys_driver
         ! Output rain sedimentation velocity
         call stats_update( "Vrr", zt2zm_api( gr%nzm, gr%nzt, ngrdcol, gr, &
                                              hydromet_vel_zt(:,:,iirr) ), stats )
+      endif
+
+    case ( "p3" )
+
+      if ( lh_microphys_type /= lh_microphys_disabled ) then
+
+        ! P3 on each SILHS sample subcolumn, averaged over the samples
+        call lh_microphys_driver( &
+               gr, ngrdcol, dt, gr%nzt, gr%nzm, lh_num_samples, & ! In
+               pdf_dim, hydromet_dim, hm_metadata, & ! In
+               X_nl_all_levs, lh_sample_point_weights, & ! In
+               pdf_params, precip_fracs, p_in_Pa, exner, rho, & ! In
+               rcm, delta_zt, cloud_frac, hydromet, X_mixt_comp_all_levs, & ! In
+               lh_rt_clipped, lh_thl_clipped, lh_rc_clipped, & ! In
+               lh_rv_clipped, lh_Nc_clipped, l_lh_importance_sampling, & ! In
+               l_lh_instant_var_covar_src, saturation_formula, stats, & ! In/InOut
+               hydromet_mc, hydromet_vel_zt, Ncm_mc, rcm_mc, rvm_mc, thlm_mc, & ! Out
+               rtp2_mc, thlp2_mc, wprtp_mc, wpthlp_mc, rtpthlp_mc, & ! Out
+               lh_AKm, AKm, AKstd, AKstd_cld, lh_rcm_avg, AKm_rcm, AKm_rcc, & ! Out
+               p3_microphys_driver )  ! Procedure
+
+        call stats_accumulate_lh_tend( gr, ngrdcol, hydromet_dim, hm_metadata, & ! In
+                                       hydromet_mc, Ncm_mc, & ! In
+                                       thlm_mc, rvm_mc, rcm_mc, & ! In
+                                       lh_AKm, AKm, AKstd, AKstd_cld, & ! In
+                                       lh_rcm_avg, AKm_rcm, AKm_rcc, & ! In
+                                       stats ) ! InOut
+      endif
+
+      ! Call P3 with the grid means if we don't want to have feedback effects
+      ! from the latin hypercube result (above)
+      if ( lh_microphys_type /= lh_microphys_interactive ) then
+
+        l_latin_hypercube_input = .false.
+
+        ! P3 does not supply tendencies for the variances and covariances, so
+        ! any set by SILHS without feedback are reset to zero.
+        do k = 1, gr%nzm
+          do i = 1, ngrdcol
+            rtp2_mc(i,k) = zero
+            thlp2_mc(i,k) = zero
+            wprtp_mc(i,k) = zero
+            wpthlp_mc(i,k) = zero
+            rtpthlp_mc(i,k) = zero
+          enddo
+        enddo
+
+        rvm = rtm - rcm
+
+        call p3_microphys_driver( &
+               gr, ngrdcol, dt, gr%nzt, & ! In
+               hydromet_dim, hm_metadata, & ! In
+               l_latin_hypercube_input, thlm, wm_zt, p_in_Pa, & ! In
+               exner, rho, cloud_frac, wtmp, & ! In
+               delta_zt, rcm, Ncm_microphys, chi, rvm, hydromet, & ! In
+               saturation_formula, & ! In
+               unit_sample_weight, & ! In
+               stats, & ! InOut
+               hydromet_mc, hydromet_vel_zt, Ncm_mc, & ! Out
+               rcm_mc, rvm_mc, thlm_mc, & ! Out
+               rrm_auto_diag, rrm_accr_diag, rrm_evap_diag, & ! Out
+               Nrm_auto_diag, Nrm_evap_diag ) ! Out
       endif
 
     case ( "khairoutdinov_kogan" )

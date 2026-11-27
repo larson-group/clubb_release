@@ -618,6 +618,12 @@ contains
     if ( hm_metadata%iiNg > 0 ) then
       call stats_update( "Ngm", hydromet(:,:,hm_metadata%iiNg), stats )
     endif
+    if ( hm_metadata%iiqirim > 0 ) then
+      call stats_update( "qirim", hydromet(:,:,hm_metadata%iiqirim), stats )
+    endif
+    if ( hm_metadata%iibirim > 0 ) then
+      call stats_update( "birim", hydromet(:,:,hm_metadata%iibirim), stats )
+    endif
 
     ! Snow Water Path
     if ( var_on_stats_list( stats, "swp" ) .and. hm_metadata%iirs > 0 ) then

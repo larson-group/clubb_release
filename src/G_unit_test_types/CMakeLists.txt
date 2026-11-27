@@ -14,6 +14,7 @@ set(G_unit_tests_sources
         smooth_min_max_tests.F90
         rev_direction_grid_test.F90
         cubic_solve_tests.F90
+        p3_silhs_rime_test.F90
 )
 
 add_library(G_unit_test_lib ${G_unit_tests_sources})

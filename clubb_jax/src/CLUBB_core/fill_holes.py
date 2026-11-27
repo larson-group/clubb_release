@@ -37,6 +37,12 @@ from clubb_jax.src.CLUBB_core.model_flags import (
 
 _CORE_EPS = jnp.finfo(core_rknd).eps
 
+# P3 rime fields. Rime mass is part of rim, so neither field is an independent
+# mixing ratio (l_mix_rat_hm = false in Fortran) or a number concentration.
+# Names are static under JAX tracing, unlike the l_mix_rat_hm array, so the
+# checks below use names; mixing ratios that hold their own water start with "r".
+RIME_HM_NAMES = ("qirim", "birim")
+
 
 @partial(
     jax.jit,
@@ -1766,7 +1772,7 @@ def fill_holes_driver_api(
     # remain unchanged; only number concentrations contribute to these budgets.
     hydromet_clipped = clip_hydromet_conc_mvr(ngrdcol, nzt, hydromet_dim, hm_metadata, hydromet)
     for i in range(hydromet_dim):
-        if hm_metadata.hydromet_list[i].startswith("N"):
+        if not hm_metadata.hydromet_list[i].startswith("r"):
             _, name_bt, name_hf, name_wvhf, name_cl, name_mc = setup_stats_names(
                 i, hydromet_dim, hm_metadata.hydromet_list
             )
@@ -1815,7 +1821,12 @@ def clip_hydromet_conc_mvr(
     # Preserve all mixing ratios; loop only over number concentrations.
     hydromet_clipped = hydromet
     for idx in range(hydromet_dim):
-        if hm_metadata.hydromet_list[idx].startswith("N"):
+        if hm_metadata.hydromet_list[idx] in RIME_HM_NAMES:
+            # The rime fields have no mixing ratio of their own; clip at zero.
+            hydromet_clipped = hydromet_clipped.at[..., idx].set(
+                jnp.maximum(hydromet[..., idx], 0.0)
+            )
+        elif hm_metadata.hydromet_list[idx].startswith("N"):
             # N_min = r / ((4/3)*pi*rho_particle*r_max^3), using liquid
             # density for rain and ice density for frozen species.
             density = rho_lw if hm_metadata.hydromet_list[idx] == "Nrm" else rho_ice

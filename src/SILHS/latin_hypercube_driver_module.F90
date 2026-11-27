@@ -17,7 +17,8 @@ module latin_hypercube_driver_module
 
   public :: latin_hypercube_output_init_api, &
     stats_accumulate_lh_api, generate_silhs_sample, &
-    copy_X_nl_into_hydromet_all_pts, clip_transform_silhs_output
+    copy_X_nl_into_hydromet_all_pts, clip_transform_silhs_output, &
+    construct_p3_rime_samples
 
   private :: stats_accumulate_uniform_lh
 
@@ -2446,6 +2447,123 @@ module latin_hypercube_driver_module
   end subroutine stats_accumulate_uniform_lh
 
   !-----------------------------------------------------------------------------
+  subroutine construct_p3_rime_samples( &
+               nzt, ngrdcol, num_samples, pdf_dim, hydromet_dim, & ! In
+               hm_metadata, hydromet, & ! In
+               X_nl_all_levs ) ! InOut
+
+  ! Description:
+  !   Construct P3 rime mass and volume from prepared total ice samples using
+  !   the grid-mean rime mass fraction and density. Update the rime PDF slots
+  !   before sample statistics and microphysics consume them. Other samples
+  !   are unchanged. Without a sampled total ice field, use mean total ice.
+  !
+  ! References:
+  !   None
+  !-----------------------------------------------------------------------------
+    use corr_varnce_module, only: &
+      hm_metadata_type ! Type(s)
+
+    use clubb_precision, only: &
+      core_rknd ! Constant(s)
+
+    use constants_clubb, only: &
+      zero ! Constant(s)
+
+    implicit none
+
+    !--------------------------- Input Variables ---------------------------
+    integer, intent(in) :: &
+      nzt,          & ! Number of thermodynamic levels [-]
+      ngrdcol,      & ! Number of model columns [-]
+      num_samples,  & ! Number of SILHS samples [-]
+      pdf_dim,      & ! Number of PDF variables [-]
+      hydromet_dim    ! Number of hydrometeor fields [-]
+
+    type(hm_metadata_type), intent(in) :: &
+      hm_metadata ! Hydrometeor species and PDF indices
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzt,hydromet_dim), intent(in) :: &
+      hydromet ! Grid-mean hydrometeor fields [units vary]
+
+    !------------------------ Input/Output Variables ------------------------
+    real( kind = core_rknd ), dimension(ngrdcol,num_samples,nzt,pdf_dim), intent(inout) :: &
+      X_nl_all_levs ! Prepared PDF samples; replace rime mass and volume [units vary]
+
+    !--------------------------- Local Variables ---------------------------
+    integer :: i, k, sample ! Column, level and sample indices
+
+    real( kind = core_rknd ) :: &
+      rime_mass_fraction, & ! Grid-mean rime mass / total ice mass [-]
+      rime_density,       & ! Grid-mean rime mass / rime volume [kg/m^3]
+      ice_sample            ! Nonnegative sampled total ice mass mixing ratio [kg/kg]
+
+    !--------------------------- Begin Code ---------------------------
+    if ( hm_metadata%iiri <= 0 .or. hm_metadata%iiqirim <= 0 &
+         .or. hm_metadata%iibirim <= 0 ) return
+
+    if ( hm_metadata%iiPDF_qirim <= 0 .or. hm_metadata%iiPDF_birim <= 0 ) then
+      error stop "P3 SILHS assertion failed: missing rime PDF indices."
+    endif
+
+    ! Transformed samples may reside on the device. Construct rime on the
+    ! host, then update the device copy for subsequent sample consumers.
+    !$acc update host( X_nl_all_levs ) if_present
+
+    do k = 1, nzt
+      do i = 1, ngrdcol
+
+        if ( hydromet(i,k,hm_metadata%iiqirim) > hydromet(i,k,hm_metadata%iiri) ) then
+          error stop "P3 SILHS assertion failed: mean rime mass exceeds total ice mass."
+        endif
+
+        if ( hydromet(i,k,hm_metadata%iiri) > zero &
+             .and. hydromet(i,k,hm_metadata%iiqirim) > zero &
+             .and. hydromet(i,k,hm_metadata%iibirim) > zero ) then
+
+          ! Use the grid-mean rime mass fraction and rime density.
+          rime_mass_fraction = hydromet(i,k,hm_metadata%iiqirim) &
+                               / hydromet(i,k,hm_metadata%iiri)
+          rime_density = hydromet(i,k,hm_metadata%iiqirim) &
+                         / hydromet(i,k,hm_metadata%iibirim)
+
+          do sample = 1, num_samples
+
+            if ( hm_metadata%iiPDF_ri > 0 ) then
+              ice_sample = X_nl_all_levs(i,sample,k,hm_metadata%iiPDF_ri)
+            else
+              ice_sample = hydromet(i,k,hm_metadata%iiri)
+            endif
+
+            if ( ice_sample < zero ) then
+              error stop "P3 SILHS assertion failed: negative sampled total ice."
+            endif
+
+            ! Rime mass sample = mean rime mass fraction * total ice sample.
+            X_nl_all_levs(i,sample,k,hm_metadata%iiPDF_qirim) = rime_mass_fraction * ice_sample
+
+            ! Rime volume sample = rime mass sample / mean rime density.
+            X_nl_all_levs(i,sample,k,hm_metadata%iiPDF_birim) &
+              = X_nl_all_levs(i,sample,k,hm_metadata%iiPDF_qirim) / rime_density
+
+          enddo
+
+        else
+
+          ! Absent/unrimed ice or a nonpositive volume cannot define rime density.
+          X_nl_all_levs(i,:,k,hm_metadata%iiPDF_qirim) = zero
+          X_nl_all_levs(i,:,k,hm_metadata%iiPDF_birim) = zero
+
+        endif
+
+      enddo
+    enddo
+
+    !$acc update device( X_nl_all_levs ) if_present
+
+  end subroutine construct_p3_rime_samples
+
+  !-----------------------------------------------------------------------------
   subroutine copy_X_nl_into_hydromet_all_pts( &
                nzt, pdf_dim, num_samples, ngrdcol, X_nl_all_levs, & ! In
                hydromet_dim, hm_metadata, hydromet, & ! In
@@ -2453,7 +2571,8 @@ module latin_hypercube_driver_module
 
   ! Description:
   !   Copy the points from the latin hypercube sample to an array with just the
-  !   hydrometeors, for every model column.
+  !   hydrometeors, for every model column. Copy prepared P3 rime samples as
+  !   other sampled fields, and use grid means for fields without PDF indices.
   !
   ! References:
   !   None
@@ -2466,30 +2585,33 @@ module latin_hypercube_driver_module
 
     implicit none
 
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
-      nzt, &
-      pdf_dim, &
-      num_samples, &
-      ngrdcol, &
-      hydromet_dim      ! Number of hydrometeor species
+      nzt,         & ! Number of thermodynamic levels [-]
+      pdf_dim,     & ! Number of PDF variables [-]
+      num_samples, & ! Number of SILHS samples [-]
+      ngrdcol,     & ! Number of model columns [-]
+      hydromet_dim   ! Number of hydrometeor fields [-]
 
     type(hm_metadata_type), intent(in) :: &
-      hm_metadata
+      hm_metadata ! Hydrometeor species and PDF indices
 
     real( kind = core_rknd ), dimension(ngrdcol,num_samples,nzt,pdf_dim), intent(in) :: &
-      X_nl_all_levs
+      X_nl_all_levs ! Sampled PDF variables [units vary]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt,hydromet_dim), intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
 
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), &
       dimension(ngrdcol,num_samples,nzt,hydromet_dim), intent(out) :: &
-      hydromet_all_points
+      hydromet_all_points ! Hydrometeor sample inputs [units vary]
 
     real( kind = core_rknd ), dimension(ngrdcol,num_samples,nzt), intent(out) :: &
-      Ncn_all_points
+      Ncn_all_points ! Sampled extended cloud droplet concentration [num/kg]
 
-    integer :: i, ivar, k, pdf_hydromet_idx, sample
+    !--------------------------- Local Variables ---------------------------
+    integer :: i, ivar, k, pdf_hydromet_idx, sample ! Column, species, level, PDF index and sample
 
     !-------------------------- Begin Code --------------------------
 
@@ -2513,6 +2635,10 @@ module latin_hypercube_driver_module
           pdf_hydromet_idx = hm_metadata%iiPDF_Ng
         else if ( ivar == hm_metadata%iiNi .and. hm_metadata%iiPDF_Ni > 0 ) then
           pdf_hydromet_idx = hm_metadata%iiPDF_Ni
+        else if ( ivar == hm_metadata%iiqirim .and. hm_metadata%iiPDF_qirim > 0 ) then
+          pdf_hydromet_idx = hm_metadata%iiPDF_qirim
+        else if ( ivar == hm_metadata%iibirim .and. hm_metadata%iiPDF_birim > 0 ) then
+          pdf_hydromet_idx = hm_metadata%iiPDF_birim
         endif
 
         if ( pdf_hydromet_idx > 0 ) then

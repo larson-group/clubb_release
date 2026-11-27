@@ -574,6 +574,8 @@
           {"name": "rsm",         "grid": "zt", "units": "kg/kg",  "long_name": "Snow water mixing ratio"},
           {"name": "rim",         "grid": "zt", "units": "kg/kg",  "long_name": "Pristine ice water mixing ratio"},
           {"name": "rgm",         "grid": "zt", "units": "kg/kg",  "long_name": "Graupel water mixing ratio"},
+          {"name": "qirim",       "grid": "zt", "units": "kg/kg",  "long_name": "Rime ice mixing ratio, part of rim (P3)"},
+          {"name": "birim",       "grid": "zt", "units": "m^3/kg", "long_name": "Rime ice volume mixing ratio (P3)"},
           {"name": "mvrr",        "grid": "zt", "units": "m",      "long_name": "mvrr, Rain drop mean volume radius"},
 
           {"name": "m_vol_rad_cloud", "grid": "zt", "units": "m",       "long_name": "Cloud drop mean volume radius"},
