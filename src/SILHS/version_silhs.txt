@@ -1,0 +1,547 @@
+commit e536e9f7442e04e92650c3f40bf627598137bff9
+Author: Daniel Ebel <124399436+shellwitz@users.noreply.github.com>
+Date:   Thu Nov 26 18:30:36 2026 -0600
+
+    Add P3 microphysics with SILHS ice support (#1454)
+    
+    * Add P3 microphysics to CLUBB standalone (warm rain, no ice yet)
+    
+    Issue #1359 asks for P3 in CLUBB so it can later be ported to JAX.
+    microphys_scheme = "p3" now calls P3 v4.0.7-HM-TurbCC from the
+    CM1R21-SDM rico_turb branch (6702544) for all columns. P3 reads the
+    two-moment ice lookup table from CM1 release 21.0, added under
+    input/p3_lookup_tables. The P3 source is unchanged except for the .F90
+    name and allocating its unused 3-moment and multi-category tables only
+    when needed (about 80 MB per executable in debug builds).
+    
+    P3 runs with one ice category, two-moment ice and the Seifert-Onishi
+    option off. CLUBB carries only rain (rrm, Nrm), so a run stops if P3
+    forms ice. CLUBB keeps diagnosing cloud water: P3 receives grid-mean
+    rcm and Ncm, sediments rain and droplets itself, and its changes return
+    as tendencies. thlm_mc uses CLUBB's constants, as for KK, so P3's
+    condensation of cloud water does not change theta_l. p3_iparam selects
+    the warm-rain formula (default Seifert-Beheng 2001). New cases:
+    dycoms2_rf02_p3 and rico_p3.
+    
+    Tested locally with gfortran 10: debug, release and single-precision
+    builds pass the standards check. dycoms2_rf02_p3 runs 6 h in all three
+    builds; with p3_iparam = 3 (KK2000) its autoconversion and rain number
+    match CLUBB's KK case closely. rico_p3 runs 72 h without ice but forms
+    almost no rain because grid-mean cloud water is small in partly cloudy
+    layers; passing in-cloud values is the next step. Intel/NVHPC builds
+    and Jenkins not run. Existing schemes are unchanged.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * Update P3 source reference and clarify coupling comments
+    
+    The CM1R21-SDM rico_turb branch moved to 8ecef10, which adds the P3
+    lookup tables to run/ and leaves module_mp_p3.F unchanged. The README
+    now names that commit as the source of both the code and table 1 (same
+    checksum as the copy from the CM1 21.0 archive), and notes that the
+    CM1 RICO runs use the same P3 configuration (ptype = 51).
+    
+    The p3_microphys_module header now says where rcm_mc and rvm_mc enter
+    rtm (rtm_forcing in clubb_driver, applied in the next timestep) and
+    that P3's droplet number change is discarded unless l_predict_Nc is set.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * Pass CLUBB's cloud fraction to P3 for in-cloud process rates
+    
+    P3 received only grid means, so in partly cloudy layers it computed
+    autoconversion from cloud water spread over the whole grid box.
+    Autoconversion grows much faster than linearly with cloud water, so the
+    rate was far too small, and rico_p3 produced no rain.
+    
+    P3 computes cloud processes from in-cloud values when its subgrid cloud
+    and precipitation fraction option (SCPF) is on, but then estimates the
+    cloud fraction itself from grid-mean relative humidity. In rico_p3 that
+    estimate is about 20-30 % where CLUBB's cloud_frac is 1-3 %, so the cloud
+    water is still spread too thin and the case still gives no surface rain.
+    p3_main now takes an optional SCF_host argument, and compute_SCPF uses
+    it in place of that estimate, with saturated cloudy air and the
+    remaining vapor in the clear part. The CLUBB driver passes cloud_frac
+    and turns SCPF on.
+    
+    P3 still derives the rain fraction with its own overlap. Rain gets the
+    cloud fraction of the topmost level with rain, and that area is not
+    extended where the cloud widens below. CLUBB resolves the cloud top over
+    several thin levels with cloud fractions near 1 %, so in RF02 rain kept
+    about 1 % of the area through the fully cloudy layer. In host mode, the
+    rain fraction inside cloud is now at least the cloud fraction.
+    
+    Using CLUBB's own precip_frac as P3's rain fraction would complement
+    this, e.g. to give P3 with KK and CLUBB's KK the same rain area. It is
+    not part of this change.
+    
+    Results (second-half means, release gcc double, against 548436cd7):
+    - rico_p3 surface precipitation 0 -> 0.09 mm/day (SB2001); with
+      p3_iparam = 3 about 0 -> 0.58 mm/day, against 0.49 mm/day for CLUBB's
+      KK rico case.
+    - dycoms2_rf02_p3, where cloud fraction is about 1, changes little
+      (peak rrm 1.3e-8 -> 1.6e-8 kg/kg).
+    RF02 and RICO also ran without errors in a gcc debug double build.
+    No regression test runs P3.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * Add P3 rime ice hydrometeor indices to hm_metadata_type
+    
+    P3 describes ice with four fields per category: mass, number, rime mass
+    and rime volume. CLUBB's hydrometeor set has slots for ice mass and
+    number (iiri, iiNi) but none for the two rime fields, so P3's ice could
+    not be carried as CLUBB hydrometeors.
+    
+    hm_metadata_type gets iiqirim and iibirim (PDF indices iiPDF_qirim and
+    iiPDF_birim), and init_pdf_hydromet_arrays_api takes them as two new
+    required arguments after iiNg. Schemes without rime pass -1. This
+    changes a host-facing API: host models must add the two arguments.
+    
+    The fields are named after P3's variables, qirim and birim, so that the
+    two-letter codes used to build stats names (K_hm_qi, wpqip, ...) do not
+    collide with rim. Rime mass is part of rim, so both fields have
+    l_mix_rat_hm = false: they are not counted as water, borrowed from in
+    hole filling or returned to vapor when small. clip_hydromet_conc_mvr
+    clips them at zero instead of treating them as number concentrations.
+    They have no default correlations (taken as uncorrelated) and use the
+    ice values for hmp2_ip_on_hmm2_ip.
+    
+    The Python API's HmMetadata and the JAX corr_varnce_module, index
+    mapping, fill_holes and stats copies get the same fields.
+    
+    Existing schemes are unaffected: rico, dycoms2_rf02_morr, mpace_a,
+    mpace_b, rico_silhs, dycoms2_rf02_p3 and rico_p3 are bit-identical to
+    the previous commit (release gcc double, full runs). G_unit tests and
+    the Python API pytests pass. In the JAX pytests, the only failures
+    (test_runtime_interface_has_no_fortran_fallback and the file-name
+    parity test) also fail before this change; they come from P3 having no
+    JAX port yet.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * Carry P3 ice in CLUBB with l_ice_microphys
+    
+    P3 could only run warm: CLUBB had no fields for its ice, so the driver
+    passed ice as zero and stopped when P3 formed any.
+    
+    With l_ice_microphys, the P3 setup now uses six hydrometeors: rain mass
+    and number plus P3's ice mass, ice number, rime mass and rime volume
+    (rim, Nim, qirim, birim). The driver passes them to p3_main and returns
+    their changes as tendencies; P3 sediments ice itself.
+    
+    - Tolerances: P3 nucleates ice far below CLUBB's ri_tol (1e-10 kg/kg),
+      and CLUBB returned that ice to vapor every step, so rim stayed zero in
+      mpace_b_p3. The four ice tolerances are scaled to P3's smallest ice
+      mass, 1e-14 kg/kg.
+    - Cloud fraction: P3 keeps ice inside its cloud fraction, so with ice it
+      gets max(cloud_frac, ice_supersat_frac). A new optional p3_main
+      argument SLF_host gives the liquid part (cloud_frac); it is saturated
+      with respect to liquid and the rest with respect to ice.
+    - theta_l: freezing and deposition heat the air. The freezing rate comes
+      from P3's heat budget (temperature and vapor change), not from the
+      change in ice mass, which includes ice falling between levels.
+    - precip_rate_sfc includes P3's liquid-equivalent solid rate, and
+      eff_rad_ice is output.
+    
+    New preset mpace_b_p3: the MPACE-B mixed-phase Arctic stratocumulus with
+    P3 and a prescribed 30 /cm3 droplet number.
+    
+    Results: warm P3 runs are unchanged (dycoms2_rf02_p3 and rico_p3
+    bit-identical to the previous commit, release gcc double); mpace_a is
+    also bit-identical. mpace_b_p3 runs for the full 12 h in debug and
+    release gcc double builds. Ice reaches 8e-5 kg/kg and 1e4 /kg, but the
+    cloud glaciates: LWP falls from 0.22 to about 0.02 kg/m^2 within 6 h,
+    while Morrison (mpace_b_silhs without SILHS) keeps about 0.14 kg/m^2
+    with about 10x fewer ice crystals. The cause, likely P3's ice
+    nucleation for this case, is not yet investigated.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * Remove the P3 rain-fraction floor
+    
+    With CLUBB's cloud fraction in P3, the rain fraction inside cloud was
+    held at no less than the cloud fraction. Without that floor, P3 gives
+    rain the cloud fraction of the topmost level with rain and does not
+    extend it where the cloud widens below. CLUBB resolves the RF02 cloud
+    top over several thin levels with cloud fractions near 1 %, so rain
+    covers about 0.5 % of the fully cloudy layer.
+    
+    A comparison with the SAM LES of RF02 (DYCOMS_RF02_128x128x96_dr_sed)
+    does not support the floor. It spreads the rain over the whole cloud
+    and lowers accretion, moving surface rain further below LES. All CLUBB
+    RF02 runs, Morrison included, have about half the LES liquid water path
+    and far too little autoconversion, so this case cannot tell which rain
+    fraction is right. compute_SCPF uses P3's own rain fraction again; only
+    SCF_host and SLF_host remain as CLUBB changes.
+    
+    CLUBB still passes cloud_frac: P3's own estimate is about 20-30 % in
+    rico_p3 where CLUBB's cloud_frac is 1-3 %, and with it rico_p3 gives no
+    surface rain.
+    
+    Results (second-half means, release gcc double, against the previous
+    commit):
+    - dycoms2_rf02_p3: surface rain 7.5e-5 -> 1.9e-3 mm/day (LES about
+      0.1-0.25), peak accretion 7.8e-14 -> 3.0e-11 kg/kg/s, LWP unchanged
+      (0.066 kg/m^2).
+    - rico_p3: surface rain 0.088 -> 0.12 mm/day.
+    - mpace_b_p3: practically unchanged (LWP 0.019 -> 0.020 kg/m^2).
+    dycoms2_rf02_p3 also runs in a gcc debug double build. Other
+    microphysics schemes do not reach this code.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * Run P3 without SCPF, as in CM1
+    
+    Passing CLUBB's cloud fraction to P3 required changing P3's
+    compute_SCPF and p3_main (optional SCF_host and SLF_host arguments).
+    To check how far the unmodified scheme gets, this commit drops those
+    changes and calls P3 with scpf_on = .false., as CM1 does through
+    mp_p3_wrapper_wrf. module_mp_p3.F90 again matches the CM1R21-SDM
+    rico_turb source except for the allocatable lookup tables, which change
+    only memory use.
+    
+    P3 now treats each grid box as fully cloudy, so CLUBB's grid means
+    serve as in-cloud values and condensation and rain evaporation use the
+    grid-mean supersaturation. In partly cloudy layers this underestimates
+    autoconversion; in Seifert and Beheng (2001) it is about proportional
+    to the cloud fraction. cloud_frac and ice_supersat_frac are no longer
+    passed to p3_microphys_driver.
+    
+    Results (second-half means, gcc debug double):
+    - rico_p3: no surface rain; peak autoconversion 2.7e-15 kg/kg/s, against
+      8.3e-11 with KK (rico) and 9.3e-11 with Morrison. Cloud fraction peaks
+      at 2-4 %.
+    - dycoms2_rf02_p3: surface rain 1.9e-5 mm/day, peak autoconversion
+      8.6e-11 kg/kg/s (KK 2.5e-9, Morrison 2.5e-9), LWP 0.065 kg/m^2.
+    - mpace_b_p3: surface precipitation 0.78 mm/day, LWP 0.057 kg/m^2,
+      IWP 0.043 kg/m^2.
+    All three P3 presets ran to completion. Other microphysics schemes do
+    not reach this code.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * WIP: Run P3 on SILHS samples
+    
+    With grid means, P3 sees a thin cloud spread over a partly cloudy box and
+    forms little rain. With lh_microphys_type = "interactive", SILHS now calls
+    P3 on each sample subcolumn, which is fully cloudy or clear at each level
+    as P3 expects, and averages the tendencies. p3_microphys_driver follows
+    microphys_interface.inc for this. Only warm P3 with prescribed droplet
+    number is allowed; new preset rico_p3_silhs.
+    
+    Without SILHS, rico_p3 is bitwise identical to the parent (gcc debug).
+    rico_p3_silhs: surface rain 0.14 mm/day (grid means 0). RF02 with SILHS:
+    peak autoconversion 8.6e-11 -> 1.5e-9 kg/kg/s.
+    
+    Open: P3 still sediments within each sample; ice and l_predict_Nc are
+    not supported with SILHS.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * added bash script for plotting
+    
+    * made pyplotgen fetching les data use input/confirm_les_data.py
+    
+    * Bound P3 mean rime mass and volume consistently
+    
+    Finite-sample tendencies and transport can leave mean rime mass above
+    mean total ice. Bound rime by total ice and scale its volume by the same
+    factor to retain density. Remove tiny bottom-boundary rime properties
+    together before computing their variances and fluxes.
+    
+    BIT_CHANGING for standalone P3 with l_ice_microphys=.true. when the
+    coupled rime correction or paired boundary cleanup acts. Total ice water
+    is unchanged by the correction itself; subsequent P3 evolution can change.
+    Existing non-P3 regression cases do not exercise these rime fields.
+    
+    * Allow P3 ice on consistent SILHS samples
+    
+    Construct rime samples immediately after SILHS clipping using the
+    grid-mean rime fraction and density, then copy the prepared fields into
+    microphysics and statistics. Assert valid mean rime and sampled ice.
+    
+    Allow l_ice_microphys with P3 and SILHS; keep prescribed cloud droplet
+    number required while its predicted-number budget remains unvalidated.
+    Document the construction and test native sampling, fallback, assertions
+    and coupled mean-rime clipping with bounds and floating-point traps.
+    
+    Validation: focused native p3_silhs_rime pytest passes. Earlier full
+    MPACE-B debug comparison preserved all 638 numeric fields when moving
+    the same construction from copying to sample preparation.
+    
+    * Wrap the paired rime boundary condition
+    
+    Keep the new condition within the Fortran line-length limit. The executable expression is unchanged. Focused CLUBB source standards checks pass.
+    
+    * Use CLI overrides instead of copied P3 cases
+    
+    Remove the four P3-specific case definitions and keep the existing
+    case catalog unchanged. Update the comparison script and README to
+    select P3 through explicit overrides, including sedimentation and
+    droplet-number flags where needed. Existing case PDF and droplet
+    settings remain in force unless an override changes them.
+    
+    Validate catalog preservation, shell syntax, and two-step native debug
+    runs of the four P3 script commands and six README examples.
+    
+    * Warn about grid-mean P3 and move rime test to G-unit
+    
+    Print a startup warning when P3 runs without interactive SILHS, since
+    P3 uses no cloud fraction. Stop tracking the P3 lookup table; the README
+    says where to download it. Share P3 namelist defaults between the
+    declaration and the reset. Move the P3 SILHS rime check from a pytest
+    harness into G_unit_tests (without its error-stop cases).
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    ---------
+    
+    Co-authored-by: Claude Opus 5.5 <noreply@anthropic.com>
+    Co-authored-by: shellwitz <shellwitz@thinkpad-E590.local>
+
+commit 08fd20181a18a9a0fe7a229142c47341a8367cad
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Fri Nov 20 00:01:25 2026 -0600
+
+    Moving time-dependent forcing to the GPU unexpectedly changed two cases in the NVHPC multicolumn bit-for-bit test. This is normal bit changing that can happen when moving code from CPU to GPU, it just didn't manifest on the machine I tested on initially. ARM’s first difference is one ULP from CPU and GPU rounding. GABLS3 now uses the correct momentum-grid subsidence on the GPU, where the old code left it at zero. So this commit was technically BIT_CHANGING:298423d4337944509d16618f730dfe922ecf3838
+
+commit 298423d4337944509d16618f730dfe922ecf3838
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Tue Nov 17 18:22:42 2026 -0600
+
+    Keep time-dependent forcing on the GPU and batch JAX initialization (#1453)
+    
+    * Keep time-dependent forcing on the GPU and batch JAX setup
+    
+    Time-dependent forcing spent most of the OpenACC ARM runtime interpolating
+    profiles on the CPU. JAX initialization separately dispatched interpolation
+    for every field and column, synchronizing each result back to NumPy.
+    
+    Store forcing data as (column, level, variable, time) with separate names
+    and times. Keep native interpolation and validity checks on the device,
+    and batch JAX setup with vmap around a compiled interpolation routine.
+    Array readers share the parser with existing record-based consumers.
+    
+    Local ARM at 3072 columns: whole-run wall time falls from 130.39 to 54.11 s
+    for OpenACC and from 364.20 to 204.91 s for JAX. New values average two runs;
+    the historical baselines have one run each on the shared RTX 4000.
+    
+    GNU 16.2 Debug/O0 outputs remain bit-identical for nine four-column,
+    20-step cases against c64fbed03, including CPU adaptation and dycore paths.
+    Short GPU comparisons pass for native ARM/CGILS-S6/COBRA and JAX ARM/COBRA.
+    Focused JAX checks cover pressure interpolation and distinct column grids.
+    
+    * Keep existing readers for forcing initialization
+    
+    The forcing performance change does not require new file-reader interfaces.
+    Restore both shared reader modules and the surface-input calls, then pack
+    temporary forcing records into the retained dense arrays during setup.
+    Device forcing kernels and compiled JAX interpolation remain unchanged.
+    
+    The 39 focused JAX checks pass. Against 8dffcec03, native initialization is
+    byte-identical for all 25 forcing tables across three grid updates; JAX
+    initialization also matches those tables and 33 surface tables. These checks
+    cover initialization, not whole-model or GPU numerical equivalence.
+    
+    * Use the shared grid interpolation API for subsidence
+    
+    Forcing-specific linear dispatch duplicated the interpolation choice already
+    owned by grid_class. Restore zt2zm_api with the mapped output array, remove
+    the extra flag imports and public helper export, and regenerate its JAX note.
+    
+    The actual forcing routine matches b85ff2fe2 byte-for-byte on GNU/O0 and
+    NVHPC 24.5 OpenACC at O0 and O2 for six nonzero subsidence/grid combinations,
+    including device-only input updates and a missing-data column. The focused
+    GPU transfer trace is unchanged. Relevant JAX checks pass (19); no new
+    whole-model numerical or performance claim is made.
+
+commit 25ab9bd583ecdc96d4b088612252f6435a6012f2
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Tue Nov 17 14:21:39 2026 -0600
+
+    Use a native Cholesky routine in Fortran and JAX (#1449)
+    
+    * Implement PDF Cholesky factorization in CLUBB
+    
+    Compute diagonal scaling and lower-triangle Cholesky locally, preserving the existing ten-attempt retry path and public interface.
+    
+    BIT_CHANGING when SILHS consumes PDF Cholesky factors with l_diagnose_correlations=.false. Sequential pivot arithmetic replaces LAPACK POTRF; a GNU double-precision -O0 kernel comparison changes 8 lower-triangle elements by at most 1.39e-17.
+    
+    * Port native Cholesky to JAX and remove the portable switch
+    
+    Mirror the new Fortran scaling and lower-triangle recurrence. Preserve failing-pivot status and ten-attempt retries under JIT and batching; keep the positive-definite path differentiable. Remove vendor Cholesky calls and the ROCm portable environment flag.
+    
+    Focused kernel, runtime and file-name checks pass, along with compiled Fortran/JAX scaling and retry comparisons.
+    
+    * Check Cholesky reconstruction at debug level 2
+    
+    Verify the successful lower-triangular factor reconstructs the matrix passed
+    to each attempt, including equilibration and diagonal retry shifts. Stop
+    with entry diagnostics when residuals exceed epsilon * max(abs(A)) or the
+    reconstructed value is nonfinite; ignore the unused upper triangle.
+    
+    GNU Fortran -O0 -fcheck=all checks in single and double precision confirm
+    that a deliberate 1% factor corruption triggers the debug-level-2 check.
+    Debug levels 0/1 pass the focused matrix, scaling and retry harness. The
+    requested epsilon threshold also rejects healthy matrices at debug level 2
+    because of roundoff; the previous tolerance passes the same inputs.
+    No integrated model or Jenkins validation was run for this diagnostic.
+
+commit c64fbed03fa758944e92ef4b22496fe2ba6e0069
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Sun Nov 15 21:09:35 2026 -0600
+
+    Improve Dash responsiveness and acquire LES benchmarks on demand (#1452)
+    
+    * Improve Dash responsiveness and acquire LES benchmarks on demand
+    
+    Give the runner and output selectors their own state owners, move expensive
+    metadata and diagnostic work into background lanes, and keep Tune's primary
+    plots visible and updating. Stack time-height comparisons, apply CPU/GPU
+    timing defaults, and expose PyPlotGen options from its help.
+    
+    Replace report bundles with a doc/ PDF, Markdown and text browser. Preserve
+    the SAM investigation as a PDF. Reuse shared LES files and download missing
+    members through one acquisition helper used by loss preparation and plots.
+    
+    Local validation: 853 Dash/runtime checks passed with 3 optional-data skips;
+    53 LES/input preparation checks passed. Live browser checks covered selector
+    latency, diagnostic visibility/order and landscape-control layout.
+    
+    * Store fallback LES downloads in input
+    
+    Use input/les_and_clubb_benchmark_runs when existing data roots are absent
+    or unwritable, and remove the separate output-cache lookup. Replace a blocked
+    input symlink with a local directory while leaving shared targets untouched.
+    Keep per-file locks beside the collection so replacement preserves locking.
+    
+    Update acquisition/plot tests and documentation. Local validation passed
+    57 acquisition/input checks and 11 Dash acquisition checks, including
+    shared-file reuse, symlink replacement and concurrent requests.
+
+commit d4d763121dc00dae8b67d27538a297bf4072d043
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Sat Nov 14 19:32:38 2026 -0600
+
+    Use the case-list runner in the release Intel test (#1451)
+    
+    The release checkout no longer provides run_scm_all.py, so its Intel
+    job fails before any case starts. Run run_scm.py -cases standard_cases
+    and document reproduction.
+    
+    Jenkins Declarative validation and release case-list parser checks pass.
+    Full Intel branch-job validation is pending.
+
+commit ceee0152daba04acead5aa11dc06a9254ac0abaf
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Sat Nov 14 01:18:33 2026 -0600
+
+    Use full-precision pi in Fortran and JAX (#1450)
+    
+    It's unclear why pi was truncated, most likely an artifact from a time when that was intended to be the single precision version of pi.
+    
+    This is BIT_CHANGING, but adding more digits to pi is probably the safest BC change possible.
+    
+    * Use full-precision pi in CLUBB calculations
+    
+    Replace the rounded core-kind pi literal with the existing double-precision
+    value. Leave pi_dp and invrs_pi unchanged.
+    
+    BIT_CHANGING in double-precision builds where pi-dependent calculations
+    are active. At GNU Fortran -O0, radians_per_deg, hydrometeor number
+    tolerances and smooth_heaviside_peskin change; the latter feeds scalar-flux
+    inverse timescales when l_smooth_Heaviside_tau_wpxp is true and inputs lie
+    inside the smoothing interval. Both literals round identically in single
+    precision. Verified with the actual constants modules and extracted source
+    routine; no whole-model comparison was run.
+    
+    * Synchronize JAX pi with the Fortran constant
+    
+    Use the new source literal and update the independent KK number-tendency
+    test oracle and stale precision descriptions. Existing pi consumers and
+    derived values follow the shared constant; no compensating formula or
+    tolerance changes were needed.
+    
+    Twelve focused JAX checks and three filename-parity checks pass. The
+    updated constants and a JIT smoothed-Heaviside evaluation agree with the
+    GNU Fortran -O0 double-precision source reference. Declaration checks pass.
+
+commit 64eb11f97cb98e82ad71a627a5ddf3ae3d9ee102
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Fri Nov 13 23:38:07 2026 -0600
+
+    Consolidate catalog selections and SCM execution (#1448)
+    
+    * Resolve catalog groups and consolidate SCM execution
+    
+    Case lists and flag sweeps previously lived outside the input catalogs,
+    while namelist preparation repackaged resolved settings and used intermediate
+    parameter files. Add inherited case/flag groups and ordered run lists,
+    centralize resolution, and run concrete selections through run_scm.py.
+    
+    Preserve all existing case names and resolved settings, move the reference
+    atmosphere beside BUGSrad, and migrate Dash, comparison and Jenkins callers.
+    
+    Local checks preserve all 2450 case/config resolutions, all five case lists
+    and all four flag collections. Focused runner/input checks pass (81), as do
+    affected Dash checks (132). Full local suites reproduce the recorded baseline
+    failures. Jenkins validation will run on this pushed checkpoint.
+    
+    * Making jax vs fortran test use only 4 workers
+
+commit ccc64399a3ddeebb0f0e198394ce490e4898e147
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Fri Nov 13 21:35:11 2026 -0600
+
+    Remove the legacy Fortran tuner and TUNER build mode (#1446)
+    
+    * Remove the legacy Fortran tuner and TUNER build mode
+    
+    Delete the native optimizer, Numerical Recipes routines, legacy controls and tuner-only parameter/flag interfaces. Remove the old wrapper, FIRE pipeline and obsolete tests. Move the live correlation-reader fixture beside its Fortran test so input_misc can be removed entirely.
+    
+    Remove the TUNING CMake option, compile.py tuning switch, Dash controls and TUNER-gated diagnostics. Keep the modern Python tuner and Fortran/JAX loss backends.
+    
+    Focused validation: 77 input/compile/strategy tests, 16 Dash compile tests and three JAX file-parity checks passed. The parameter docstring check requires no updates.
+    
+    * Review archive selections through draft pull requests
+    
+    Prepare archive payloads on topic branches based on archive and describe the selection, exclusions and preservation evidence in a draft PR. Keep direct archive pushes and merges outside ordinary archiving authorization.
+    
+    * Link archive selections from associated removal changes
+    
+    Require the archival PR in the removal PR description or associated commit message, with a reference back to the source/removal change. For explicit commit-only requests, use archive commit references and an additional provenance commit when the removal already exists.
+    
+    Legacy tuner archive proposal: https://github.com/larson-group/clubb/pull/1447
+    
+    Archive payload commit: 6dcdf38a93eb8f26477bb4f3c48eecf923834007. Related removal: https://github.com/larson-group/clubb/pull/1446. The archive is proposed and awaits merge.
+
+commit b42379c7f276359b677e71569c2f4930024ee02e
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Fri Nov 13 21:32:15 2026 -0600
+
+    Organize CLUBB porting guidance and clean up JAX maintenance files (#1445)
+    
+    * Make CLUBB porting milestones and execution modes explicit
+    
+    Separate language-neutral porting strategy and reusable language guidance
+    from the existing JAX and Kokkos implementation maintenance contracts.
+    Record the ordered type, driver, core and final-statistics milestones;
+    add serial, balanced and fastest execution modes and update routing.
+    
+    Validate skill metadata, local references and guidance-only scope against
+    master. Kokkos maintenance remains conditional on that backend existing.
+    
+    * Consolidate JAX guidance and backend runtime files
+    
+    Remove obsolete conversion plans, porting notes and redundant local agent
+    instructions, retaining current usage and support limits in the JAX README.
+    Move backend requirements beside their owners and update launcher and Dash
+    path consumers without changing dependencies. Remove the empty package
+    initializer and three retired manual tools; promote the reviewed timestep
+    gradient workflow without changing its assertions.
+    
+    Verify CPU setup, backend/runtime and Dash path checks, filename parity and
+    all generated declarations. The moved BOMEX/ATEX gradient workflow passes
+    its derivative, finite-difference and eager/JIT checks. Jenkins validation
+    will run on this published commit before the draft PR handoff.
